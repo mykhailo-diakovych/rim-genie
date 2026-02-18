@@ -13,6 +13,12 @@ import { toast } from "sonner";
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
+      if ((error as { code?: string }).code === "UNAUTHORIZED") {
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return;
+      }
       toast.error(`Error: ${error.message}`, {
         action: {
           label: "retry",

@@ -10,6 +10,8 @@
   --blue: #1583e4;
   --green: #21b84e;
   --red: #f04438;
+  --badge-green: #1e9e62;
+  --badge-red: #ee3f3f;
   --page: #f4f7fa;
   --card-line: #ebf0f5;
   --field-line: #ebedf0;
@@ -93,6 +95,8 @@
   --color-blue: var(--blue);
   --color-green: var(--green);
   --color-red: var(--red);
+  --color-badge-green: var(--badge-green);
+  --color-badge-red: var(--badge-red);
   --color-page: var(--page);
   --color-card-line: var(--card-line);
   --color-field-line: var(--field-line);
