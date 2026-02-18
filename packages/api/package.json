@@ -5,6 +5,9 @@
     ".": {
       "default": "./src/index.ts"
     },
+    "./effect": {
+      "default": "./src/effect/index.ts"
+    },
     "./*": {
       "default": "./src/*.ts"
     }
@@ -19,10 +22,12 @@
     "@rim-genie/db": "workspace:*",
     "@rim-genie/env": "workspace:*",
     "dotenv": "catalog:",
+    "effect": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@rim-genie/config": "workspace:*",
+    "@types/pg": "^8.16.0",
     "typescript": "catalog:"
   }
 }
