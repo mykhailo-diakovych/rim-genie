@@ -1,0 +1,3 @@
+{
+  "extends": "@rim-genie/config/tsconfig.base.json"
+}

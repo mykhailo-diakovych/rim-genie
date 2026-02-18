@@ -1,0 +1,24 @@
+{
+  "name": "@rim-genie/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@rim-genie/db": "workspace:*",
+    "@rim-genie/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@rim-genie/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
