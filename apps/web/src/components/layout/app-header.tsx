@@ -41,8 +41,8 @@ export function AppHeader() {
           <img src="/logo.png" alt="Rim Genie" className="h-12 w-auto" />
         </div>
 
-        {/* Search — icon on the right, matching Figma */}
-        <div className="flex w-80 items-center gap-4 rounded-[8px] border border-field-line bg-white px-3 py-[10px]">
+        {/* Search — hidden on mobile, full bar on md+ */}
+        <div className="hidden md:flex w-80 items-center gap-4 rounded-[8px] border border-field-line bg-white px-3 py-[10px]">
           <span className="min-w-0 flex-1 font-rubik text-[12px] leading-[14px] text-ghost">
             {m.header_search_placeholder()}
           </span>
@@ -51,19 +51,28 @@ export function AppHeader() {
       </div>
 
       {/* Right block */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        {/* Search icon — mobile only */}
+        <button
+          type="button"
+          className="flex md:hidden h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f0f5fa]"
+          aria-label={m.header_search_placeholder()}
+        >
+          <Search className="size-4 text-ghost" />
+        </button>
+
         {/* User name + datetime stacked */}
         {isPending ? (
           <div className="flex flex-col gap-1">
             <Skeleton className="h-[18px] w-28 rounded" />
-            <Skeleton className="h-[14px] w-24 rounded" />
+            <Skeleton className="hidden md:block h-[14px] w-24 rounded" />
           </div>
         ) : (
           <div className="flex flex-col gap-1 items-start justify-center">
             <span className="font-rubik text-[14px] font-medium leading-[18px] text-body">
               {session?.user.name}
             </span>
-            <span className="font-rubik text-[12px] leading-[14px] text-label">
+            <span className="hidden md:block font-rubik text-[12px] leading-[14px] text-label">
               {formatDateTime(now)}
             </span>
           </div>
