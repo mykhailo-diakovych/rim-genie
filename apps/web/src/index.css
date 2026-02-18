@@ -1,10 +1,23 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/rubik";
+@import "@fontsource/poppins/400.css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --blue: #1583e4;
+  --green: #21b84e;
+  --red: #f04438;
+  --page: #f4f7fa;
+  --card-line: #ebf0f5;
+  --field-line: #ebedf0;
+  --toggle-line: #e1e9eb;
+  --body: #2b2d2e;
+  --label: #686b6c;
+  --ghost: #b3bbc2;
+  --dim: #54687a;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0.01 145);
   --card: oklch(1 0 0);
@@ -75,6 +88,19 @@
 
 @theme inline {
   --font-sans: "Inter Variable", sans-serif;
+  --font-rubik: "Rubik Variable", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+  --color-blue: var(--blue);
+  --color-green: var(--green);
+  --color-red: var(--red);
+  --color-page: var(--page);
+  --color-card-line: var(--card-line);
+  --color-field-line: var(--field-line);
+  --color-toggle-line: var(--toggle-line);
+  --color-body: var(--body);
+  --color-label: var(--label);
+  --color-ghost: var(--ghost);
+  --color-dim: var(--dim);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

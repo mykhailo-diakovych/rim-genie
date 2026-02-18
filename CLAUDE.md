@@ -46,16 +46,21 @@ Environment: `apps/web/.env` (single env file, loaded by all packages including 
 ### Effect.ts Service Layer (`packages/api/src/effect/`)
 
 Services are Context Tags; Layers provide implementations:
+
 - `DbService` → `db` (Drizzle client)
 - `AuthService` → `auth` (Better Auth instance)
 - `AppLayer = Layer.mergeAll(DbLayer, AuthLayer)` → `AppRuntime = ManagedRuntime.make(AppLayer)`
 
 Usage in a router handler:
+
 ```typescript
-handler: () => runEffect(Effect.gen(function* () {
-  const db = yield* DbService;
-  // ...
-}))
+handler: () =>
+  runEffect(
+    Effect.gen(function* () {
+      const db = yield* DbService;
+      // ...
+    }),
+  );
 ```
 
 Errors: throw `new ApiError("tag", "message")` inside effects → automatically converted to `ORPCError`.

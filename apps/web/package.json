@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
+    "@fontsource-variable/rubik": "^5.2.8",
+    "@fontsource/poppins": "^5.2.7",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
@@ -35,6 +37,7 @@
     "shadcn": "^3.6.2",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.3.1",
+    "tailwind-variants": "^3.2.2",
     "tailwindcss": "^4.1.3",
     "tw-animate-css": "^1.2.5",
     "vite-tsconfig-paths": "^5.1.4",

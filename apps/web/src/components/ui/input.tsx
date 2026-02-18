@@ -1,19 +1,117 @@
-import { Input as InputPrimitive } from "@base-ui/react/input";
-import * as React from "react";
+import { useState } from "react";
 
-import { cn } from "@/lib/utils";
+import { tv } from "tailwind-variants";
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+const inputVariants = tv({
+  slots: {
+    wrapper:
+      "flex h-9 w-full items-center gap-2 rounded-[8px] border bg-white px-2 transition-colors",
+    field:
+      "min-w-0 flex-1 bg-transparent font-rubik text-[12px] leading-[14px] text-body placeholder:text-ghost outline-none",
+    icon: "size-4 shrink-0 text-ghost",
+    action: "size-4 shrink-0 text-ghost transition-colors hover:text-body",
+  },
+  variants: {
+    error: {
+      true: { wrapper: "border-red/50" },
+      false: { wrapper: "border-field-line" },
+    },
+  },
+  defaultVariants: {
+    error: false,
+  },
+});
+
+interface InputProps {
+  id?: string;
+  name?: string;
+  type?: "text" | "password" | "email" | "number";
+  value?: string;
+  placeholder?: string;
+  leadingIcon?: React.ReactNode;
+  error?: boolean;
+  onBlur?: () => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+function Input({
+  id,
+  name,
+  type = "text",
+  value,
+  placeholder,
+  leadingIcon,
+  error = false,
+  onBlur,
+  onChange,
+}: InputProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+  const { wrapper, field, icon, action } = inputVariants({ error });
+
   return (
-    <InputPrimitive
-      type={type}
-      data-slot="input"
-      className={cn(
-        "dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 disabled:bg-input/50 dark:disabled:bg-input/80 h-8 rounded-none border bg-transparent px-2.5 py-1 text-xs transition-colors file:h-6 file:text-xs file:font-medium focus-visible:ring-1 aria-invalid:ring-1 md:text-xs file:text-foreground placeholder:text-muted-foreground w-full min-w-0 outline-none file:inline-flex file:border-0 file:bg-transparent disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-        className,
+    <div className={wrapper()}>
+      {leadingIcon && <span className={icon()}>{leadingIcon}</span>}
+      <input
+        id={id}
+        name={name}
+        type={inputType}
+        value={value}
+        placeholder={placeholder}
+        onBlur={onBlur}
+        onChange={onChange}
+        className={field()}
+      />
+      {isPassword && (
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setShowPassword((s) => !s)}
+          className={action()}
+        >
+          {showPassword ? (
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="size-4"
+            >
+              <path
+                d="M2 2l12 12M6.5 6.55A2 2 0 0 0 9.45 9.5M8 3.5C4.5 3.5 1.5 8 1.5 8s1 1.8 3 3M14.5 8s-1.5-4.5-6.5-4.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="size-4"
+            >
+              <path d="M1.5 8s2.5-5 6.5-5 6.5 5 6.5 5-2.5 5-6.5 5-6.5-5-6.5-5Z" />
+              <circle cx="8" cy="8" r="2" />
+            </svg>
+          )}
+        </button>
       )}
-      {...props}
-    />
+      {error && !isPassword && (
+        <span className={action({ class: "text-red" })}>
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            className="size-4"
+          >
+            <circle cx="8" cy="8" r="6.5" />
+            <path d="M8 5v3.5M8 11h.01" strokeLinecap="round" />
+          </svg>
+        </span>
+      )}
+    </div>
   );
 }
 
