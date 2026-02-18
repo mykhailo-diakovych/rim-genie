@@ -1,5 +1,7 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 
+import { m } from "@/paraglide/messages";
+
 export const Route = createFileRoute("/_auth")({
   component: AuthLayout,
 });
@@ -11,9 +13,7 @@ function AuthLayout() {
         <Outlet />
       </div>
       <footer className="flex h-10 items-center justify-center border-t border-card-line bg-white px-5">
-        <p className="font-poppins text-[12px] leading-[18px] text-dim">
-          {" Copyright © 2026 Rim Genie Ltd."}
-        </p>
+        <p className="font-poppins text-[12px] leading-[18px] text-dim">{m.copyright()}</p>
       </footer>
     </div>
   );

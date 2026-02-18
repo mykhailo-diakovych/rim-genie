@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PinInput } from "@/components/ui/pin-input";
+import { m } from "@/paraglide/messages";
 
 export function StaffLoginForm() {
   const [pin, setPin] = useState("");
@@ -16,11 +17,11 @@ export function StaffLoginForm() {
   const form = useForm({
     defaultValues: { employeeId: "" },
     onSubmit: async () => {
-      toast.info("Staff login coming soon");
+      toast.info(m.toast_staff_login_soon());
     },
     validators: {
       onSubmit: z.object({
-        employeeId: z.string().min(1, "Employee ID is required"),
+        employeeId: z.string().min(1, m.validation_employee_id_required()),
       }),
     },
   });
@@ -38,7 +39,7 @@ export function StaffLoginForm() {
         <form.Field name="employeeId">
           {(field) => (
             <div className="flex flex-col gap-1">
-              <Label htmlFor={field.name}>Employee ID:</Label>
+              <Label htmlFor={field.name}>{m.label_employee_id()}</Label>
               <Input
                 id={field.name}
                 name={field.name}
@@ -59,7 +60,7 @@ export function StaffLoginForm() {
         </form.Field>
 
         <div className="flex flex-col gap-1">
-          <Label>Enter your PIN:</Label>
+          <Label>{m.label_enter_pin()}</Label>
           <PinInput value={pin} onChange={setPin} />
         </div>
       </div>
@@ -67,13 +68,13 @@ export function StaffLoginForm() {
       <form.Subscribe>
         {(state) => (
           <Button type="submit" fullWidth disabled={!state.canSubmit || state.isSubmitting}>
-            {state.isSubmitting ? "Logging in..." : "Log In"}
+            {state.isSubmitting ? m.btn_logging_in() : m.btn_login()}
           </Button>
         )}
       </form.Subscribe>
 
       <p className="text-center font-rubik text-[12px] leading-[16px] text-label">
-        Use your assigned PIN. Contact admin if needed.
+        {m.staff_pin_help()}
       </p>
     </form>
   );

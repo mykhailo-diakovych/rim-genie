@@ -54,6 +54,9 @@ next-env.d.ts
 # Other
 dev-dist
 
+# Paraglide generated output
+src/paraglide/
+
 .wrangler
 .dev.vars*
 

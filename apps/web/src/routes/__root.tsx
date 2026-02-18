@@ -7,6 +7,8 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { orpc } from "@/utils/orpc";
 
 import { Toaster } from "@/components/ui/sonner";
+import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 
 import appCss from "../index.css?url";
 
@@ -26,7 +28,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "Rim Genie",
+        title: m.app_name(),
       },
     ],
     links: [
@@ -42,7 +44,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootDocument() {
   return (
-    <html lang="en" className="dark">
+    <html lang={getLocale()} className="dark">
       <head>
         <HeadContent />
       </head>

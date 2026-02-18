@@ -8,6 +8,7 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { m } from "@/paraglide/messages";
 
 export function EmailLoginForm() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export function EmailLoginForm() {
         {
           onSuccess: () => {
             navigate({ to: "/dashboard" });
-            toast.success("Signed in successfully");
+            toast.success(m.toast_signed_in());
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -30,8 +31,8 @@ export function EmailLoginForm() {
     },
     validators: {
       onSubmit: z.object({
-        email: z.email("Invalid email address"),
-        password: z.string().min(1, "Password is required"),
+        email: z.email(m.validation_invalid_email()),
+        password: z.string().min(1, m.validation_password_required()),
       }),
     },
   });
@@ -49,7 +50,7 @@ export function EmailLoginForm() {
         <form.Field name="email">
           {(field) => (
             <div className="flex flex-col gap-1">
-              <Label htmlFor={field.name}>Email:</Label>
+              <Label htmlFor={field.name}>{m.label_email()}</Label>
               <Input
                 id={field.name}
                 name={field.name}
@@ -72,7 +73,7 @@ export function EmailLoginForm() {
         <form.Field name="password">
           {(field) => (
             <div className="flex flex-col gap-1">
-              <Label htmlFor={field.name}>Password:</Label>
+              <Label htmlFor={field.name}>{m.label_password()}</Label>
               <Input
                 id={field.name}
                 name={field.name}
@@ -96,7 +97,7 @@ export function EmailLoginForm() {
       <form.Subscribe>
         {(state) => (
           <Button type="submit" fullWidth disabled={!state.canSubmit || state.isSubmitting}>
-            {state.isSubmitting ? "Logging in..." : "Log In"}
+            {state.isSubmitting ? m.btn_logging_in() : m.btn_login()}
           </Button>
         )}
       </form.Subscribe>

@@ -8,11 +8,12 @@ import z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { m } from "@/paraglide/messages";
 
 const pinSchema = z
   .string()
-  .length(6, "The PIN must contain 6 digits")
-  .regex(/^\d+$/, "The PIN must contain 6 digits");
+  .length(6, m.validation_pin_six_digits())
+  .regex(/^\d+$/, m.validation_pin_six_digits());
 
 interface ResetPinModalProps {
   trigger: React.ReactNode;
@@ -30,14 +31,14 @@ export function ResetPinModal({ trigger }: ResetPinModalProps) {
     setConfirmPinError("");
     const result = pinSchema.safeParse(newPin);
     if (!result.success) {
-      setNewPinError(result.error.issues[0]?.message ?? "Invalid PIN");
+      setNewPinError(result.error.issues[0]?.message ?? m.validation_pin_invalid());
       return;
     }
     if (newPin !== confirmPin) {
-      setConfirmPinError("PINs do not match");
+      setConfirmPinError(m.validation_pins_mismatch());
       return;
     }
-    toast.info("Reset PIN coming soon");
+    toast.info(m.toast_reset_pin_soon());
   }
 
   function handleCancel() {
@@ -56,7 +57,9 @@ export function ResetPinModal({ trigger }: ResetPinModalProps) {
         <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]" />
         <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-[12px] bg-[#fafbfc] shadow-[0px_0px_40px_0px_rgba(0,0,0,0.04)]">
           <div className="flex items-center justify-between border-b border-field-line pl-3 pr-2 py-3">
-            <p className="font-rubik font-medium text-[16px] leading-[20px] text-body">Reset Pin</p>
+            <p className="font-rubik font-medium text-[16px] leading-[20px] text-body">
+              {m.reset_pin_title()}
+            </p>
             <Dialog.Close className="flex items-center rounded-[6px] p-1 text-label transition-colors hover:text-body">
               <X className="size-4" />
             </Dialog.Close>
@@ -65,12 +68,12 @@ export function ResetPinModal({ trigger }: ResetPinModalProps) {
           <div className="flex flex-col gap-6 p-3">
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <Label>Old Pin:</Label>
+                <Label>{m.label_old_pin()}</Label>
                 <Input type="password" value={oldPin} onChange={(e) => setOldPin(e.target.value)} />
               </div>
 
               <div className="flex flex-col gap-1">
-                <Label>New Pin:</Label>
+                <Label>{m.label_new_pin()}</Label>
                 <Input
                   type="password"
                   value={newPin}
@@ -81,7 +84,7 @@ export function ResetPinModal({ trigger }: ResetPinModalProps) {
               </div>
 
               <div className="flex flex-col gap-1">
-                <Label>Confirm Pin:</Label>
+                <Label>{m.label_confirm_pin()}</Label>
                 <Input
                   type="password"
                   value={confirmPin}
@@ -98,12 +101,12 @@ export function ResetPinModal({ trigger }: ResetPinModalProps) {
               <Dialog.Close
                 render={
                   <Button variant="ghost" onClick={handleCancel}>
-                    Cancel
+                    {m.btn_cancel()}
                   </Button>
                 }
               />
               <Button variant="success" onClick={handleReset}>
-                Reset
+                {m.btn_reset()}
               </Button>
             </div>
           </div>
