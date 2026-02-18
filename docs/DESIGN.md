@@ -30,19 +30,19 @@ Reference document for Claude Code agents and developers implementing UI.
 
 Defined in `apps/web/src/index.css` (`:root` + `@theme inline`). App-wide — not scoped to auth.
 
-| CSS Variable    | Hex       | Tailwind Classes                    | Usage                              |
-| --------------- | --------- | ----------------------------------- | ---------------------------------- |
-| `--blue`        | `#1583e4` | `bg-blue`, `text-blue`, `border-blue` | Primary action, active toggle    |
-| `--green`       | `#21b84e` | `bg-green`, `text-green`            | Success button                     |
-| `--red`         | `#f04438` | `text-red`, `border-red`            | Validation errors                  |
-| `--page`        | `#f4f7fa` | `bg-page`                           | Page / layout background           |
-| `--card-line`   | `#ebf0f5` | `border-card-line`                  | Card borders, footer separator     |
-| `--field-line`  | `#ebedf0` | `border-field-line`                 | Input borders                      |
-| `--toggle-line` | `#e1e9eb` | `border-toggle-line`                | Segmented control border           |
-| `--body`        | `#2b2d2e` | `text-body`                         | Primary body text                  |
-| `--label`       | `#686b6c` | `text-label`                        | Labels, secondary text             |
-| `--ghost`       | `#b3bbc2` | `text-ghost`                        | Placeholders, icon defaults        |
-| `--dim`         | `#54687a` | `text-dim`                          | Footer / muted text                |
+| CSS Variable    | Hex       | Tailwind Classes                      | Usage                          |
+| --------------- | --------- | ------------------------------------- | ------------------------------ |
+| `--blue`        | `#1583e4` | `bg-blue`, `text-blue`, `border-blue` | Primary action, active toggle  |
+| `--green`       | `#21b84e` | `bg-green`, `text-green`              | Success button                 |
+| `--red`         | `#f04438` | `text-red`, `border-red`              | Validation errors              |
+| `--page`        | `#f4f7fa` | `bg-page`                             | Page / layout background       |
+| `--card-line`   | `#ebf0f5` | `border-card-line`                    | Card borders, footer separator |
+| `--field-line`  | `#ebedf0` | `border-field-line`                   | Input borders                  |
+| `--toggle-line` | `#e1e9eb` | `border-toggle-line`                  | Segmented control border       |
+| `--body`        | `#2b2d2e` | `text-body`                           | Primary body text              |
+| `--label`       | `#686b6c` | `text-label`                          | Labels, secondary text         |
+| `--ghost`       | `#b3bbc2` | `text-ghost`                          | Placeholders, icon defaults    |
+| `--dim`         | `#54687a` | `text-dim`                            | Footer / muted text            |
 
 ---
 
@@ -82,12 +82,12 @@ import { Button } from "@/components/ui/button";
 <Button variant="ghost">Cancel</Button>
 ```
 
-| Variant | Appearance | Notes |
-|---|---|---|
-| `default` | `bg-blue` white text | Use `fullWidth` prop for full-width |
-| `success` | `bg-green` white text | Fixed `w-[128px]` |
-| `ghost` | No background, `text-body` | Auto width |
-| `outline` / `secondary` / `destructive` / `link` | Dark-theme variants | For app shell use |
+| Variant                                          | Appearance                 | Notes                               |
+| ------------------------------------------------ | -------------------------- | ----------------------------------- |
+| `default`                                        | `bg-blue` white text       | Use `fullWidth` prop for full-width |
+| `success`                                        | `bg-green` white text      | Fixed `w-[128px]`                   |
+| `ghost`                                          | No background, `text-body` | Auto width                          |
+| `outline` / `secondary` / `destructive` / `link` | Dark-theme variants        | For app shell use                   |
 
 #### `Input`
 
@@ -95,13 +95,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 <Input
-  type="email"                          // "text" | "password" | "email" | "number"
+  type="email" // "text" | "password" | "email" | "number"
   value={value}
   leadingIcon={<Mail className="size-4" />}
-  error={hasError}                      // red border + alert icon
+  error={hasError} // red border + alert icon
   onChange={handler}
   onBlur={handler}
-/>
+/>;
 ```
 
 Password type automatically adds eye toggle. Error + password: red border only (no alert icon).
@@ -111,7 +111,7 @@ Password type automatically adds eye toggle. Error + password: red border only (
 ```tsx
 import { Label } from "@/components/ui/label";
 
-<Label htmlFor="email">Email:</Label>
+<Label htmlFor="email">Email:</Label>;
 ```
 
 Rubik 12px, `text-label` color. Standard HTML `<label>` semantics.
@@ -128,7 +128,7 @@ const TABS = [
   { value: "staff" as const, label: "Staff" },
 ];
 
-<SegmentedControl tabs={TABS} value={tab} onChange={setTab} />
+<SegmentedControl tabs={TABS} value={tab} onChange={setTab} />;
 ```
 
 #### `PinInput`
@@ -138,7 +138,7 @@ Six-digit PIN with auto-advance, backspace, paste support.
 ```tsx
 import { PinInput } from "@/components/ui/pin-input";
 
-<PinInput value={pin} onChange={setPin} error={hasError} />
+<PinInput value={pin} onChange={setPin} error={hasError} />;
 ```
 
 ---
