@@ -9,7 +9,6 @@ export default defineConfig({
   plugins: [
     tsconfigPaths(),
     tailwindcss(),
-    // @ts-expect-error – vite@7.3.1 has two hash entries in bun cache causing type incompatibility
     paraglideVitePlugin({
       project: "./project.inlang",
       outdir: "./src/paraglide",
@@ -21,6 +20,6 @@ export default defineConfig({
     viteReact(),
   ],
   server: {
-    port: 3001,
+    port: 3000,
   },
 });
