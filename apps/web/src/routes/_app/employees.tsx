@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -21,6 +21,11 @@ import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/employees")({
+  beforeLoad: ({ context }) => {
+    if (context.session.user.role !== "admin") {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: EmployeesPage,
 });
 

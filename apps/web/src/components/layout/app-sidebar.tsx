@@ -1,7 +1,10 @@
 import { useMatchRoute, Link } from "@tanstack/react-router";
 import { tv } from "tailwind-variants";
 
+import type { UserRole } from "@rim-genie/db/schema";
+
 import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
 import { m } from "@/paraglide/messages";
 import {
   IconCashier,
@@ -87,11 +90,16 @@ const NAV_ITEMS = [
   { to: "/inventory", labelKey: "nav_inventory" as const, icon: IconInventory },
   { to: "/cashier", labelKey: "nav_cashier" as const, icon: IconCashier },
   { to: "/technician", labelKey: "nav_technician" as const, icon: IconTechnician },
-  { to: "/employees", labelKey: "nav_employees" as const, icon: IconEmployees },
+  {
+    to: "/employees",
+    labelKey: "nav_employees" as const,
+    icon: IconEmployees,
+    roles: ["admin"] as UserRole[],
+  },
   { to: "/customers", labelKey: "nav_customers" as const, icon: IconCustomers },
   { to: "/manage", labelKey: "nav_manage" as const, icon: IconManage },
   { to: "/terms", labelKey: "nav_terms" as const, icon: IconTerms },
-] as const;
+];
 
 interface AppSidebarProps {
   horizontal?: boolean;
@@ -100,7 +108,13 @@ interface AppSidebarProps {
 
 export function AppSidebar({ horizontal = false, className }: AppSidebarProps) {
   const matchRoute = useMatchRoute();
+  const { data: session } = authClient.useSession();
+  const userRole = session?.user.role as UserRole | undefined;
   const orientation = horizontal ? "horizontal" : "vertical";
+
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.roles || (userRole && item.roles.includes(userRole)),
+  );
 
   if (horizontal) {
     return (
@@ -110,7 +124,7 @@ export function AppSidebar({ horizontal = false, className }: AppSidebarProps) {
           className,
         )}
       >
-        {NAV_ITEMS.map(({ to, labelKey, icon: Icon }) => {
+        {visibleItems.map(({ to, labelKey, icon: Icon }) => {
           const isActive = !!matchRoute({ to, fuzzy: true });
           const { root, icon, label } = navItem({ orientation, active: isActive });
           return (
@@ -131,7 +145,7 @@ export function AppSidebar({ horizontal = false, className }: AppSidebarProps) {
         className,
       )}
     >
-      {NAV_ITEMS.map(({ to, labelKey, icon: Icon }) => {
+      {visibleItems.map(({ to, labelKey, icon: Icon }) => {
         const isActive = !!matchRoute({ to, fuzzy: true });
         const { root, icon, label } = navItem({ orientation, active: isActive });
         return (
