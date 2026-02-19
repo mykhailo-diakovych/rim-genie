@@ -1,5 +1,16 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import type { InferSelectModel } from "drizzle-orm";
+import { pgEnum, pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+
+export const userRoleEnum = pgEnum("user_role", [
+  "admin",
+  "floorManager",
+  "cashier",
+  "technician",
+  "inventoryClerk",
+]);
+
+export type UserRole = (typeof userRoleEnum.enumValues)[number];
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -12,7 +23,15 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  username: text("username").unique(),
+  displayUsername: text("display_username"),
+  role: userRoleEnum("role"),
+  banned: boolean("banned").default(false),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires"),
 });
+
+export type User = InferSelectModel<typeof user>;
 
 export const session = pgTable(
   "session",
@@ -29,6 +48,7 @@ export const session = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    impersonatedBy: text("impersonated_by"),
   },
   (table) => [index("session_userId_idx").on(table.userId)],
 );

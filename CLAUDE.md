@@ -92,3 +92,4 @@ Errors: throw `new ApiError("tag", "message")` inside effects → automatically 
 - **TypeScript**: Strict mode, `noUnusedLocals`, `noUnusedParameters` — all enforced
 - **Linting**: `oxlint` (fast Rust-based linter). Run `bun run check` to fix.
 - **No test framework configured** — there are no tests yet
+- **No unnecessary comments**: Do not add inline comments, JSDoc, or section dividers unless they explain non-obvious logic. Code should be self-documenting.
