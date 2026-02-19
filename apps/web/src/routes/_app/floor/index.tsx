@@ -59,6 +59,7 @@ function QuoteCard({
         </button>
         <button
           type="button"
+          onClick={() => window.open(`/api/quotes/${quote.id}/pdf`, "_blank")}
           className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-[8px] border border-blue font-rubik text-[12px] leading-[14px] text-blue transition-colors hover:bg-blue/5"
         >
           <Printer className="size-4" />

@@ -27,6 +27,7 @@ import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppFloorNewQuoteRouteImport } from './routes/_app/floor/new-quote'
 import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
+import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$quoteId/pdf'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -116,6 +117,11 @@ const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
   path: '/$quoteId',
   getParentRoute: () => AppFloorRoute,
 } as any)
+const ApiQuotesQuoteIdPdfRoute = ApiQuotesQuoteIdPdfRouteImport.update({
+  id: '/api/quotes/$quoteId/pdf',
+  path: '/api/quotes/$quoteId/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/floor/': typeof AppFloorIndexRoute
+  '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/floor': typeof AppFloorIndexRoute
+  '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/_app/floor/': typeof AppFloorIndexRoute
+  '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/floor/'
+    | '/api/quotes/$quoteId/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/floor'
+    | '/api/quotes/$quoteId/pdf'
   id:
     | '__root__'
     | '/_app'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/_app/floor/'
+    | '/api/quotes/$quoteId/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -236,6 +248,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
+  ApiQuotesQuoteIdPdfRoute: typeof ApiQuotesQuoteIdPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -366,6 +379,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFloorQuoteIdRouteImport
       parentRoute: typeof AppFloorRoute
     }
+    '/api/quotes/$quoteId/pdf': {
+      id: '/api/quotes/$quoteId/pdf'
+      path: '/api/quotes/$quoteId/pdf'
+      fullPath: '/api/quotes/$quoteId/pdf'
+      preLoaderRoute: typeof ApiQuotesQuoteIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -428,6 +448,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
+  ApiQuotesQuoteIdPdfRoute: ApiQuotesQuoteIdPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

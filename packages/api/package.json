@@ -8,6 +8,12 @@
     "./effect": {
       "default": "./src/effect/index.ts"
     },
+    "./pdf/render-quote-pdf": {
+      "default": "./src/pdf/render-quote-pdf.tsx"
+    },
+    "./pdf/get-quote-pdf": {
+      "default": "./src/pdf/get-quote-pdf.ts"
+    },
     "./*": {
       "default": "./src/*.ts"
     }
@@ -18,6 +24,7 @@
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
+    "@react-pdf/renderer": "^4.3.2",
     "@rim-genie/auth": "workspace:*",
     "@rim-genie/db": "workspace:*",
     "@rim-genie/env": "workspace:*",
@@ -28,6 +35,7 @@
   "devDependencies": {
     "@rim-genie/config": "workspace:*",
     "@types/pg": "^8.16.0",
+    "@types/react": "^19.2.14",
     "typescript": "catalog:"
   }
 }

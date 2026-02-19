@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   MapPin,
   Phone,
   Plus,
+  Printer,
   Save,
   Trash2,
   Wrench,
@@ -162,13 +163,7 @@ function QuoteEditorPage() {
               <Wrench className="size-4" />
               To Technician
             </button>
-            <button
-              type="button"
-              className="flex h-9 w-[72px] items-center justify-center gap-2 rounded-[8px] border border-field-line bg-white font-rubik text-[12px] leading-[14px] text-body transition-colors hover:bg-page"
-            >
-              More
-              <ChevronDown className="size-4 text-ghost" />
-            </button>
+            <MoreDropdown quoteId={quoteId} />
           </div>
         </div>
 
@@ -355,6 +350,53 @@ function QuoteEditorPage() {
         isAdding={addItem.isPending}
       />
     </>
+  );
+}
+
+// ─── More Dropdown ────────────────────────────────────────────────────────────
+
+function MoreDropdown({ quoteId }: { quoteId: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-9 w-[72px] items-center justify-center gap-2 rounded-[8px] border border-field-line bg-white font-rubik text-[12px] leading-[14px] text-body transition-colors hover:bg-page"
+      >
+        More
+        <ChevronDown className="size-4 text-ghost" />
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 z-10 mt-1 w-36 rounded-[8px] border border-card-line bg-white py-1 shadow-md">
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              window.open(`/api/quotes/${quoteId}/pdf`, "_blank");
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-[12px] text-body transition-colors hover:bg-page"
+          >
+            <Printer className="size-4 text-ghost" />
+            Print PDF
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
