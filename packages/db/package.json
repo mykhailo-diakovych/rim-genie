@@ -17,10 +17,12 @@
     "db:start": "docker compose up -d",
     "db:watch": "docker compose up",
     "db:stop": "docker compose stop",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "db:seed": "npx dotenvx run -f ../../apps/web/.env -- bun run src/seed.ts"
   },
   "dependencies": {
     "@rim-genie/env": "workspace:*",
+    "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "catalog:",
     "pg": "^8.17.1",

@@ -117,6 +117,7 @@
       "name": "@rim-genie/db",
       "dependencies": {
         "@rim-genie/env": "workspace:*",
+        "better-auth": "catalog:",
         "dotenv": "catalog:",
         "drizzle-orm": "catalog:",
         "pg": "^8.17.1",

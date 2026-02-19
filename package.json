@@ -35,7 +35,7 @@
     "db:watch": "turbo -F @rim-genie/db db:watch",
     "db:stop": "turbo -F @rim-genie/db db:stop",
     "db:down": "turbo -F @rim-genie/db db:down",
-    "db:seed": "turbo -F @rim-genie/auth seed",
+    "db:seed": "turbo -F @rim-genie/db db:seed",
     "check": "oxlint && oxfmt --write"
   },
   "dependencies": {

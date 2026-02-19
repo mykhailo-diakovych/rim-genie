@@ -9,9 +9,7 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {
-    "seed": "bun run src/seed.ts"
-  },
+  "scripts": {},
   "dependencies": {
     "@rim-genie/db": "workspace:*",
     "@rim-genie/env": "workspace:*",
