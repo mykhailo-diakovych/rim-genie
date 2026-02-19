@@ -12,6 +12,7 @@
   --red: #f04438;
   --badge-green: #1e9e62;
   --badge-red: #ee3f3f;
+  --badge-blue: oklch(0.783 0.162 232.8);
   --page: #f4f7fa;
   --card-line: #ebf0f5;
   --field-line: #ebedf0;
@@ -97,6 +98,7 @@
   --color-red: var(--red);
   --color-badge-green: var(--badge-green);
   --color-badge-red: var(--badge-red);
+  --color-badge-blue: var(--badge-blue);
   --color-page: var(--page);
   --color-card-line: var(--card-line);
   --color-field-line: var(--field-line);

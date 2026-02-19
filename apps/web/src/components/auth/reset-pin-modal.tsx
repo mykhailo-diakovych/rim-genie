@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useRef } from "react";
 
 import { Dialog } from "@base-ui/react/dialog";
+import { useForm } from "@tanstack/react-form";
+import { useMutation } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import z from "zod";
@@ -9,48 +11,45 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { m } from "@/paraglide/messages";
+import { orpc } from "@/utils/orpc";
 
-const pinSchema = z
+const pinField = z
   .string()
   .length(6, m.validation_pin_six_digits())
   .regex(/^\d+$/, m.validation_pin_six_digits());
 
 interface ResetPinModalProps {
+  employeeId: string;
   trigger: React.ReactNode;
 }
 
-export function ResetPinModal({ trigger }: ResetPinModalProps) {
-  const [oldPin, setOldPin] = useState("");
-  const [newPin, setNewPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
-  const [newPinError, setNewPinError] = useState("");
-  const [confirmPinError, setConfirmPinError] = useState("");
+export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
+  const closeRef = useRef<HTMLButtonElement>(null);
 
-  function handleReset() {
-    setNewPinError("");
-    setConfirmPinError("");
-    const result = pinSchema.safeParse(newPin);
-    if (!result.success) {
-      setNewPinError(result.error.issues[0]?.message ?? m.validation_pin_invalid());
-      return;
-    }
-    if (newPin !== confirmPin) {
-      setConfirmPinError(m.validation_pins_mismatch());
-      return;
-    }
-    toast.info(m.toast_reset_pin_soon());
-  }
+  const resetPin = useMutation(orpc.employees.resetPin.mutationOptions());
 
-  function handleCancel() {
-    setOldPin("");
-    setNewPin("");
-    setConfirmPin("");
-    setNewPinError("");
-    setConfirmPinError("");
-  }
+  const form = useForm({
+    defaultValues: { newPin: "", confirmPin: "" },
+    onSubmit: async ({ value }) => {
+      await resetPin.mutateAsync({ userId: employeeId, newPin: value.newPin });
+      toast.success(m.employees_toast_pin_reset());
+      closeRef.current?.click();
+    },
+    validators: {
+      onSubmit: z
+        .object({
+          newPin: pinField,
+          confirmPin: z.string(),
+        })
+        .refine((v) => v.newPin === v.confirmPin, {
+          message: m.validation_pins_mismatch(),
+          path: ["confirmPin"],
+        }),
+    },
+  });
 
   return (
-    <Dialog.Root>
+    <Dialog.Root onOpenChange={(open) => !open && form.reset()}>
       <Dialog.Trigger render={<span />}>{trigger}</Dialog.Trigger>
 
       <Dialog.Portal>
@@ -65,51 +64,76 @@ export function ResetPinModal({ trigger }: ResetPinModalProps) {
             </Dialog.Close>
           </div>
 
-          <div className="flex flex-col gap-6 p-3">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+            className="flex flex-col gap-6 p-3"
+          >
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <Label>{m.label_old_pin()}</Label>
-                <Input type="password" value={oldPin} onChange={(e) => setOldPin(e.target.value)} />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <Label>{m.label_new_pin()}</Label>
-                <Input
-                  type="password"
-                  value={newPin}
-                  error={!!newPinError}
-                  onChange={(e) => setNewPin(e.target.value)}
-                />
-                {newPinError && <p className="font-rubik text-[12px] text-red">{newPinError}</p>}
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <Label>{m.label_confirm_pin()}</Label>
-                <Input
-                  type="password"
-                  value={confirmPin}
-                  error={!!confirmPinError}
-                  onChange={(e) => setConfirmPin(e.target.value)}
-                />
-                {confirmPinError && (
-                  <p className="font-rubik text-[12px] text-red">{confirmPinError}</p>
+              <form.Field name="newPin">
+                {(field) => (
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor={field.name}>{m.label_new_pin()}</Label>
+                    <Input
+                      id={field.name}
+                      type="password"
+                      value={field.state.value}
+                      error={field.state.meta.errors.length > 0}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <p className="font-rubik text-[12px] text-red">
+                        {field.state.meta.errors[0]?.message}
+                      </p>
+                    )}
+                  </div>
                 )}
-              </div>
+              </form.Field>
+
+              <form.Field name="confirmPin">
+                {(field) => (
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor={field.name}>{m.label_confirm_pin()}</Label>
+                    <Input
+                      id={field.name}
+                      type="password"
+                      value={field.state.value}
+                      error={field.state.meta.errors.length > 0}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <p className="font-rubik text-[12px] text-red">
+                        {field.state.meta.errors[0]?.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </form.Field>
             </div>
 
             <div className="flex items-center justify-center gap-2">
-              <Dialog.Close
-                render={
-                  <Button variant="ghost" onClick={handleCancel}>
-                    {m.btn_cancel()}
+              <Dialog.Close ref={closeRef} render={<Button variant="ghost" className="w-[72px]" />}>
+                {m.btn_cancel()}
+              </Dialog.Close>
+              <form.Subscribe>
+                {(state) => (
+                  <Button
+                    type="submit"
+                    variant="success"
+                    className="w-[128px]"
+                    disabled={!state.canSubmit || state.isSubmitting || resetPin.isPending}
+                  >
+                    {m.btn_save()}
                   </Button>
-                }
-              />
-              <Button variant="success" onClick={handleReset}>
-                {m.btn_reset()}
-              </Button>
+                )}
+              </form.Subscribe>
             </div>
-          </div>
+          </form>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
