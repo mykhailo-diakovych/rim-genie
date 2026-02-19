@@ -22,8 +22,10 @@ import { Route as AppEmployeesRouteImport } from './routes/_app/employees'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCustomersRouteImport } from './routes/_app/customers'
 import { Route as AppCashierRouteImport } from './routes/_app/cashier'
+import { Route as AppFloorIndexRouteImport } from './routes/_app/floor/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AppFloorNewQuoteRouteImport } from './routes/_app/floor/new-quote'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -88,6 +90,11 @@ const AppCashierRoute = AppCashierRouteImport.update({
   path: '/cashier',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFloorIndexRoute = AppFloorIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppFloorRoute,
+} as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
   path: '/api/rpc/$',
@@ -98,6 +105,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppFloorNewQuoteRoute = AppFloorNewQuoteRouteImport.update({
+  id: '/new-quote',
+  path: '/new-quote',
+  getParentRoute: () => AppFloorRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -105,14 +117,16 @@ export interface FileRoutesByFullPath {
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
-  '/floor': typeof AppFloorRoute
+  '/floor': typeof AppFloorRouteWithChildren
   '/inventory': typeof AppInventoryRoute
   '/manage': typeof AppManageRoute
   '/technician': typeof AppTechnicianRoute
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
+  '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/floor/': typeof AppFloorIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -120,14 +134,15 @@ export interface FileRoutesByTo {
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
-  '/floor': typeof AppFloorRoute
   '/inventory': typeof AppInventoryRoute
   '/manage': typeof AppManageRoute
   '/technician': typeof AppTechnicianRoute
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
+  '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/floor': typeof AppFloorIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -137,15 +152,17 @@ export interface FileRoutesById {
   '/_app/customers': typeof AppCustomersRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
-  '/_app/floor': typeof AppFloorRoute
+  '/_app/floor': typeof AppFloorRouteWithChildren
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/manage': typeof AppManageRoute
   '/_app/technician': typeof AppTechnicianRoute
   '/_app/terms': typeof AppTermsRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/_app/floor/': typeof AppFloorIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,8 +178,10 @@ export interface FileRouteTypes {
     | '/technician'
     | '/terms'
     | '/login'
+    | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
+    | '/floor/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -170,14 +189,15 @@ export interface FileRouteTypes {
     | '/customers'
     | '/dashboard'
     | '/employees'
-    | '/floor'
     | '/inventory'
     | '/manage'
     | '/technician'
     | '/terms'
     | '/login'
+    | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
+    | '/floor'
   id:
     | '__root__'
     | '/_app'
@@ -193,8 +213,10 @@ export interface FileRouteTypes {
     | '/_app/terms'
     | '/_auth/login'
     | '/_app/'
+    | '/_app/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
+    | '/_app/floor/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -297,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCashierRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/floor/': {
+      id: '/_app/floor/'
+      path: '/'
+      fullPath: '/floor/'
+      preLoaderRoute: typeof AppFloorIndexRouteImport
+      parentRoute: typeof AppFloorRoute
+    }
     '/api/rpc/$': {
       id: '/api/rpc/$'
       path: '/api/rpc/$'
@@ -311,15 +340,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/floor/new-quote': {
+      id: '/_app/floor/new-quote'
+      path: '/new-quote'
+      fullPath: '/floor/new-quote'
+      preLoaderRoute: typeof AppFloorNewQuoteRouteImport
+      parentRoute: typeof AppFloorRoute
+    }
   }
 }
+
+interface AppFloorRouteChildren {
+  AppFloorNewQuoteRoute: typeof AppFloorNewQuoteRoute
+  AppFloorIndexRoute: typeof AppFloorIndexRoute
+}
+
+const AppFloorRouteChildren: AppFloorRouteChildren = {
+  AppFloorNewQuoteRoute: AppFloorNewQuoteRoute,
+  AppFloorIndexRoute: AppFloorIndexRoute,
+}
+
+const AppFloorRouteWithChildren = AppFloorRoute._addFileChildren(
+  AppFloorRouteChildren,
+)
 
 interface AppRouteChildren {
   AppCashierRoute: typeof AppCashierRoute
   AppCustomersRoute: typeof AppCustomersRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
-  AppFloorRoute: typeof AppFloorRoute
+  AppFloorRoute: typeof AppFloorRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRoute
   AppManageRoute: typeof AppManageRoute
   AppTechnicianRoute: typeof AppTechnicianRoute
@@ -332,7 +382,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCustomersRoute: AppCustomersRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
-  AppFloorRoute: AppFloorRoute,
+  AppFloorRoute: AppFloorRouteWithChildren,
   AppInventoryRoute: AppInventoryRoute,
   AppManageRoute: AppManageRoute,
   AppTechnicianRoute: AppTechnicianRoute,
