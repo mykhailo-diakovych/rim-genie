@@ -37,11 +37,7 @@ export function JobCard({ job, onView }: { job: InProgressJob; onView: () => voi
           View
         </button>
 
-        {job.action === "done" ? (
-          <CompleteJobDialog job={job} />
-        ) : (
-          <UploadProofsDialog job={job} />
-        )}
+        {job.action === "done" ? <CompleteJobDialog job={job} /> : <UploadProofsDialog job={job} />}
       </div>
     </div>
   );

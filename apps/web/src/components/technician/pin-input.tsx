@@ -42,9 +42,7 @@ interface PinInputProps {
 export function PinInput({ pin, inputsRef, onPinChange, onPinKeyDown }: PinInputProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="font-rubik text-[12px] leading-[14px] text-label">
-        Technician Code:
-      </label>
+      <label className="font-rubik text-[12px] leading-[14px] text-label">Technician Code:</label>
       <div className="flex gap-2">
         {pin.map((digit, i) => (
           <input

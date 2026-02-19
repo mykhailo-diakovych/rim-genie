@@ -1,9 +1,7 @@
 import type { RouterClient } from "@orpc/server";
-import { Effect } from "effect";
 import { z } from "zod";
 
 import { protectedProcedure, publicProcedure } from "../index";
-import { DbService, runEffect } from "../effect";
 import { employeesRouter } from "./employees";
 import { floorRouter } from "./floor";
 
@@ -20,17 +18,10 @@ export const appRouter = {
   healthCheck: publicProcedure.handler(() => {
     return "OK";
   }),
-  privateData: protectedProcedure.handler(({ context }) =>
-    runEffect(
-      Effect.gen(function* () {
-        yield* DbService;
-        return {
-          message: "This is private",
-          user: context.session.user,
-        };
-      }),
-    ),
-  ),
+  privateData: protectedProcedure.handler(({ context }) => ({
+    message: "This is private",
+    user: context.session.user,
+  })),
   employees: employeesRouter,
   floor: floorRouter,
   dashboard: {

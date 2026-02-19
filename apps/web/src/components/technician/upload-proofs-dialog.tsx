@@ -36,10 +36,10 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
                   <Upload className="size-4 text-blue" />
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <p className="font-rubik text-[14px] leading-[18px] text-center text-[#032906]">
+                  <p className="text-center font-rubik text-[14px] leading-[18px] text-[#032906]">
                     Click to upload photo or video recording
                   </p>
-                  <p className="font-rubik text-[12px] leading-normal text-center text-[#787a78]">
+                  <p className="text-center font-rubik text-[12px] leading-normal text-[#787a78]">
                     JPG, PNG (max. 10MB)
                   </p>
                 </div>
@@ -48,9 +48,7 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-rubik text-[12px] leading-[14px] text-label">
-                File Name:
-              </label>
+              <label className="font-rubik text-[12px] leading-[14px] text-label">File Name:</label>
               <input
                 type="text"
                 value={fileName}
@@ -69,9 +67,7 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
             </div>
 
             <div className="flex flex-col gap-1">
-              <span className="font-rubik text-[12px] leading-[14px] text-label">
-                Photo Status
-              </span>
+              <span className="font-rubik text-[12px] leading-[14px] text-label">Photo Status</span>
               <div className="flex h-9 items-center gap-8">
                 {(["before", "after"] as const).map((val) => (
                   <label key={val} className="flex cursor-pointer items-center gap-1.5">

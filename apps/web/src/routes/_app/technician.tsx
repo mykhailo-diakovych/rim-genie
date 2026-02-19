@@ -70,9 +70,7 @@ function TechnicianPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-5">
-      <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
-        List of Jobs
-      </h1>
+      <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">List of Jobs</h1>
 
       <div>
         {/* Animated tab bar */}
@@ -88,7 +86,7 @@ function TechnicianPage() {
                 type="button"
                 onClick={() => handleTabChange(tab.value)}
                 className={cn(
-                  "flex h-9 cursor-pointer items-center gap-1.5 px-3 py-2 font-rubik text-[14px] leading-[18px] outline-none transition-colors",
+                  "flex h-9 cursor-pointer items-center gap-1.5 px-3 py-2 font-rubik text-[14px] leading-[18px] transition-colors outline-none",
                   isActive ? "text-blue" : "text-body hover:text-body/70",
                 )}
               >

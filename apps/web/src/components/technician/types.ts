@@ -41,30 +41,98 @@ export const MOCK_ASSIGN_JOBS: AssignJob[] = [
 ];
 
 export const MOCK_IN_PROGRESS_JOBS: InProgressJob[] = [
-  { id: "5118", customer: "Smith Jack", assignee: "heaven dev", date: "Thu, Jun 02 11:48 AM", action: "proofs" },
-  { id: "5116", customer: "Savannah Nguyen", assignee: "ankit patel", date: "Mon, Jun 01 12:16 AM", action: "done" },
-  { id: "5115", customer: "Dianne Russell", assignee: null, date: "Fri, May 29 10:10 AM", action: "proofs" },
+  {
+    id: "5118",
+    customer: "Smith Jack",
+    assignee: "heaven dev",
+    date: "Thu, Jun 02 11:48 AM",
+    action: "proofs",
+  },
+  {
+    id: "5116",
+    customer: "Savannah Nguyen",
+    assignee: "ankit patel",
+    date: "Mon, Jun 01 12:16 AM",
+    action: "done",
+  },
+  {
+    id: "5115",
+    customer: "Dianne Russell",
+    assignee: null,
+    date: "Fri, May 29 10:10 AM",
+    action: "proofs",
+  },
 ];
 
 export const MOCK_JOB_LINES: Record<string, { customer: string; lines: JobLine[] }> = {
   "5118": {
     customer: "Smith Jack",
     lines: [
-      { no: 1, rimSize: `10"`, rimType: "Factory", damage: "MEDIUM", repairs: "2 x Bends", comments: "", assignee: "heaven dev", status: "completed", action: null },
-      { no: 2, rimSize: `11"`, rimType: "Off market", damage: "SEVERE", repairs: "1 x Cracks", comments: "", assignee: "ankit patel", status: "in-progress", action: "proofs" },
-      { no: 3, rimSize: `13"`, rimType: "Factory", damage: "MEDIUM", repairs: "2 x Straighten", comments: "", assignee: "darshan Prajapati", status: "in-progress", action: "done" },
+      {
+        no: 1,
+        rimSize: `10"`,
+        rimType: "Factory",
+        damage: "MEDIUM",
+        repairs: "2 x Bends",
+        comments: "",
+        assignee: "heaven dev",
+        status: "completed",
+        action: null,
+      },
+      {
+        no: 2,
+        rimSize: `11"`,
+        rimType: "Off market",
+        damage: "SEVERE",
+        repairs: "1 x Cracks",
+        comments: "",
+        assignee: "ankit patel",
+        status: "in-progress",
+        action: "proofs",
+      },
+      {
+        no: 3,
+        rimSize: `13"`,
+        rimType: "Factory",
+        damage: "MEDIUM",
+        repairs: "2 x Straighten",
+        comments: "",
+        assignee: "darshan Prajapati",
+        status: "in-progress",
+        action: "done",
+      },
     ],
   },
   "5116": {
     customer: "Savannah Nguyen",
     lines: [
-      { no: 1, rimSize: `11"`, rimType: "Off market", damage: "SEVERE", repairs: "1 x Cracks", comments: "", assignee: "ankit patel", status: "in-progress", action: "done" },
+      {
+        no: 1,
+        rimSize: `11"`,
+        rimType: "Off market",
+        damage: "SEVERE",
+        repairs: "1 x Cracks",
+        comments: "",
+        assignee: "ankit patel",
+        status: "in-progress",
+        action: "done",
+      },
     ],
   },
   "5115": {
     customer: "Dianne Russell",
     lines: [
-      { no: 1, rimSize: `13"`, rimType: "Factory", damage: "MEDIUM", repairs: "2 x Straighten", comments: "", assignee: "darshan Prajapati", status: "in-progress", action: "proofs" },
+      {
+        no: 1,
+        rimSize: `13"`,
+        rimType: "Factory",
+        damage: "MEDIUM",
+        repairs: "2 x Straighten",
+        comments: "",
+        assignee: "darshan Prajapati",
+        status: "in-progress",
+        action: "proofs",
+      },
     ],
   },
 };

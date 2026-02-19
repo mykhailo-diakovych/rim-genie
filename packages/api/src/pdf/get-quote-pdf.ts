@@ -1,6 +1,6 @@
 import { db } from "@rim-genie/db";
 import { quote } from "@rim-genie/db/schema";
-import { eq } from "@rim-genie/db/utils";
+import { eq } from "drizzle-orm";
 
 import { renderQuotePdf } from "./render-quote-pdf";
 

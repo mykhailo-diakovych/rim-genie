@@ -61,9 +61,7 @@ function JobActionDialog({
 
   return (
     <Dialog.Root>
-      <Dialog.Trigger className={triggerClassName}>
-        {triggerContent}
-      </Dialog.Trigger>
+      <Dialog.Trigger className={triggerClassName}>{triggerContent}</Dialog.Trigger>
 
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]" />

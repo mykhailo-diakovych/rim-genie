@@ -28,7 +28,7 @@ Environment: `apps/web/.env` (single env file, loaded by all packages including 
 ### Package Responsibilities
 
 - **`apps/web`** — TanStack Start (React 19, SSR). File-based routing under `src/routes/`. Port 3001.
-- **`packages/api`** — oRPC server. Exports procedure builders, the `appRouter`, and the Effect layer.
+- **`packages/api`** — oRPC server. Exports procedure builders and the `appRouter`.
 - **`packages/auth`** — Better Auth instance (email/password, Drizzle adapter, TanStack Start cookies plugin).
 - **`packages/db`** — Drizzle ORM + Postgres. Schema in `src/schema/`. Config reads `../../apps/web/.env`.
 - **`packages/env`** — `@t3-oss/env-core` validation. Exports `./server` (server vars) and `./web` (Vite-prefixed client vars).
@@ -40,30 +40,8 @@ Environment: `apps/web/.env` (single env file, loaded by all packages including 
 2. `apps/web/src/routes/api/rpc/$.ts` handles the request with `RPCHandler` (and `OpenAPIHandler` for `/api/rpc/api-reference`)
 3. `createContext({ req })` extracts the Better Auth session from request headers
 4. Procedure runs — `publicProcedure` or `protectedProcedure` (middleware checks `context.session`)
-5. Complex handlers use `runEffect(Effect.gen(...))` to access injected services
+5. Handler uses `db` (Drizzle) and `auth` (Better Auth) directly via imports
 6. oRPC serializes the response; React Query caches it client-side
-
-### Effect.ts Service Layer (`packages/api/src/effect/`)
-
-Services are Context Tags; Layers provide implementations:
-
-- `DbService` → `db` (Drizzle client)
-- `AuthService` → `auth` (Better Auth instance)
-- `AppLayer = Layer.mergeAll(DbLayer, AuthLayer)` → `AppRuntime = ManagedRuntime.make(AppLayer)`
-
-Usage in a router handler:
-
-```typescript
-handler: () =>
-  runEffect(
-    Effect.gen(function* () {
-      const db = yield* DbService;
-      // ...
-    }),
-  );
-```
-
-Errors: throw `new ApiError("tag", "message")` inside effects → automatically converted to `ORPCError`.
 
 ### Adding a New API Procedure
 

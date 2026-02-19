@@ -1,17 +1,13 @@
-import { Effect } from "effect";
 import { z } from "zod";
 
-import type { db as DbClient } from "@rim-genie/db";
+import { db } from "@rim-genie/db";
 import { customer, quote, quoteItem } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { eq, ilike, or, sql, sum } from "@rim-genie/db/utils";
+import { eq, ilike, or, sql, sum } from "drizzle-orm";
 
 import { protectedProcedure } from "../index";
-import { DbService, runEffect } from "../effect";
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
-
-async function recalcQuoteTotal(db: typeof DbClient, quoteId: string): Promise<void> {
+async function recalcQuoteTotal(quoteId: string): Promise<void> {
   const result = await db
     .select({ total: sum(sql`${quoteItem.quantity} * ${quoteItem.unitCost}`) })
     .from(quoteItem)
@@ -21,36 +17,24 @@ async function recalcQuoteTotal(db: typeof DbClient, quoteId: string): Promise<v
   await db.update(quote).set({ total }).where(eq(quote.id, quoteId));
 }
 
-// ─── Input schemas ────────────────────────────────────────────────────────────
-
 const jobTypeEntrySchema = z.object({
   type: z.enum(["bend-fix", "crack-fix", "straighten", "twist", "reconstruct", "general"]),
   input: z.string().optional(),
 });
 
-// ─── Router ───────────────────────────────────────────────────────────────────
-
 export const floorRouter = {
   customers: {
-    search: protectedProcedure.input(z.object({ query: z.string().min(1) })).handler(({ input }) =>
-      runEffect(
-        Effect.gen(function* () {
-          const db = yield* DbService;
-          return yield* Effect.promise(() =>
-            db
-              .select()
-              .from(customer)
-              .where(
-                or(
-                  ilike(customer.phone, `%${input.query}%`),
-                  ilike(customer.name, `%${input.query}%`),
-                ),
-              )
-              .limit(20),
-          );
-        }),
-      ),
-    ),
+    search: protectedProcedure
+      .input(z.object({ query: z.string().min(1) }))
+      .handler(async ({ input }) => {
+        return db
+          .select()
+          .from(customer)
+          .where(
+            or(ilike(customer.phone, `%${input.query}%`), ilike(customer.name, `%${input.query}%`)),
+          )
+          .limit(20);
+      }),
 
     create: protectedProcedure
       .input(
@@ -62,54 +46,35 @@ export const floorRouter = {
           birthdayMonth: z.number().int().min(1).max(12).optional(),
         }),
       )
-      .handler(({ input }) =>
-        runEffect(
-          Effect.gen(function* () {
-            const db = yield* DbService;
-            const rows = yield* Effect.promise(() => db.insert(customer).values(input).returning());
-            return rows[0]!;
-          }),
-        ),
-      ),
+      .handler(async ({ input }) => {
+        const rows = await db.insert(customer).values(input).returning();
+        return rows[0]!;
+      }),
   },
 
   quotes: {
-    list: protectedProcedure.handler(() =>
-      runEffect(
-        Effect.gen(function* () {
-          const db = yield* DbService;
-          return yield* Effect.promise(() =>
-            db.query.quote.findMany({
-              orderBy: (q, { desc }) => [desc(q.createdAt)],
-              with: {
-                customer: true,
-                items: true,
-              },
-            }),
-          );
-        }),
-      ),
-    ),
+    list: protectedProcedure.handler(async () => {
+      return db.query.quote.findMany({
+        orderBy: (q, { desc }) => [desc(q.createdAt)],
+        with: {
+          customer: true,
+          items: true,
+        },
+      });
+    }),
 
-    get: protectedProcedure.input(z.object({ id: z.string() })).handler(({ input }) =>
-      runEffect(
-        Effect.gen(function* () {
-          const db = yield* DbService;
-          return yield* Effect.promise(() =>
-            db.query.quote.findFirst({
-              where: eq(quote.id, input.id),
-              with: {
-                customer: true,
-                createdBy: true,
-                items: {
-                  orderBy: (i, { asc }) => [asc(i.sortOrder)],
-                },
-              },
-            }),
-          );
-        }),
-      ),
-    ),
+    get: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+      return db.query.quote.findFirst({
+        where: eq(quote.id, input.id),
+        with: {
+          customer: true,
+          createdBy: true,
+          items: {
+            orderBy: (i, { asc }) => [asc(i.sortOrder)],
+          },
+        },
+      });
+    }),
 
     create: protectedProcedure
       .input(
@@ -118,26 +83,19 @@ export const floorRouter = {
           validUntilDays: z.number().int().optional(),
         }),
       )
-      .handler(({ input, context }) =>
-        runEffect(
-          Effect.gen(function* () {
-            const db = yield* DbService;
-            const validUntil = new Date(Date.now() + (input.validUntilDays ?? 7) * 86_400_000);
-            const rows = yield* Effect.promise(() =>
-              db
-                .insert(quote)
-                .values({
-                  customerId: input.customerId,
-                  createdById: context.session.user.id,
-                  status: "draft",
-                  validUntil,
-                })
-                .returning(),
-            );
-            return rows[0]!;
-          }),
-        ),
-      ),
+      .handler(async ({ input, context }) => {
+        const validUntil = new Date(Date.now() + (input.validUntilDays ?? 7) * 86_400_000);
+        const rows = await db
+          .insert(quote)
+          .values({
+            customerId: input.customerId,
+            createdById: context.session.user.id,
+            status: "draft",
+            validUntil,
+          })
+          .returning();
+        return rows[0]!;
+      }),
 
     update: protectedProcedure
       .input(
@@ -148,28 +106,16 @@ export const floorRouter = {
           jobRack: z.string().optional(),
         }),
       )
-      .handler(({ input }) =>
-        runEffect(
-          Effect.gen(function* () {
-            const db = yield* DbService;
-            const { id, ...fields } = input;
-            const rows = yield* Effect.promise(() =>
-              db.update(quote).set(fields).where(eq(quote.id, id)).returning(),
-            );
-            return rows[0]!;
-          }),
-        ),
-      ),
+      .handler(async ({ input }) => {
+        const { id, ...fields } = input;
+        const rows = await db.update(quote).set(fields).where(eq(quote.id, id)).returning();
+        return rows[0]!;
+      }),
 
-    delete: protectedProcedure.input(z.object({ id: z.string() })).handler(({ input }) =>
-      runEffect(
-        Effect.gen(function* () {
-          const db = yield* DbService;
-          yield* Effect.promise(() => db.delete(quote).where(eq(quote.id, input.id)));
-          return { success: true as const };
-        }),
-      ),
-    ),
+    delete: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+      await db.delete(quote).where(eq(quote.id, input.id));
+      return { success: true as const };
+    }),
 
     addItem: protectedProcedure
       .input(
@@ -184,44 +130,34 @@ export const floorRouter = {
           description: z.string().optional(),
         }),
       )
-      .handler(({ input }) =>
-        runEffect(
-          Effect.gen(function* () {
-            const db = yield* DbService;
+      .handler(async ({ input }) => {
+        const existing = await db
+          .select({ sortOrder: quoteItem.sortOrder })
+          .from(quoteItem)
+          .where(eq(quoteItem.quoteId, input.quoteId))
+          .orderBy(sql`${quoteItem.sortOrder} desc`)
+          .limit(1);
 
-            const existing = yield* Effect.promise(() =>
-              db
-                .select({ sortOrder: quoteItem.sortOrder })
-                .from(quoteItem)
-                .where(eq(quoteItem.quoteId, input.quoteId))
-                .orderBy(sql`${quoteItem.sortOrder} desc`)
-                .limit(1),
-            );
+        const sortOrder = (existing[0]?.sortOrder ?? -1) + 1;
 
-            const sortOrder = (existing[0]?.sortOrder ?? -1) + 1;
+        const rows = await db
+          .insert(quoteItem)
+          .values({
+            quoteId: input.quoteId,
+            vehicleSize: input.vehicleSize,
+            sideOfVehicle: input.sideOfVehicle,
+            damageLevel: input.damageLevel,
+            quantity: input.quantity,
+            unitCost: input.unitCost,
+            jobTypes: input.jobTypes as JobTypeEntry[],
+            description: input.description,
+            sortOrder,
+          })
+          .returning();
 
-            const rows = yield* Effect.promise(() =>
-              db
-                .insert(quoteItem)
-                .values({
-                  quoteId: input.quoteId,
-                  vehicleSize: input.vehicleSize,
-                  sideOfVehicle: input.sideOfVehicle,
-                  damageLevel: input.damageLevel,
-                  quantity: input.quantity,
-                  unitCost: input.unitCost,
-                  jobTypes: input.jobTypes as JobTypeEntry[],
-                  description: input.description,
-                  sortOrder,
-                })
-                .returning(),
-            );
-
-            yield* Effect.promise(() => recalcQuoteTotal(db, input.quoteId));
-            return rows[0]!;
-          }),
-        ),
-      ),
+        await recalcQuoteTotal(input.quoteId);
+        return rows[0]!;
+      }),
 
     updateItem: protectedProcedure
       .input(
@@ -237,56 +173,44 @@ export const floorRouter = {
           comments: z.string().optional(),
         }),
       )
-      .handler(({ input }) =>
-        runEffect(
-          Effect.gen(function* () {
-            const db = yield* DbService;
-            const { id, ...fields } = input;
+      .handler(async ({ input }) => {
+        const { id, ...fields } = input;
 
-            const existing = yield* Effect.promise(() =>
-              db.select({ quoteId: quoteItem.quoteId }).from(quoteItem).where(eq(quoteItem.id, id)),
-            );
+        const existing = await db
+          .select({ quoteId: quoteItem.quoteId })
+          .from(quoteItem)
+          .where(eq(quoteItem.id, id));
 
-            const rows = yield* Effect.promise(() =>
-              db
-                .update(quoteItem)
-                .set(fields as Partial<typeof quoteItem.$inferInsert>)
-                .where(eq(quoteItem.id, id))
-                .returning(),
-            );
+        const rows = await db
+          .update(quoteItem)
+          .set(fields as Partial<typeof quoteItem.$inferInsert>)
+          .where(eq(quoteItem.id, id))
+          .returning();
 
-            const qId = existing[0]?.quoteId;
-            if (qId) {
-              yield* Effect.promise(() => recalcQuoteTotal(db, qId));
-            }
+        const qId = existing[0]?.quoteId;
+        if (qId) {
+          await recalcQuoteTotal(qId);
+        }
 
-            return rows[0]!;
-          }),
-        ),
-      ),
+        return rows[0]!;
+      }),
 
-    removeItem: protectedProcedure.input(z.object({ id: z.string() })).handler(({ input }) =>
-      runEffect(
-        Effect.gen(function* () {
-          const db = yield* DbService;
+    removeItem: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .handler(async ({ input }) => {
+        const existing = await db
+          .select({ quoteId: quoteItem.quoteId })
+          .from(quoteItem)
+          .where(eq(quoteItem.id, input.id));
 
-          const existing = yield* Effect.promise(() =>
-            db
-              .select({ quoteId: quoteItem.quoteId })
-              .from(quoteItem)
-              .where(eq(quoteItem.id, input.id)),
-          );
+        await db.delete(quoteItem).where(eq(quoteItem.id, input.id));
 
-          yield* Effect.promise(() => db.delete(quoteItem).where(eq(quoteItem.id, input.id)));
+        const qId = existing[0]?.quoteId;
+        if (qId) {
+          await recalcQuoteTotal(qId);
+        }
 
-          const qId = existing[0]?.quoteId;
-          if (qId) {
-            yield* Effect.promise(() => recalcQuoteTotal(db, qId));
-          }
-
-          return { success: true as const };
-        }),
-      ),
-    ),
+        return { success: true as const };
+      }),
   },
 };
