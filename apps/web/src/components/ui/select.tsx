@@ -11,7 +11,7 @@ function SelectTrigger({ className, children, ...props }: SelectPrimitive.Trigge
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "sdfsf flex h-9 w-full items-center justify-between rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] transition-colors outline-none",
+        "flex h-9 w-full items-center justify-between rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] transition-colors outline-none",
         className,
       )}
       {...props}
