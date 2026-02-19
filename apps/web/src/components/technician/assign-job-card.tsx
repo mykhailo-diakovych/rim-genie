@@ -1,4 +1,4 @@
-import { CheckCircle2, Eye } from "lucide-react";
+import { Eye, SquareCheckBig } from "lucide-react";
 
 import { AcceptJobDialog } from "./accept-job-dialog";
 import { type AssignJob } from "./types";
@@ -34,7 +34,7 @@ export function AssignJobCard({ job, onView }: { job: AssignJob; onView: () => v
           triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] bg-green font-rubik text-[12px] leading-[14px] text-white transition-opacity hover:opacity-90"
           triggerContent={
             <>
-              <CheckCircle2 className="size-4" />
+              <SquareCheckBig className="size-4" />
               Accept
             </>
           }

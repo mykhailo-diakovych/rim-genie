@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronLeft } from "lucide-react";
+import { ChevronLeft, SquareCheckBig } from "lucide-react";
 
 import { AcceptJobDialog } from "./accept-job-dialog";
 import { MOCK_JOB_LINES } from "./types";
@@ -36,7 +36,7 @@ export function AssignDetailView({ jobId, onBack }: { jobId: string; onBack: () 
           triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-[8px] border border-green font-rubik text-[12px] leading-[14px] text-green transition-colors hover:bg-green/5"
           triggerContent={
             <>
-              <CheckCircle2 className="size-4" />
+              <SquareCheckBig className="size-4" />
               Accept all
             </>
           }
@@ -81,7 +81,7 @@ export function AssignDetailView({ jobId, onBack }: { jobId: string; onBack: () 
                 triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] bg-green font-rubik text-[12px] leading-[14px] text-white transition-opacity hover:opacity-90"
                 triggerContent={
                   <>
-                    <CheckCircle2 className="size-4" />
+                    <SquareCheckBig className="size-4" />
                     Accept
                   </>
                 }
