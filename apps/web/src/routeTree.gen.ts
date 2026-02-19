@@ -26,6 +26,7 @@ import { Route as AppFloorIndexRouteImport } from './routes/_app/floor/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppFloorNewQuoteRouteImport } from './routes/_app/floor/new-quote'
+import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -110,6 +111,11 @@ const AppFloorNewQuoteRoute = AppFloorNewQuoteRouteImport.update({
   path: '/new-quote',
   getParentRoute: () => AppFloorRoute,
 } as any)
+const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
+  id: '/$quoteId',
+  path: '/$quoteId',
+  getParentRoute: () => AppFloorRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/technician': typeof AppTechnicianRoute
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
+  '/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/technician': typeof AppTechnicianRoute
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
+  '/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/_app/terms': typeof AppTermsRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/_app/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/technician'
     | '/terms'
     | '/login'
+    | '/floor/$quoteId'
     | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/technician'
     | '/terms'
     | '/login'
+    | '/floor/$quoteId'
     | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/_app/terms'
     | '/_auth/login'
     | '/_app/'
+    | '/_app/floor/$quoteId'
     | '/_app/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -347,15 +359,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFloorNewQuoteRouteImport
       parentRoute: typeof AppFloorRoute
     }
+    '/_app/floor/$quoteId': {
+      id: '/_app/floor/$quoteId'
+      path: '/$quoteId'
+      fullPath: '/floor/$quoteId'
+      preLoaderRoute: typeof AppFloorQuoteIdRouteImport
+      parentRoute: typeof AppFloorRoute
+    }
   }
 }
 
 interface AppFloorRouteChildren {
+  AppFloorQuoteIdRoute: typeof AppFloorQuoteIdRoute
   AppFloorNewQuoteRoute: typeof AppFloorNewQuoteRoute
   AppFloorIndexRoute: typeof AppFloorIndexRoute
 }
 
 const AppFloorRouteChildren: AppFloorRouteChildren = {
+  AppFloorQuoteIdRoute: AppFloorQuoteIdRoute,
   AppFloorNewQuoteRoute: AppFloorNewQuoteRoute,
   AppFloorIndexRoute: AppFloorIndexRoute,
 }
