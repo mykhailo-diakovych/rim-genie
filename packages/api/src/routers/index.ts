@@ -4,6 +4,7 @@ import { z } from "zod";
 import { protectedProcedure, publicProcedure } from "../index";
 import { employeesRouter } from "./employees";
 import { floorRouter } from "./floor";
+import { manageRouter } from "./manage";
 
 const periodSchema = z.object({ period: z.enum(["today", "week", "month"]) });
 
@@ -24,6 +25,7 @@ export const appRouter = {
   })),
   employees: employeesRouter,
   floor: floorRouter,
+  manage: manageRouter,
   dashboard: {
     metrics: protectedProcedure.input(periodSchema).handler(({ input }) => {
       const m = PERIOD_MULTIPLIER[input.period];
