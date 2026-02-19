@@ -31,7 +31,7 @@ export function AssignJobCard({ job, onView }: { job: AssignJob; onView: () => v
         <AcceptJobDialog
           customer={job.customer}
           jobId={job.id}
-          triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] bg-green font-rubik text-[12px] leading-[14px] text-white transition-opacity hover:opacity-90"
+          triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] border border-green font-rubik text-[12px] leading-[14px] text-green transition-colors hover:bg-green/5"
           triggerContent={
             <>
               <SquareCheckBig className="size-4" />

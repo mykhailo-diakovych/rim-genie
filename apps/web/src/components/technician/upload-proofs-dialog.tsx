@@ -9,6 +9,7 @@ import { DialogCustomerRow, DialogHeader, DialogModal } from "./dialog-shared";
 import { type InProgressJob } from "./types";
 
 export function UploadProofsDialog({ job }: { job: InProgressJob }) {
+  const [files, setFiles] = useState<FileList | null>(null);
   const [fileName, setFileName] = useState("");
   const [notes, setNotes] = useState("");
   const [photoStatus, setPhotoStatus] = useState<"before" | "after">("after");
@@ -31,19 +32,35 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
               <label className="font-rubik text-[12px] leading-[14px] text-label">
                 File Attachment:
               </label>
-              <label className="flex h-[120px] cursor-pointer flex-col items-center justify-center gap-3 rounded-[8px] border border-field-line bg-white px-6 py-4 transition-colors hover:bg-[#f0f5fa]/50">
+              <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-3 rounded-[8px] border border-field-line bg-white px-6 py-4 transition-colors hover:bg-[#f0f5fa]/50">
                 <div className="flex size-11 items-center justify-center rounded-[8px] bg-[#f0f5fa]">
                   <Upload className="size-4 text-blue" />
                 </div>
-                <div className="flex flex-col items-center gap-1">
-                  <p className="text-center font-rubik text-[14px] leading-[18px] text-[#032906]">
-                    Click to upload photo or video recording
-                  </p>
-                  <p className="text-center font-rubik text-[12px] leading-normal text-[#787a78]">
-                    JPG, PNG (max. 10MB)
-                  </p>
-                </div>
-                <input type="file" className="sr-only" accept="image/*,video/*" multiple />
+                {files && files.length > 0 ? (
+                  <div className="flex flex-col items-center gap-1">
+                    {Array.from(files).map((f) => (
+                      <p key={f.name} className="text-center font-rubik text-[12px] leading-[14px] font-medium text-[#032906]">
+                        {f.name}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1">
+                    <p className="text-center font-rubik text-[14px] leading-[18px] text-[#032906]">
+                      Click to upload photo or video recording
+                    </p>
+                    <p className="text-center font-rubik text-[12px] leading-normal text-[#787a78]">
+                      JPG, PNG (max. 10MB)
+                    </p>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  className="sr-only"
+                  accept="image/*,video/*"
+                  multiple
+                  onChange={(e) => setFiles(e.target.files)}
+                />
               </label>
             </div>
 

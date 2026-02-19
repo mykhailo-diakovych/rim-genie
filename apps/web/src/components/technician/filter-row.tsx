@@ -49,11 +49,11 @@ export function FilterRow() {
     <div className="flex items-center justify-end gap-2">
       <Select defaultValue="all">
         <SelectTrigger className="w-[104px]">
-          <SelectValue />
+          <SelectValue className="uppercase" />
         </SelectTrigger>
         <SelectPopup>
-          <SelectOption value="all">All</SelectOption>
-          <SelectOption value="mine">Mine</SelectOption>
+          <SelectOption value="all">ALL</SelectOption>
+          <SelectOption value="mine">MINE</SelectOption>
         </SelectPopup>
       </Select>
 
