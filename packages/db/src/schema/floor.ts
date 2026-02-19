@@ -43,6 +43,7 @@ export const customer = pgTable(
     birthdayDay: integer("birthday_day"),
     birthdayMonth: integer("birthday_month"),
     isVip: boolean("is_vip").default(false).notNull(),
+    discount: integer("discount"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

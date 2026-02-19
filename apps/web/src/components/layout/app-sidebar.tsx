@@ -96,7 +96,12 @@ const NAV_ITEMS = [
     icon: IconEmployees,
     roles: ["admin"] as UserRole[],
   },
-  { to: "/customers", labelKey: "nav_customers" as const, icon: IconCustomers },
+  {
+    to: "/customers",
+    labelKey: "nav_customers" as const,
+    icon: IconCustomers,
+    roles: ["admin", "floorManager", "cashier"] as UserRole[],
+  },
   { to: "/manage", labelKey: "nav_manage" as const, icon: IconManage },
   { to: "/terms", labelKey: "nav_terms" as const, icon: IconTerms },
 ];

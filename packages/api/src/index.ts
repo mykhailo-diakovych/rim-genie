@@ -21,9 +21,9 @@ const requireAuth = o.middleware(async ({ context, next }) => {
 
 export const protectedProcedure = publicProcedure.use(requireAuth);
 
-const requireRole = (...roles: UserRole[]) =>
+export const requireRole = (...roles: UserRole[]) =>
   protectedProcedure.use(async ({ context, next }) => {
-    const userRole = (context.session.user as { role?: UserRole }).role;
+    const userRole = context.session.user.role as UserRole | null | undefined;
     if (!userRole || !roles.includes(userRole)) {
       throw new ORPCError("FORBIDDEN");
     }
