@@ -5,7 +5,7 @@ function MetricCardSkeleton() {
     <div className="flex flex-col gap-3 rounded-[8px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
       {/* Title row: icon circle + title/subtitle */}
       <div className="flex items-center gap-2">
-        <Skeleton className="size-9 rounded-full shrink-0" />
+        <Skeleton className="size-9 shrink-0 rounded-full" />
         <div className="flex flex-col gap-1.5">
           <Skeleton className="h-3.5 w-28 rounded-[3px]" />
           <Skeleton className="h-3 w-12 rounded-[3px]" />
@@ -45,18 +45,18 @@ export function DashboardSkeleton() {
       {/* Bottom row */}
       <div className="grid gap-3 lg:grid-cols-[1fr_248px]">
         {/* Team Activity */}
-        <div className="rounded-[12px] border border-card-line bg-white p-[12px] flex flex-col gap-[12px] shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+        <div className="flex flex-col gap-[12px] rounded-[12px] border border-card-line bg-white p-[12px] shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
           <Skeleton className="h-[18px] w-28 rounded-[3px]" />
-          <div className="flex flex-col w-full">
+          <div className="flex w-full flex-col">
             {/* Header row */}
             <div className="flex w-full">
-              <div className="border-l border-t border-field-line flex-1 h-[32px] flex items-center px-2">
+              <div className="flex h-[32px] flex-1 items-center border-t border-l border-field-line px-2">
                 <Skeleton className="h-3 w-16 rounded-[3px]" />
               </div>
-              <div className="border-l border-t border-field-line w-[80px] h-[32px] flex items-center px-2">
+              <div className="flex h-[32px] w-[80px] items-center border-t border-l border-field-line px-2">
                 <Skeleton className="h-3 w-10 rounded-[3px]" />
               </div>
-              <div className="border-l border-r border-t border-field-line w-[80px] h-[32px] flex items-center px-2">
+              <div className="flex h-[32px] w-[80px] items-center border-t border-r border-l border-field-line px-2">
                 <Skeleton className="h-3 w-12 rounded-[3px]" />
               </div>
             </div>
@@ -64,17 +64,17 @@ export function DashboardSkeleton() {
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex w-full">
                 <div
-                  className={`border-l border-t ${i === 4 ? "border-b" : ""} border-field-line flex-1 h-[32px] flex items-center px-2`}
+                  className={`border-t border-l ${i === 4 ? "border-b" : ""} flex h-[32px] flex-1 items-center border-field-line px-2`}
                 >
                   <Skeleton className="h-3 w-28 rounded-[3px]" />
                 </div>
                 <div
-                  className={`border-l border-t ${i === 4 ? "border-b" : ""} border-field-line w-[80px] h-[32px] flex items-center px-2`}
+                  className={`border-t border-l ${i === 4 ? "border-b" : ""} flex h-[32px] w-[80px] items-center border-field-line px-2`}
                 >
                   <Skeleton className="h-3 w-4 rounded-[3px]" />
                 </div>
                 <div
-                  className={`border-l border-r border-t ${i === 4 ? "border-b" : ""} border-field-line w-[80px] h-[32px] flex items-center px-2`}
+                  className={`border-t border-r border-l ${i === 4 ? "border-b" : ""} flex h-[32px] w-[80px] items-center border-field-line px-2`}
                 >
                   <Skeleton className="h-3 w-4 rounded-[3px]" />
                 </div>
@@ -84,27 +84,27 @@ export function DashboardSkeleton() {
         </div>
 
         {/* Attention Required */}
-        <div className="rounded-[12px] border border-[rgba(219,62,33,0.5)] bg-white p-[12px] flex flex-col gap-[12px] shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+        <div className="flex flex-col gap-[12px] rounded-[12px] border border-[rgba(219,62,33,0.5)] bg-white p-[12px] shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
           <Skeleton className="h-[18px] w-36 rounded-[3px]" />
-          <div className="flex flex-col gap-[8px] w-full">
+          <div className="flex w-full flex-col gap-[8px]">
             {/* Item 1 with divider */}
             <div className="flex flex-col gap-[8px]">
-              <div className="flex gap-[12px] items-center">
-                <div className="flex flex-1 min-w-0 gap-[4px] items-center">
-                  <Skeleton className="size-5 rounded-full shrink-0" />
-                  <Skeleton className="h-3.5 flex-1 min-w-0 rounded-[3px]" />
+              <div className="flex items-center gap-[12px]">
+                <div className="flex min-w-0 flex-1 items-center gap-[4px]">
+                  <Skeleton className="size-5 shrink-0 rounded-full" />
+                  <Skeleton className="h-3.5 min-w-0 flex-1 rounded-[3px]" />
                 </div>
-                <Skeleton className="h-[18px] w-9 rounded-[4px] shrink-0" />
+                <Skeleton className="h-[18px] w-9 shrink-0 rounded-[4px]" />
               </div>
-              <div className="bg-[rgba(219,62,33,0.08)] h-px w-full" />
+              <div className="h-px w-full bg-[rgba(219,62,33,0.08)]" />
             </div>
             {/* Item 2 */}
-            <div className="flex gap-[12px] items-center">
-              <div className="flex flex-1 min-w-0 gap-[4px] items-center">
-                <Skeleton className="size-5 rounded-full shrink-0" />
-                <Skeleton className="h-3.5 flex-1 min-w-0 rounded-[3px]" />
+            <div className="flex items-center gap-[12px]">
+              <div className="flex min-w-0 flex-1 items-center gap-[4px]">
+                <Skeleton className="size-5 shrink-0 rounded-full" />
+                <Skeleton className="h-3.5 min-w-0 flex-1 rounded-[3px]" />
               </div>
-              <Skeleton className="h-[18px] w-9 rounded-[4px] shrink-0" />
+              <Skeleton className="h-[18px] w-9 shrink-0 rounded-[4px]" />
             </div>
           </div>
         </div>

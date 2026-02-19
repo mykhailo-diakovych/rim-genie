@@ -55,9 +55,9 @@ export function ResetPinModal({ trigger }: ResetPinModalProps) {
 
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]" />
-        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-[12px] bg-[#fafbfc] shadow-[0px_0px_40px_0px_rgba(0,0,0,0.04)]">
-          <div className="flex items-center justify-between border-b border-field-line pl-3 pr-2 py-3">
-            <p className="font-rubik font-medium text-[16px] leading-[20px] text-body">
+        <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 w-full max-w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-[12px] bg-[#fafbfc] shadow-[0px_0px_40px_0px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center justify-between border-b border-field-line py-3 pr-2 pl-3">
+            <p className="font-rubik text-[16px] leading-[20px] font-medium text-body">
               {m.reset_pin_title()}
             </p>
             <Dialog.Close className="flex items-center rounded-[6px] p-1 text-label transition-colors hover:text-body">

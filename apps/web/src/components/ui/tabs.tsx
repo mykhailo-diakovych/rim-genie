@@ -8,10 +8,7 @@ function Tabs({ ...props }: TabsPrimitive.Root.Props) {
 
 function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
   return (
-    <TabsPrimitive.List
-      className={cn("flex border-b border-field-line", className)}
-      {...props}
-    />
+    <TabsPrimitive.List className={cn("flex border-b border-field-line", className)} {...props} />
   );
 }
 
@@ -19,7 +16,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
       className={cn(
-        "flex h-9 cursor-pointer items-center justify-center px-3 py-2 font-rubik text-[14px] leading-[18px] text-body outline-none transition-colors",
+        "flex h-9 cursor-pointer items-center justify-center px-3 py-2 font-rubik text-[14px] leading-[18px] text-body transition-colors outline-none",
         "data-selected:border-b-2 data-selected:border-blue data-selected:text-blue",
         className,
       )}
@@ -29,12 +26,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
 }
 
 function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
-  return (
-    <TabsPrimitive.Panel
-      className={cn("outline-none", className)}
-      {...props}
-    />
-  );
+  return <TabsPrimitive.Panel className={cn("outline-none", className)} {...props} />;
 }
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };

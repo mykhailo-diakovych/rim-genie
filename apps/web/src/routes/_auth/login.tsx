@@ -28,7 +28,7 @@ function LoginPage() {
 
         <div className="flex w-full flex-col items-center gap-6">
           <div className="flex w-full items-center justify-between">
-            <p className="font-rubik font-medium text-[22px] leading-[26px] text-body">
+            <p className="font-rubik text-[22px] leading-[26px] font-medium text-body">
               {tab === "email" ? m.login_email_title() : m.login_staff_title()}
             </p>
             <SegmentedControl tabs={LOGIN_TABS} value={tab} onChange={setTab} />

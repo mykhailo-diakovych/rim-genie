@@ -63,7 +63,7 @@ export function MetricCard({
         {/* Left: value, badge, label */}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2">
-            <span className="font-rubik text-[26px] font-medium leading-[30px] text-body">
+            <span className="font-rubik text-[26px] leading-[30px] font-medium text-body">
               {value}
             </span>
             <span

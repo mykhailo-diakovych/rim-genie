@@ -127,7 +127,7 @@ export function AppSidebar({ horizontal = false, className }: AppSidebarProps) {
   return (
     <nav
       className={cn(
-        "flex w-20 shrink-0 flex-col bg-white border-r border-card-line overflow-y-auto",
+        "flex w-20 shrink-0 flex-col overflow-y-auto border-r border-card-line bg-white",
         className,
       )}
     >

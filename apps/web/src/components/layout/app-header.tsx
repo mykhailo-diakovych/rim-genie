@@ -33,7 +33,7 @@ export function AppHeader() {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between pr-5 border-b border-card-line bg-white shadow-[0px_2px_24px_0px_rgba(42,44,45,0.04)]">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-card-line bg-white pr-5 shadow-[0px_2px_24px_0px_rgba(42,44,45,0.04)]">
       {/* Left block */}
       <div className="flex items-center gap-5">
         {/* Logo */}
@@ -42,7 +42,7 @@ export function AppHeader() {
         </div>
 
         {/* Search — hidden on mobile, full bar on md+ */}
-        <div className="hidden md:flex w-80 items-center gap-4 rounded-[8px] border border-field-line bg-white px-3 py-[10px]">
+        <div className="hidden w-80 items-center gap-4 rounded-[8px] border border-field-line bg-white px-3 py-[10px] md:flex">
           <span className="min-w-0 flex-1 font-rubik text-[12px] leading-[14px] text-ghost">
             {m.header_search_placeholder()}
           </span>
@@ -55,7 +55,7 @@ export function AppHeader() {
         {/* Search icon — mobile only */}
         <button
           type="button"
-          className="flex md:hidden h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f0f5fa]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f0f5fa] md:hidden"
           aria-label={m.header_search_placeholder()}
         >
           <Search className="size-4 text-ghost" />
@@ -65,14 +65,14 @@ export function AppHeader() {
         {isPending ? (
           <div className="flex flex-col gap-1">
             <Skeleton className="h-[18px] w-28 rounded" />
-            <Skeleton className="hidden md:block h-[14px] w-24 rounded" />
+            <Skeleton className="hidden h-[14px] w-24 rounded md:block" />
           </div>
         ) : (
-          <div className="flex flex-col gap-1 items-start justify-center">
-            <span className="font-rubik text-[14px] font-medium leading-[18px] text-body">
+          <div className="flex flex-col items-start justify-center gap-1">
+            <span className="font-rubik text-[14px] leading-[18px] font-medium text-body">
               {session?.user.name}
             </span>
-            <span className="hidden md:block font-rubik text-[12px] leading-[14px] text-label">
+            <span className="hidden font-rubik text-[12px] leading-[14px] text-label md:block">
               {formatDateTime(now)}
             </span>
           </div>

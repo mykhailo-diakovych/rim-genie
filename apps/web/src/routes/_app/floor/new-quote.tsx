@@ -45,15 +45,19 @@ interface JobItem {
 
 // ─── Quote Generator Sheet ────────────────────────────────────────────────────
 
-const JOB_TYPES: { value: JobType; label: string; hasInput?: boolean; inputPlaceholder?: string }[] =
-  [
-    { value: "bend-fix", label: "Bend Fix", hasInput: true, inputPlaceholder: "No. of Bends" },
-    { value: "crack-fix", label: "Crack Fix" },
-    { value: "straighten", label: "Straighten" },
-    { value: "twist", label: "Twist" },
-    { value: "reconstruct", label: "Reconstruct", hasInput: true, inputPlaceholder: "No. of Bends" },
-    { value: "general", label: "General" },
-  ];
+const JOB_TYPES: {
+  value: JobType;
+  label: string;
+  hasInput?: boolean;
+  inputPlaceholder?: string;
+}[] = [
+  { value: "bend-fix", label: "Bend Fix", hasInput: true, inputPlaceholder: "No. of Bends" },
+  { value: "crack-fix", label: "Crack Fix" },
+  { value: "straighten", label: "Straighten" },
+  { value: "twist", label: "Twist" },
+  { value: "reconstruct", label: "Reconstruct", hasInput: true, inputPlaceholder: "No. of Bends" },
+  { value: "general", label: "General" },
+];
 
 function FloorCheckbox({
   checked,
@@ -66,7 +70,7 @@ function FloorCheckbox({
     <CheckboxPrimitive.Root
       checked={checked}
       onCheckedChange={onCheckedChange}
-      className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-[6px] border-[1.2px] outline-none transition-colors data-checked:border-blue data-checked:bg-blue border-[#cdcfd1] bg-white"
+      className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-[6px] border-[1.2px] border-[#cdcfd1] bg-white transition-colors outline-none data-checked:border-blue data-checked:bg-blue"
     >
       <CheckboxPrimitive.Indicator className="flex items-center justify-center text-white">
         <Check className="size-3" />
@@ -137,7 +141,7 @@ function QuoteGeneratorSheet({
         <button
           type="button"
           onClick={onClose}
-          className={`absolute -left-9 top-3 flex items-center justify-center rounded-bl-[8px] rounded-tl-[8px] bg-blue p-2 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+          className={`absolute top-3 -left-9 flex items-center justify-center rounded-tl-[8px] rounded-bl-[8px] bg-blue p-2 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
           aria-label="Close"
         >
           <X className="size-5 text-white" />
@@ -145,7 +149,7 @@ function QuoteGeneratorSheet({
 
         {/* Header */}
         <div className="flex flex-col gap-0.5 border-b border-field-line p-3">
-          <p className="font-rubik text-[16px] font-medium leading-[20px] text-body">
+          <p className="font-rubik text-[16px] leading-[20px] font-medium text-body">
             Quote Generator
           </p>
           <p className="font-rubik text-[12px] leading-[16px] text-label">
@@ -238,7 +242,7 @@ function QuoteGeneratorSheet({
                       min="1"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      className="flex h-9 w-full rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] text-body outline-none transition-colors"
+                      className="flex h-9 w-full rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none"
                     />
                   </div>
                 </div>
@@ -246,7 +250,7 @@ function QuoteGeneratorSheet({
 
               {/* Job Types */}
               <div className="flex flex-col gap-1">
-                <p className="font-rubik text-[12px] font-medium leading-[14px] text-body">
+                <p className="font-rubik text-[12px] leading-[14px] font-medium text-body">
                   Job Type:
                 </p>
                 <div className="flex flex-col gap-2">
@@ -269,7 +273,7 @@ function QuoteGeneratorSheet({
                           onChange={(e) =>
                             setJobInputs((prev) => ({ ...prev, [job.value]: e.target.value }))
                           }
-                          className="flex h-9 w-[172px] shrink-0 rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] text-body placeholder:text-ghost outline-none transition-colors"
+                          className="flex h-9 w-[172px] shrink-0 rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none placeholder:text-ghost"
                         />
                       )}
                     </div>
@@ -379,7 +383,7 @@ function NewQuotePage() {
           {/* Row 1: Logo + Title */}
           <div className="flex items-center justify-between">
             <img src="/logo.png" alt="Rim Genie" className="h-12 w-auto" />
-            <h2 className="font-rubik text-[22px] font-medium leading-[26px] text-body">
+            <h2 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
               New Quote
             </h2>
           </div>
@@ -412,7 +416,7 @@ function NewQuotePage() {
               </div>
             </div>
 
-            <div className="self-stretch w-px bg-field-line" />
+            <div className="w-px self-stretch bg-field-line" />
 
             {/* Address */}
             <div className="flex flex-1 justify-end">
@@ -439,7 +443,7 @@ function NewQuotePage() {
           <div className="overflow-x-auto">
             <table className="w-full font-rubik text-[12px]">
               <thead>
-                <tr className="border-b border-t border-field-line text-left text-label">
+                <tr className="border-t border-b border-field-line text-left text-label">
                   <th className="w-12 border-l border-field-line px-2 py-1.5 font-normal">#</th>
                   <th className="border-l border-field-line px-2 py-1.5 font-normal">
                     Description
@@ -450,10 +454,8 @@ function NewQuotePage() {
                   <th className="w-20 border-l border-field-line px-2 py-1.5 font-normal">
                     Unit Cost
                   </th>
-                  <th className="w-20 border-l border-field-line px-2 py-1.5 font-normal">
-                    Total
-                  </th>
-                  <th className="w-20 border-l border-r border-field-line px-2 py-1.5 font-normal" />
+                  <th className="w-20 border-l border-field-line px-2 py-1.5 font-normal">Total</th>
+                  <th className="w-20 border-r border-l border-field-line px-2 py-1.5 font-normal" />
                 </tr>
               </thead>
               <tbody>
@@ -482,7 +484,7 @@ function NewQuotePage() {
                     <td className="border-l border-field-line px-2 py-2 text-[14px] text-body">
                       ${(job.quantity * job.unitCost).toFixed(2)}
                     </td>
-                    <td className="border-l border-r border-field-line px-2 py-2">
+                    <td className="border-r border-l border-field-line px-2 py-2">
                       <div className="flex flex-col gap-2">
                         <button
                           type="button"
@@ -505,7 +507,7 @@ function NewQuotePage() {
                 ))}
                 {/* Add Job row */}
                 <tr className="border-b border-field-line">
-                  <td colSpan={6} className="border-l border-r border-field-line px-2 py-2">
+                  <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
                     <button
                       type="button"
                       onClick={() => setSheetOpen(true)}
@@ -528,7 +530,7 @@ function NewQuotePage() {
               onChange={(e) => setComments(e.target.value)}
               placeholder="Enter note"
               rows={3}
-              className="w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[12px] leading-[14px] text-body placeholder:text-ghost outline-none transition-colors"
+              className="w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none placeholder:text-ghost"
             />
           </div>
 
@@ -538,9 +540,7 @@ function NewQuotePage() {
           <div className="flex items-end justify-between gap-4">
             {/* Share Quote */}
             <div className="flex flex-col gap-1">
-              <span className="font-rubik text-[12px] leading-[14px] text-label">
-                Share Quote:
-              </span>
+              <span className="font-rubik text-[12px] leading-[14px] text-label">Share Quote:</span>
               <div className="flex flex-col gap-1 font-rubik text-[14px] leading-[18px] text-body">
                 <div className="flex items-center gap-1.5">
                   <Mail className="size-4 shrink-0 text-ghost" />
@@ -569,11 +569,7 @@ function NewQuotePage() {
       </div>
 
       {/* Quote Generator Sheet */}
-      <QuoteGeneratorSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        onAdd={addJob}
-      />
+      <QuoteGeneratorSheet open={sheetOpen} onClose={() => setSheetOpen(false)} onAdd={addJob} />
     </>
   );
 }

@@ -35,41 +35,39 @@ function SeverityIcon({ severity }: { severity: Severity }) {
 
 export function AttentionRequiredCard({ items }: AttentionRequiredCardProps) {
   return (
-    <div className="rounded-[12px] border border-[rgba(219,62,33,0.5)] bg-white overflow-hidden flex flex-col gap-[12px] p-[12px] shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
-      <p className="font-rubik font-medium text-[14px] leading-[18px] text-body">
+    <div className="flex flex-col gap-[12px] overflow-hidden rounded-[12px] border border-[rgba(219,62,33,0.5)] bg-white p-[12px] shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+      <p className="font-rubik text-[14px] leading-[18px] font-medium text-body">
         {m.attention_required_title()}
       </p>
-      <div className="flex flex-col gap-[8px] w-full">
+      <div className="flex w-full flex-col gap-[8px]">
         {items.map((item, idx) => {
           const style = SEVERITY_STYLE[item.severity];
           const labelFn = LABEL_MAP[item.label];
           return (
             <div key={item.id} className="flex flex-col gap-[8px]">
-              <div className="flex gap-[12px] items-center w-full">
-                <div className="flex flex-1 min-w-0 gap-[4px] items-center">
+              <div className="flex w-full items-center gap-[12px]">
+                <div className="flex min-w-0 flex-1 items-center gap-[4px]">
                   <div
-                    className="flex items-center p-[4px] rounded-full shrink-0"
+                    className="flex shrink-0 items-center rounded-full p-[4px]"
                     style={{ backgroundColor: style.iconBg }}
                   >
                     <SeverityIcon severity={item.severity} />
                   </div>
-                  <p className="flex-1 min-w-0 font-rubik font-normal text-[12px] leading-[14px] text-body whitespace-pre-wrap">
+                  <p className="min-w-0 flex-1 font-rubik text-[12px] leading-[14px] font-normal whitespace-pre-wrap text-body">
                     {labelFn ? labelFn() : item.label}
                   </p>
                 </div>
                 <div
-                  className="flex gap-[2px] items-center justify-center border rounded-[4px] w-[36px] pl-[4px] py-[3px] shrink-0"
+                  className="flex w-[36px] shrink-0 items-center justify-center gap-[2px] rounded-[4px] border py-[3px] pl-[4px]"
                   style={{ borderColor: style.badgeColor, color: style.badgeColor }}
                 >
-                  <span className="font-rubik font-normal text-[12px] text-center leading-none">
+                  <span className="text-center font-rubik text-[12px] leading-none font-normal">
                     {item.count}
                   </span>
                   <IconArrowRight className="size-3" />
                 </div>
               </div>
-              {idx < items.length - 1 && (
-                <div className="bg-[rgba(219,62,33,0.08)] h-px w-full" />
-              )}
+              {idx < items.length - 1 && <div className="h-px w-full bg-[rgba(219,62,33,0.08)]" />}
             </div>
           );
         })}

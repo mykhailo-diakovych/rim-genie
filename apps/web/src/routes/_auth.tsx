@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_auth")({
 
 function AuthLayout() {
   return (
-    <div className="font-rubik flex min-h-svh flex-col bg-page">
+    <div className="flex min-h-svh flex-col bg-page font-rubik">
       <div className="flex flex-1 items-center justify-center px-4 py-8">
         <Outlet />
       </div>

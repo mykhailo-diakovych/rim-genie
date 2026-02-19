@@ -25,7 +25,7 @@ function QuoteCard({
     <div className="flex flex-col gap-3 rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)] sm:min-h-16 sm:flex-row sm:items-center sm:justify-between">
       {/* Left */}
       <div className="flex flex-col gap-1">
-        <span className="font-rubik text-[14px] font-medium leading-[18px] text-body">
+        <span className="font-rubik text-[14px] leading-[18px] font-medium text-body">
           {quote.customer}
         </span>
         <div className="flex flex-wrap items-center gap-2 font-rubik text-[12px] leading-[14px]">
@@ -77,7 +77,7 @@ function FloorPage() {
     <div className="flex flex-1 flex-col gap-5 p-5">
       {/* Title row */}
       <div className="flex items-center justify-between">
-        <h1 className="font-rubik text-[22px] font-medium leading-[26px] text-body">
+        <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
           List of Quotes
         </h1>
         <button
