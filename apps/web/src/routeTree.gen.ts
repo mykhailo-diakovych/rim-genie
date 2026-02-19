@@ -8,412 +8,414 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as AuthRouteImport } from "./routes/_auth";
-import { Route as AppRouteImport } from "./routes/_app";
-import { Route as AppIndexRouteImport } from "./routes/_app/index";
-import { Route as AuthLoginRouteImport } from "./routes/_auth/login";
-import { Route as AppTermsRouteImport } from "./routes/_app/terms";
-import { Route as AppTechnicianRouteImport } from "./routes/_app/technician";
-import { Route as AppManageRouteImport } from "./routes/_app/manage";
-import { Route as AppInventoryRouteImport } from "./routes/_app/inventory";
-import { Route as AppFloorRouteImport } from "./routes/_app/floor";
-import { Route as AppEmployeesRouteImport } from "./routes/_app/employees";
-import { Route as AppDashboardRouteImport } from "./routes/_app/dashboard";
-import { Route as AppCustomersRouteImport } from "./routes/_app/customers";
-import { Route as AppCashierRouteImport } from "./routes/_app/cashier";
-import { Route as AppFloorIndexRouteImport } from "./routes/_app/floor/index";
-import { Route as ApiRpcSplatRouteImport } from "./routes/api/rpc/$";
-import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth/$";
-import { Route as AppFloorNewQuoteRouteImport } from "./routes/_app/floor/new-quote";
-import { Route as AppFloorQuoteIdRouteImport } from "./routes/_app/floor/$quoteId";
-import { Route as ApiQuotesQuoteIdPdfRouteImport } from "./routes/api/quotes/$quoteId/pdf";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as AppTermsRouteImport } from './routes/_app/terms'
+import { Route as AppTechnicianRouteImport } from './routes/_app/technician'
+import { Route as AppManageRouteImport } from './routes/_app/manage'
+import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
+import { Route as AppFloorRouteImport } from './routes/_app/floor'
+import { Route as AppEmployeesRouteImport } from './routes/_app/employees'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppCustomersRouteImport } from './routes/_app/customers'
+import { Route as AppCashierRouteImport } from './routes/_app/cashier'
+import { Route as AppFloorIndexRouteImport } from './routes/_app/floor/index'
+import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AppFloorNewQuoteRouteImport } from './routes/_app/floor/new-quote'
+import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
+import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$quoteId/pdf'
 
 const AuthRoute = AuthRouteImport.update({
-  id: "/_auth",
+  id: '/_auth',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AppRoute = AppRouteImport.update({
-  id: "/_app",
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: "/login",
-  path: "/login",
+  id: '/login',
+  path: '/login',
   getParentRoute: () => AuthRoute,
-} as any);
+} as any)
 const AppTermsRoute = AppTermsRouteImport.update({
-  id: "/terms",
-  path: "/terms",
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AppTechnicianRoute = AppTechnicianRouteImport.update({
-  id: "/technician",
-  path: "/technician",
+  id: '/technician',
+  path: '/technician',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AppManageRoute = AppManageRouteImport.update({
-  id: "/manage",
-  path: "/manage",
+  id: '/manage',
+  path: '/manage',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AppInventoryRoute = AppInventoryRouteImport.update({
-  id: "/inventory",
-  path: "/inventory",
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AppFloorRoute = AppFloorRouteImport.update({
-  id: "/floor",
-  path: "/floor",
+  id: '/floor',
+  path: '/floor',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AppEmployeesRoute = AppEmployeesRouteImport.update({
-  id: "/employees",
-  path: "/employees",
+  id: '/employees',
+  path: '/employees',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
-  id: "/dashboard",
-  path: "/dashboard",
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AppCustomersRoute = AppCustomersRouteImport.update({
-  id: "/customers",
-  path: "/customers",
+  id: '/customers',
+  path: '/customers',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AppCashierRoute = AppCashierRouteImport.update({
-  id: "/cashier",
-  path: "/cashier",
+  id: '/cashier',
+  path: '/cashier',
   getParentRoute: () => AppRoute,
-} as any);
+} as any)
 const AppFloorIndexRoute = AppFloorIndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => AppFloorRoute,
-} as any);
+} as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
-  id: "/api/rpc/$",
-  path: "/api/rpc/$",
+  id: '/api/rpc/$',
+  path: '/api/rpc/$',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: "/api/auth/$",
-  path: "/api/auth/$",
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AppFloorNewQuoteRoute = AppFloorNewQuoteRouteImport.update({
-  id: "/new-quote",
-  path: "/new-quote",
+  id: '/new-quote',
+  path: '/new-quote',
   getParentRoute: () => AppFloorRoute,
-} as any);
+} as any)
 const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
-  id: "/$quoteId",
-  path: "/$quoteId",
+  id: '/$quoteId',
+  path: '/$quoteId',
   getParentRoute: () => AppFloorRoute,
-} as any);
+} as any)
 const ApiQuotesQuoteIdPdfRoute = ApiQuotesQuoteIdPdfRouteImport.update({
-  id: "/api/quotes/$quoteId/pdf",
-  path: "/api/quotes/$quoteId/pdf",
+  id: '/api/quotes/$quoteId/pdf',
+  path: '/api/quotes/$quoteId/pdf',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof AppIndexRoute;
-  "/cashier": typeof AppCashierRoute;
-  "/customers": typeof AppCustomersRoute;
-  "/dashboard": typeof AppDashboardRoute;
-  "/employees": typeof AppEmployeesRoute;
-  "/floor": typeof AppFloorRouteWithChildren;
-  "/inventory": typeof AppInventoryRoute;
-  "/manage": typeof AppManageRoute;
-  "/technician": typeof AppTechnicianRoute;
-  "/terms": typeof AppTermsRoute;
-  "/login": typeof AuthLoginRoute;
-  "/floor/$quoteId": typeof AppFloorQuoteIdRoute;
-  "/floor/new-quote": typeof AppFloorNewQuoteRoute;
-  "/api/auth/$": typeof ApiAuthSplatRoute;
-  "/api/rpc/$": typeof ApiRpcSplatRoute;
-  "/floor/": typeof AppFloorIndexRoute;
-  "/api/quotes/$quoteId/pdf": typeof ApiQuotesQuoteIdPdfRoute;
+  '/': typeof AppIndexRoute
+  '/cashier': typeof AppCashierRoute
+  '/customers': typeof AppCustomersRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/employees': typeof AppEmployeesRoute
+  '/floor': typeof AppFloorRouteWithChildren
+  '/inventory': typeof AppInventoryRoute
+  '/manage': typeof AppManageRoute
+  '/technician': typeof AppTechnicianRoute
+  '/terms': typeof AppTermsRoute
+  '/login': typeof AuthLoginRoute
+  '/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/floor/new-quote': typeof AppFloorNewQuoteRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/floor/': typeof AppFloorIndexRoute
+  '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof AppIndexRoute;
-  "/cashier": typeof AppCashierRoute;
-  "/customers": typeof AppCustomersRoute;
-  "/dashboard": typeof AppDashboardRoute;
-  "/employees": typeof AppEmployeesRoute;
-  "/inventory": typeof AppInventoryRoute;
-  "/manage": typeof AppManageRoute;
-  "/technician": typeof AppTechnicianRoute;
-  "/terms": typeof AppTermsRoute;
-  "/login": typeof AuthLoginRoute;
-  "/floor/$quoteId": typeof AppFloorQuoteIdRoute;
-  "/floor/new-quote": typeof AppFloorNewQuoteRoute;
-  "/api/auth/$": typeof ApiAuthSplatRoute;
-  "/api/rpc/$": typeof ApiRpcSplatRoute;
-  "/floor": typeof AppFloorIndexRoute;
-  "/api/quotes/$quoteId/pdf": typeof ApiQuotesQuoteIdPdfRoute;
+  '/': typeof AppIndexRoute
+  '/cashier': typeof AppCashierRoute
+  '/customers': typeof AppCustomersRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/employees': typeof AppEmployeesRoute
+  '/inventory': typeof AppInventoryRoute
+  '/manage': typeof AppManageRoute
+  '/technician': typeof AppTechnicianRoute
+  '/terms': typeof AppTermsRoute
+  '/login': typeof AuthLoginRoute
+  '/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/floor/new-quote': typeof AppFloorNewQuoteRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/floor': typeof AppFloorIndexRoute
+  '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/_app": typeof AppRouteWithChildren;
-  "/_auth": typeof AuthRouteWithChildren;
-  "/_app/cashier": typeof AppCashierRoute;
-  "/_app/customers": typeof AppCustomersRoute;
-  "/_app/dashboard": typeof AppDashboardRoute;
-  "/_app/employees": typeof AppEmployeesRoute;
-  "/_app/floor": typeof AppFloorRouteWithChildren;
-  "/_app/inventory": typeof AppInventoryRoute;
-  "/_app/manage": typeof AppManageRoute;
-  "/_app/technician": typeof AppTechnicianRoute;
-  "/_app/terms": typeof AppTermsRoute;
-  "/_auth/login": typeof AuthLoginRoute;
-  "/_app/": typeof AppIndexRoute;
-  "/_app/floor/$quoteId": typeof AppFloorQuoteIdRoute;
-  "/_app/floor/new-quote": typeof AppFloorNewQuoteRoute;
-  "/api/auth/$": typeof ApiAuthSplatRoute;
-  "/api/rpc/$": typeof ApiRpcSplatRoute;
-  "/_app/floor/": typeof AppFloorIndexRoute;
-  "/api/quotes/$quoteId/pdf": typeof ApiQuotesQuoteIdPdfRoute;
+  __root__: typeof rootRouteImport
+  '/_app': typeof AppRouteWithChildren
+  '/_auth': typeof AuthRouteWithChildren
+  '/_app/cashier': typeof AppCashierRoute
+  '/_app/customers': typeof AppCustomersRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/employees': typeof AppEmployeesRoute
+  '/_app/floor': typeof AppFloorRouteWithChildren
+  '/_app/inventory': typeof AppInventoryRoute
+  '/_app/manage': typeof AppManageRoute
+  '/_app/technician': typeof AppTechnicianRoute
+  '/_app/terms': typeof AppTermsRoute
+  '/_auth/login': typeof AuthLoginRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/_app/floor/new-quote': typeof AppFloorNewQuoteRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/_app/floor/': typeof AppFloorIndexRoute
+  '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/cashier"
-    | "/customers"
-    | "/dashboard"
-    | "/employees"
-    | "/floor"
-    | "/inventory"
-    | "/manage"
-    | "/technician"
-    | "/terms"
-    | "/login"
-    | "/floor/$quoteId"
-    | "/floor/new-quote"
-    | "/api/auth/$"
-    | "/api/rpc/$"
-    | "/floor/"
-    | "/api/quotes/$quoteId/pdf";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/cashier'
+    | '/customers'
+    | '/dashboard'
+    | '/employees'
+    | '/floor'
+    | '/inventory'
+    | '/manage'
+    | '/technician'
+    | '/terms'
+    | '/login'
+    | '/floor/$quoteId'
+    | '/floor/new-quote'
+    | '/api/auth/$'
+    | '/api/rpc/$'
+    | '/floor/'
+    | '/api/quotes/$quoteId/pdf'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/cashier"
-    | "/customers"
-    | "/dashboard"
-    | "/employees"
-    | "/inventory"
-    | "/manage"
-    | "/technician"
-    | "/terms"
-    | "/login"
-    | "/floor/$quoteId"
-    | "/floor/new-quote"
-    | "/api/auth/$"
-    | "/api/rpc/$"
-    | "/floor"
-    | "/api/quotes/$quoteId/pdf";
+    | '/'
+    | '/cashier'
+    | '/customers'
+    | '/dashboard'
+    | '/employees'
+    | '/inventory'
+    | '/manage'
+    | '/technician'
+    | '/terms'
+    | '/login'
+    | '/floor/$quoteId'
+    | '/floor/new-quote'
+    | '/api/auth/$'
+    | '/api/rpc/$'
+    | '/floor'
+    | '/api/quotes/$quoteId/pdf'
   id:
-    | "__root__"
-    | "/_app"
-    | "/_auth"
-    | "/_app/cashier"
-    | "/_app/customers"
-    | "/_app/dashboard"
-    | "/_app/employees"
-    | "/_app/floor"
-    | "/_app/inventory"
-    | "/_app/manage"
-    | "/_app/technician"
-    | "/_app/terms"
-    | "/_auth/login"
-    | "/_app/"
-    | "/_app/floor/$quoteId"
-    | "/_app/floor/new-quote"
-    | "/api/auth/$"
-    | "/api/rpc/$"
-    | "/_app/floor/"
-    | "/api/quotes/$quoteId/pdf";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/_app'
+    | '/_auth'
+    | '/_app/cashier'
+    | '/_app/customers'
+    | '/_app/dashboard'
+    | '/_app/employees'
+    | '/_app/floor'
+    | '/_app/inventory'
+    | '/_app/manage'
+    | '/_app/technician'
+    | '/_app/terms'
+    | '/_auth/login'
+    | '/_app/'
+    | '/_app/floor/$quoteId'
+    | '/_app/floor/new-quote'
+    | '/api/auth/$'
+    | '/api/rpc/$'
+    | '/_app/floor/'
+    | '/api/quotes/$quoteId/pdf'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AppRoute: typeof AppRouteWithChildren;
-  AuthRoute: typeof AuthRouteWithChildren;
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute;
-  ApiRpcSplatRoute: typeof ApiRpcSplatRoute;
-  ApiQuotesQuoteIdPdfRoute: typeof ApiQuotesQuoteIdPdfRoute;
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRouteWithChildren
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiRpcSplatRoute: typeof ApiRpcSplatRoute
+  ApiQuotesQuoteIdPdfRoute: typeof ApiQuotesQuoteIdPdfRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/_auth": {
-      id: "/_auth";
-      path: "";
-      fullPath: "/";
-      preLoaderRoute: typeof AuthRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/_app": {
-      id: "/_app";
-      path: "";
-      fullPath: "/";
-      preLoaderRoute: typeof AppRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/_app/": {
-      id: "/_app/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof AppIndexRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_auth/login": {
-      id: "/_auth/login";
-      path: "/login";
-      fullPath: "/login";
-      preLoaderRoute: typeof AuthLoginRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    "/_app/terms": {
-      id: "/_app/terms";
-      path: "/terms";
-      fullPath: "/terms";
-      preLoaderRoute: typeof AppTermsRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_app/technician": {
-      id: "/_app/technician";
-      path: "/technician";
-      fullPath: "/technician";
-      preLoaderRoute: typeof AppTechnicianRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_app/manage": {
-      id: "/_app/manage";
-      path: "/manage";
-      fullPath: "/manage";
-      preLoaderRoute: typeof AppManageRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_app/inventory": {
-      id: "/_app/inventory";
-      path: "/inventory";
-      fullPath: "/inventory";
-      preLoaderRoute: typeof AppInventoryRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_app/floor": {
-      id: "/_app/floor";
-      path: "/floor";
-      fullPath: "/floor";
-      preLoaderRoute: typeof AppFloorRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_app/employees": {
-      id: "/_app/employees";
-      path: "/employees";
-      fullPath: "/employees";
-      preLoaderRoute: typeof AppEmployeesRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_app/dashboard": {
-      id: "/_app/dashboard";
-      path: "/dashboard";
-      fullPath: "/dashboard";
-      preLoaderRoute: typeof AppDashboardRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_app/customers": {
-      id: "/_app/customers";
-      path: "/customers";
-      fullPath: "/customers";
-      preLoaderRoute: typeof AppCustomersRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_app/cashier": {
-      id: "/_app/cashier";
-      path: "/cashier";
-      fullPath: "/cashier";
-      preLoaderRoute: typeof AppCashierRouteImport;
-      parentRoute: typeof AppRoute;
-    };
-    "/_app/floor/": {
-      id: "/_app/floor/";
-      path: "/";
-      fullPath: "/floor/";
-      preLoaderRoute: typeof AppFloorIndexRouteImport;
-      parentRoute: typeof AppFloorRoute;
-    };
-    "/api/rpc/$": {
-      id: "/api/rpc/$";
-      path: "/api/rpc/$";
-      fullPath: "/api/rpc/$";
-      preLoaderRoute: typeof ApiRpcSplatRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/api/auth/$": {
-      id: "/api/auth/$";
-      path: "/api/auth/$";
-      fullPath: "/api/auth/$";
-      preLoaderRoute: typeof ApiAuthSplatRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/_app/floor/new-quote": {
-      id: "/_app/floor/new-quote";
-      path: "/new-quote";
-      fullPath: "/floor/new-quote";
-      preLoaderRoute: typeof AppFloorNewQuoteRouteImport;
-      parentRoute: typeof AppFloorRoute;
-    };
-    "/_app/floor/$quoteId": {
-      id: "/_app/floor/$quoteId";
-      path: "/$quoteId";
-      fullPath: "/floor/$quoteId";
-      preLoaderRoute: typeof AppFloorQuoteIdRouteImport;
-      parentRoute: typeof AppFloorRoute;
-    };
-    "/api/quotes/$quoteId/pdf": {
-      id: "/api/quotes/$quoteId/pdf";
-      path: "/api/quotes/$quoteId/pdf";
-      fullPath: "/api/quotes/$quoteId/pdf";
-      preLoaderRoute: typeof ApiQuotesQuoteIdPdfRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_app/terms': {
+      id: '/_app/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof AppTermsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/technician': {
+      id: '/_app/technician'
+      path: '/technician'
+      fullPath: '/technician'
+      preLoaderRoute: typeof AppTechnicianRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/manage': {
+      id: '/_app/manage'
+      path: '/manage'
+      fullPath: '/manage'
+      preLoaderRoute: typeof AppManageRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/inventory': {
+      id: '/_app/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AppInventoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/floor': {
+      id: '/_app/floor'
+      path: '/floor'
+      fullPath: '/floor'
+      preLoaderRoute: typeof AppFloorRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/employees': {
+      id: '/_app/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof AppEmployeesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/customers': {
+      id: '/_app/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof AppCustomersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/cashier': {
+      id: '/_app/cashier'
+      path: '/cashier'
+      fullPath: '/cashier'
+      preLoaderRoute: typeof AppCashierRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/floor/': {
+      id: '/_app/floor/'
+      path: '/'
+      fullPath: '/floor/'
+      preLoaderRoute: typeof AppFloorIndexRouteImport
+      parentRoute: typeof AppFloorRoute
+    }
+    '/api/rpc/$': {
+      id: '/api/rpc/$'
+      path: '/api/rpc/$'
+      fullPath: '/api/rpc/$'
+      preLoaderRoute: typeof ApiRpcSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/floor/new-quote': {
+      id: '/_app/floor/new-quote'
+      path: '/new-quote'
+      fullPath: '/floor/new-quote'
+      preLoaderRoute: typeof AppFloorNewQuoteRouteImport
+      parentRoute: typeof AppFloorRoute
+    }
+    '/_app/floor/$quoteId': {
+      id: '/_app/floor/$quoteId'
+      path: '/$quoteId'
+      fullPath: '/floor/$quoteId'
+      preLoaderRoute: typeof AppFloorQuoteIdRouteImport
+      parentRoute: typeof AppFloorRoute
+    }
+    '/api/quotes/$quoteId/pdf': {
+      id: '/api/quotes/$quoteId/pdf'
+      path: '/api/quotes/$quoteId/pdf'
+      fullPath: '/api/quotes/$quoteId/pdf'
+      preLoaderRoute: typeof ApiQuotesQuoteIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AppFloorRouteChildren {
-  AppFloorQuoteIdRoute: typeof AppFloorQuoteIdRoute;
-  AppFloorNewQuoteRoute: typeof AppFloorNewQuoteRoute;
-  AppFloorIndexRoute: typeof AppFloorIndexRoute;
+  AppFloorQuoteIdRoute: typeof AppFloorQuoteIdRoute
+  AppFloorNewQuoteRoute: typeof AppFloorNewQuoteRoute
+  AppFloorIndexRoute: typeof AppFloorIndexRoute
 }
 
 const AppFloorRouteChildren: AppFloorRouteChildren = {
   AppFloorQuoteIdRoute: AppFloorQuoteIdRoute,
   AppFloorNewQuoteRoute: AppFloorNewQuoteRoute,
   AppFloorIndexRoute: AppFloorIndexRoute,
-};
+}
 
-const AppFloorRouteWithChildren = AppFloorRoute._addFileChildren(AppFloorRouteChildren);
+const AppFloorRouteWithChildren = AppFloorRoute._addFileChildren(
+  AppFloorRouteChildren,
+)
 
 interface AppRouteChildren {
-  AppCashierRoute: typeof AppCashierRoute;
-  AppCustomersRoute: typeof AppCustomersRoute;
-  AppDashboardRoute: typeof AppDashboardRoute;
-  AppEmployeesRoute: typeof AppEmployeesRoute;
-  AppFloorRoute: typeof AppFloorRouteWithChildren;
-  AppInventoryRoute: typeof AppInventoryRoute;
-  AppManageRoute: typeof AppManageRoute;
-  AppTechnicianRoute: typeof AppTechnicianRoute;
-  AppTermsRoute: typeof AppTermsRoute;
-  AppIndexRoute: typeof AppIndexRoute;
+  AppCashierRoute: typeof AppCashierRoute
+  AppCustomersRoute: typeof AppCustomersRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppEmployeesRoute: typeof AppEmployeesRoute
+  AppFloorRoute: typeof AppFloorRouteWithChildren
+  AppInventoryRoute: typeof AppInventoryRoute
+  AppManageRoute: typeof AppManageRoute
+  AppTechnicianRoute: typeof AppTechnicianRoute
+  AppTermsRoute: typeof AppTermsRoute
+  AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -427,19 +429,19 @@ const AppRouteChildren: AppRouteChildren = {
   AppTechnicianRoute: AppTechnicianRoute,
   AppTermsRoute: AppTermsRoute,
   AppIndexRoute: AppIndexRoute,
-};
+}
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren);
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface AuthRouteChildren {
-  AuthLoginRoute: typeof AuthLoginRoute;
+  AuthLoginRoute: typeof AuthLoginRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
-};
+}
 
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
@@ -447,16 +449,16 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiQuotesQuoteIdPdfRoute: ApiQuotesQuoteIdPdfRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { createStart } from "@tanstack/react-start";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }

@@ -1,8 +1,15 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [],
+  "ignorePatterns": [
+    "routeTree.gen.ts"
+  ],
   "experimentalTailwindcss": {
     "stylesheet": "apps/web/src/index.css",
-    "functions": ["clsx", "cn", "cva", "tw"]
+    "functions": [
+      "clsx",
+      "cn",
+      "cva",
+      "tw"
+    ]
   }
 }
