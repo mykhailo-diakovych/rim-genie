@@ -1,4 +1,4 @@
-import { Camera, CheckCircle2, ChevronLeft, RotateCcw } from "lucide-react";
+import { Camera, CheckCircle2, ChevronLeft, Undo2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,7 @@ export function JobDetailView({ jobId, onBack }: { jobId: string; onBack: () => 
           triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-[8px] border border-[#db3e21] font-rubik text-[12px] leading-[14px] text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
           triggerContent={
             <>
-              <RotateCcw className="size-4" />
+              <Undo2 className="size-4" />
               Reverse all
             </>
           }
@@ -126,7 +126,7 @@ export function JobDetailView({ jobId, onBack }: { jobId: string; onBack: () => 
                 )}
                 triggerContent={
                   <>
-                    <RotateCcw className="size-4" />
+                    <Undo2 className="size-4" />
                     Reverse
                   </>
                 }

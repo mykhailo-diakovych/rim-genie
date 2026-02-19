@@ -1,4 +1,4 @@
-import { Eye, RotateCcw } from "lucide-react";
+import { Eye, Undo2 } from "lucide-react";
 
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { type CompletedJob } from "./types";
@@ -41,7 +41,7 @@ export function CompletedJobCard({ job, onView }: { job: CompletedJob; onView: (
           triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] border border-[#db3e21] font-rubik text-[12px] leading-[14px] text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
           triggerContent={
             <>
-              <RotateCcw className="size-4" />
+              <Undo2 className="size-4" />
               Reverse
             </>
           }

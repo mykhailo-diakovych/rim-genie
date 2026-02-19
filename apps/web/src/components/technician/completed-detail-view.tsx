@@ -1,4 +1,4 @@
-import { ChevronLeft, RotateCcw } from "lucide-react";
+import { ChevronLeft, Undo2 } from "lucide-react";
 
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { MOCK_JOB_LINES } from "./types";
@@ -36,7 +36,7 @@ export function CompletedDetailView({ jobId, onBack }: { jobId: string; onBack: 
           triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-[8px] border border-[#db3e21] font-rubik text-[12px] leading-[14px] text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
           triggerContent={
             <>
-              <RotateCcw className="size-4" />
+              <Undo2 className="size-4" />
               Reverse all
             </>
           }
@@ -91,7 +91,7 @@ export function CompletedDetailView({ jobId, onBack }: { jobId: string; onBack: 
                 triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] border border-[#db3e21] font-rubik text-[12px] leading-[14px] text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
                 triggerContent={
                   <>
-                    <RotateCcw className="size-4" />
+                    <Undo2 className="size-4" />
                     Reverse
                   </>
                 }
