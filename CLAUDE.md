@@ -57,6 +57,15 @@ Environment: `apps/web/.env` (single env file, loaded by all packages including 
 - **UI components**: Base UI (headless) in `src/components/ui/`. Theme tokens in `src/index.css` (OKLch color space, dark mode by default)
 - **Notifications**: Sonner (`toast.*`) — wired into the QueryClient's `onError`
 
+### Button Component (`src/components/ui/button.tsx`)
+
+Uses CVA with two axes: `variant` (`default` | `outline` | `ghost`) × `color` (`default` | `destructive` | `success`). Built on `@base-ui/react/button`.
+
+- **Navigation buttons must use `render` prop** — never use `onClick` + `navigate()` for route transitions. Use `<Button render={<Link to="..." />}>` instead. This renders a semantic `<a>` tag, enabling prefetching, right-click → open in new tab, and proper accessibility.
+- **Hardcoded colors** — always use CSS variables (oklch) from `index.css`, never hardcode hex values.
+- **Icon sizing** — button auto-sizes child SVGs via `[&_svg:not([class*='size-'])]:size-4`. Do not add `className="size-4"` to icons unless overriding to a different size.
+- **No hardcoded widths** — buttons should auto-size to content. Do not use `w-[72px]` etc.
+
 ### Auth Routes
 
 - `/api/auth/$` — Better Auth handler (GET + POST)
@@ -71,3 +80,62 @@ Environment: `apps/web/.env` (single env file, loaded by all packages including 
 - **Linting**: `oxlint` (fast Rust-based linter). Run `bun run check` to fix.
 - **No test framework configured** — there are no tests yet
 - **No unnecessary comments**: Do not add inline comments, JSDoc, or section dividers unless they explain non-obvious logic. Code should be self-documenting.
+
+## Workflow Orchestration
+
+### 1. Plan Mode Default
+
+- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+- If something goes sideways, STOP and re-plan immediately – don't keep pushing
+- Use plan mode for verification steps, not just building
+- Write detailed specs upfront to reduce ambiguity
+
+### 2. Subagent Strategy
+
+- Use subagents liberally to keep main context window clean
+- Offload research, exploration, and parallel analysis to subagents
+- For complex problems, throw more compute at it via subagents
+- One task per subagent for focused execution
+
+### 3. Self-Improvement Loop
+
+- After ANY correction from the user: update `.claude/tasks/lessons.md` with the pattern
+- Write rules for yourself that prevent the same mistake
+- Ruthlessly iterate on these lessons until mistake rate drops
+- Review lessons at session start for relevant project
+
+### 4. Verification Before Done
+
+- Never mark a task complete without proving it works
+- Diff behavior between main and your changes when relevant
+- Ask yourself: "Would a staff engineer approve this?"
+- Run tests, check logs, demonstrate correctness
+
+### 5. Demand Elegance (Balanced)
+
+- For non-trivial changes: pause and ask "is there a more elegant way?"
+- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
+- Skip this for simple, obvious fixes – don't over-engineer
+- Challenge your own work before presenting it
+
+### 6. Autonomous Bug Fixing
+
+- When given a bug report: just fix it. Don't ask for hand-holding
+- Point at logs, errors, failing tests – then resolve them
+- Zero context switching required from the user
+- Go fix failing CI tests without being told how
+
+## Task Management
+
+1. **Plan First**: Write plan to `.claude/tasks/todo.md` with checkable items
+2. **Verify Plan**: Check in before starting implementation
+3. **Track Progress**: Mark items complete as you go
+4. **Explain Changes**: High-level summary at each step
+5. **Document Results**: Add review section to `.claude/tasks/todo.md`
+6. **Capture Lessons**: Update `.claude/tasks/lessons.md` after corrections
+
+## Core Principles
+
+- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
