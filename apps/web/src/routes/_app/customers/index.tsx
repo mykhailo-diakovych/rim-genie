@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect } from "@tanstack/react-router";
 import { Eye, Plus } from "lucide-react";
 
 import type { UserRole } from "@rim-genie/db/schema";
@@ -14,7 +14,7 @@ import { orpc } from "@/utils/orpc";
 const ALLOWED_ROLES: UserRole[] = ["admin", "floorManager", "cashier"];
 const CAN_EDIT_ROLES: UserRole[] = ["admin", "floorManager"];
 
-export const Route = createFileRoute("/_app/customers")({
+export const Route = createFileRoute("/_app/customers/")({
   beforeLoad: ({ context }) => {
     const role = context.session.user.role as UserRole | null;
     if (!role || !ALLOWED_ROLES.includes(role)) {
@@ -55,7 +55,7 @@ function CustomersPage() {
           <CustomerModal
             trigger={
               <Button>
-                <Plus className="size-4" />
+                <Plus />
                 {m.customers_btn_add()}
               </Button>
             }
@@ -76,28 +76,18 @@ function CustomersPage() {
             customer={customer}
             actions={
               <>
-                <button
-                  type="button"
-                  className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-lg bg-blue p-2"
-                >
-                  <Eye className="size-4 shrink-0 text-white" />
-                  <span className="font-rubik text-xs leading-3.5 text-white">
-                    {m.customers_btn_view()}
-                  </span>
-                </button>
+                <Button render={<Link to="/customers/$customerId" params={{ customerId: customer.id }} />}>
+                  <Eye />
+                  {m.customers_btn_view()}
+                </Button>
                 {canEdit && (
                   <CustomerModal
                     customer={customer}
                     trigger={
-                      <button
-                        type="button"
-                        className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-lg border border-blue p-2"
-                      >
-                        <IconEdit className="size-4 shrink-0 text-blue" />
-                        <span className="font-rubik text-xs leading-3.5 text-blue">
-                          {m.customers_btn_edit()}
-                        </span>
-                      </button>
+                      <Button variant="outline">
+                        <IconEdit />
+                        {m.customers_btn_edit()}
+                      </Button>
                     }
                   />
                 )}
