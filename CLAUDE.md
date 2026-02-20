@@ -62,9 +62,18 @@ Environment: `apps/web/.env` (single env file, loaded by all packages including 
 Uses CVA with two axes: `variant` (`default` | `outline` | `ghost`) × `color` (`default` | `destructive` | `success`). Built on `@base-ui/react/button`.
 
 - **Navigation buttons must use `render` prop** — never use `onClick` + `navigate()` for route transitions. Use `<Button render={<Link to="..." />}>` instead. This renders a semantic `<a>` tag, enabling prefetching, right-click → open in new tab, and proper accessibility.
-- **Hardcoded colors** — always use CSS variables (oklch) from `index.css`, never hardcode hex values.
 - **Icon sizing** — button auto-sizes child SVGs via `[&_svg:not([class*='size-'])]:size-4`. Do not add `className="size-4"` to icons unless overriding to a different size.
 - **No hardcoded widths** — buttons should auto-size to content. Do not use `w-[72px]` etc.
+
+### Tailwind — No Hardcoded Values
+
+Before writing any arbitrary value (`text-[16px]`, `rounded-[12px]`, `bg-[#fafbfc]`), always check if a standard Tailwind class or project CSS variable already covers it:
+
+- **Colors**: Use tokens from `index.css` (`text-body`, `text-label`, `bg-dialog`, `border-field-line`, etc.). Never hardcode hex/rgb — if a color is missing, add it as an oklch variable in `:root` + register in `@theme inline`.
+- **Spacing / sizing**: Use the default scale (`p-3` = 12px, `gap-2` = 8px, `h-9` = 36px, `leading-5` = 20px).
+- **Border radius**: Use token scale (`rounded-sm` = 6px, `rounded-md` = 8px, `rounded-lg` = 10px, `rounded-xl` = 14px). Never `rounded-[12px]`.
+- **Shadows**: Use named shadows (`shadow-dialog`). Add new ones in `@theme inline` as `--shadow-*`.
+- **Font size**: Use standard classes (`text-xs` = 12px, `text-sm` = 14px, `text-base` = 16px). Never `text-[16px]`.
 
 ### Auth Routes
 

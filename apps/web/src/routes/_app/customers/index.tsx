@@ -76,7 +76,10 @@ function CustomersPage() {
             customer={customer}
             actions={
               <>
-                <Button render={<Link to="/customers/$customerId" params={{ customerId: customer.id }} />}>
+                <Button
+                  render={<Link to="/customers/$customerId" params={{ customerId: customer.id }} />}
+                  nativeButton={false}
+                >
                   <Eye />
                   {m.customers_btn_view()}
                 </Button>
