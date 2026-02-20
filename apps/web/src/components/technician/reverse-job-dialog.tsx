@@ -67,7 +67,10 @@ export function ReverseJobDialog({
 
           <DialogFooter className="p-0">
             <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
-            <DialogClose render={<Button color="destructive" className="w-32" />} onClick={handleConfirm}>
+            <DialogClose
+              render={<Button color="destructive" className="w-32" />}
+              onClick={handleConfirm}
+            >
               Reverse
             </DialogClose>
           </DialogFooter>

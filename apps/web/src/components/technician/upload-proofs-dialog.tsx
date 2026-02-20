@@ -126,7 +126,9 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
           </div>
 
           <DialogFooter className="p-0">
-            <DialogClose render={<Button color="success" className="w-32" />}>Upload proofs</DialogClose>
+            <DialogClose render={<Button color="success" className="w-32" />}>
+              Upload proofs
+            </DialogClose>
           </DialogFooter>
         </div>
       </DialogContent>

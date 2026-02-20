@@ -94,7 +94,10 @@ export function AcceptJobDialog({
 
           <DialogFooter className="p-0">
             <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
-            <DialogClose render={<Button color="success" className="w-32" />} onClick={handleConfirm}>
+            <DialogClose
+              render={<Button color="success" className="w-32" />}
+              onClick={handleConfirm}
+            >
               Accept
             </DialogClose>
           </DialogFooter>
