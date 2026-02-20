@@ -110,12 +110,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -208,12 +204,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -223,9 +215,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -327,16 +317,12 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         },
         "user_username_unique": {
           "name": "user_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},
@@ -501,9 +487,7 @@
         "customer_phone_unique": {
           "name": "customer_phone_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "phone"
-          ]
+          "columns": ["phone"]
         }
       },
       "policies": {},
@@ -638,12 +622,8 @@
           "name": "quote_customer_id_customer_id_fk",
           "tableFrom": "quote",
           "tableTo": "customer",
-          "columnsFrom": [
-            "customer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["customer_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -651,12 +631,8 @@
           "name": "quote_created_by_id_user_id_fk",
           "tableFrom": "quote",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -762,12 +738,8 @@
           "name": "quote_item_quote_id_quote_id_fk",
           "tableFrom": "quote_item",
           "tableTo": "quote",
-          "columnsFrom": [
-            "quote_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["quote_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -870,41 +842,22 @@
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "admin",
-        "floorManager",
-        "cashier",
-        "technician",
-        "inventoryClerk"
-      ]
+      "values": ["admin", "floorManager", "cashier", "technician", "inventoryClerk"]
     },
     "public.quote_status": {
       "name": "quote_status",
       "schema": "public",
-      "values": [
-        "draft",
-        "pending",
-        "in_progress",
-        "completed"
-      ]
+      "values": ["draft", "pending", "in_progress", "completed"]
     },
     "public.service_type": {
       "name": "service_type",
       "schema": "public",
-      "values": [
-        "rim",
-        "general"
-      ]
+      "values": ["rim", "general"]
     },
     "public.vehicle_type": {
       "name": "vehicle_type",
       "schema": "public",
-      "values": [
-        "car",
-        "suv",
-        "truck",
-        "van"
-      ]
+      "values": ["car", "suv", "truck", "van"]
     }
   },
   "schemas": {},
