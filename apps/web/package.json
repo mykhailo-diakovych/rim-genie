@@ -19,6 +19,7 @@
     "@orpc/zod": "catalog:",
     "@rim-genie/api": "workspace:*",
     "@rim-genie/auth": "workspace:*",
+    "@rim-genie/db": "workspace:*",
     "@rim-genie/env": "workspace:*",
     "@tailwindcss/vite": "^4.2.0",
     "@tanstack/react-form": "^1.28.3",
