@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { Camera, Upload } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { DialogCustomerRow, DialogHeader, DialogModal } from "./dialog-shared";
@@ -16,8 +17,8 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
 
   return (
     <Dialog.Root>
-      <Dialog.Trigger className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-[8px] border border-green font-rubik text-[12px] leading-[14px] text-green transition-colors hover:bg-green/5">
-        <Camera className="size-4" />
+      <Dialog.Trigger render={<Button variant="outline" color="success" />}>
+        <Camera />
         Proofs
       </Dialog.Trigger>
 
@@ -39,7 +40,10 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
                 {files && files.length > 0 ? (
                   <div className="flex flex-col items-center gap-1">
                     {Array.from(files).map((f) => (
-                      <p key={f.name} className="text-center font-rubik text-[12px] leading-[14px] font-medium text-[#032906]">
+                      <p
+                        key={f.name}
+                        className="text-center font-rubik text-[12px] leading-[14px] font-medium text-[#032906]"
+                      >
                         {f.name}
                       </p>
                     ))}
@@ -114,7 +118,7 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
           </div>
 
           <div className="flex justify-center">
-            <Dialog.Close className="flex h-9 w-[128px] items-center justify-center rounded-[8px] bg-green font-rubik text-[12px] leading-[14px] text-white transition-opacity hover:opacity-90">
+            <Dialog.Close render={<Button color="success" />}>
               Upload proofs
             </Dialog.Close>
           </div>

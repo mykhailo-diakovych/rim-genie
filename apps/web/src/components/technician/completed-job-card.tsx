@@ -1,5 +1,7 @@
 import { Eye, Undo2 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { type CompletedJob } from "./types";
 
@@ -27,14 +29,10 @@ export function CompletedJobCard({ job, onView }: { job: CompletedJob; onView: (
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={onView}
-          className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-[8px] bg-blue font-rubik text-[12px] leading-[14px] text-white transition-colors hover:bg-blue/90"
-        >
-          <Eye className="size-4" />
+        <Button onClick={onView}>
+          <Eye />
           View
-        </button>
+        </Button>
         <ReverseJobDialog
           customer={job.customer}
           jobId={job.id}

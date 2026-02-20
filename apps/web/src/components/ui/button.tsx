@@ -1,53 +1,86 @@
-import type { VariantProps } from "tailwind-variants";
-
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
-import { tv } from "tailwind-variants";
+import { cva, type VariantProps } from "class-variance-authority";
 
-export const buttonVariants = tv({
-  base: "inline-flex h-9 items-center justify-center rounded-[8px] px-3 font-rubik text-[12px] leading-[14px] outline-none transition-colors disabled:pointer-events-none disabled:opacity-50",
-  variants: {
-    variant: {
-      default: "bg-blue text-white hover:bg-blue/90",
-      success: "bg-green text-white hover:bg-green/90",
-      ghost: "text-body hover:opacity-70",
-      outline:
-        "border border-border bg-background text-foreground hover:bg-muted dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-      secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-      destructive: "bg-destructive/10 text-destructive hover:bg-destructive/20",
-      link: "text-primary underline-offset-4 hover:underline",
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-2.25 font-rubik text-xs leading-[14px] font-normal whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default: "text-white",
+        outline: "",
+        ghost: "text-body hover:bg-muted focus-visible:ring-ring/50",
+      },
+      color: {
+        default: "",
+        destructive: "",
+        success: "",
+      },
+      size: {
+        default: "",
+        "icon-sm": "size-7 p-0",
+      },
     },
-    size: {
-      default: "h-9",
-      sm: "h-7 px-2.5 text-xs",
-      lg: "h-10 px-4",
-      icon: "size-9 p-0",
-    },
-    fullWidth: {
-      true: "w-full",
+    compoundVariants: [
+      {
+        variant: "default",
+        color: "default",
+        className: "bg-blue hover:bg-blue/90 focus-visible:ring-blue/50",
+      },
+      {
+        variant: "default",
+        color: "destructive",
+        className: "bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/50",
+      },
+      {
+        variant: "default",
+        color: "success",
+        className: "bg-green hover:bg-green/90 focus-visible:ring-green/50",
+      },
+      {
+        variant: "outline",
+        color: "default",
+        className: "border-blue text-blue hover:bg-blue/5 focus-visible:ring-blue/50",
+      },
+      {
+        variant: "outline",
+        color: "destructive",
+        className:
+          "border-destructive text-destructive hover:bg-destructive/5 focus-visible:ring-destructive/50",
+      },
+      {
+        variant: "outline",
+        color: "success",
+        className: "border-green text-green hover:bg-green/5 focus-visible:ring-green/50",
+      },
+    ],
+    defaultVariants: {
+      variant: "default",
+      color: "default",
+      size: "default",
     },
   },
-  defaultVariants: {
-    variant: "default",
-    size: "default",
-  },
-});
-
-export type ButtonVariants = VariantProps<typeof buttonVariants>;
+);
 
 function Button({
   className,
-  variant,
-  size,
+  variant = "default",
+  color = "default",
+  size = "default",
   fullWidth,
   ...props
-}: Omit<ButtonPrimitive.Props, "className"> & ButtonVariants & { className?: string }) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    fullWidth?: boolean;
+  }) {
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={buttonVariants({ variant, size, fullWidth, className })}
+      className={cn(buttonVariants({ variant, color, size, className }), fullWidth && "w-full")}
       {...props}
     />
   );
 }
 
-export { Button };
+export { Button, buttonVariants };

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Building2,
@@ -16,6 +16,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
 import type { QuoteGeneratorSheetData } from "@/components/floor/quote-generator-sheet";
@@ -34,7 +35,6 @@ function Skeleton({ className }: { className?: string }) {
 
 function QuoteEditorPage() {
   const { quoteId } = Route.useParams();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -135,34 +135,27 @@ function QuoteEditorPage() {
       <div className="flex flex-1 flex-col gap-5 p-5">
         {/* Action bar */}
         <div className="flex flex-wrap items-center justify-between gap-y-2">
-          <button
-            type="button"
-            onClick={() => void navigate({ to: "/floor" })}
-            className="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] border border-blue font-rubik text-[12px] leading-[14px] text-blue transition-colors hover:bg-blue/5"
-          >
-            <ArrowLeft className="size-4" />
+          <Button variant="outline" render={<Link to="/floor" />}>
+            <ArrowLeft />
             Back to list
-          </button>
+          </Button>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              color="success"
               onClick={handleSave}
               disabled={updateQuote.isPending}
-              className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-[8px] bg-green font-rubik text-[12px] leading-[14px] text-white transition-colors hover:bg-green/90 disabled:opacity-60"
             >
-              <Save className="size-4" />
+              <Save />
               Save
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               onClick={handleToTechnician}
               disabled={updateQuote.isPending}
-              className="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-[8px] bg-blue font-rubik text-[12px] leading-[14px] text-white transition-colors hover:bg-blue/90 disabled:opacity-60"
             >
-              <Wrench className="size-4" />
+              <Wrench />
               To Technician
-            </button>
+            </Button>
             <MoreDropdown quoteId={quoteId} />
           </div>
         </div>
@@ -463,15 +456,15 @@ function ItemRow({
         ${rowTotal.toFixed(2)}
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          color="destructive"
           onClick={onRemove}
           disabled={isRemoving}
-          className="flex h-8 w-[72px] items-center justify-center gap-1.5 rounded-[8px] border border-[#db3e21] font-rubik text-[12px] leading-[14px] text-[#db3e21] transition-colors hover:bg-[#db3e21]/5 disabled:opacity-60"
         >
           <Trash2 className="size-3.5" />
           Remove
-        </button>
+        </Button>
       </td>
     </tr>
   );

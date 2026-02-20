@@ -74,6 +74,22 @@ export const floorRouter = {
         .orderBy(asc(customer.name));
     }),
 
+    getById: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+      return db.query.customer.findFirst({
+        where: eq(customer.id, input.id),
+        with: {
+          quotes: {
+            orderBy: (q, { desc }) => [desc(q.createdAt)],
+            with: {
+              items: {
+                orderBy: (i, { asc }) => [asc(i.sortOrder)],
+              },
+            },
+          },
+        },
+      });
+    }),
+
     update: floorManagerProcedure
       .input(
         z.object({

@@ -283,7 +283,7 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
               <form.Subscribe>
                 {(state) => (
                   <Button
-                    variant="success"
+                    color="success"
                     className="w-32"
                     type="submit"
                     disabled={!state.canSubmit || state.isSubmitting || isPending}

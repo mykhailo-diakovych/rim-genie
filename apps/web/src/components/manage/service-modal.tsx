@@ -13,13 +13,38 @@ import { vehicleTypeEnum } from "@rim-genie/db/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectOption, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectOption,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 
 import type { ServiceRow } from "./service-table";
 
-const SIZE_OPTIONS = ["10", "11", "12", "13", "14", "15", "16", "16.5", "17", "18", "19", "19.5", "20", "21", "22", "23", "24", "26"];
+const SIZE_OPTIONS = [
+  "10",
+  "11",
+  "12",
+  "13",
+  "14",
+  "15",
+  "16",
+  "16.5",
+  "17",
+  "18",
+  "19",
+  "19.5",
+  "20",
+  "21",
+  "22",
+  "23",
+  "24",
+  "26",
+];
 
 const VEHICLE_TYPE_LABELS: Record<string, () => string> = {
   car: m.manage_vehicle_type_car,
@@ -30,11 +55,9 @@ const VEHICLE_TYPE_LABELS: Record<string, () => string> = {
 
 const makeSchema = (serviceType: ServiceType) =>
   z.object({
-    vehicleType: z
-      .string()
-      .refine((v) => serviceType !== "general" || v.length > 0, {
-        message: m.manage_validation_vehicle_type_required(),
-      }),
+    vehicleType: z.string().refine((v) => serviceType !== "general" || v.length > 0, {
+      message: m.manage_validation_vehicle_type_required(),
+    }),
     name: z.string().min(1, m.manage_validation_name_required()),
     minSize: z.string().min(1, m.manage_validation_min_size_invalid()),
     maxSize: z.string().min(1, m.manage_validation_max_size_invalid()),
@@ -192,7 +215,7 @@ export function ServiceModal({ open, onOpenChange, serviceType, service }: Servi
                 )}
               </form.Field>
 
-              <div className="flex gap-3 w-[222px]">
+              <div className="flex w-[222px] gap-3">
                 <form.Field name="minSize">
                   {(field) => (
                     <div className="flex flex-1 flex-col gap-1">
@@ -284,7 +307,7 @@ export function ServiceModal({ open, onOpenChange, serviceType, service }: Servi
               <form.Subscribe>
                 {(state) => (
                   <Button
-                    variant="success"
+                    color="success"
                     className="w-32"
                     type="submit"
                     disabled={!state.canSubmit || state.isSubmitting || isPending}

@@ -33,11 +33,11 @@ export function DeleteServiceModal({
           <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
             <div className="flex flex-col items-center gap-4">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-[28px] border-8 border-[#fef3f2] bg-[#fee4e2]">
-                <IconDelete className="size-6 text-[#db3e21]" />
+                <IconDelete className="size-6 text-destructive" />
               </div>
 
               <div className="flex flex-col items-center gap-2 text-center">
-                <p className="font-rubik text-base font-medium leading-5 text-body">
+                <p className="font-rubik text-base leading-5 font-medium text-body">
                   {m.manage_modal_delete_title()}
                 </p>
                 <p className="font-rubik text-sm leading-[18px] text-label">
@@ -59,7 +59,8 @@ export function DeleteServiceModal({
                 }
               />
               <Button
-                className="w-32 bg-[#db3e21] hover:bg-[#db3e21]/90"
+                color="destructive"
+                className="w-32"
                 onClick={onConfirm}
                 disabled={isPending}
               >

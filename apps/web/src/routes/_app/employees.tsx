@@ -3,7 +3,12 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
 import { ResetPinModal } from "@/components/auth/reset-pin-modal";
-import { EmployeeCard, EmployeeCardSkeleton, IconEdit, IconResetPin } from "@/components/employees/employee-card";
+import {
+  EmployeeCard,
+  EmployeeCardSkeleton,
+  IconEdit,
+  IconResetPin,
+} from "@/components/employees/employee-card";
 import { EmployeeModal } from "@/components/employees/employee-modal";
 import { Button } from "@/components/ui/button";
 import { m } from "@/paraglide/messages";
@@ -30,7 +35,7 @@ function EmployeesPage() {
         <EmployeeModal
           trigger={
             <Button>
-              <Plus className="size-4" />
+              <Plus />
               {m.employees_btn_add()}
             </Button>
           }
@@ -53,29 +58,19 @@ function EmployeesPage() {
                 <EmployeeModal
                   employee={employee}
                   trigger={
-                    <button
-                      type="button"
-                      className="flex h-9 w-18 items-center justify-center gap-1.5 rounded-lg border border-blue p-2"
-                    >
-                      <IconEdit className="size-4 shrink-0 text-blue" />
-                      <span className="font-rubik text-xs leading-3.5 text-blue">
-                        {m.employees_btn_edit()}
-                      </span>
-                    </button>
+                    <Button variant="outline">
+                      <IconEdit />
+                      {m.employees_btn_edit()}
+                    </Button>
                   }
                 />
                 <ResetPinModal
                   employeeId={employee.id}
                   trigger={
-                    <button
-                      type="button"
-                      className="flex h-9 w-26 items-center justify-center gap-1.5 rounded-lg border border-red p-2"
-                    >
-                      <IconResetPin className="size-4 shrink-0 text-red" />
-                      <span className="font-rubik text-xs leading-3.5 text-red">
-                        {m.employees_btn_reset_pin()}
-                      </span>
-                    </button>
+                    <Button variant="outline" color="destructive">
+                      <IconResetPin />
+                      {m.employees_btn_reset_pin()}
+                    </Button>
                   }
                 />
               </>

@@ -38,7 +38,9 @@ export function ServicesPagination({
   return (
     <div className="flex items-center justify-between px-3 py-3">
       <div className="flex items-center gap-1.5">
-        <span className="font-rubik text-xs leading-3.5 text-body">{m.manage_pagination_show()}</span>
+        <span className="font-rubik text-xs leading-3.5 text-body">
+          {m.manage_pagination_show()}
+        </span>
         <select
           value={pageSize}
           onChange={(e) => {
@@ -54,9 +56,7 @@ export function ServicesPagination({
           ))}
         </select>
         <span className="font-rubik text-xs leading-3.5 text-body">
-          {m.manage_pagination_of()}{" "}
-          <strong>{total}</strong>{" "}
-          {m.manage_pagination_entries()}
+          {m.manage_pagination_of()} <strong>{total}</strong> {m.manage_pagination_entries()}
         </span>
       </div>
 

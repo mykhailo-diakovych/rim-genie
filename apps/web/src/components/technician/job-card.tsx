@@ -1,5 +1,7 @@
 import { Eye } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+
 import { CompleteJobDialog } from "./complete-job-dialog";
 import { type InProgressJob } from "./types";
 import { UploadProofsDialog } from "./upload-proofs-dialog";
@@ -28,14 +30,10 @@ export function JobCard({ job, onView }: { job: InProgressJob; onView: () => voi
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={onView}
-          className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-[8px] bg-blue font-rubik text-[12px] leading-[14px] text-white transition-colors hover:bg-blue/90"
-        >
-          <Eye className="size-4" />
+        <Button onClick={onView}>
+          <Eye />
           View
-        </button>
+        </Button>
 
         {job.action === "done" ? <CompleteJobDialog job={job} /> : <UploadProofsDialog job={job} />}
       </div>

@@ -80,7 +80,7 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
             placeholder={m.manage_search_placeholder()}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="flex h-10 w-full rounded-lg border border-field-line bg-white px-3 py-2.5 pr-9 font-rubik text-xs leading-3.5 text-body placeholder:text-ghost outline-none"
+            className="flex h-10 w-full rounded-lg border border-field-line bg-white px-3 py-2.5 pr-9 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
           />
           <Search className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ghost" />
         </div>
@@ -91,9 +91,7 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
           ) : services.length === 0 ? (
             <>
               <ServiceTableSkeleton rows={null} />
-              <p className="py-10 text-center font-rubik text-sm text-label">
-                {m.manage_empty()}
-              </p>
+              <p className="py-10 text-center font-rubik text-sm text-label">{m.manage_empty()}</p>
             </>
           ) : (
             <>
@@ -120,22 +118,22 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
         </div>
       </div>
 
-      <ServiceModal
-        open={addOpen}
-        onOpenChange={onAddOpenChange}
-        serviceType={type}
-      />
+      <ServiceModal open={addOpen} onOpenChange={onAddOpenChange} serviceType={type} />
 
       <ServiceModal
         open={!!editService}
-        onOpenChange={(open) => { if (!open) setEditService(null); }}
+        onOpenChange={(open) => {
+          if (!open) setEditService(null);
+        }}
         serviceType={type}
         service={editService ?? undefined}
       />
 
       <DeleteServiceModal
         open={!!deleteConfirm}
-        onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirm(null);
+        }}
         serviceName={deleteConfirm?.name ?? ""}
         onConfirm={() => deleteConfirm && deleteService.mutate({ id: deleteConfirm.id })}
         isPending={deleteService.isPending}
@@ -155,15 +153,12 @@ function ManagePage() {
           {m.manage_title()}
         </h1>
         <Button onClick={() => setAddOpen(true)}>
-          <Plus className="size-4" />
+          <Plus />
           {m.manage_btn_add_service()}
         </Button>
       </div>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(val) => setActiveTab(val as ServiceType)}
-      >
+      <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as ServiceType)}>
         <TabsList>
           {SERVICE_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>

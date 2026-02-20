@@ -36,7 +36,13 @@ export const manageRouter = {
         );
 
         const [items, [totalRow]] = await Promise.all([
-          db.select().from(service).where(where).orderBy(asc(service.name)).limit(pageSize).offset(offset),
+          db
+            .select()
+            .from(service)
+            .where(where)
+            .orderBy(asc(service.name))
+            .limit(pageSize)
+            .offset(offset),
           db.select({ total: count() }).from(service).where(where),
         ]);
 
@@ -63,11 +69,9 @@ export const manageRouter = {
         return row!;
       }),
 
-    delete: adminProcedure
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input }) => {
-        await db.delete(service).where(eq(service.id, input.id));
-        return { success: true as const };
-      }),
+    delete: adminProcedure.input(z.object({ id: z.string().min(1) })).handler(async ({ input }) => {
+      await db.delete(service).where(eq(service.id, input.id));
+      return { success: true as const };
+    }),
   },
 };

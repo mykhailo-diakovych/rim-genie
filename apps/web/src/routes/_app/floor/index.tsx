@@ -1,8 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Eye, Plus, Printer, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/floor/")({
@@ -21,12 +22,12 @@ type QuoteListItem = {
 
 function QuoteCard({
   quote,
-  onView,
+  quoteId,
   onDelete,
   isDeleting,
 }: {
   quote: QuoteListItem;
-  onView: () => void;
+  quoteId: string;
   onDelete: () => void;
   isDeleting: boolean;
 }) {
@@ -49,31 +50,21 @@ function QuoteCard({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={onView}
-          className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-[8px] bg-blue font-rubik text-[12px] leading-[14px] text-white transition-colors hover:bg-blue/90"
-        >
-          <Eye className="size-4" />
+        <Button render={<Link to="/floor/$quoteId" params={{ quoteId }} />}>
+          <Eye />
           View
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="outline"
           onClick={() => window.open(`/api/quotes/${quote.id}/pdf`, "_blank")}
-          className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-[8px] border border-blue font-rubik text-[12px] leading-[14px] text-blue transition-colors hover:bg-blue/5"
         >
-          <Printer className="size-4" />
+          <Printer />
           Print
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={isDeleting}
-          className="flex h-9 w-[72px] items-center justify-center gap-1.5 rounded-[8px] border border-[#db3e21] font-rubik text-[12px] leading-[14px] text-[#db3e21] transition-colors hover:bg-[#db3e21]/5 disabled:opacity-60"
-        >
-          <Trash2 className="size-4" />
+        </Button>
+        <Button variant="outline" color="destructive" onClick={onDelete} disabled={isDeleting}>
+          <Trash2 />
           Delete
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -82,7 +73,6 @@ function QuoteCard({
 // ─── Floor Page ───────────────────────────────────────────────────────────────
 
 function FloorPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const quotesQuery = useQuery(orpc.floor.quotes.list.queryOptions());
@@ -104,14 +94,10 @@ function FloorPage() {
         <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
           List of Quotes
         </h1>
-        <button
-          type="button"
-          onClick={() => void navigate({ to: "/floor/new-quote" })}
-          className="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-[8px] bg-blue font-rubik text-[12px] leading-[14px] text-white transition-colors hover:bg-blue/90"
-        >
-          <Plus className="size-4" />
+        <Button render={<Link to="/floor/new-quote" />}>
+          <Plus />
           New Quote
-        </button>
+        </Button>
       </div>
 
       {/* Quote list */}
@@ -135,7 +121,7 @@ function FloorPage() {
             <QuoteCard
               key={quote.id}
               quote={quote}
-              onView={() => void navigate({ to: "/floor/$quoteId", params: { quoteId: quote.id } })}
+              quoteId={quote.id}
               onDelete={() => deleteQuote.mutate({ id: quote.id })}
               isDeleting={deleteQuote.isPending && deleteQuote.variables?.id === quote.id}
             />

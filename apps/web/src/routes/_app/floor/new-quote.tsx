@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Phone, Plus, Search, Star, User } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/floor/new-quote")({
@@ -106,21 +107,13 @@ function CreateCustomerForm({
         </div>
 
         <div className="flex gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex h-9 flex-1 items-center justify-center rounded-[8px] border border-field-line font-rubik text-[12px] text-body transition-colors hover:bg-page"
-          >
+          <Button variant="ghost" onClick={onCancel} className="flex-1">
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-green font-rubik text-[12px] text-white transition-colors hover:bg-green/90 disabled:opacity-60"
-          >
-            <Plus className="size-4" />
+          </Button>
+          <Button type="submit" color="success" disabled={isLoading} className="flex-1">
+            <Plus />
             {isLoading ? "Creating..." : "Create & Quote"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
@@ -156,14 +149,13 @@ function CustomerCard({
           )}
         </div>
       </div>
-      <button
-        type="button"
+      <Button
         onClick={onSelect}
         disabled={isLoading}
-        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-[8px] bg-blue font-rubik text-[12px] text-white transition-colors hover:bg-blue/90 disabled:opacity-60 sm:w-[128px]"
+        className="w-full"
       >
         {isLoading ? "Creating..." : "Create Quote"}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -207,14 +199,10 @@ function NewQuotePage() {
     <div className="flex flex-1 flex-col gap-5 p-5">
       {/* Action bar */}
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => void navigate({ to: "/floor" })}
-          className="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] border border-blue font-rubik text-[12px] leading-[14px] text-blue transition-colors hover:bg-blue/5"
-        >
-          <ArrowLeft className="size-4" />
+        <Button variant="outline" render={<Link to="/floor" />}>
+          <ArrowLeft />
           Back to list
-        </button>
+        </Button>
         <h1 className="font-rubik text-[18px] font-medium text-body">New Quote</h1>
       </div>
 
@@ -258,14 +246,10 @@ function NewQuotePage() {
                 <p className="font-rubik text-[14px] text-label">
                   No customers found for "{query}"
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForm(true)}
-                  className="flex h-9 items-center justify-center gap-1.5 rounded-[8px] bg-blue px-4 font-rubik text-[12px] text-white transition-colors hover:bg-blue/90"
-                >
-                  <Plus className="size-4" />
+                <Button onClick={() => setShowCreateForm(true)}>
+                  <Plus />
                   Create New Customer
-                </button>
+                </Button>
               </div>
             )}
           </div>

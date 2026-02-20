@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { m } from "@/paraglide/messages";
 
@@ -56,16 +57,24 @@ export function ServiceTable({ services, onEdit, onDelete, isDeleting }: Service
     <div className="overflow-hidden rounded-lg bg-white">
       <div className="flex border-b border-field-line">
         <div className="flex flex-1 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">{m.manage_col_service_name()}</span>
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_col_service_name()}
+          </span>
         </div>
         <div className="flex w-20 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">{m.manage_col_min_size()}</span>
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_col_min_size()}
+          </span>
         </div>
         <div className="flex w-20 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">{m.manage_col_max_size()}</span>
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_col_max_size()}
+          </span>
         </div>
         <div className="flex w-28 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">{m.manage_col_unit_cost()}</span>
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_col_unit_cost()}
+          </span>
         </div>
         <div className="h-8 w-[168px]" />
       </div>
@@ -82,26 +91,19 @@ export function ServiceTable({ services, onEdit, onDelete, isDeleting }: Service
             <span className="font-rubik text-sm leading-[18px] text-body">{svc.maxSize}</span>
           </div>
           <div className="flex w-28 items-center self-stretch border-r border-field-line p-2">
-            <span className="font-rubik text-sm leading-[18px] text-body">{formatUSD(svc.unitCost)}</span>
+            <span className="font-rubik text-sm leading-[18px] text-body">
+              {formatUSD(svc.unitCost)}
+            </span>
           </div>
           <div className="flex items-center justify-end gap-2 self-stretch p-2">
-            <button
-              type="button"
-              onClick={() => onEdit(svc)}
-              className="flex h-9 w-18 items-center justify-center gap-1.5 rounded-lg border border-blue p-2"
-            >
-              <IconEdit className="size-4 shrink-0 text-blue" />
-              <span className="font-rubik text-xs leading-3.5 text-blue">{m.employees_btn_edit()}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(svc)}
-              disabled={isDeleting === svc.id}
-              className="flex h-9 w-18 items-center justify-center gap-1.5 rounded-lg border border-red p-2 disabled:opacity-50"
-            >
-              <IconDelete className="size-4 shrink-0 text-red" />
-              <span className="font-rubik text-xs leading-3.5 text-red">{m.manage_btn_delete()}</span>
-            </button>
+            <Button variant="outline" onClick={() => onEdit(svc)}>
+              <IconEdit />
+              {m.employees_btn_edit()}
+            </Button>
+            <Button variant="outline" color="destructive" onClick={() => onDelete(svc)} disabled={isDeleting === svc.id}>
+              <IconDelete />
+              {m.manage_btn_delete()}
+            </Button>
           </div>
         </div>
       ))}
@@ -137,20 +139,30 @@ export function ServiceTableSkeleton({ rows }: { rows?: ReactNode }) {
     <div className="overflow-hidden rounded-lg bg-white">
       <div className="flex border-b border-field-line">
         <div className="flex flex-1 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">{m.manage_col_service_name()}</span>
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_col_service_name()}
+          </span>
         </div>
         <div className="flex w-20 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">{m.manage_col_min_size()}</span>
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_col_min_size()}
+          </span>
         </div>
         <div className="flex w-20 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">{m.manage_col_max_size()}</span>
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_col_max_size()}
+          </span>
         </div>
         <div className="flex w-28 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">{m.manage_col_unit_cost()}</span>
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_col_unit_cost()}
+          </span>
         </div>
         <div className="h-8 w-[168px]" />
       </div>
-      {rows !== undefined ? rows : Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} />)}
+      {rows !== undefined
+        ? rows
+        : Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} />)}
     </div>
   );
 }

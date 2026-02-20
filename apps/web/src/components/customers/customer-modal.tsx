@@ -377,7 +377,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
               <form.Subscribe>
                 {(state) => (
                   <Button
-                    variant="success"
+                    color="success"
                     className="w-32"
                     type="submit"
                     disabled={!state.canSubmit || state.isSubmitting || isPending}

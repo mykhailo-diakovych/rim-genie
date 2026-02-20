@@ -1,5 +1,7 @@
 import { ChevronLeft, Undo2 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { MOCK_JOB_LINES } from "./types";
 
@@ -10,14 +12,10 @@ export function CompletedDetailView({ jobId, onBack }: { jobId: string; onBack: 
   return (
     <div className="flex flex-1 flex-col gap-5 p-5">
       {/* Back button */}
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-[8px] border border-blue font-rubik text-[12px] leading-[14px] text-blue transition-colors hover:bg-blue/5"
-      >
-        <ChevronLeft className="size-4" />
+      <Button variant="outline" onClick={onBack}>
+        <ChevronLeft />
         Back to list
-      </button>
+      </Button>
 
       {/* Profile card */}
       <div className="flex items-center justify-between rounded-[12px] border border-card-line bg-white px-4 py-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">

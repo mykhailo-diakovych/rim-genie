@@ -20,13 +20,14 @@ import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
 import { Route as AppFloorRouteImport } from './routes/_app/floor'
 import { Route as AppEmployeesRouteImport } from './routes/_app/employees'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
-import { Route as AppCustomersRouteImport } from './routes/_app/customers'
 import { Route as AppCashierRouteImport } from './routes/_app/cashier'
 import { Route as AppFloorIndexRouteImport } from './routes/_app/floor/index'
+import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppFloorNewQuoteRouteImport } from './routes/_app/floor/new-quote'
 import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
+import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/customers/$customerId'
 import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$quoteId/pdf'
 
 const AuthRoute = AuthRouteImport.update({
@@ -82,11 +83,6 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCustomersRoute = AppCustomersRouteImport.update({
-  id: '/customers',
-  path: '/customers',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppCashierRoute = AppCashierRouteImport.update({
   id: '/cashier',
   path: '/cashier',
@@ -96,6 +92,11 @@ const AppFloorIndexRoute = AppFloorIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppFloorRoute,
+} as any)
+const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
+  getParentRoute: () => AppRoute,
 } as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
@@ -117,6 +118,11 @@ const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
   path: '/$quoteId',
   getParentRoute: () => AppFloorRoute,
 } as any)
+const AppCustomersCustomerIdRoute = AppCustomersCustomerIdRouteImport.update({
+  id: '/customers/$customerId',
+  path: '/customers/$customerId',
+  getParentRoute: () => AppRoute,
+} as any)
 const ApiQuotesQuoteIdPdfRoute = ApiQuotesQuoteIdPdfRouteImport.update({
   id: '/api/quotes/$quoteId/pdf',
   path: '/api/quotes/$quoteId/pdf',
@@ -126,7 +132,6 @@ const ApiQuotesQuoteIdPdfRoute = ApiQuotesQuoteIdPdfRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/cashier': typeof AppCashierRoute
-  '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/floor': typeof AppFloorRouteWithChildren
@@ -135,17 +140,18 @@ export interface FileRoutesByFullPath {
   '/technician': typeof AppTechnicianRoute
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
+  '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/customers/': typeof AppCustomersIndexRoute
   '/floor/': typeof AppFloorIndexRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/cashier': typeof AppCashierRoute
-  '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/inventory': typeof AppInventoryRoute
@@ -153,10 +159,12 @@ export interface FileRoutesByTo {
   '/technician': typeof AppTechnicianRoute
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
+  '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/customers': typeof AppCustomersIndexRoute
   '/floor': typeof AppFloorIndexRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
 }
@@ -165,7 +173,6 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/_app/cashier': typeof AppCashierRoute
-  '/_app/customers': typeof AppCustomersRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
   '/_app/floor': typeof AppFloorRouteWithChildren
@@ -175,10 +182,12 @@ export interface FileRoutesById {
   '/_app/terms': typeof AppTermsRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/_app/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/_app/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/floor/': typeof AppFloorIndexRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
 }
@@ -187,7 +196,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/cashier'
-    | '/customers'
     | '/dashboard'
     | '/employees'
     | '/floor'
@@ -196,17 +204,18 @@ export interface FileRouteTypes {
     | '/technician'
     | '/terms'
     | '/login'
+    | '/customers/$customerId'
     | '/floor/$quoteId'
     | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
+    | '/customers/'
     | '/floor/'
     | '/api/quotes/$quoteId/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/cashier'
-    | '/customers'
     | '/dashboard'
     | '/employees'
     | '/inventory'
@@ -214,10 +223,12 @@ export interface FileRouteTypes {
     | '/technician'
     | '/terms'
     | '/login'
+    | '/customers/$customerId'
     | '/floor/$quoteId'
     | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
+    | '/customers'
     | '/floor'
     | '/api/quotes/$quoteId/pdf'
   id:
@@ -225,7 +236,6 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_auth'
     | '/_app/cashier'
-    | '/_app/customers'
     | '/_app/dashboard'
     | '/_app/employees'
     | '/_app/floor'
@@ -235,10 +245,12 @@ export interface FileRouteTypes {
     | '/_app/terms'
     | '/_auth/login'
     | '/_app/'
+    | '/_app/customers/$customerId'
     | '/_app/floor/$quoteId'
     | '/_app/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
+    | '/_app/customers/'
     | '/_app/floor/'
     | '/api/quotes/$quoteId/pdf'
   fileRoutesById: FileRoutesById
@@ -330,13 +342,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/customers': {
-      id: '/_app/customers'
-      path: '/customers'
-      fullPath: '/customers'
-      preLoaderRoute: typeof AppCustomersRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/cashier': {
       id: '/_app/cashier'
       path: '/cashier'
@@ -350,6 +355,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/floor/'
       preLoaderRoute: typeof AppFloorIndexRouteImport
       parentRoute: typeof AppFloorRoute
+    }
+    '/_app/customers/': {
+      id: '/_app/customers/'
+      path: '/customers'
+      fullPath: '/customers/'
+      preLoaderRoute: typeof AppCustomersIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/api/rpc/$': {
       id: '/api/rpc/$'
@@ -379,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFloorQuoteIdRouteImport
       parentRoute: typeof AppFloorRoute
     }
+    '/_app/customers/$customerId': {
+      id: '/_app/customers/$customerId'
+      path: '/customers/$customerId'
+      fullPath: '/customers/$customerId'
+      preLoaderRoute: typeof AppCustomersCustomerIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/api/quotes/$quoteId/pdf': {
       id: '/api/quotes/$quoteId/pdf'
       path: '/api/quotes/$quoteId/pdf'
@@ -407,7 +426,6 @@ const AppFloorRouteWithChildren = AppFloorRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppCashierRoute: typeof AppCashierRoute
-  AppCustomersRoute: typeof AppCustomersRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
   AppFloorRoute: typeof AppFloorRouteWithChildren
@@ -416,11 +434,12 @@ interface AppRouteChildren {
   AppTechnicianRoute: typeof AppTechnicianRoute
   AppTermsRoute: typeof AppTermsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppCustomersCustomerIdRoute: typeof AppCustomersCustomerIdRoute
+  AppCustomersIndexRoute: typeof AppCustomersIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppCashierRoute: AppCashierRoute,
-  AppCustomersRoute: AppCustomersRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
   AppFloorRoute: AppFloorRouteWithChildren,
@@ -429,6 +448,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppTechnicianRoute: AppTechnicianRoute,
   AppTermsRoute: AppTermsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppCustomersCustomerIdRoute: AppCustomersCustomerIdRoute,
+  AppCustomersIndexRoute: AppCustomersIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

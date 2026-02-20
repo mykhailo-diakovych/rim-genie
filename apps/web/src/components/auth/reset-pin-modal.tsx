@@ -117,15 +117,15 @@ export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
             </div>
 
             <div className="flex items-center justify-center gap-2">
-              <Dialog.Close ref={closeRef} render={<Button variant="ghost" className="w-[72px]" />}>
+              <Dialog.Close ref={closeRef} render={<Button variant="ghost" />}>
                 {m.btn_cancel()}
               </Dialog.Close>
               <form.Subscribe>
                 {(state) => (
                   <Button
                     type="submit"
-                    variant="success"
-                    className="w-[128px]"
+                    color="success"
+                    className="w-32"
                     disabled={!state.canSubmit || state.isSubmitting || resetPin.isPending}
                   >
                     {m.btn_save()}

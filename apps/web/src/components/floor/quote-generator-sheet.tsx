@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, Info, X } from "lucide-react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
@@ -295,21 +296,12 @@ export function QuoteGeneratorSheet({ open, onClose, onAdd, isAdding }: QuoteGen
 
         {/* Footer */}
         <div className="flex items-center justify-center gap-2 border-t border-field-line bg-white p-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 w-[72px] items-center justify-center rounded-[8px] font-rubik text-[12px] leading-[14px] text-body transition-colors hover:bg-page"
-          >
+          <Button variant="ghost" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={isAdding}
-            className="flex h-9 w-[128px] items-center justify-center rounded-[8px] bg-green font-rubik text-[12px] leading-[14px] text-white transition-colors hover:bg-green/90 disabled:opacity-60"
-          >
+          </Button>
+          <Button color="success" onClick={handleAdd} disabled={isAdding} className="w-32">
             {isAdding ? "Adding..." : "Add to Quote"}
-          </button>
+          </Button>
         </div>
       </div>
     </>
