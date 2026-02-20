@@ -1,8 +1,20 @@
 import { useState } from "react";
 
-import { Dialog } from "@base-ui/react/dialog";
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertCircle, Moon, Recycle, X } from "lucide-react";
+import { AlertCircle, Moon, Recycle } from "lucide-react";
+
+import type { DialogTriggerProps } from "@base-ui/react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_app/inventory")({
   component: InventoryPage,
@@ -38,111 +50,77 @@ const MOCK_OVERNIGHT_JOBS = [
 
 type Job = (typeof MOCK_OVERNIGHT_JOBS)[number];
 
-// ─── Shared confirmation modal ────────────────────────────────────────────────
-
 interface JobActionDialogProps {
   title: string;
   job: Job;
-  /** Tailwind bg class for the confirm button */
-  confirmBg: string;
-  /** Trigger element rendered as the Dialog.Trigger */
-  triggerClassName: string;
-  triggerContent: React.ReactNode;
+  confirmColor: "success" | "destructive";
+  trigger: DialogTriggerProps["render"];
 }
 
-function JobActionDialog({
-  title,
-  job,
-  confirmBg,
-  triggerClassName,
-  triggerContent,
-}: JobActionDialogProps) {
+function JobActionDialog({ title, job, confirmColor, trigger }: JobActionDialogProps) {
   const [notes, setNotes] = useState("");
 
   return (
-    <Dialog.Root>
-      <Dialog.Trigger className={triggerClassName}>{triggerContent}</Dialog.Trigger>
+    <Dialog>
+      <DialogTrigger render={trigger} />
 
-      <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]" />
-        <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 w-full max-w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-[12px] bg-[#fafbfc] shadow-[0px_0px_40px_0px_rgba(0,0,0,0.04)]">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-field-line py-3 pr-2 pl-3">
-            <p className="font-rubik text-[16px] leading-[20px] font-medium text-[#1a1f1a]">
+      <DialogContent className="max-w-[340px]">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-6 px-3 pt-0 pb-3">
+          <div className="flex items-baseline justify-between border-b border-field-line pt-3 pb-2 font-rubik text-sm leading-[18px]">
+            <span className="font-medium text-body">{job.customer}</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-label">Job ID:</span>
+              <span className="text-body">{job.id}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="font-rubik text-xs leading-3.5 text-label">Notes/Comments:</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-[#a0a3a0] focus:border-blue"
+            />
+          </div>
+
+          <DialogFooter className="p-0">
+            <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+            <DialogClose
+              render={<Button color={confirmColor} className="w-32" />}
+              onClick={() => setNotes("")}
+            >
               {title}
-            </p>
-            <Dialog.Close className="flex items-center rounded-[6px] p-1 text-label transition-colors hover:text-body">
-              <X className="size-4" />
-            </Dialog.Close>
-          </div>
-
-          {/* Body */}
-          <div className="flex flex-col gap-6 px-3 pt-0 pb-3">
-            {/* Customer + Job ID */}
-            <div className="flex items-baseline justify-between border-b border-field-line pt-3 pb-2 font-rubik text-[14px] leading-[18px]">
-              <span className="font-medium text-body">{job.customer}</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-label">Job ID:</span>
-                <span className="text-body">{job.id}</span>
-              </div>
-            </div>
-
-            {/* Notes / Comments */}
-            <div className="flex flex-col gap-1">
-              <label className="font-rubik text-[12px] leading-[14px] text-label">
-                Notes/Comments:
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="h-[70px] w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[14px] leading-[18px] text-body outline-none placeholder:text-[#a0a3a0] focus:border-blue"
-              />
-            </div>
-
-            {/* Buttons */}
-            <div className="flex items-center justify-center gap-2">
-              <Dialog.Close className="flex h-9 w-[72px] items-center justify-center rounded-[8px] font-rubik text-[12px] leading-[14px] text-body transition-colors hover:bg-black/5">
-                Cancel
-              </Dialog.Close>
-              <Dialog.Close
-                className={`flex h-9 w-[128px] items-center justify-center rounded-[8px] font-rubik text-[12px] leading-[14px] text-white transition-opacity hover:opacity-90 ${confirmBg}`}
-                onClick={() => setNotes("")}
-              >
-                {title}
-              </Dialog.Close>
-            </div>
-          </div>
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
+            </DialogClose>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// ─── Card ─────────────────────────────────────────────────────────────────────
-
 function OvernightJobCard({ job }: { job: Job }) {
-  const btnBase =
-    "flex h-9 items-center justify-center gap-1.5 rounded-[8px] border px-2 font-rubik text-[12px] leading-[14px] transition-colors";
-
   return (
-    <div className="flex gap-4 rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
-      {/* Left */}
+    <div className="flex gap-4 rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
       <div className="flex flex-1 flex-col gap-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-4">
-            <span className="font-rubik text-[14px] leading-[18px] font-medium text-body">
+            <span className="font-rubik text-sm leading-[18px] font-medium text-body">
               {job.customer}
             </span>
-            <span className="rounded-[4px] bg-[#243a5e] px-1.5 py-0.5 font-rubik text-[12px] leading-[14px] text-[#ebf0ff]">
+            <span className="rounded-[4px] bg-[#243a5e] px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-[#ebf0ff]">
               Overnight
             </span>
           </div>
-          <div className="flex items-baseline gap-1 font-rubik text-[12px] leading-[14px]">
+          <div className="flex items-baseline gap-1 font-rubik text-xs leading-3.5">
             <span className="text-label">Job ID:</span>
             <span className="text-body">{job.id}</span>
           </div>
         </div>
-        <div className="font-rubik text-[14px] leading-[18px] text-body">
+        <div className="font-rubik text-sm leading-[18px] text-body">
           <p>{job.rimSize} Rims</p>
           <p>
             Rim Type: {job.rimType}, Damage: {job.damage}, {job.repairs}
@@ -150,50 +128,44 @@ function OvernightJobCard({ job }: { job: Job }) {
         </div>
       </div>
 
-      {/* Right — action buttons */}
       <div className="flex shrink-0 flex-col gap-2">
         <JobActionDialog
           title="Pickup"
           job={job}
-          confirmBg="bg-green"
-          triggerClassName={`${btnBase} border-green text-green hover:bg-green/5`}
-          triggerContent={
-            <>
-              <Recycle className="size-4" />
+          confirmColor="success"
+          trigger={
+            <Button variant="outline" color="success">
+              <Recycle />
               Pickup
-            </>
+            </Button>
           }
         />
         <JobActionDialog
           title="Overnight"
           job={job}
-          confirmBg="bg-green"
-          triggerClassName={`${btnBase} w-[104px] border-blue text-blue hover:bg-blue/5`}
-          triggerContent={
-            <>
-              <Moon className="size-4" />
+          confirmColor="success"
+          trigger={
+            <Button variant="outline">
+              <Moon />
               Overnight
-            </>
+            </Button>
           }
         />
         <JobActionDialog
           title="Missing"
           job={job}
-          confirmBg="bg-[#db3e21]"
-          triggerClassName={`${btnBase} border-[#db3e21] text-[#db3e21] hover:bg-[#db3e21]/5`}
-          triggerContent={
-            <>
-              <AlertCircle className="size-4" />
+          confirmColor="destructive"
+          trigger={
+            <Button variant="outline" color="destructive">
+              <AlertCircle />
               Missing
-            </>
+            </Button>
           }
         />
       </div>
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 function InventoryPage() {
   return (

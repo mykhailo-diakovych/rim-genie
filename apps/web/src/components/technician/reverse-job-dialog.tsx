@@ -1,8 +1,17 @@
 import { useState } from "react";
 
-import { Dialog } from "@base-ui/react/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-import { DialogCustomerRow, DialogHeader, DialogModal } from "./dialog-shared";
+import { DialogCustomerRow } from "./dialog-shared";
 import { PinInput, usePinState } from "./pin-input";
 
 interface ReverseJobDialogProps {
@@ -27,24 +36,24 @@ export function ReverseJobDialog({
   }
 
   return (
-    <Dialog.Root>
-      <Dialog.Trigger className={triggerClassName}>{triggerContent}</Dialog.Trigger>
+    <Dialog>
+      <DialogTrigger className={triggerClassName}>{triggerContent}</DialogTrigger>
 
-      <DialogModal>
-        <DialogHeader title="Reverse Job" />
+      <DialogContent className="sm:max-w-[340px]">
+        <DialogHeader>
+          <DialogTitle>Reverse Job</DialogTitle>
+        </DialogHeader>
 
         <div className="flex flex-col gap-6 px-3 pb-3">
           <div className="flex flex-col gap-3">
             <DialogCustomerRow customer={customer} jobId={jobId} />
 
             <div className="flex flex-col gap-1">
-              <label className="font-rubik text-[12px] leading-[14px] text-label">
-                Reversal Reason:
-              </label>
+              <label className="font-rubik text-xs leading-3.5 text-label">Reversal Reason:</label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="h-[70px] w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[14px] leading-[18px] text-body outline-none placeholder:text-[#a0a3a0] focus:border-blue"
+                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-label focus:border-blue"
               />
             </div>
 
@@ -56,19 +65,14 @@ export function ReverseJobDialog({
             />
           </div>
 
-          <div className="flex items-center justify-center gap-2">
-            <Dialog.Close className="flex h-9 w-[72px] items-center justify-center rounded-[8px] font-rubik text-[12px] leading-[14px] text-body transition-colors hover:bg-black/5">
-              Cancel
-            </Dialog.Close>
-            <Dialog.Close
-              className="flex h-9 w-[128px] items-center justify-center rounded-[8px] bg-[#db3e21] font-rubik text-[12px] leading-[14px] text-white transition-opacity hover:opacity-90"
-              onClick={handleConfirm}
-            >
+          <DialogFooter className="p-0">
+            <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+            <DialogClose render={<Button color="destructive" className="w-32" />} onClick={handleConfirm}>
               Reverse
-            </Dialog.Close>
-          </div>
+            </DialogClose>
+          </DialogFooter>
         </div>
-      </DialogModal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -103,7 +103,7 @@ function CustomerProfilePage() {
     <div className="flex flex-1 flex-col gap-3 p-5">
       {/* Back button */}
       <div>
-        <Button variant="outline" render={<Link to="/customers" />}>
+        <Button variant="outline" nativeButton={false} render={<Link to="/customers" />}>
           <ArrowLeft />
           Back to list
         </Button>

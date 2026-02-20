@@ -1,8 +1,17 @@
 import { useState } from "react";
 
-import { Dialog } from "@base-ui/react/dialog";
 import { Calendar } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectOption,
@@ -11,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { DialogCustomerRow, DialogHeader, DialogModal } from "./dialog-shared";
+import { DialogCustomerRow } from "./dialog-shared";
 import { PinInput, usePinState } from "./pin-input";
 
 interface AcceptJobDialogProps {
@@ -38,11 +47,13 @@ export function AcceptJobDialog({
   }
 
   return (
-    <Dialog.Root>
-      <Dialog.Trigger className={triggerClassName}>{triggerContent}</Dialog.Trigger>
+    <Dialog>
+      <DialogTrigger className={triggerClassName}>{triggerContent}</DialogTrigger>
 
-      <DialogModal>
-        <DialogHeader title="Accept Job" />
+      <DialogContent className="sm:max-w-[340px]">
+        <DialogHeader>
+          <DialogTitle>Accept Job</DialogTitle>
+        </DialogHeader>
 
         <div className="flex flex-col gap-6 px-3 pb-3">
           <div className="flex flex-col gap-3">
@@ -81,19 +92,14 @@ export function AcceptJobDialog({
             />
           </div>
 
-          <div className="flex items-center justify-center gap-2">
-            <Dialog.Close className="flex h-9 w-[72px] items-center justify-center rounded-[8px] font-rubik text-[12px] leading-[14px] text-body transition-colors hover:bg-black/5">
-              Cancel
-            </Dialog.Close>
-            <Dialog.Close
-              className="flex h-9 w-[128px] items-center justify-center rounded-[8px] bg-green font-rubik text-[12px] leading-[14px] text-white transition-opacity hover:opacity-90"
-              onClick={handleConfirm}
-            >
+          <DialogFooter className="p-0">
+            <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+            <DialogClose render={<Button color="success" className="w-32" />} onClick={handleConfirm}>
               Accept
-            </Dialog.Close>
-          </div>
+            </DialogClose>
+          </DialogFooter>
         </div>
-      </DialogModal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

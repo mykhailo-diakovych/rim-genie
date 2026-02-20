@@ -50,7 +50,7 @@ function QuoteCard({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <Button render={<Link to="/floor/$quoteId" params={{ quoteId }} />}>
+        <Button nativeButton={false} render={<Link to="/floor/$quoteId" params={{ quoteId }} />}>
           <Eye />
           View
         </Button>
@@ -94,7 +94,7 @@ function FloorPage() {
         <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
           List of Quotes
         </h1>
-        <Button render={<Link to="/floor/new-quote" />}>
+        <Button nativeButton={false} render={<Link to="/floor/new-quote" />}>
           <Plus />
           New Quote
         </Button>

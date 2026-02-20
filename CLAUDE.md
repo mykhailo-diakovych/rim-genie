@@ -61,7 +61,7 @@ Environment: `apps/web/.env` (single env file, loaded by all packages including 
 
 Uses CVA with two axes: `variant` (`default` | `outline` | `ghost`) × `color` (`default` | `destructive` | `success`). Built on `@base-ui/react/button`.
 
-- **Navigation buttons must use `render` prop** — never use `onClick` + `navigate()` for route transitions. Use `<Button render={<Link to="..." />}>` instead. This renders a semantic `<a>` tag, enabling prefetching, right-click → open in new tab, and proper accessibility.
+- **Navigation buttons must use `render` prop** — never use `onClick` + `navigate()` for route transitions. Use `<Button nativeButton={false} render={<Link to="..." />}>` instead. `nativeButton={false}` is required because Base UI expects a native `<button>` by default — without it, rendering as `<a>` causes console errors. This pattern renders a semantic `<a>` tag, enabling prefetching, right-click → open in new tab, and proper accessibility.
 - **Icon sizing** — button auto-sizes child SVGs via `[&_svg:not([class*='size-'])]:size-4`. Do not add `className="size-4"` to icons unless overriding to a different size.
 - **No hardcoded widths** — buttons should auto-size to content. Do not use `w-[72px]` etc.
 

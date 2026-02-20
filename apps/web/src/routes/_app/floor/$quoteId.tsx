@@ -135,24 +135,17 @@ function QuoteEditorPage() {
       <div className="flex flex-1 flex-col gap-5 p-5">
         {/* Action bar */}
         <div className="flex flex-wrap items-center justify-between gap-y-2">
-          <Button variant="outline" render={<Link to="/floor" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/floor" />}>
             <ArrowLeft />
             Back to list
           </Button>
 
           <div className="flex items-center gap-2">
-            <Button
-              color="success"
-              onClick={handleSave}
-              disabled={updateQuote.isPending}
-            >
+            <Button color="success" onClick={handleSave} disabled={updateQuote.isPending}>
               <Save />
               Save
             </Button>
-            <Button
-              onClick={handleToTechnician}
-              disabled={updateQuote.isPending}
-            >
+            <Button onClick={handleToTechnician} disabled={updateQuote.isPending}>
               <Wrench />
               To Technician
             </Button>
@@ -456,12 +449,7 @@ function ItemRow({
         ${rowTotal.toFixed(2)}
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
-        <Button
-          variant="outline"
-          color="destructive"
-          onClick={onRemove}
-          disabled={isRemoving}
-        >
+        <Button variant="outline" color="destructive" onClick={onRemove} disabled={isRemoving}>
           <Trash2 className="size-3.5" />
           Remove
         </Button>

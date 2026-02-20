@@ -100,7 +100,12 @@ export function ServiceTable({ services, onEdit, onDelete, isDeleting }: Service
               <IconEdit />
               {m.employees_btn_edit()}
             </Button>
-            <Button variant="outline" color="destructive" onClick={() => onDelete(svc)} disabled={isDeleting === svc.id}>
+            <Button
+              variant="outline"
+              color="destructive"
+              onClick={() => onDelete(svc)}
+              disabled={isDeleting === svc.id}
+            >
               <IconDelete />
               {m.manage_btn_delete()}
             </Button>

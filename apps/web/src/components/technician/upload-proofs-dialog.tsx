@@ -1,12 +1,20 @@
 import { useState } from "react";
 
-import { Dialog } from "@base-ui/react/dialog";
 import { Camera, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-import { DialogCustomerRow, DialogHeader, DialogModal } from "./dialog-shared";
+import { DialogCustomerRow } from "./dialog-shared";
 import { type InProgressJob } from "./types";
 
 export function UploadProofsDialog({ job }: { job: InProgressJob }) {
@@ -16,25 +24,25 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
   const [photoStatus, setPhotoStatus] = useState<"before" | "after">("after");
 
   return (
-    <Dialog.Root>
-      <Dialog.Trigger render={<Button variant="outline" color="success" />}>
+    <Dialog>
+      <DialogTrigger render={<Button variant="outline" color="success" />}>
         <Camera />
         Proofs
-      </Dialog.Trigger>
+      </DialogTrigger>
 
-      <DialogModal className="max-h-[90dvh] overflow-y-auto">
-        <DialogHeader title="Upload Job Proofs" />
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-[340px]">
+        <DialogHeader>
+          <DialogTitle>Upload Job Proofs</DialogTitle>
+        </DialogHeader>
 
         <div className="flex flex-col gap-6 px-3 pb-3">
           <div className="flex flex-col gap-3">
             <DialogCustomerRow customer={job.customer} jobId={job.id} />
 
             <div className="flex flex-col gap-1">
-              <label className="font-rubik text-[12px] leading-[14px] text-label">
-                File Attachment:
-              </label>
-              <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-3 rounded-[8px] border border-field-line bg-white px-6 py-4 transition-colors hover:bg-[#f0f5fa]/50">
-                <div className="flex size-11 items-center justify-center rounded-[8px] bg-[#f0f5fa]">
+              <label className="font-rubik text-xs leading-3.5 text-label">File Attachment:</label>
+              <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-3 rounded-md border border-field-line bg-white px-6 py-4 transition-colors hover:bg-[#f0f5fa]/50">
+                <div className="flex size-11 items-center justify-center rounded-md bg-[#f0f5fa]">
                   <Upload className="size-4 text-blue" />
                 </div>
                 {files && files.length > 0 ? (
@@ -42,7 +50,7 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
                     {Array.from(files).map((f) => (
                       <p
                         key={f.name}
-                        className="text-center font-rubik text-[12px] leading-[14px] font-medium text-[#032906]"
+                        className="text-center font-rubik text-xs leading-3.5 font-medium text-body"
                       >
                         {f.name}
                       </p>
@@ -50,10 +58,10 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-1">
-                    <p className="text-center font-rubik text-[14px] leading-[18px] text-[#032906]">
+                    <p className="text-center font-rubik text-sm leading-[18px] text-body">
                       Click to upload photo or video recording
                     </p>
-                    <p className="text-center font-rubik text-[12px] leading-normal text-[#787a78]">
+                    <p className="text-center font-rubik text-xs leading-normal text-label">
                       JPG, PNG (max. 10MB)
                     </p>
                   </div>
@@ -69,26 +77,26 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-rubik text-[12px] leading-[14px] text-label">File Name:</label>
+              <label className="font-rubik text-xs leading-3.5 text-label">File Name:</label>
               <input
                 type="text"
                 value={fileName}
                 onChange={(e) => setFileName(e.target.value)}
-                className="h-9 w-full rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] text-body outline-none focus:border-blue"
+                className="h-9 w-full rounded-md border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none focus:border-blue"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-rubik text-[12px] leading-[14px] text-label">Notes:</label>
+              <label className="font-rubik text-xs leading-3.5 text-label">Notes:</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="h-[70px] w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[14px] leading-[18px] text-body outline-none placeholder:text-[#a0a3a0] focus:border-blue"
+                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-label focus:border-blue"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <span className="font-rubik text-[12px] leading-[14px] text-label">Photo Status</span>
+              <span className="font-rubik text-xs leading-3.5 text-label">Photo Status</span>
               <div className="flex h-9 items-center gap-8">
                 {(["before", "after"] as const).map((val) => (
                   <label key={val} className="flex cursor-pointer items-center gap-1.5">
@@ -108,7 +116,7 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
                       checked={photoStatus === val}
                       onChange={() => setPhotoStatus(val)}
                     />
-                    <span className="font-rubik text-[14px] leading-[18px] text-[#032906]">
+                    <span className="font-rubik text-sm leading-[18px] text-body">
                       {val === "before" ? "Before" : "After"}
                     </span>
                   </label>
@@ -117,13 +125,11 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <Dialog.Close render={<Button color="success" />}>
-              Upload proofs
-            </Dialog.Close>
-          </div>
+          <DialogFooter className="p-0">
+            <DialogClose render={<Button color="success" className="w-32" />}>Upload proofs</DialogClose>
+          </DialogFooter>
         </div>
-      </DialogModal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

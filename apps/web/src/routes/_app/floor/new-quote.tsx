@@ -149,11 +149,7 @@ function CustomerCard({
           )}
         </div>
       </div>
-      <Button
-        onClick={onSelect}
-        disabled={isLoading}
-        className="w-full"
-      >
+      <Button onClick={onSelect} disabled={isLoading} className="w-full">
         {isLoading ? "Creating..." : "Create Quote"}
       </Button>
     </div>
@@ -199,7 +195,7 @@ function NewQuotePage() {
     <div className="flex flex-1 flex-col gap-5 p-5">
       {/* Action bar */}
       <div className="flex items-center justify-between">
-        <Button variant="outline" render={<Link to="/floor" />}>
+        <Button variant="outline" nativeButton={false} render={<Link to="/floor" />}>
           <ArrowLeft />
           Back to list
         </Button>
