@@ -1,6 +1,8 @@
 import { useState } from "react";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +14,35 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { client, orpc } from "@/utils/orpc";
 
 import { DialogCustomerRow } from "./dialog-shared";
-import { type InProgressJob } from "./types";
+import { type JobGroup } from "./types";
 
-export function CompleteJobDialog({ job }: { job: InProgressJob }) {
+export function CompleteJobDialog({ group }: { group: JobGroup }) {
   const [notes, setNotes] = useState("");
   const [techCode, setTechCode] = useState("");
+  const queryClient = useQueryClient();
+
+  const completeMutation = useMutation({
+    mutationFn: async () => {
+      const incomplete = group.jobs.filter((j) => j.status !== "completed");
+      for (const j of incomplete) {
+        await client.technician.jobs.complete({ jobId: j.id });
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: orpc.technician.jobs.list.key() });
+      toast.success("Job completed");
+    },
+    onError: (err: Error) => toast.error(`Failed to complete: ${err.message}`),
+  });
+
+  function handleConfirm() {
+    completeMutation.mutate();
+    setNotes("");
+    setTechCode("");
+  }
 
   return (
     <Dialog>
@@ -55,7 +79,7 @@ export function CompleteJobDialog({ job }: { job: InProgressJob }) {
 
         <div className="flex flex-col gap-6 px-3 pb-3">
           <div className="flex flex-col gap-3">
-            <DialogCustomerRow customer={job.customer} jobId={job.id} />
+            <DialogCustomerRow customer={group.customer} jobId={String(group.invoiceNumber)} />
 
             <div className="flex flex-col gap-1">
               <label className="font-rubik text-xs leading-3.5 text-label">Notes:</label>
@@ -81,10 +105,7 @@ export function CompleteJobDialog({ job }: { job: InProgressJob }) {
             <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
             <DialogClose
               render={<Button color="success" className="w-32" />}
-              onClick={() => {
-                setNotes("");
-                setTechCode("");
-              }}
+              onClick={handleConfirm}
             >
               Done
             </DialogClose>

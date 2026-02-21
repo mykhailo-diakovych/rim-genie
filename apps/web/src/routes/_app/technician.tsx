@@ -10,34 +10,29 @@ import { CompletedJobCard } from "@/components/technician/completed-job-card";
 import { FilterRow } from "@/components/technician/filter-row";
 import { JobCard } from "@/components/technician/job-card";
 import { JobDetailView } from "@/components/technician/job-detail-view";
-import {
-  MOCK_ASSIGN_JOBS,
-  MOCK_COMPLETED_JOBS,
-  MOCK_IN_PROGRESS_JOBS,
-  MOCK_NEW_JOBS,
-  TAB_CONFIG,
-  type TabValue,
-} from "@/components/technician/types";
+import { TAB_CONFIG, type JobGroup, type TabValue } from "@/components/technician/types";
+import { useJobs } from "@/components/technician/use-jobs";
 
 export const Route = createFileRoute("/_app/technician")({
   component: TechnicianPage,
 });
 
-type DetailView = { id: string; source: "in-progress" | "assign" | "completed" };
-
-const TAB_COUNTS: Record<TabValue, number> = {
-  new: MOCK_NEW_JOBS.length,
-  assign: MOCK_ASSIGN_JOBS.length,
-  "in-progress": MOCK_IN_PROGRESS_JOBS.length,
-  completed: MOCK_COMPLETED_JOBS.length,
-};
+type DetailView = { group: JobGroup; source: "in-progress" | "assign" | "completed" };
 
 function TechnicianPage() {
+  const { assign, inProgress, completed, isLoading } = useJobs();
   const [activeTab, setActiveTab] = useState<TabValue>("in-progress");
   const [detailView, setDetailView] = useState<DetailView | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<TabValue, HTMLButtonElement | null>>(new Map());
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  const tabCounts: Record<TabValue, number> = {
+    new: 0,
+    assign: assign.length,
+    "in-progress": inProgress.length,
+    completed: completed.length,
+  };
 
   function measureIndicator(tab: TabValue) {
     const el = tabRefs.current.get(tab);
@@ -60,12 +55,12 @@ function TechnicianPage() {
   if (detailView !== null) {
     const onBack = () => setDetailView(null);
     if (detailView.source === "assign") {
-      return <AssignDetailView jobId={detailView.id} onBack={onBack} />;
+      return <AssignDetailView group={detailView.group} onBack={onBack} />;
     }
     if (detailView.source === "completed") {
-      return <CompletedDetailView jobId={detailView.id} onBack={onBack} />;
+      return <CompletedDetailView group={detailView.group} onBack={onBack} />;
     }
-    return <JobDetailView jobId={detailView.id} onBack={onBack} />;
+    return <JobDetailView group={detailView.group} onBack={onBack} />;
   }
 
   return (
@@ -91,14 +86,14 @@ function TechnicianPage() {
                 )}
               >
                 {tab.label}
-                {TAB_COUNTS[tab.value] > 0 && (
+                {tabCounts[tab.value] > 0 && (
                   <span
                     className={cn(
                       "flex h-[18px] min-w-[28px] items-center justify-center rounded-full px-1 font-rubik text-[12px] leading-[14px] transition-colors duration-200",
                       isActive ? "bg-blue text-white" : "bg-[#e2e4e5] text-label",
                     )}
                   >
-                    {TAB_COUNTS[tab.value]}
+                    {tabCounts[tab.value]}
                   </span>
                 )}
               </button>
@@ -112,52 +107,70 @@ function TechnicianPage() {
           )}
         </div>
 
-        {/* Tab content */}
-        {activeTab === "in-progress" && (
+        {isLoading && (
+          <p className="pt-3 font-rubik text-[12px] leading-[14px] text-label">Loading jobs...</p>
+        )}
+
+        {!isLoading && activeTab === "in-progress" && (
           <div className="flex flex-col gap-3 pt-3">
             <FilterRow />
             <div className="flex flex-col gap-2">
-              {MOCK_IN_PROGRESS_JOBS.map((job) => (
+              {inProgress.map((group) => (
                 <JobCard
-                  key={job.id}
-                  job={job}
-                  onView={() => setDetailView({ id: job.id, source: "in-progress" })}
+                  key={group.invoiceId}
+                  group={group}
+                  onView={() => setDetailView({ group, source: "in-progress" })}
                 />
               ))}
+              {inProgress.length === 0 && (
+                <p className="font-rubik text-[12px] leading-[14px] text-label">
+                  No in-progress jobs.
+                </p>
+              )}
             </div>
           </div>
         )}
 
-        {activeTab === "assign" && (
+        {!isLoading && activeTab === "assign" && (
           <div className="flex flex-col gap-3 pt-3">
             <FilterRow />
             <div className="flex flex-col gap-2">
-              {MOCK_ASSIGN_JOBS.map((job) => (
+              {assign.map((group) => (
                 <AssignJobCard
-                  key={job.id}
-                  job={job}
-                  onView={() => setDetailView({ id: job.id, source: "assign" })}
+                  key={group.invoiceId}
+                  group={group}
+                  onView={() => setDetailView({ group, source: "assign" })}
                 />
               ))}
+              {assign.length === 0 && (
+                <p className="font-rubik text-[12px] leading-[14px] text-label">
+                  No jobs to assign.
+                </p>
+              )}
             </div>
           </div>
         )}
 
-        {activeTab === "new" && (
+        {!isLoading && activeTab === "new" && (
           <p className="pt-3 font-rubik text-[12px] leading-[14px] text-label">No new jobs.</p>
         )}
 
-        {activeTab === "completed" && (
+        {!isLoading && activeTab === "completed" && (
           <div className="flex flex-col gap-3 pt-3">
             <FilterRow />
             <div className="flex flex-col gap-2">
-              {MOCK_COMPLETED_JOBS.map((job) => (
+              {completed.map((group) => (
                 <CompletedJobCard
-                  key={job.id}
-                  job={job}
-                  onView={() => setDetailView({ id: job.id, source: "completed" })}
+                  key={group.invoiceId}
+                  group={group}
+                  onView={() => setDetailView({ group, source: "completed" })}
                 />
               ))}
+              {completed.length === 0 && (
+                <p className="font-rubik text-[12px] leading-[14px] text-label">
+                  No completed jobs.
+                </p>
+              )}
             </div>
           </div>
         )}

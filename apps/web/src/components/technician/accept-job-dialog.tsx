@@ -1,6 +1,8 @@
 import { useState } from "react";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calendar } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { client, orpc } from "@/utils/orpc";
 
 import { DialogCustomerRow } from "./dialog-shared";
 import { PinInput, usePinState } from "./pin-input";
@@ -26,6 +29,7 @@ import { PinInput, usePinState } from "./pin-input";
 interface AcceptJobDialogProps {
   customer: string;
   jobId: string;
+  jobIds: string[];
   triggerClassName: string;
   triggerContent: React.ReactNode;
 }
@@ -33,14 +37,30 @@ interface AcceptJobDialogProps {
 export function AcceptJobDialog({
   customer,
   jobId,
+  jobIds,
   triggerClassName,
   triggerContent,
 }: AcceptJobDialogProps) {
   const [technician, setTechnician] = useState("");
   const [completionDate, setCompletionDate] = useState("");
   const { pin, inputsRef, handlePinChange, handlePinKeyDown, resetPin } = usePinState();
+  const queryClient = useQueryClient();
+
+  const acceptMutation = useMutation({
+    mutationFn: async () => {
+      for (const id of jobIds) {
+        await client.technician.jobs.accept({ jobId: id });
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: orpc.technician.jobs.list.key() });
+      toast.success("Job accepted");
+    },
+    onError: (err: Error) => toast.error(`Failed to accept: ${err.message}`),
+  });
 
   function handleConfirm() {
+    acceptMutation.mutate();
     setTechnician("");
     setCompletionDate("");
     resetPin();

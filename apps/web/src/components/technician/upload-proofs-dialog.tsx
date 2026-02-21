@@ -15,9 +15,9 @@ import {
 import { cn } from "@/lib/utils";
 
 import { DialogCustomerRow } from "./dialog-shared";
-import { type InProgressJob } from "./types";
+import { type JobGroup } from "./types";
 
-export function UploadProofsDialog({ job }: { job: InProgressJob }) {
+export function UploadProofsDialog({ group }: { group: JobGroup }) {
   const [files, setFiles] = useState<FileList | null>(null);
   const [fileName, setFileName] = useState("");
   const [notes, setNotes] = useState("");
@@ -37,7 +37,7 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
 
         <div className="flex flex-col gap-6 px-3 pb-3">
           <div className="flex flex-col gap-3">
-            <DialogCustomerRow customer={job.customer} jobId={job.id} />
+            <DialogCustomerRow customer={group.customer} jobId={String(group.invoiceNumber)} />
 
             <div className="flex flex-col gap-1">
               <label className="font-rubik text-xs leading-3.5 text-label">File Attachment:</label>
@@ -111,7 +111,7 @@ export function UploadProofsDialog({ job }: { job: InProgressJob }) {
                     <input
                       type="radio"
                       className="sr-only"
-                      name={`photoStatus-${job.id}`}
+                      name={`photoStatus-${group.invoiceId}`}
                       value={val}
                       checked={photoStatus === val}
                       onChange={() => setPhotoStatus(val)}

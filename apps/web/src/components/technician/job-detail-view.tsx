@@ -18,34 +18,42 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { ReverseJobDialog } from "./reverse-job-dialog";
-import { MOCK_JOB_LINES } from "./types";
+import { type ApiJob, type JobGroup } from "./types";
 
-export function JobDetailView({ jobId, onBack }: { jobId: string; onBack: () => void }) {
-  const data = MOCK_JOB_LINES[jobId];
-  if (!data) return null;
+function formatJobStatus(status: ApiJob["status"]) {
+  switch (status) {
+    case "completed":
+      return "Completed";
+    case "in_progress":
+      return "In Progress";
+    case "accepted":
+      return "Accepted";
+    case "pending":
+      return "Pending";
+  }
+}
 
+export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
   return (
     <div className="flex flex-1 flex-col gap-5 p-5">
-      {/* Back button */}
       <Button variant="outline" onClick={onBack}>
         <ChevronLeft />
         Back to list
       </Button>
 
-      {/* Profile card */}
       <div className="flex items-center justify-between rounded-[12px] border border-card-line bg-white px-4 py-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
         <div className="flex items-baseline gap-3">
           <span className="font-rubik text-[22px] leading-[26px] font-bold text-body">
-            {data.customer}
+            {group.customer}
           </span>
           <div className="flex items-baseline gap-1 font-rubik text-[14px] leading-[18px]">
             <span className="text-label">Job ID:</span>
-            <span className="font-medium text-body">{jobId}</span>
+            <span className="font-medium text-body">{group.invoiceNumber}</span>
           </div>
         </div>
         <ReverseJobDialog
-          customer={data.customer}
-          jobId={jobId}
+          customer={group.customer}
+          jobId={String(group.invoiceNumber)}
           triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-[8px] border border-[#db3e21] font-rubik text-[12px] leading-[14px] text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
           triggerContent={
             <>
@@ -56,9 +64,7 @@ export function JobDetailView({ jobId, onBack }: { jobId: string; onBack: () => 
         />
       </div>
 
-      {/* Table */}
       <div className="overflow-hidden rounded-[12px] border border-card-line bg-white shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
-        {/* Header */}
         <div className="grid grid-cols-[48px_1fr_120px_124px] border-b border-card-line">
           <span className="border-r border-card-line px-3 py-2 font-rubik text-[12px] leading-[14px] text-label">
             #
@@ -72,54 +78,56 @@ export function JobDetailView({ jobId, onBack }: { jobId: string; onBack: () => 
           <span />
         </div>
 
-        {/* Rows */}
-        {data.lines.map((line, idx) => (
+        {group.jobs.map((job, idx) => (
           <div
-            key={line.no}
+            key={job.id}
             className={cn(
               "grid grid-cols-[48px_1fr_120px_124px] hover:bg-[#fafffa]",
-              idx < data.lines.length - 1 && "border-b border-card-line",
+              idx < group.jobs.length - 1 && "border-b border-card-line",
             )}
           >
             <span className="border-r border-card-line px-3 py-3 pt-3.5 font-rubik text-[14px] leading-[18px] text-body">
-              {line.no}
+              {idx + 1}
             </span>
 
             <div className="flex flex-col gap-2 border-r border-card-line px-3 py-3">
               <div className="font-rubik text-[14px] leading-[18px] font-normal text-body">
-                <p>{line.rimSize} Rims</p>
+                <p>{job.invoiceItem.vehicleSize}&quot; Rims</p>
                 <p>
-                  Rim Type: {line.rimType}, Damage: {line.damage}, {line.repairs}
+                  {job.invoiceItem.description}
+                  {job.invoiceItem.damageLevel && `, Damage: ${job.invoiceItem.damageLevel}`}
                 </p>
               </div>
               <div className="flex gap-1 font-rubik text-[14px] leading-[18px]">
                 <span className="text-label">Comments:</span>
-                <span className="text-body">{line.comments}</span>
+                <span className="text-body">{job.invoiceItem.comments}</span>
               </div>
-              <span className="inline-flex w-fit rounded-[4px] bg-[#32cbfa] px-1.5 py-0.5 font-rubik text-[12px] leading-[14px] text-white">
-                {line.assignee}
-              </span>
+              {job.technician && (
+                <span className="inline-flex w-fit rounded-[4px] bg-[#32cbfa] px-1.5 py-0.5 font-rubik text-[12px] leading-[14px] text-white">
+                  {job.technician.name}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center border-r border-card-line px-3 py-3">
               <span
                 className={cn(
                   "rounded-[4px] px-1.5 py-0.5 font-rubik text-[12px] leading-[14px] text-white",
-                  line.status === "completed" ? "bg-[#55ce63]" : "bg-[#f9b62e]",
+                  job.status === "completed" ? "bg-[#55ce63]" : "bg-[#f9b62e]",
                 )}
               >
-                {line.status === "completed" ? "Completed" : "In Progress"}
+                {formatJobStatus(job.status)}
               </span>
             </div>
 
             <div className="flex flex-col gap-2 px-3 py-3">
-              {line.action === "proofs" && (
+              {job.status === "accepted" && (
                 <Button variant="outline" color="success">
                   <Camera />
                   Proofs
                 </Button>
               )}
-              {line.action === "done" && (
+              {job.status === "in_progress" && (
                 <Button color="success">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
                     <path
@@ -133,8 +141,8 @@ export function JobDetailView({ jobId, onBack }: { jobId: string; onBack: () => 
                 </Button>
               )}
               <ReverseJobDialog
-                customer={data.customer}
-                jobId={jobId}
+                customer={group.customer}
+                jobId={String(group.invoiceNumber)}
                 triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] font-rubik text-[12px] leading-[14px] transition-colors border border-[#db3e21] text-[#db3e21] hover:bg-[#db3e21]/5"
                 triggerContent={
                   <>

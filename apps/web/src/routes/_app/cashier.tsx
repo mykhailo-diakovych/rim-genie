@@ -1,11 +1,12 @@
-import { useMemo } from "react";
-
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Calendar, ChevronDown, CircleDollarSign, Eye, Trash2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { orpc } from "@/utils/orpc";
 
 const TAB_VALUES = ["unpaid", "partially", "paid"] as const;
 type InvoiceTab = (typeof TAB_VALUES)[number];
@@ -15,77 +16,6 @@ const TAB_LABELS: Record<InvoiceTab, string> = {
   partially: "Partially",
   paid: "Paid",
 };
-
-type Invoice = {
-  id: number;
-  customerName: string;
-  date: string;
-  total: number;
-  balance: number | null;
-  status: InvoiceTab;
-  tag?: string;
-};
-
-const MOCK_INVOICES: Invoice[] = [
-  {
-    id: 5118,
-    customerName: "Smith Jack",
-    date: "01.01.26",
-    total: 1500,
-    balance: 1500,
-    status: "unpaid",
-  },
-  {
-    id: 5110,
-    customerName: "Darlene Robertson",
-    date: "Dec 26, 2025",
-    total: 250,
-    balance: null,
-    status: "unpaid",
-  },
-  {
-    id: 5118,
-    customerName: "Ralph Edwards",
-    date: "01.01.26",
-    total: 1500,
-    balance: 1500,
-    status: "partially",
-  },
-  {
-    id: 5112,
-    customerName: "Wade Warren",
-    date: "01.01.26",
-    total: 1500,
-    balance: 1500,
-    status: "partially",
-  },
-  {
-    id: 5118,
-    customerName: "Kathryn Murphy",
-    date: "01.01.26",
-    total: 1500,
-    balance: 1500,
-    status: "paid",
-    tag: "Technician Queue",
-  },
-  {
-    id: 5120,
-    customerName: "Floyd Miles",
-    date: "01.01.26",
-    total: 1500,
-    balance: 1500,
-    status: "paid",
-    tag: "Technician Queue",
-  },
-  {
-    id: 5122,
-    customerName: "Darrell Steward",
-    date: "01.01.26",
-    total: 1500,
-    balance: 1500,
-    status: "paid",
-  },
-];
 
 export const Route = createFileRoute("/_app/cashier")({
   validateSearch: (search: Record<string, unknown>): { tab: InvoiceTab } => ({
@@ -107,7 +37,53 @@ function TabCounter({ count, active }: { count: number; active: boolean }) {
   );
 }
 
-function InvoiceCard({ invoice }: { invoice: Invoice }) {
+function formatDate(date: Date | string) {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatCents(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function InvoiceCardSkeleton() {
+  return (
+    <div className="flex animate-pulse flex-col gap-3 rounded-xl border border-card-line bg-white p-3 sm:min-h-16 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
+        <div className="h-4 w-32 rounded bg-[#e2e4e5]" />
+        <div className="h-4 w-16 rounded bg-[#e2e4e5]" />
+        <div className="h-4 w-24 rounded bg-[#e2e4e5]" />
+        <div className="h-4 w-28 rounded bg-[#e2e4e5]" />
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <div className="h-9 w-20 rounded-lg bg-[#e2e4e5]" />
+        <div className="h-9 w-16 rounded-lg bg-[#e2e4e5]" />
+        <div className="h-9 w-20 rounded-lg bg-[#e2e4e5]" />
+      </div>
+    </div>
+  );
+}
+
+function InvoiceCard({
+  invoice,
+  onDelete,
+  isDeleting,
+}: {
+  invoice: {
+    id: string;
+    invoiceNumber: number;
+    status: string;
+    total: number;
+    balance: number;
+    createdAt: Date | string;
+    customerName: string;
+  };
+  onDelete: () => void;
+  isDeleting: boolean;
+}) {
   const isUnpaid = invoice.status === "unpaid";
 
   return (
@@ -117,28 +93,22 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
           <span className="truncate font-rubik text-sm leading-[18px] font-medium text-body">
             {invoice.customerName}
           </span>
-          {invoice.tag && (
-            <span className="w-fit rounded bg-[#32cbfa] px-1.5 py-0.5 font-rubik text-[11px] leading-[14px] text-white">
-              {invoice.tag}
-            </span>
-          )}
         </div>
 
         <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-[14px]">
           <span className="text-label">ID:</span>
-          <span className="text-body">{invoice.id}</span>
+          <span className="text-body">{invoice.invoiceNumber}</span>
         </div>
 
         <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-[14px]">
           <span className="text-label">Date :</span>
-          <span className="truncate text-body">{invoice.date}</span>
+          <span className="truncate text-body">{formatDate(invoice.createdAt)}</span>
         </div>
 
         <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-[14px]">
           <span className="text-label">Total / Balance</span>
           <span className="text-body">
-            ${invoice.total.toFixed(2)}
-            {invoice.balance != null ? ` / $${invoice.balance.toFixed(2)}` : ""}
+            {formatCents(invoice.total)} / {formatCents(invoice.balance)}
           </span>
         </div>
       </div>
@@ -152,7 +122,7 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
           <CircleDollarSign />
           Pay
         </Button>
-        <Button variant="outline" color="destructive" disabled={isUnpaid}>
+        <Button variant="outline" color="destructive" onClick={onDelete} disabled={isDeleting}>
           <Trash2 />
           Delete
         </Button>
@@ -164,17 +134,37 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
 function CashierPage() {
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const queryClient = useQueryClient();
 
-  const counts = useMemo(
-    () => ({
-      unpaid: MOCK_INVOICES.filter((i) => i.status === "unpaid").length,
-      partially: MOCK_INVOICES.filter((i) => i.status === "partially").length,
-      paid: MOCK_INVOICES.filter((i) => i.status === "paid").length,
-    }),
-    [],
+  const unpaidQuery = useQuery(
+    orpc.cashier.invoices.list.queryOptions({ input: { status: "unpaid" } }),
+  );
+  const partiallyQuery = useQuery(
+    orpc.cashier.invoices.list.queryOptions({ input: { status: "partially_paid" } }),
+  );
+  const paidQuery = useQuery(
+    orpc.cashier.invoices.list.queryOptions({ input: { status: "paid" } }),
   );
 
-  const filteredInvoices = useMemo(() => MOCK_INVOICES.filter((i) => i.status === tab), [tab]);
+  const queries = { unpaid: unpaidQuery, partially: partiallyQuery, paid: paidQuery };
+  const currentQuery = queries[tab];
+  const invoices = currentQuery.data?.rows ?? [];
+  const isLoading = currentQuery.isLoading;
+
+  const counts = {
+    unpaid: unpaidQuery.data?.total ?? 0,
+    partially: partiallyQuery.data?.total ?? 0,
+    paid: paidQuery.data?.total ?? 0,
+  };
+
+  const deleteInvoice = useMutation({
+    ...orpc.cashier.invoices.delete.mutationOptions(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: orpc.cashier.invoices.list.key() });
+      toast.success("Invoice deleted");
+    },
+    onError: (err: Error) => toast.error(`Failed to delete: ${err.message}`),
+  });
 
   return (
     <div className="flex flex-col gap-5 p-5">
@@ -211,11 +201,26 @@ function CashierPage() {
         {TAB_VALUES.map((value) => (
           <TabsContent key={value} value={value}>
             <div className="flex flex-col gap-2 pt-2">
-              {filteredInvoices.map((invoice) => (
-                <InvoiceCard key={`${invoice.id}-${invoice.customerName}`} invoice={invoice} />
-              ))}
-              {filteredInvoices.length === 0 && (
-                <p className="py-8 text-center font-rubik text-sm text-label">No invoices found</p>
+              {isLoading && tab === value ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <InvoiceCardSkeleton key={`skeleton-${i}`} />
+                ))
+              ) : (
+                <>
+                  {invoices.map((invoice) => (
+                    <InvoiceCard
+                      key={invoice.id}
+                      invoice={invoice}
+                      onDelete={() => deleteInvoice.mutate({ id: invoice.id })}
+                      isDeleting={deleteInvoice.isPending}
+                    />
+                  ))}
+                  {invoices.length === 0 && (
+                    <p className="py-8 text-center font-rubik text-sm text-label">
+                      No invoices found
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </TabsContent>

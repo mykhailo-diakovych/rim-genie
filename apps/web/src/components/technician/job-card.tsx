@@ -3,29 +3,32 @@ import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { CompleteJobDialog } from "./complete-job-dialog";
-import { type InProgressJob } from "./types";
+import { type JobGroup } from "./types";
 import { UploadProofsDialog } from "./upload-proofs-dialog";
+import { getGroupAction } from "./use-jobs";
 
-export function JobCard({ job, onView }: { job: InProgressJob; onView: () => void }) {
+export function JobCard({ group, onView }: { group: JobGroup; onView: () => void }) {
+  const action = getGroupAction(group);
+
   return (
     <div className="flex items-center gap-4 rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
       <div className="flex flex-1 flex-col gap-1">
         <div className="flex items-center gap-4">
           <span className="font-rubik text-[14px] leading-[18px] font-medium text-body">
-            {job.customer}
+            {group.customer}
           </span>
-          {job.assignee && (
+          {group.assignee && (
             <span className="rounded-[4px] bg-[#32cbfa] px-1.5 py-0.5 font-rubik text-[12px] leading-[14px] text-white">
-              {job.assignee}
+              {group.assignee}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2 font-rubik text-[12px] leading-[14px]">
           <span className="text-label">Job ID:</span>
-          <span className="text-body">{job.id}</span>
+          <span className="text-body">{group.invoiceNumber}</span>
           <span className="size-1 rounded-full bg-ghost" />
           <span className="text-label">Date:</span>
-          <span className="text-body">{job.date}</span>
+          <span className="text-body">{group.date}</span>
         </div>
       </div>
 
@@ -35,7 +38,11 @@ export function JobCard({ job, onView }: { job: InProgressJob; onView: () => voi
           View
         </Button>
 
-        {job.action === "done" ? <CompleteJobDialog job={job} /> : <UploadProofsDialog job={job} />}
+        {action === "done" ? (
+          <CompleteJobDialog group={group} />
+        ) : (
+          <UploadProofsDialog group={group} />
+        )}
       </div>
     </div>
   );
