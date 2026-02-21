@@ -1,6 +1,6 @@
 # Rim Genie — Implementation Status & Plan
 
-> Generated: 2026-02-20 | Based on `docs/REQUIREMENTS.md`
+> Updated: 2026-02-21 | Based on `docs/REQUIREMENTS.md`
 
 ---
 
@@ -44,58 +44,67 @@
 - [ ] Search by invoice number (upgrade request)
 - [ ] Default phone prefix `+1 876` with replace option
 - [ ] Pricing by inches for welding/reconstruction
-- [ ] VIP auto-discount application at quote time
+- [ ] VIP auto-discount application at quote time (only applied at invoice conversion)
 - [ ] Manual discount input on quote
 - [ ] Send quote via email (Resend integration)
 - [ ] Send quote via SMS (external API)
 - [ ] Electronic quote viewer (public SSR page via link)
 - [ ] Print job label tag (rack identifier)
-- [ ] "Send to Technician" button explicitly hidden from Floor Manager
+- [ ] "Send to Technician" button explicitly hidden from Floor Manager (currently visible)
 
-### Cashier Module — §2.2 (UI Shell Only — Mock Data)
+### Cashier Module — §2.2 (Backend Complete, Frontend Partially Wired)
 
 **Done:**
 
-- [x] Page with tabbed invoice list (Unpaid / Partially Paid / Paid)
-- [x] Basic UI shell with date filter
+- [x] Invoice schema (invoice, invoiceItem, payment tables in DB)
+- [x] Invoice API — full CRUD: list (with filters), get, createFromQuote, update, delete
+- [x] Payment API — record (with auto-status recalculation), list
+- [x] "Send to Technician" API — cashier-only role guard, creates jobs from invoice items
+- [x] Page with tabbed invoice list wired to real API (Unpaid / Partially Paid / Paid)
+- [x] Tab counts from real API totals
+- [x] Delete invoice wired to API mutation with cache invalidation
+- [x] Loading skeleton state
+- [x] Money formatted from cents to dollars, dates from Date objects
 
 **Not Done:**
 
-- [ ] **Invoice schema** — no `invoice` table in DB
-- [ ] **Payment schema** — no `payment` table in DB
-- [ ] Quote → Invoice conversion
-- [ ] Record payments (full/partial) with payment mode
-- [ ] Payment modes: Credit Card, Debit Card, Online Bank Transfer, Cash, Cheque
-- [ ] "Send to Technician" button (cashier-exclusive)
-- [ ] Apply admin-approved discounts and taxes
-- [ ] Add special notes to invoice
+- [ ] "View" button action (invoice detail view / modal)
+- [ ] "Pay" button action (payment recording form — amount, mode, reference)
+- [ ] Quote → Invoice conversion UI (API exists, no frontend trigger)
+- [ ] "Send to Technician" button on cashier page (API exists, no UI button)
+- [ ] Date filter wired to actual date range filtering (dropdown is cosmetic)
+- [ ] Apply admin-approved discounts and taxes (API supports discount/tax update, no UI)
+- [ ] Add special notes to invoice (API supports, no UI)
 - [ ] Print receipt (browser print preview)
 - [ ] E-receipt via email/SMS
 - [ ] Storage fee notice on every receipt
 - [ ] Job completion notification to cashier
 - [ ] Outstanding payment auto-reminder to customer
 
-### Technician Module — §2.3 (UI Shell Only — Mock Data)
+### Technician Module — §2.3 (Backend Complete, Frontend Partially Wired)
 
 **Done:**
 
-- [x] Page with tabs (New / Assign / In Progress / Completed)
-- [x] Job card and detail view components
-- [x] Accept job dialog, complete job dialog, reverse dialog
-- [x] Upload proofs dialog UI
+- [x] Job schema (job table in DB with full relations)
+- [x] Job API — list (with status/technician filters), get, accept, complete, setDueDate, addNote
+- [x] Page with tabs wired to real API via `useJobs()` hook
+- [x] Jobs grouped by invoiceId client-side (one card per invoice)
+- [x] Tab categorization: Assign (all pending), In Progress (any accepted/in_progress), Completed (all completed)
+- [x] Accept job dialog wired to `technician.jobs.accept` mutation (accepts all pending jobs in group)
+- [x] Complete job dialog wired to `technician.jobs.complete` mutation (completes all incomplete jobs in group)
+- [x] Detail views display real job data from invoiceItem relations
+- [x] Cache invalidation on mutations, toast feedback
 
 **Not Done:**
 
-- [ ] **Job schema** — no `job` table in DB
-- [ ] Job assignment with employee number tracking
-- [ ] Job acceptance workflow
-- [ ] Mark job complete with employee number verification
-- [ ] Upload 30-second proof-of-work video (Azure Blob Storage)
+- [ ] Accept dialog technician selector loads from employees API (currently hardcoded dropdown)
+- [ ] Accept dialog completion date sends to `setDueDate` API (captured but not sent)
+- [ ] PIN input validation in accept dialog (captured but not verified)
+- [ ] Technician code validation in complete dialog (captured but not verified)
+- [ ] Upload proof-of-work video (API endpoint missing, Azure Blob Storage not integrated)
 - [ ] Auto-notify customer on completion (SMS + email)
 - [ ] Notify cashier on job completion (in-app)
-- [ ] Set due date / flag as overnight job
-- [ ] Add special notes to job
-- [ ] Filter/organize jobs by technician (upgrade request)
+- [ ] Filter/organize jobs by technician (FilterRow renders but not wired)
 
 ### Inventory Module — §2.4 (UI Shell Only — Mock Data)
 
@@ -118,11 +127,13 @@
 
 - [x] Service catalog CRUD (rim + general types, vehicle types, sizes, costs)
 - [x] Employee management (create, edit, reset PIN, role assignment)
-- [x] Dashboard with metrics, team activity, attention items
+- [x] Dashboard with metrics, team activity, attention items (mock/calculated data)
+- [x] VIP discount auto-applied at invoice creation time (in `createFromQuote` service)
 
 **Not Done:**
 
-- [ ] VIP client management (upgrade customers to VIP with auto-discount)
+- [ ] Dashboard metrics from real DB aggregation (currently hardcoded multipliers)
+- [ ] VIP client management UI (upgrade/downgrade customers)
 - [ ] Discount approval workflow (Floor Manager requests → Admin approves)
 - [ ] Remove customer with invoice/job validation
 - [ ] Clock in/out attendance tracking
@@ -130,7 +141,7 @@
 - [ ] View invoices and payments
 - [ ] Daily reports (expenses, revenue, quotes, invoices)
 - [ ] Multi-site support (location scoping)
-- [ ] Job monitoring dashboard (job ID, technician, work area, status)
+- [ ] Job monitoring dashboard with real data (job ID, technician, work area, status)
 
 ### Loyalty / Birthday Module — §2.7 (Not Started)
 
@@ -150,6 +161,7 @@
 - [ ] SMS integration (external API endpoint)
 - [ ] Email integration (Resend — configured but not wired)
 - [ ] In-app notification system
+- [ ] Notification schema (no table in DB)
 - [ ] All notification triggers per spec table
 
 ### Cross-Cutting Concerns (Not Started)
@@ -162,248 +174,216 @@
 
 ## Part 2: Implementation Plan (Recommended Order)
 
-### Phase 1: Core Data Layer (Invoice + Job + Payment schemas)
+### Phase 1: Core Data Layer ~~(Invoice + Job + Payment schemas)~~ ✅ COMPLETE
 
-> Priority: **Critical** — All remaining modules depend on this
+> ~~Priority: **Critical**~~ — Done
 
-#### Step 1.1: Invoice & Payment Schema
+- [x] Step 1.1: Invoice, InvoiceItem, Payment tables — `packages/db/src/schema/invoice.ts`
+- [x] Step 1.2: Job table — `packages/db/src/schema/job.ts`
+- [x] Seed data with users, quotes, invoices, jobs
+- [ ] Step 1.3: Notification schema — **deferred to Phase 4**
+- [ ] Step 1.4: Site schema (multi-site) — **deferred to Phase 6**
 
-- Add `invoice` table: id, invoiceNumber (serial), quoteId (FK), customerId (FK), status (draft/pending/paid/partially_paid/overdue), subtotal, discount, tax, total, notes, createdById, createdAt, updatedAt
-- Add `payment` table: id, invoiceId (FK), amount, mode (credit_card/debit_card/bank_transfer/cash/cheque), reference, receivedById, createdAt
-- Add `invoiceItem` table (mirror of quoteItem but for invoice): id, invoiceId, description, quantity, unitCost, jobTypes, etc.
-- Migration + seed
-
-#### Step 1.2: Job Schema
-
-- Add `job` table: id, invoiceId (FK), invoiceItemId (FK), technicianId (FK → user), status (pending/accepted/in_progress/completed), acceptedById (FK → user, employee number tracking), completedById, dueDate, isOvernight, specialNotes, proofVideoUrl, acceptedAt, completedAt, createdAt, updatedAt
-- Migration
-
-#### Step 1.3: Notification Schema
-
-- Add `notification` table: id, userId (FK), type (enum), title, message, read (boolean), relatedEntityType, relatedEntityId, createdAt
-
-#### Step 1.4: Site Schema (Multi-site)
-
-- Add `site` table: id, name, address, isActive
-- Add `siteId` FK to relevant tables (quote, invoice, job, customer-site junction)
+Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). Job table lacks `acceptedById`/`completedById` separate columns (uses `technicianId` only).
 
 ---
 
-### Phase 2: Cashier Module (Full Implementation)
+### Phase 2: Cashier Module ✅ Backend Complete, 🔶 Frontend Partial
 
-> Priority: **High** — Central to the business flow (quotes → invoices → payments → jobs)
+> Priority: **High**
 
-#### Step 2.1: Invoice API
-
-- `cashier.invoices.list` — list invoices with filters (status, date range, customer)
-- `cashier.invoices.get` — get invoice with items and payments
-- `cashier.invoices.createFromQuote` — convert quote to invoice (copy items, link quote)
-- `cashier.invoices.update` — update notes, apply discount
-- `cashier.invoices.delete` — with authorization check
-
-#### Step 2.2: Payment API
-
-- `cashier.payments.record` — record payment (amount, mode, reference)
-- `cashier.payments.list` — list payments for an invoice
-- Auto-update invoice status based on payment totals
-
-#### Step 2.3: "Send to Technician" API
-
-- `cashier.jobs.sendToTechnician` — create job(s) from invoice items
-- Role-guard: cashier-only (not floor manager)
-
-#### Step 2.4: Cashier Frontend
-
-- Invoice list with real data (replace mock)
-- Quote → Invoice conversion UI
-- Payment recording form (amount, mode, reference)
-- Receipt view with print/email/SMS options
-- Storage fee notice at bottom of receipt
-- "Send to Technician" button (cashier-exclusive)
+- [x] Step 2.1: Invoice API — all 5 procedures implemented
+- [x] Step 2.2: Payment API — record + list implemented, auto-status recalculation works
+- [x] Step 2.3: "Send to Technician" API — cashier-only guard, creates jobs from invoice items
+- [x] Step 2.4a: Invoice list with real data (tabs, counts, delete)
+- [ ] Step 2.4b: Invoice detail view (View button)
+- [ ] Step 2.4c: Payment recording form (Pay button)
+- [ ] Step 2.4d: Quote → Invoice conversion UI
+- [ ] Step 2.4e: "Send to Technician" button on page
+- [ ] Step 2.4f: Receipt view with print/email/SMS
+- [ ] Step 2.4g: Date filter wired to API
 
 ---
 
-### Phase 3: Technician Module (Full Implementation)
+### Phase 3: Technician Module ✅ Backend Complete, 🔶 Frontend Partial
 
-> Priority: **High** — Core operational workflow
+> Priority: **High**
 
-#### Step 3.1: Job API
-
-- `technician.jobs.list` — list jobs by status + technician filter
-- `technician.jobs.accept` — accept job (requires employee number)
-- `technician.jobs.complete` — mark complete (requires employee number)
-- `technician.jobs.setDueDate` — set due date, flag as overnight
-- `technician.jobs.addNote` — add special notes
-- `technician.jobs.uploadProof` — upload proof-of-work video
-
-#### Step 3.2: Video Upload
-
-- Azure Blob Storage integration
-- Presigned URL generation for direct upload
-- 30-second video validation (size/duration)
-
-#### Step 3.3: Technician Frontend
-
-- Replace mock data with real job queries
-- Wire accept/complete/reverse dialogs to API
-- Due date picker with overnight flag
-- Video upload with progress indicator
-- Filter by technician
+- [x] Step 3.1: Job API — list, get, accept, complete, setDueDate, addNote (uploadProof missing)
+- [x] Step 3.3a: Frontend wired to real data (list, grouping, accept, complete mutations)
+- [ ] Step 3.1b: `technician.jobs.uploadProof` API endpoint
+- [ ] Step 3.2: Video upload (Azure Blob Storage integration)
+- [ ] Step 3.3b: Technician dropdown from employees API
+- [ ] Step 3.3c: Due date picker wired to setDueDate
+- [ ] Step 3.3d: PIN/employee code validation
+- [ ] Step 3.3e: Filter by technician
 
 ---
 
-### Phase 4: Notification System
+### Phase 4: Notification System (Not Started)
 
 > Priority: **High** — Multiple modules depend on notifications
 
 #### Step 4.1: In-App Notifications
 
-- Notification API (list, mark read, mark all read)
-- Notification bell in header with unread count
-- Notification dropdown/panel
+- [ ] Notification schema (DB table)
+- [ ] Notification API (list, mark read, mark all read)
+- [ ] Notification bell in header with unread count
+- [ ] Notification dropdown/panel
 
 #### Step 4.2: Email Integration (Resend)
 
-- Configure Resend transactional email
-- Quote email template
-- Receipt email template
-- Payment reminder template
+- [ ] Configure Resend transactional email
+- [ ] Quote email template
+- [ ] Receipt email template
+- [ ] Payment reminder template
 
 #### Step 4.3: SMS Integration
 
-- Integrate with provided SMS API endpoint (or Twilio)
-- Quote SMS with link
-- Job completion SMS
-- Payment reminder SMS
+- [ ] Integrate with provided SMS API endpoint (or Twilio)
+- [ ] Quote SMS with link
+- [ ] Job completion SMS
+- [ ] Payment reminder SMS
 
 #### Step 4.4: Notification Triggers
 
-- Wire all triggers per spec: quote sent, job completed, payment reminder, inventory discrepancy, discount request, discount approved/rejected
+- [ ] Wire all triggers per spec: quote sent, job completed, payment reminder, inventory discrepancy, discount request, discount approved/rejected
 
 ---
 
-### Phase 5: Inventory Module (Full Implementation)
+### Phase 5: Inventory Module (Not Started)
 
-> Priority: **Medium** — Depends on Job schema from Phase 1
+> Priority: **Medium** — Depends on Job schema (now complete)
 
 #### Step 5.1: Inventory API
 
-- `inventory.overnightJobs.list` — all overnight/unfinished jobs
-- `inventory.records.createEOD` — end-of-day count
-- `inventory.records.createSOD` — start-of-day verification
-- `inventory.records.flagDiscrepancy` — flag + notify admin
+- [ ] `inventory.overnightJobs.list` — all overnight/unfinished jobs
+- [ ] `inventory.records.createEOD` — end-of-day count
+- [ ] `inventory.records.createSOD` — start-of-day verification
+- [ ] `inventory.records.flagDiscrepancy` — flag + notify admin
 
 #### Step 5.2: Inventory Frontend
 
-- Replace mock data with real queries
-- EOD verification form
-- SOD reconciliation view
-- Discrepancy flagging UI
+- [ ] Replace mock data with real queries
+- [ ] EOD verification form
+- [ ] SOD reconciliation view
+- [ ] Discrepancy flagging UI
 
 ---
 
-### Phase 6: Admin Enhancements
+### Phase 6: Admin Enhancements (Not Started)
 
 > Priority: **Medium**
 
 #### Step 6.1: Financial Views
 
-- View invoices and payments
-- Expense recording (new `expense` table + CRUD)
-- Daily reports: revenue, expenses, quotes, invoices
+- [ ] View invoices and payments
+- [ ] Expense recording (new `expense` table + CRUD)
+- [ ] Daily reports: revenue, expenses, quotes, invoices
+- [ ] Dashboard metrics from real DB aggregation queries
 
 #### Step 6.2: Workforce
 
-- Clock in/out attendance tracking (new `attendance` table)
-- Attendance reports
+- [ ] Clock in/out attendance tracking (new `attendance` table)
+- [ ] Attendance reports
 
 #### Step 6.3: VIP & Discounts
 
-- VIP management UI (upgrade/downgrade customers)
-- Discount approval workflow (request → admin approval → apply)
+- [ ] VIP management UI (upgrade/downgrade customers)
+- [ ] Discount approval workflow (request → admin approval → apply)
 
 #### Step 6.4: Job Monitoring Dashboard
 
-- Real-time job board: job ID, technician, work area, status
-- Multi-site dashboard switching
+- [ ] Real-time job board: job ID, technician, work area, status
+- [ ] Multi-site dashboard switching
+- [ ] Site schema (deferred from Phase 1.4)
 
 ---
 
-### Phase 7: Floor Manager Enhancements
+### Phase 7: Floor Manager Enhancements (Not Started)
 
 > Priority: **Medium**
 
-- Default phone prefix `+1 876` in customer forms
-- Search by invoice number
-- Pricing by inches for welding/reconstruction services
-- VIP auto-discount at quote creation
-- Manual discount input on quote
-- Print job label tag
-- Send quote via email/SMS with electronic quote link
-- Public electronic quote viewer page (SSR)
+- [ ] Default phone prefix `+1 876` in customer forms
+- [ ] Search by invoice number
+- [ ] Pricing by inches for welding/reconstruction services
+- [ ] VIP auto-discount at quote creation
+- [ ] Manual discount input on quote
+- [ ] Print job label tag
+- [ ] Send quote via email/SMS with electronic quote link
+- [ ] Public electronic quote viewer page (SSR)
+- [ ] Hide "Send to Technician" from Floor Manager UI
 
 ---
 
-### Phase 8: Real-Time Updates
+### Phase 8: Real-Time Updates (Not Started)
 
 > Priority: **Medium** — Addresses Bug #1 from legacy system
 
-- WebSocket or SSE server (Azure Web PubSub or custom)
-- Quote created → appears in cashier queue instantly
-- Job status changes → reflected in all views
-- Notification push to connected clients
+- [ ] WebSocket or SSE server (Azure Web PubSub or custom)
+- [ ] Quote created → appears in cashier queue instantly
+- [ ] Job status changes → reflected in all views
+- [ ] Notification push to connected clients
 
 ---
 
-### Phase 9: Print & Receipt Optimization
+### Phase 9: Print & Receipt Optimization (Not Started)
 
 > Priority: **Low-Medium**
 
-- `@media print` stylesheets for receipts, invoices, job tags
-- Receipt layout: 8+ services per page, address beside logo
-- Storage fee notice on all receipts
-- Job label tag print format
+- [ ] `@media print` stylesheets for receipts, invoices, job tags
+- [ ] Receipt layout: 8+ services per page, address beside logo
+- [ ] Storage fee notice on all receipts
+- [ ] Job label tag print format
 
 ---
 
-### Phase 10: Loyalty Program — §2.7
+### Phase 10: Loyalty Program — §2.7 (Not Started)
 
 > Priority: **Low**
 
-- Purchase frequency tracking
-- Loyalty data in customer profiles
-- Admin-configurable thresholds
+- [ ] Purchase frequency tracking
+- [ ] Loyalty data in customer profiles
+- [ ] Admin-configurable thresholds
 
 ---
 
-### Phase 11: Digital Disclaimer / Signature — §2.8 (Stage 3)
+### Phase 11: Digital Disclaimer / Signature — §2.8 (Not Started — Stage 3)
 
 > Priority: **Low** (explicitly Stage 3)
 
-- Tablet signature capture (react-signature-canvas)
-- 7 disclaimer sections
-- Section-based signing
-- Save to customer profile
+- [ ] Tablet signature capture (react-signature-canvas)
+- [ ] 7 disclaimer sections
+- [ ] Section-based signing
+- [ ] Save to customer profile
 
 ---
 
-## Part 3: Architecture Notes for Implementation
+## Part 3: Architecture Notes
 
-### Database Design Decisions Needed
+### Resolved Design Decisions
 
-1. **Invoice items**: Copy from quote items (snapshot) or reference them? → Recommend **copy** (invoices should be immutable records)
-2. **Multi-site**: Add `siteId` to all tables or use a junction? → Recommend FK on quote/invoice/job
-3. **Discount workflow**: Inline on invoice or separate approval entity? → Recommend separate `discountRequest` table for audit trail
+1. **Invoice items**: ✅ Decided — Copy from quote items (snapshot). Implemented in `createFromQuote` service.
+2. **"Send to Technician" enforcement**: ✅ Backend role-guard via `cashierProcedure`. UI hiding still needed on floor manager page.
+3. **VIP discount**: ✅ Auto-applied at invoice conversion time (not at quote time per spec request).
+
+### Remaining Design Decisions
+
+1. **Multi-site**: Add `siteId` to all tables or use a junction? → Recommend FK on quote/invoice/job (Phase 6.4)
+2. **Discount workflow**: Inline on invoice or separate approval entity? → Recommend separate `discountRequest` table for audit trail (Phase 6.3)
 
 ### Technical Debt / Improvements
 
+- ~~Technician, Cashier pages use hardcoded mock data~~ → ✅ Both now wired to real API
 - Dashboard metrics currently use mock/calculated data — need real aggregation queries
-- Technician, Cashier, Inventory pages use hardcoded mock data — need real API integration
+- Inventory page still uses hardcoded mock data
 - No real-time updates yet (polling could be interim via TanStack Query refetchInterval)
 - No file upload infrastructure (Azure Blob Storage needed for proof-of-work videos)
+- Accept dialog technician dropdown hardcoded (should load from employees API)
+- `acceptedById`/`completedById` audit columns missing from job table
 
 ### Security Gaps to Address
 
-- "Send to Technician" must be backend-enforced (cashier-only), not just UI-hidden
-- Authorization before changes/deletions (audit log system)
-- Customer deletion validation (check for existing invoices/jobs)
+- "Send to Technician" is backend-enforced ✅ but still visible in Floor Manager UI ❌
+- Authorization before changes/deletions (audit log system) — not implemented
+- Customer deletion validation (check for existing invoices/jobs) — not implemented
