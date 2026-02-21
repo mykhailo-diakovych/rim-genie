@@ -11,6 +11,7 @@ import {
   JobNotAccepted,
   JobAlreadyCompleted,
   JobsAlreadyCreated,
+  JobCannotBeReversed,
 } from "./errors";
 
 export function sendToTechnician(invoiceId: string) {
@@ -147,6 +148,42 @@ export function addNote(jobId: string, specialNotes: string) {
 
     const [updated] = yield* Effect.tryPromise(() =>
       db.update(job).set({ specialNotes }).where(eq(job.id, jobId)).returning(),
+    );
+
+    return updated!;
+  });
+}
+
+export function reverseJob(jobId: string, reason: string) {
+  return Effect.gen(function* () {
+    const found = yield* Effect.tryPromise(() =>
+      db.query.job.findFirst({ where: eq(job.id, jobId) }),
+    );
+
+    if (!found) {
+      return yield* Effect.fail(new JobNotFound({ id: jobId }));
+    }
+
+    if (found.status === "pending") {
+      return yield* Effect.fail(new JobCannotBeReversed({ jobId }));
+    }
+
+    const notes = found.specialNotes
+      ? `${found.specialNotes}\n[REVERSED]: ${reason}`
+      : `[REVERSED]: ${reason}`;
+
+    const [updated] = yield* Effect.tryPromise(() =>
+      db
+        .update(job)
+        .set({
+          status: "pending",
+          technicianId: null,
+          acceptedAt: null,
+          completedAt: null,
+          specialNotes: notes,
+        })
+        .where(eq(job.id, jobId))
+        .returning(),
     );
 
     return updated!;

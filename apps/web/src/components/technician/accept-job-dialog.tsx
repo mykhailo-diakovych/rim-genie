@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +26,19 @@ import { client, orpc } from "@/utils/orpc";
 import { DialogCustomerRow } from "./dialog-shared";
 import { PinInput, usePinState } from "./pin-input";
 
+function getDateValue(key: string): string {
+  const now = new Date();
+  if (key === "today") return now.toISOString();
+  if (key === "tomorrow") {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString();
+  }
+  const d = new Date(now);
+  d.setDate(d.getDate() + 7);
+  return d.toISOString();
+}
+
 interface AcceptJobDialogProps {
   customer: string;
   jobId: string;
@@ -41,33 +54,60 @@ export function AcceptJobDialog({
   triggerClassName,
   triggerContent,
 }: AcceptJobDialogProps) {
+  const [open, setOpen] = useState(false);
   const [technician, setTechnician] = useState("");
   const [completionDate, setCompletionDate] = useState("");
   const { pin, inputsRef, handlePinChange, handlePinKeyDown, resetPin } = usePinState();
   const queryClient = useQueryClient();
 
+  const { data: technicians } = useQuery(orpc.technician.technicians.list.queryOptions());
+
   const acceptMutation = useMutation({
     mutationFn: async () => {
+      const pinString = pin.join("");
+      if (!technician || !completionDate || pinString.length !== 6) {
+        throw new Error("Please fill in all fields");
+      }
+
+      const { valid } = await client.technician.jobs.verifyPin({
+        userId: technician,
+        pin: pinString,
+      });
+      if (!valid) throw new Error("Invalid technician code");
+
+      const dueDate = getDateValue(completionDate);
       for (const id of jobIds) {
-        await client.technician.jobs.accept({ jobId: id });
+        await client.technician.jobs.accept({ jobId: id, technicianId: technician });
+        await client.technician.jobs.setDueDate({ jobId: id, dueDate });
       }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: orpc.technician.jobs.list.key() });
       toast.success("Job accepted");
+      resetForm();
+      setOpen(false);
     },
-    onError: (err: Error) => toast.error(`Failed to accept: ${err.message}`),
+    onError: (err: Error) => toast.error(err.message),
   });
 
-  function handleConfirm() {
-    acceptMutation.mutate();
+  function resetForm() {
     setTechnician("");
     setCompletionDate("");
     resetPin();
   }
 
+  function handleConfirm() {
+    acceptMutation.mutate();
+  }
+
   return (
-    <Dialog>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) resetForm();
+      }}
+    >
       <DialogTrigger className={triggerClassName}>{triggerContent}</DialogTrigger>
 
       <DialogContent className="sm:max-w-[340px]">
@@ -84,9 +124,11 @@ export function AcceptJobDialog({
                 <SelectValue placeholder="Select Technician" />
               </SelectTrigger>
               <SelectPopup>
-                <SelectOption value="heaven-dev">heaven dev</SelectOption>
-                <SelectOption value="ankit-patel">ankit patel</SelectOption>
-                <SelectOption value="darshan-prajapati">darshan Prajapati</SelectOption>
+                {technicians?.map((t) => (
+                  <SelectOption key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectOption>
+                ))}
               </SelectPopup>
             </Select>
 
@@ -114,12 +156,14 @@ export function AcceptJobDialog({
 
           <DialogFooter className="p-0">
             <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
-            <DialogClose
-              render={<Button color="success" className="w-32" />}
+            <Button
+              color="success"
+              className="w-32"
+              disabled={acceptMutation.isPending}
               onClick={handleConfirm}
             >
-              Accept
-            </DialogClose>
+              {acceptMutation.isPending ? "Accepting..." : "Accept"}
+            </Button>
           </DialogFooter>
         </div>
       </DialogContent>

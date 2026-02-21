@@ -10,8 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// ─── Info tooltip ─────────────────────────────────────────────────────────────
-
 function InfoTooltip() {
   const [open, setOpen] = useState(false);
 
@@ -42,12 +40,28 @@ function InfoTooltip() {
   );
 }
 
-// ─── Filter row ───────────────────────────────────────────────────────────────
+export type OwnerFilter = "all" | "mine";
+export type DateFilter = "" | "today" | "week" | "month";
 
-export function FilterRow() {
+interface FilterRowProps {
+  ownerFilter: OwnerFilter;
+  dateFilter: DateFilter;
+  onOwnerFilterChange: (value: OwnerFilter) => void;
+  onDateFilterChange: (value: DateFilter) => void;
+}
+
+export function FilterRow({
+  ownerFilter,
+  dateFilter,
+  onOwnerFilterChange,
+  onDateFilterChange,
+}: FilterRowProps) {
   return (
     <div className="flex items-center justify-end gap-2">
-      <Select defaultValue="all">
+      <Select
+        value={ownerFilter}
+        onValueChange={(v) => onOwnerFilterChange((v ?? "all") as OwnerFilter)}
+      >
         <SelectTrigger className="w-[104px]">
           <SelectValue className="uppercase" />
         </SelectTrigger>
@@ -57,7 +71,7 @@ export function FilterRow() {
         </SelectPopup>
       </Select>
 
-      <Select>
+      <Select value={dateFilter} onValueChange={(v) => onDateFilterChange((v ?? "") as DateFilter)}>
         <SelectTrigger className="w-[144px]">
           <div className="flex items-center gap-1.5">
             <Calendar className="size-4 shrink-0 text-ghost" />

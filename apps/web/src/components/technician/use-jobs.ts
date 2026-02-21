@@ -2,8 +2,10 @@ import { useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
+import { authClient } from "@/lib/auth-client";
 import { orpc } from "@/utils/orpc";
 
+import type { DateFilter, OwnerFilter } from "./filter-row";
 import type { ApiJob, JobGroup } from "./types";
 
 function groupJobsByInvoice(jobs: ApiJob[]): JobGroup[] {
@@ -42,8 +44,60 @@ export function getGroupAction(group: JobGroup): "proofs" | "done" {
   return group.jobs.some((j) => j.status === "accepted") ? "proofs" : "done";
 }
 
-export function useJobs() {
-  const { data, isLoading } = useQuery(orpc.technician.jobs.list.queryOptions({ input: {} }));
+function getDateRange(dateFilter: DateFilter): { start: Date; end: Date } | null {
+  if (!dateFilter) return null;
+
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const endOfDay = new Date(startOfDay);
+  endOfDay.setDate(endOfDay.getDate() + 1);
+
+  if (dateFilter === "today") {
+    return { start: startOfDay, end: endOfDay };
+  }
+
+  if (dateFilter === "week") {
+    const dayOfWeek = now.getDay();
+    const startOfWeek = new Date(startOfDay);
+    startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(endOfWeek.getDate() + 7);
+    return { start: startOfWeek, end: endOfWeek };
+  }
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return { start: startOfMonth, end: endOfMonth };
+}
+
+function filterGroupsByDate(groups: JobGroup[], dateFilter: DateFilter): JobGroup[] {
+  const range = getDateRange(dateFilter);
+  if (!range) return groups;
+
+  return groups.filter((group) =>
+    group.jobs.some((job) => {
+      const created = new Date(job.createdAt);
+      return created >= range.start && created < range.end;
+    }),
+  );
+}
+
+interface UseJobsParams {
+  ownerFilter?: OwnerFilter;
+  dateFilter?: DateFilter;
+}
+
+export function useJobs(params?: UseJobsParams) {
+  const { ownerFilter = "all", dateFilter = "" } = params ?? {};
+  const { data: session } = authClient.useSession();
+
+  const technicianId = ownerFilter === "mine" ? session?.user?.id : undefined;
+
+  const { data, isLoading } = useQuery(
+    orpc.technician.jobs.list.queryOptions({
+      input: { technicianId: technicianId ?? undefined },
+    }),
+  );
 
   const groups = useMemo(() => {
     if (!data)
@@ -70,8 +124,12 @@ export function useJobs() {
       }
     }
 
-    return { assign, inProgress, completed };
-  }, [data]);
+    return {
+      assign: filterGroupsByDate(assign, dateFilter),
+      inProgress: filterGroupsByDate(inProgress, dateFilter),
+      completed: filterGroupsByDate(completed, dateFilter),
+    };
+  }, [data, dateFilter]);
 
   return { ...groups, isLoading };
 }

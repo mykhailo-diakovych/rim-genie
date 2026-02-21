@@ -1,14 +1,24 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { verifyPassword } from "@rim-genie/auth/crypto";
 
 import { db } from "@rim-genie/db";
-import { job } from "@rim-genie/db/schema";
+import { account, job, user } from "@rim-genie/db/schema";
 
-import { technicianProcedure } from "../index";
+import { protectedProcedure, technicianProcedure } from "../index";
 import * as JobService from "../services/job.service";
 import { runEffect } from "../services/run-effect";
 
 export const technicianRouter = {
+  technicians: {
+    list: protectedProcedure.handler(async () => {
+      return db.query.user.findMany({
+        where: eq(user.role, "technician"),
+        columns: { id: true, name: true },
+      });
+    }),
+  },
+
   jobs: {
     list: technicianProcedure
       .input(
@@ -50,9 +60,10 @@ export const technicianRouter = {
     }),
 
     accept: technicianProcedure
-      .input(z.object({ jobId: z.string() }))
+      .input(z.object({ jobId: z.string(), technicianId: z.string().optional() }))
       .handler(async ({ input, context }) => {
-        return runEffect(JobService.acceptJob(input.jobId, context.session.user.id));
+        const assigneeId = input.technicianId ?? context.session.user.id;
+        return runEffect(JobService.acceptJob(input.jobId, assigneeId));
       }),
 
     complete: technicianProcedure
@@ -84,6 +95,27 @@ export const technicianRouter = {
       )
       .handler(async ({ input }) => {
         return runEffect(JobService.addNote(input.jobId, input.specialNotes));
+      }),
+
+    reverse: technicianProcedure
+      .input(z.object({ jobId: z.string(), reason: z.string() }))
+      .handler(async ({ input }) => {
+        return runEffect(JobService.reverseJob(input.jobId, input.reason));
+      }),
+
+    verifyPin: protectedProcedure
+      .input(z.object({ userId: z.string(), pin: z.string() }))
+      .handler(async ({ input }) => {
+        const found = await db.query.account.findFirst({
+          where: and(eq(account.userId, input.userId), eq(account.providerId, "credential")),
+        });
+
+        if (!found?.password) {
+          return { valid: false };
+        }
+
+        const valid = await verifyPassword({ hash: found.password, password: input.pin });
+        return { valid };
       }),
   },
 };

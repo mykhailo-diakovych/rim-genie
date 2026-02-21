@@ -1,18 +1,34 @@
 import { Cause, Effect, Exit, Option } from "effect";
 import { ORPCError } from "@orpc/server";
 
-const TAG_MAP: Record<string, { code: ConstructorParameters<typeof ORPCError>[0]; message: string }> = {
+const TAG_MAP: Record<
+  string,
+  { code: ConstructorParameters<typeof ORPCError>[0]; message: string }
+> = {
   InvoiceNotFound: { code: "NOT_FOUND", message: "Invoice not found" },
   QuoteNotFound: { code: "NOT_FOUND", message: "Quote not found" },
   JobNotFound: { code: "NOT_FOUND", message: "Job not found" },
-  QuoteAlreadyConverted: { code: "CONFLICT", message: "This quote has already been converted to an invoice" },
-  InvoiceHasPayments: { code: "CONFLICT", message: "Cannot delete an invoice that has payments recorded" },
+  QuoteAlreadyConverted: {
+    code: "CONFLICT",
+    message: "This quote has already been converted to an invoice",
+  },
+  InvoiceHasPayments: {
+    code: "CONFLICT",
+    message: "Cannot delete an invoice that has payments recorded",
+  },
   InvoiceHasJobs: { code: "CONFLICT", message: "Cannot delete an invoice that has jobs assigned" },
   JobAlreadyAccepted: { code: "CONFLICT", message: "This job has already been accepted" },
   JobAlreadyCompleted: { code: "CONFLICT", message: "This job has already been completed" },
-  JobsAlreadyCreated: { code: "CONFLICT", message: "Jobs have already been created for this invoice" },
-  PaymentExceedsBalance: { code: "BAD_REQUEST", message: "Payment amount exceeds the remaining balance" },
+  JobsAlreadyCreated: {
+    code: "CONFLICT",
+    message: "Jobs have already been created for this invoice",
+  },
+  PaymentExceedsBalance: {
+    code: "BAD_REQUEST",
+    message: "Payment amount exceeds the remaining balance",
+  },
   JobNotAccepted: { code: "BAD_REQUEST", message: "This job has not been accepted yet" },
+  JobCannotBeReversed: { code: "BAD_REQUEST", message: "This job cannot be reversed" },
 };
 
 export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): Promise<A> {

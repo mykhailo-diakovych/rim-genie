@@ -45,3 +45,7 @@ export class JobAlreadyCompleted extends Data.TaggedError("JobAlreadyCompleted")
 export class JobsAlreadyCreated extends Data.TaggedError("JobsAlreadyCreated")<{
   invoiceId: string;
 }> {}
+
+export class JobCannotBeReversed extends Data.TaggedError("JobCannotBeReversed")<{
+  jobId: string;
+}> {}

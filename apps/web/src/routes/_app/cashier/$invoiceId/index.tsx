@@ -204,11 +204,7 @@ function InvoiceDetailPage() {
             <div className="flex flex-col gap-2 pr-4 font-rubik">
               <span className="text-xs text-label">Invoice #:</span>
               <span className="text-sm text-body">
-                {invoiceQuery.isLoading ? (
-                  <Skeleton className="h-4 w-16" />
-                ) : (
-                  inv?.invoiceNumber
-                )}
+                {invoiceQuery.isLoading ? <Skeleton className="h-4 w-16" /> : inv?.invoiceNumber}
               </span>
             </div>
 
@@ -313,13 +309,9 @@ function InvoiceDetailPage() {
                     </td>
                     <td className="border-l border-field-line px-2 py-2">
                       <div className="flex flex-col gap-1">
-                        <span className="text-sm text-body">
-                          {item.description ?? "Rim Job"}
-                        </span>
+                        <span className="text-sm text-body">{item.description ?? "Rim Job"}</span>
                         {item.comments && (
-                          <span className="text-xs text-label">
-                            Comments: {item.comments}
-                          </span>
+                          <span className="text-xs text-label">Comments: {item.comments}</span>
                         )}
                       </div>
                     </td>
@@ -376,7 +368,6 @@ function InvoiceDetailPage() {
           <strong>$500 daily</strong>
         </p>
       </div>
-
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { AssignDetailView } from "@/components/technician/assign-detail-view";
 import { AssignJobCard } from "@/components/technician/assign-job-card";
 import { CompletedDetailView } from "@/components/technician/completed-detail-view";
 import { CompletedJobCard } from "@/components/technician/completed-job-card";
-import { FilterRow } from "@/components/technician/filter-row";
+import { FilterRow, type DateFilter, type OwnerFilter } from "@/components/technician/filter-row";
 import { JobCard } from "@/components/technician/job-card";
 import { JobDetailView } from "@/components/technician/job-detail-view";
 import { TAB_CONFIG, type JobGroup, type TabValue } from "@/components/technician/types";
@@ -20,7 +20,9 @@ export const Route = createFileRoute("/_app/technician")({
 type DetailView = { group: JobGroup; source: "in-progress" | "assign" | "completed" };
 
 function TechnicianPage() {
-  const { assign, inProgress, completed, isLoading } = useJobs();
+  const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("");
+  const { assign, inProgress, completed, isLoading } = useJobs({ ownerFilter, dateFilter });
   const [activeTab, setActiveTab] = useState<TabValue>("in-progress");
   const [detailView, setDetailView] = useState<DetailView | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -113,7 +115,12 @@ function TechnicianPage() {
 
         {!isLoading && activeTab === "in-progress" && (
           <div className="flex flex-col gap-3 pt-3">
-            <FilterRow />
+            <FilterRow
+              ownerFilter={ownerFilter}
+              dateFilter={dateFilter}
+              onOwnerFilterChange={setOwnerFilter}
+              onDateFilterChange={setDateFilter}
+            />
             <div className="flex flex-col gap-2">
               {inProgress.map((group) => (
                 <JobCard
@@ -133,7 +140,12 @@ function TechnicianPage() {
 
         {!isLoading && activeTab === "assign" && (
           <div className="flex flex-col gap-3 pt-3">
-            <FilterRow />
+            <FilterRow
+              ownerFilter={ownerFilter}
+              dateFilter={dateFilter}
+              onOwnerFilterChange={setOwnerFilter}
+              onDateFilterChange={setDateFilter}
+            />
             <div className="flex flex-col gap-2">
               {assign.map((group) => (
                 <AssignJobCard
@@ -157,7 +169,12 @@ function TechnicianPage() {
 
         {!isLoading && activeTab === "completed" && (
           <div className="flex flex-col gap-3 pt-3">
-            <FilterRow />
+            <FilterRow
+              ownerFilter={ownerFilter}
+              dateFilter={dateFilter}
+              onOwnerFilterChange={setOwnerFilter}
+              onDateFilterChange={setDateFilter}
+            />
             <div className="flex flex-col gap-2">
               {completed.map((group) => (
                 <CompletedJobCard

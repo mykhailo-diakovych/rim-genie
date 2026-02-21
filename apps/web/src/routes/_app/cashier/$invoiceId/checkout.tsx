@@ -72,10 +72,7 @@ function PaymentAccordionHeader({
       <div className="flex items-center gap-1.5">
         <Icon className="size-6" />
         <span
-          className={cn(
-            "font-rubik text-base font-medium",
-            isOpen ? "text-blue" : "text-body",
-          )}
+          className={cn("font-rubik text-base font-medium", isOpen ? "text-blue" : "text-body")}
         >
           {label}
         </span>
@@ -109,9 +106,7 @@ function CashContent({
               onChange={(e) => onChange(denom.value, e.target.value)}
               className="h-9 w-[120px] rounded-md border border-field-line bg-white p-2 font-rubik text-xs text-body outline-none placeholder:text-ghost"
             />
-            <span className="font-rubik text-sm font-medium text-body">
-              × {denom.label}
-            </span>
+            <span className="font-rubik text-sm font-medium text-body">× {denom.label}</span>
           </div>
         ))}
       </div>
@@ -203,7 +198,11 @@ function CheckoutPage() {
 
   const paymentEntries = [
     { mode: "cash" as const, amount: cashTotal, reference: undefined as string | undefined },
-    { mode: "credit_card" as const, amount: creditTotal, reference: undefined as string | undefined },
+    {
+      mode: "credit_card" as const,
+      amount: creditTotal,
+      reference: undefined as string | undefined,
+    },
     { mode: "debit_card" as const, amount: debitTotal, reference: undefined as string | undefined },
     { mode: "cheque" as const, amount: chequeTotal, reference: chequeRef || undefined },
     { mode: "bank_transfer" as const, amount: bankTotal, reference: bankRef || undefined },
@@ -281,24 +280,15 @@ function CheckoutPage() {
                   />
 
                   {isOpen && key === "cash" && (
-                    <CashContent
-                      counts={cashCounts}
-                      onChange={handleCashCountChange}
-                    />
+                    <CashContent counts={cashCounts} onChange={handleCashCountChange} />
                   )}
 
                   {isOpen && key === "credit" && (
-                    <AmountContent
-                      amount={creditAmount}
-                      onAmountChange={setCreditAmount}
-                    />
+                    <AmountContent amount={creditAmount} onAmountChange={setCreditAmount} />
                   )}
 
                   {isOpen && key === "debit" && (
-                    <AmountContent
-                      amount={debitAmount}
-                      onAmountChange={setDebitAmount}
-                    />
+                    <AmountContent amount={debitAmount} onAmountChange={setDebitAmount} />
                   )}
 
                   {isOpen && key === "cheque" && (

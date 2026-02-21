@@ -1,4 +1,4 @@
-import { Camera, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
 function ReverseIcon() {
   return (
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { type ApiJob, type JobGroup } from "./types";
+import { UploadProofsDialog } from "./upload-proofs-dialog";
 
 function formatJobStatus(status: ApiJob["status"]) {
   switch (status) {
@@ -54,6 +55,7 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
         <ReverseJobDialog
           customer={group.customer}
           jobId={String(group.invoiceNumber)}
+          jobIds={group.jobs.map((j) => j.id)}
           triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-[8px] border border-[#db3e21] font-rubik text-[12px] leading-[14px] text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
           triggerContent={
             <>
@@ -122,10 +124,7 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
 
             <div className="flex flex-col gap-2 px-3 py-3">
               {job.status === "accepted" && (
-                <Button variant="outline" color="success">
-                  <Camera />
-                  Proofs
-                </Button>
+                <UploadProofsDialog group={group} />
               )}
               {job.status === "in_progress" && (
                 <Button color="success">
@@ -143,6 +142,7 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
               <ReverseJobDialog
                 customer={group.customer}
                 jobId={String(group.invoiceNumber)}
+                jobIds={[job.id]}
                 triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] font-rubik text-[12px] leading-[14px] transition-colors border border-[#db3e21] text-[#db3e21] hover:bg-[#db3e21]/5"
                 triggerContent={
                   <>

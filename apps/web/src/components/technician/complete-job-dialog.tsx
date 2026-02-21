@@ -14,38 +14,64 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { authClient } from "@/lib/auth-client";
 import { client, orpc } from "@/utils/orpc";
 
 import { DialogCustomerRow } from "./dialog-shared";
 import { type JobGroup } from "./types";
 
 export function CompleteJobDialog({ group }: { group: JobGroup }) {
+  const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [techCode, setTechCode] = useState("");
   const queryClient = useQueryClient();
+  const { data: session } = authClient.useSession();
 
   const completeMutation = useMutation({
     mutationFn: async () => {
+      if (!techCode.trim()) throw new Error("Please enter the technician code");
+      if (!session?.user?.id) throw new Error("Not authenticated");
+
+      const { valid } = await client.technician.jobs.verifyPin({
+        userId: session.user.id,
+        pin: techCode,
+      });
+      if (!valid) throw new Error("Invalid technician code");
+
       const incomplete = group.jobs.filter((j) => j.status !== "completed");
       for (const j of incomplete) {
+        if (notes.trim()) {
+          await client.technician.jobs.addNote({ jobId: j.id, specialNotes: notes });
+        }
         await client.technician.jobs.complete({ jobId: j.id });
       }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: orpc.technician.jobs.list.key() });
       toast.success("Job completed");
+      resetForm();
+      setOpen(false);
     },
-    onError: (err: Error) => toast.error(`Failed to complete: ${err.message}`),
+    onError: (err: Error) => toast.error(err.message),
   });
 
-  function handleConfirm() {
-    completeMutation.mutate();
+  function resetForm() {
     setNotes("");
     setTechCode("");
   }
 
+  function handleConfirm() {
+    completeMutation.mutate();
+  }
+
   return (
-    <Dialog>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) resetForm();
+      }}
+    >
       <DialogTrigger render={<Button color="success" />}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
@@ -103,12 +129,14 @@ export function CompleteJobDialog({ group }: { group: JobGroup }) {
 
           <DialogFooter className="p-0">
             <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
-            <DialogClose
-              render={<Button color="success" className="w-32" />}
+            <Button
+              color="success"
+              className="w-32"
+              disabled={completeMutation.isPending}
               onClick={handleConfirm}
             >
-              Done
-            </DialogClose>
+              {completeMutation.isPending ? "Completing..." : "Done"}
+            </Button>
           </DialogFooter>
         </div>
       </DialogContent>

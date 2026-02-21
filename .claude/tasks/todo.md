@@ -1,6 +1,6 @@
 # Rim Genie — Implementation Status & Plan
 
-> Updated: 2026-02-21 | Based on `docs/REQUIREMENTS.md`
+> Updated: 2026-02-22 | Based on `docs/REQUIREMENTS.md`
 
 ---
 
@@ -52,7 +52,7 @@
 - [ ] Print job label tag (rack identifier)
 - [ ] "Send to Technician" button explicitly hidden from Floor Manager (currently visible)
 
-### Cashier Module — §2.2 (Backend Complete, Frontend Partially Wired)
+### Cashier Module — §2.2 (Backend Complete, Frontend Mostly Complete)
 
 **Done:**
 
@@ -65,46 +65,48 @@
 - [x] Delete invoice wired to API mutation with cache invalidation
 - [x] Loading skeleton state
 - [x] Money formatted from cents to dollars, dates from Date objects
+- [x] Invoice detail view (`$invoiceId/index.tsx` — items table, totals, payments, customer info)
+- [x] Payment recording checkout page (`$invoiceId/checkout.tsx` — 5 payment methods, denomination breakdown, multi-payment support)
+- [x] "Send to Technician" button on invoice detail page (wired to `cashier.jobs.sendToTechnician`)
+- [x] Date filter wired to API (DateRangeDropdown passes `dateFrom` to all 3 tab queries)
+- [x] Print receipt via `window.print()` with print CSS
+- [x] Effect → oRPC error handling fixed (`runEffect` uses `runPromiseExit` with user-friendly messages)
 
 **Not Done:**
 
-- [ ] "View" button action (invoice detail view / modal)
-- [ ] "Pay" button action (payment recording form — amount, mode, reference)
-- [ ] Quote → Invoice conversion UI (API exists, no frontend trigger)
-- [ ] "Send to Technician" button on cashier page (API exists, no UI button)
-- [ ] Date filter wired to actual date range filtering (dropdown is cosmetic)
+- [ ] Quote → Invoice conversion UI (API exists, no frontend trigger on floor manager page)
 - [ ] Apply admin-approved discounts and taxes (API supports discount/tax update, no UI)
 - [ ] Add special notes to invoice (API supports, no UI)
-- [ ] Print receipt (browser print preview)
-- [ ] E-receipt via email/SMS
+- [ ] E-receipt via email/SMS (depends on notification infra — Phase 4)
 - [ ] Storage fee notice on every receipt
-- [ ] Job completion notification to cashier
-- [ ] Outstanding payment auto-reminder to customer
+- [ ] Job completion notification to cashier (depends on notification infra — Phase 4)
+- [ ] Outstanding payment auto-reminder to customer (depends on notification infra — Phase 4)
 
-### Technician Module — §2.3 (Backend Complete, Frontend Partially Wired)
+### Technician Module — §2.3 (Backend Complete, Frontend Mostly Complete)
 
 **Done:**
 
 - [x] Job schema (job table in DB with full relations)
 - [x] Job API — list (with status/technician filters), get, accept, complete, setDueDate, addNote
+- [x] Job API — reverse (resets job to pending, clears technician/dates, appends reason to notes)
+- [x] Job API — verifyPin (validates user PIN against password hash via better-auth crypto)
+- [x] Technicians list API — returns `{id, name}[]` for dropdowns
 - [x] Page with tabs wired to real API via `useJobs()` hook
 - [x] Jobs grouped by invoiceId client-side (one card per invoice)
 - [x] Tab categorization: Assign (all pending), In Progress (any accepted/in_progress), Completed (all completed)
-- [x] Accept job dialog wired to `technician.jobs.accept` mutation (accepts all pending jobs in group)
-- [x] Complete job dialog wired to `technician.jobs.complete` mutation (completes all incomplete jobs in group)
+- [x] Accept job dialog: dynamic technician dropdown from API, due date wired to `setDueDate`, PIN verification, assigns selected technician
+- [x] Complete job dialog: tech code verification via `verifyPin`, notes saved via `addNote`, controlled dialog state
+- [x] Reverse job dialog: wired to `reverse` API with reason + PIN verification, all callers pass real `jobIds`
 - [x] Detail views display real job data from invoiceItem relations
 - [x] Cache invalidation on mutations, toast feedback
+- [x] Filter row wired: owner filter ("All"/"Mine") passes `technicianId` to API, date filter (today/week/month) filters client-side
+- [x] Filter state lifted to page level, shared across all tabs
 
 **Not Done:**
 
-- [ ] Accept dialog technician selector loads from employees API (currently hardcoded dropdown)
-- [ ] Accept dialog completion date sends to `setDueDate` API (captured but not sent)
-- [ ] PIN input validation in accept dialog (captured but not verified)
-- [ ] Technician code validation in complete dialog (captured but not verified)
 - [ ] Upload proof-of-work video (API endpoint missing, Azure Blob Storage not integrated)
 - [ ] Auto-notify customer on completion (SMS + email)
 - [ ] Notify cashier on job completion (in-app)
-- [ ] Filter/organize jobs by technician (FilterRow renders but not wired)
 
 ### Inventory Module — §2.4 (UI Shell Only — Mock Data)
 
@@ -188,7 +190,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ---
 
-### Phase 2: Cashier Module ✅ Backend Complete, 🔶 Frontend Partial
+### Phase 2: Cashier Module ✅ Backend Complete, ✅ Frontend Mostly Complete
 
 > Priority: **High**
 
@@ -196,27 +198,29 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [x] Step 2.2: Payment API — record + list implemented, auto-status recalculation works
 - [x] Step 2.3: "Send to Technician" API — cashier-only guard, creates jobs from invoice items
 - [x] Step 2.4a: Invoice list with real data (tabs, counts, delete)
-- [ ] Step 2.4b: Invoice detail view (View button)
-- [ ] Step 2.4c: Payment recording form (Pay button)
-- [ ] Step 2.4d: Quote → Invoice conversion UI
-- [ ] Step 2.4e: "Send to Technician" button on page
-- [ ] Step 2.4f: Receipt view with print/email/SMS
-- [ ] Step 2.4g: Date filter wired to API
+- [x] Step 2.4b: Invoice detail view (View button → `$invoiceId/index.tsx`)
+- [x] Step 2.4c: Payment recording form (Pay button → `$invoiceId/checkout.tsx`)
+- [ ] Step 2.4d: Quote → Invoice conversion UI (API ready, no UI on floor manager page)
+- [x] Step 2.4e: "Send to Technician" button on invoice detail page
+- [x] Step 2.4f-print: Print receipt via `window.print()` with print CSS
+- [ ] Step 2.4f-digital: E-receipt via email/SMS (depends on Phase 4)
+- [x] Step 2.4g: Date filter wired to API
 
 ---
 
-### Phase 3: Technician Module ✅ Backend Complete, 🔶 Frontend Partial
+### Phase 3: Technician Module ✅ Backend Complete, ✅ Frontend Mostly Complete
 
 > Priority: **High**
 
-- [x] Step 3.1: Job API — list, get, accept, complete, setDueDate, addNote (uploadProof missing)
+- [x] Step 3.1: Job API — list, get, accept, complete, setDueDate, addNote, reverse, verifyPin, technicians.list
 - [x] Step 3.3a: Frontend wired to real data (list, grouping, accept, complete mutations)
+- [x] Step 3.3b: Technician dropdown from `technicians.list` API
+- [x] Step 3.3c: Due date picker wired to `setDueDate` API (Today/Tomorrow/In a week)
+- [x] Step 3.3d: PIN/employee code validation via `verifyPin` endpoint (accept, complete, reverse dialogs)
+- [x] Step 3.3e: Filter by owner (All/Mine) + date (Today/This week/This month)
+- [x] Step 3.3f: Reverse job dialog wired to `reverse` API with reason + PIN, callers pass real job IDs
 - [ ] Step 3.1b: `technician.jobs.uploadProof` API endpoint
 - [ ] Step 3.2: Video upload (Azure Blob Storage integration)
-- [ ] Step 3.3b: Technician dropdown from employees API
-- [ ] Step 3.3c: Due date picker wired to setDueDate
-- [ ] Step 3.3d: PIN/employee code validation
-- [ ] Step 3.3e: Filter by technician
 
 ---
 
@@ -375,11 +379,11 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 ### Technical Debt / Improvements
 
 - ~~Technician, Cashier pages use hardcoded mock data~~ → ✅ Both now wired to real API
+- ~~Accept dialog technician dropdown hardcoded~~ → ✅ Now loads from `technicians.list` API
 - Dashboard metrics currently use mock/calculated data — need real aggregation queries
 - Inventory page still uses hardcoded mock data
 - No real-time updates yet (polling could be interim via TanStack Query refetchInterval)
 - No file upload infrastructure (Azure Blob Storage needed for proof-of-work videos)
-- Accept dialog technician dropdown hardcoded (should load from employees API)
 - `acceptedById`/`completedById` audit columns missing from job table
 
 ### Security Gaps to Address

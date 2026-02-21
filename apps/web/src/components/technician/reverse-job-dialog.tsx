@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,6 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { authClient } from "@/lib/auth-client";
+import { client, orpc } from "@/utils/orpc";
 
 import { DialogCustomerRow } from "./dialog-shared";
 import { PinInput, usePinState } from "./pin-input";
@@ -17,6 +22,7 @@ import { PinInput, usePinState } from "./pin-input";
 interface ReverseJobDialogProps {
   customer: string;
   jobId: string;
+  jobIds: string[];
   triggerClassName: string;
   triggerContent: React.ReactNode;
 }
@@ -24,19 +30,59 @@ interface ReverseJobDialogProps {
 export function ReverseJobDialog({
   customer,
   jobId,
+  jobIds,
   triggerClassName,
   triggerContent,
 }: ReverseJobDialogProps) {
+  const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const { pin, inputsRef, handlePinChange, handlePinKeyDown, resetPin } = usePinState();
+  const queryClient = useQueryClient();
+  const { data: session } = authClient.useSession();
 
-  function handleConfirm() {
+  const reverseMutation = useMutation({
+    mutationFn: async () => {
+      const pinString = pin.join("");
+      if (!reason.trim()) throw new Error("Please enter a reversal reason");
+      if (pinString.length !== 6) throw new Error("Please enter a complete 6-digit code");
+      if (!session?.user?.id) throw new Error("Not authenticated");
+
+      const { valid } = await client.technician.jobs.verifyPin({
+        userId: session.user.id,
+        pin: pinString,
+      });
+      if (!valid) throw new Error("Invalid technician code");
+
+      for (const id of jobIds) {
+        await client.technician.jobs.reverse({ jobId: id, reason: reason.trim() });
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: orpc.technician.jobs.list.key() });
+      toast.success("Job reversed");
+      resetForm();
+      setOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  function resetForm() {
     setReason("");
     resetPin();
   }
 
+  function handleConfirm() {
+    reverseMutation.mutate();
+  }
+
   return (
-    <Dialog>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) resetForm();
+      }}
+    >
       <DialogTrigger className={triggerClassName}>{triggerContent}</DialogTrigger>
 
       <DialogContent className="sm:max-w-[340px]">
@@ -67,12 +113,14 @@ export function ReverseJobDialog({
 
           <DialogFooter className="p-0">
             <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
-            <DialogClose
-              render={<Button color="destructive" className="w-32" />}
+            <Button
+              color="destructive"
+              className="w-32"
+              disabled={reverseMutation.isPending}
               onClick={handleConfirm}
             >
-              Reverse
-            </DialogClose>
+              {reverseMutation.isPending ? "Reversing..." : "Reverse"}
+            </Button>
           </DialogFooter>
         </div>
       </DialogContent>
