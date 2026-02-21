@@ -297,7 +297,7 @@ function CashierPage() {
                       isDeleting={
                         deleteInvoice.isPending && deleteInvoice.variables?.id === invoice.id
                       }
-                      onPay={() => {}}
+                      onPay={() => navigate({ to: "/cashier/$invoiceId/checkout", params: { invoiceId: invoice.id } })}
                     />
                   ))}
                   {invoices.length === 0 && (

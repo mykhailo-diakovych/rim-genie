@@ -162,7 +162,7 @@ function InvoiceDetailPage() {
           Back to list
         </Button>
 
-        <div className="flex flex-1 items-center justify-center gap-2">
+        <div className="flex flex-1 items-center justify-end gap-2">
           <Button
             color="success"
             disabled={!canPay}
