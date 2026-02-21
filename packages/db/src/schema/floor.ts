@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
+import { invoice } from "./invoice";
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
 
@@ -111,6 +112,7 @@ export const quoteItem = pgTable("quote_item", {
 
 export const customerRelations = relations(customer, ({ many }) => ({
   quotes: many(quote),
+  invoices: many(invoice),
 }));
 
 export const quoteRelations = relations(quote, ({ one, many }) => ({
@@ -123,6 +125,10 @@ export const quoteRelations = relations(quote, ({ one, many }) => ({
     references: [user.id],
   }),
   items: many(quoteItem),
+  invoice: one(invoice, {
+    fields: [quote.id],
+    references: [invoice.quoteId],
+  }),
 }));
 
 export const quoteItemRelations = relations(quoteItem, ({ one }) => ({

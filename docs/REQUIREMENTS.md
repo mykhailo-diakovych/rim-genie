@@ -283,23 +283,23 @@ All team members must be authenticated before being granted access to the platfo
 
 ### Performance Issues
 
-| #   | Issue                                            | Severity |
-| --- | ------------------------------------------------ | -------- |
+| #   | Issue                                                   | Severity |
+| --- | ------------------------------------------------------- | -------- |
 | P   | Slight delay in processing when signing into the system | Low      |
 
 ---
 
 ## UI/UX Label Corrections (from client — Stage 1)
 
-| Screen    | Current Label                              | Correct Label                                                   |
-| --------- | ------------------------------------------ | --------------------------------------------------------------- |
-| General   | Rim Type: Off the Market / Factory         | Side of vehicle rim removed from                                |
-| Rotors    | Vehicle size options                       | Sedan/Small Cars · Mid-Size SUV/Pick-up · Full-Size SUV/Pick-up |
-| Tire Work | "Remove and Repair Rim"                    | "Remove and Replace"                                            |
-| Polishing | "Number of Polishing"                      | "Area to be Polished: Lip / Face / Spot Polish"                 |
-| General   | "Hide Meaning" element                     | Remove or clarify — users do not understand its purpose         |
-| Receipt   | Row size (only ~4 items per page)          | Reduce row height — target **8 services minimum** per page (or maximum possible) |
-| Receipt   | Address section positioned below logo      | Move address **beside** logo to save vertical space and reduce paper usage |
+| Screen    | Current Label                         | Correct Label                                                                    |
+| --------- | ------------------------------------- | -------------------------------------------------------------------------------- |
+| General   | Rim Type: Off the Market / Factory    | Side of vehicle rim removed from                                                 |
+| Rotors    | Vehicle size options                  | Sedan/Small Cars · Mid-Size SUV/Pick-up · Full-Size SUV/Pick-up                  |
+| Tire Work | "Remove and Repair Rim"               | "Remove and Replace"                                                             |
+| Polishing | "Number of Polishing"                 | "Area to be Polished: Lip / Face / Spot Polish"                                  |
+| General   | "Hide Meaning" element                | Remove or clarify — users do not understand its purpose                          |
+| Receipt   | Row size (only ~4 items per page)     | Reduce row height — target **8 services minimum** per page (or maximum possible) |
+| Receipt   | Address section positioned below logo | Move address **beside** logo to save vertical space and reduce paper usage       |
 
 ---
 
@@ -312,15 +312,15 @@ All team members must be authenticated before being granted access to the platfo
 
 **Notification Triggers:**
 
-| Trigger                        | Recipients                          | Channel              |
-| ------------------------------ | ----------------------------------- | -------------------- |
-| Quote sent                     | Customer                            | Email and/or SMS     |
-| Job completed                  | Customer + Cashier                  | SMS to customer; in-app notification to Cashier |
-| Outstanding payment reminder   | Customer                            | Email and/or SMS     |
-| Payment due before pickup      | Customer (auto-triggered when job is complete but payment is partial/outstanding) | Email and/or SMS     |
-| Inventory discrepancy          | System Administrator                | In-app notification  |
-| Discount request submitted     | System Administrator                | In-app notification  |
-| Discount request approved/rejected | Floor Manager                   | In-app notification  |
+| Trigger                            | Recipients                                                                        | Channel                                         |
+| ---------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Quote sent                         | Customer                                                                          | Email and/or SMS                                |
+| Job completed                      | Customer + Cashier                                                                | SMS to customer; in-app notification to Cashier |
+| Outstanding payment reminder       | Customer                                                                          | Email and/or SMS                                |
+| Payment due before pickup          | Customer (auto-triggered when job is complete but payment is partial/outstanding) | Email and/or SMS                                |
+| Inventory discrepancy              | System Administrator                                                              | In-app notification                             |
+| Discount request submitted         | System Administrator                                                              | In-app notification                             |
+| Discount request approved/rejected | Floor Manager                                                                     | In-app notification                             |
 
 ---
 
@@ -334,29 +334,29 @@ Admin dashboard can switch between different physical site locations. All data (
 
 ### Confirmed Stack
 
-| Layer               | Technology                      | Notes                                                    |
-| ------------------- | ------------------------------- | -------------------------------------------------------- |
-| Frontend framework  | TanStack Start                  | SSR useful for public electronic quote viewer link       |
-| Data fetching       | TanStack Query                  | API state management; polling fallback for real-time     |
-| Forms               | TanStack Form                   | Form state + validation                                  |
-| UI components       | shadcn/ui                       | Consistent, responsive component library                 |
-| Backend API         | oRPC (type-safe)                | End-to-end type safety between frontend and backend      |
-| Business logic      | Effect TS                       | Structured error handling for complex workflows          |
-| ORM                 | Drizzle ORM                     | Type-safe Postgres access, migrations as code            |
-| Database            | PostgreSQL                      | Relational data model                                    |
-| CI/CD               | Azure DevOps                    |                                                          |
-| Hosting             | Azure                           |                                                          |
-| Email               | Resend                          | Transactional emails (quotes, receipts, notifications)   |
+| Layer              | Technology       | Notes                                                  |
+| ------------------ | ---------------- | ------------------------------------------------------ |
+| Frontend framework | TanStack Start   | SSR useful for public electronic quote viewer link     |
+| Data fetching      | TanStack Query   | API state management; polling fallback for real-time   |
+| Forms              | TanStack Form    | Form state + validation                                |
+| UI components      | shadcn/ui        | Consistent, responsive component library               |
+| Backend API        | oRPC (type-safe) | End-to-end type safety between frontend and backend    |
+| Business logic     | Effect TS        | Structured error handling for complex workflows        |
+| ORM                | Drizzle ORM      | Type-safe Postgres access, migrations as code          |
+| Database           | PostgreSQL       | Relational data model                                  |
+| CI/CD              | Azure DevOps     |                                                        |
+| Hosting            | Azure            |                                                        |
+| Email              | Resend           | Transactional emails (quotes, receipts, notifications) |
 
 ### Additional Requirements Not Yet Covered
 
-| Need                     | Recommendation                          | Why                                                                                      |
-| ------------------------ | --------------------------------------- | ---------------------------------------------------------------------------------------- |
-| **Real-time updates**    | WebSocket / SSE (e.g., Socket.io, Ably, or Azure Web PubSub) | Bug #1: "page refresh required to see new work." TanStack Query polling alone may not be sufficient for the client's expectation of instant updates. |
-| **SMS delivery**         | Confirm client's existing SMS API or add Twilio / Azure Communication Services | Legacy spec says "provided API endpoint" — clarify if this is already available or needs to be built. |
-| **Video/file storage**   | Azure Blob Storage                      | 30-second proof-of-work video uploads (~50 MB max). Fits Azure hosting stack.            |
-| **Signature capture**    | `react-signature-canvas` or `signature_pad` | Disclaimer module requires tablet-friendly signature capture.                            |
-| **Print optimization**   | `@media print` CSS                      | Browser-native print preview. Dedicated print stylesheets for receipts, invoices, job tags. No server-side print generation needed. |
+| Need                   | Recommendation                                                                 | Why                                                                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Real-time updates**  | WebSocket / SSE (e.g., Socket.io, Ably, or Azure Web PubSub)                   | Bug #1: "page refresh required to see new work." TanStack Query polling alone may not be sufficient for the client's expectation of instant updates. |
+| **SMS delivery**       | Confirm client's existing SMS API or add Twilio / Azure Communication Services | Legacy spec says "provided API endpoint" — clarify if this is already available or needs to be built.                                                |
+| **Video/file storage** | Azure Blob Storage                                                             | 30-second proof-of-work video uploads (~50 MB max). Fits Azure hosting stack.                                                                        |
+| **Signature capture**  | `react-signature-canvas` or `signature_pad`                                    | Disclaimer module requires tablet-friendly signature capture.                                                                                        |
+| **Print optimization** | `@media print` CSS                                                             | Browser-native print preview. Dedicated print stylesheets for receipts, invoices, job tags. No server-side print generation needed.                  |
 
 ---
 
@@ -364,10 +364,10 @@ Admin dashboard can switch between different physical site locations. All data (
 
 The system should interface with any internet-enabled device (laptop, tablet, mobile) via a standard web URL requiring authenticated access. System pages adapt to the following screen sizes:
 
-| Module                        | Desktop | Tablet | Mobile |
-| ----------------------------- | ------- | ------ | ------ |
-| Cashier Module                | ✅       | ❌ (rare) | ❌      |
-| Floor Manager Module          | ✅       | ✅      | ❌      |
-| Inventory Module              | ❌       | ✅      | ✅      |
-| Technician Module             | ❌       | ✅      | ❌      |
-| System Administration Module  | ✅       | ✅      | ✅      |
+| Module                       | Desktop | Tablet    | Mobile |
+| ---------------------------- | ------- | --------- | ------ |
+| Cashier Module               | ✅      | ❌ (rare) | ❌     |
+| Floor Manager Module         | ✅      | ✅        | ❌     |
+| Inventory Module             | ❌      | ✅        | ✅     |
+| Technician Module            | ❌      | ✅        | ❌     |
+| System Administration Module | ✅      | ✅        | ✅     |

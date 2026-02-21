@@ -2,9 +2,11 @@ import type { RouterClient } from "@orpc/server";
 import { z } from "zod";
 
 import { protectedProcedure, publicProcedure } from "../index";
+import { cashierRouter } from "./cashier";
 import { employeesRouter } from "./employees";
 import { floorRouter } from "./floor";
 import { manageRouter } from "./manage";
+import { technicianRouter } from "./technician";
 
 const periodSchema = z.object({ period: z.enum(["today", "week", "month"]) });
 
@@ -23,9 +25,11 @@ export const appRouter = {
     message: "This is private",
     user: context.session.user,
   })),
+  cashier: cashierRouter,
   employees: employeesRouter,
   floor: floorRouter,
   manage: manageRouter,
+  technician: technicianRouter,
   dashboard: {
     metrics: protectedProcedure.input(periodSchema).handler(({ input }) => {
       const m = PERIOD_MULTIPLIER[input.period];
