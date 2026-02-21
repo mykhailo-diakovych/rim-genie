@@ -23,12 +23,16 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCashierRouteImport } from './routes/_app/cashier'
 import { Route as AppFloorIndexRouteImport } from './routes/_app/floor/index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/index'
+import { Route as AppCashierIndexRouteImport } from './routes/_app/cashier/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppFloorNewQuoteRouteImport } from './routes/_app/floor/new-quote'
 import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/customers/$customerId'
+import { Route as AppCashierInvoiceIdRouteImport } from './routes/_app/cashier/$invoiceId'
+import { Route as AppCashierInvoiceIdIndexRouteImport } from './routes/_app/cashier/$invoiceId/index'
 import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$quoteId/pdf'
+import { Route as AppCashierInvoiceIdCheckoutRouteImport } from './routes/_app/cashier/$invoiceId/checkout'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -98,6 +102,11 @@ const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
   path: '/customers/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCashierIndexRoute = AppCashierIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCashierRoute,
+} as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
   path: '/api/rpc/$',
@@ -123,15 +132,32 @@ const AppCustomersCustomerIdRoute = AppCustomersCustomerIdRouteImport.update({
   path: '/customers/$customerId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCashierInvoiceIdRoute = AppCashierInvoiceIdRouteImport.update({
+  id: '/$invoiceId',
+  path: '/$invoiceId',
+  getParentRoute: () => AppCashierRoute,
+} as any)
+const AppCashierInvoiceIdIndexRoute =
+  AppCashierInvoiceIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppCashierInvoiceIdRoute,
+  } as any)
 const ApiQuotesQuoteIdPdfRoute = ApiQuotesQuoteIdPdfRouteImport.update({
   id: '/api/quotes/$quoteId/pdf',
   path: '/api/quotes/$quoteId/pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppCashierInvoiceIdCheckoutRoute =
+  AppCashierInvoiceIdCheckoutRouteImport.update({
+    id: '/checkout',
+    path: '/checkout',
+    getParentRoute: () => AppCashierInvoiceIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/cashier': typeof AppCashierRoute
+  '/cashier': typeof AppCashierRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/floor': typeof AppFloorRouteWithChildren
@@ -140,18 +166,21 @@ export interface FileRoutesByFullPath {
   '/technician': typeof AppTechnicianRoute
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
+  '/cashier/$invoiceId': typeof AppCashierInvoiceIdRouteWithChildren
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/cashier/': typeof AppCashierIndexRoute
   '/customers/': typeof AppCustomersIndexRoute
   '/floor/': typeof AppFloorIndexRoute
+  '/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
+  '/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
-  '/cashier': typeof AppCashierRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/inventory': typeof AppInventoryRoute
@@ -164,15 +193,18 @@ export interface FileRoutesByTo {
   '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/cashier': typeof AppCashierIndexRoute
   '/customers': typeof AppCustomersIndexRoute
   '/floor': typeof AppFloorIndexRoute
+  '/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
+  '/cashier/$invoiceId': typeof AppCashierInvoiceIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
-  '/_app/cashier': typeof AppCashierRoute
+  '/_app/cashier': typeof AppCashierRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
   '/_app/floor': typeof AppFloorRouteWithChildren
@@ -182,14 +214,18 @@ export interface FileRoutesById {
   '/_app/terms': typeof AppTermsRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/cashier/$invoiceId': typeof AppCashierInvoiceIdRouteWithChildren
   '/_app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/_app/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/_app/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/_app/cashier/': typeof AppCashierIndexRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/floor/': typeof AppFloorIndexRoute
+  '/_app/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
+  '/_app/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -204,18 +240,21 @@ export interface FileRouteTypes {
     | '/technician'
     | '/terms'
     | '/login'
+    | '/cashier/$invoiceId'
     | '/customers/$customerId'
     | '/floor/$quoteId'
     | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
+    | '/cashier/'
     | '/customers/'
     | '/floor/'
+    | '/cashier/$invoiceId/checkout'
     | '/api/quotes/$quoteId/pdf'
+    | '/cashier/$invoiceId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/cashier'
     | '/dashboard'
     | '/employees'
     | '/inventory'
@@ -228,9 +267,12 @@ export interface FileRouteTypes {
     | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
+    | '/cashier'
     | '/customers'
     | '/floor'
+    | '/cashier/$invoiceId/checkout'
     | '/api/quotes/$quoteId/pdf'
+    | '/cashier/$invoiceId'
   id:
     | '__root__'
     | '/_app'
@@ -245,14 +287,18 @@ export interface FileRouteTypes {
     | '/_app/terms'
     | '/_auth/login'
     | '/_app/'
+    | '/_app/cashier/$invoiceId'
     | '/_app/customers/$customerId'
     | '/_app/floor/$quoteId'
     | '/_app/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
+    | '/_app/cashier/'
     | '/_app/customers/'
     | '/_app/floor/'
+    | '/_app/cashier/$invoiceId/checkout'
     | '/api/quotes/$quoteId/pdf'
+    | '/_app/cashier/$invoiceId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -363,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/cashier/': {
+      id: '/_app/cashier/'
+      path: '/'
+      fullPath: '/cashier/'
+      preLoaderRoute: typeof AppCashierIndexRouteImport
+      parentRoute: typeof AppCashierRoute
+    }
     '/api/rpc/$': {
       id: '/api/rpc/$'
       path: '/api/rpc/$'
@@ -398,6 +451,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersCustomerIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/cashier/$invoiceId': {
+      id: '/_app/cashier/$invoiceId'
+      path: '/$invoiceId'
+      fullPath: '/cashier/$invoiceId'
+      preLoaderRoute: typeof AppCashierInvoiceIdRouteImport
+      parentRoute: typeof AppCashierRoute
+    }
+    '/_app/cashier/$invoiceId/': {
+      id: '/_app/cashier/$invoiceId/'
+      path: '/'
+      fullPath: '/cashier/$invoiceId/'
+      preLoaderRoute: typeof AppCashierInvoiceIdIndexRouteImport
+      parentRoute: typeof AppCashierInvoiceIdRoute
+    }
     '/api/quotes/$quoteId/pdf': {
       id: '/api/quotes/$quoteId/pdf'
       path: '/api/quotes/$quoteId/pdf'
@@ -405,8 +472,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiQuotesQuoteIdPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/cashier/$invoiceId/checkout': {
+      id: '/_app/cashier/$invoiceId/checkout'
+      path: '/checkout'
+      fullPath: '/cashier/$invoiceId/checkout'
+      preLoaderRoute: typeof AppCashierInvoiceIdCheckoutRouteImport
+      parentRoute: typeof AppCashierInvoiceIdRoute
+    }
   }
 }
+
+interface AppCashierInvoiceIdRouteChildren {
+  AppCashierInvoiceIdCheckoutRoute: typeof AppCashierInvoiceIdCheckoutRoute
+  AppCashierInvoiceIdIndexRoute: typeof AppCashierInvoiceIdIndexRoute
+}
+
+const AppCashierInvoiceIdRouteChildren: AppCashierInvoiceIdRouteChildren = {
+  AppCashierInvoiceIdCheckoutRoute: AppCashierInvoiceIdCheckoutRoute,
+  AppCashierInvoiceIdIndexRoute: AppCashierInvoiceIdIndexRoute,
+}
+
+const AppCashierInvoiceIdRouteWithChildren =
+  AppCashierInvoiceIdRoute._addFileChildren(AppCashierInvoiceIdRouteChildren)
+
+interface AppCashierRouteChildren {
+  AppCashierInvoiceIdRoute: typeof AppCashierInvoiceIdRouteWithChildren
+  AppCashierIndexRoute: typeof AppCashierIndexRoute
+}
+
+const AppCashierRouteChildren: AppCashierRouteChildren = {
+  AppCashierInvoiceIdRoute: AppCashierInvoiceIdRouteWithChildren,
+  AppCashierIndexRoute: AppCashierIndexRoute,
+}
+
+const AppCashierRouteWithChildren = AppCashierRoute._addFileChildren(
+  AppCashierRouteChildren,
+)
 
 interface AppFloorRouteChildren {
   AppFloorQuoteIdRoute: typeof AppFloorQuoteIdRoute
@@ -425,7 +526,7 @@ const AppFloorRouteWithChildren = AppFloorRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
-  AppCashierRoute: typeof AppCashierRoute
+  AppCashierRoute: typeof AppCashierRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRoute
   AppFloorRoute: typeof AppFloorRouteWithChildren
@@ -439,7 +540,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppCashierRoute: AppCashierRoute,
+  AppCashierRoute: AppCashierRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRoute,
   AppFloorRoute: AppFloorRouteWithChildren,

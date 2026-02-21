@@ -161,3 +161,9 @@
     @apply font-sans;
   }
 }
+
+@media print {
+  body {
+    background: white !important;
+  }
+}
