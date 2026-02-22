@@ -34,7 +34,7 @@
 - [x] Create/edit customer profiles (name, phone, email, birthday day/month)
 - [x] VIP flag + discount percentage on customer profile
 - [x] Generate quotes (create quote → add line items with job types)
-- [x] Quote status workflow (draft → pending → in_progress → completed)
+- [x] Quote status workflow (draft → completed via Send to Cashier, which creates invoice directly)
 - [x] Quote PDF generation
 - [x] Quote list with view/print/delete actions
 - [x] Quote editor with items table, comments, totals
@@ -50,7 +50,10 @@
 - [ ] Send quote via SMS (external API)
 - [ ] Electronic quote viewer (public SSR page via link)
 - [ ] Print job label tag (rack identifier)
-- [ ] "Send to Technician" button explicitly hidden from Floor Manager (currently visible)
+- [x] "Send to Technician" replaced with "Send to Cashier" on Floor Manager (creates invoice directly)
+- [x] Quote editor read-only mode for completed quotes (hides Save/Send/Add Job/Remove)
+- [x] Status badges on quote list (Draft / Invoiced)
+- [x] `quotes.update` and `quotes.delete` hardened to `floorManagerProcedure`
 
 ### Cashier Module — §2.2 (Backend Complete, Frontend Mostly Complete)
 
@@ -74,7 +77,7 @@
 
 **Not Done:**
 
-- [ ] Quote → Invoice conversion UI (API exists, no frontend trigger on floor manager page)
+- [x] Quote → Invoice conversion UI (Floor Manager "Send to Cashier" button creates invoice directly)
 - [ ] Apply admin-approved discounts and taxes (API supports discount/tax update, no UI)
 - [ ] Add special notes to invoice (API supports, no UI)
 - [ ] E-receipt via email/SMS (depends on notification infra — Phase 4)
@@ -200,7 +203,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [x] Step 2.4a: Invoice list with real data (tabs, counts, delete)
 - [x] Step 2.4b: Invoice detail view (View button → `$invoiceId/index.tsx`)
 - [x] Step 2.4c: Payment recording form (Pay button → `$invoiceId/checkout.tsx`)
-- [ ] Step 2.4d: Quote → Invoice conversion UI (API ready, no UI on floor manager page)
+- [x] Step 2.4d: Quote → Invoice conversion UI (Floor Manager "Send to Cashier" → `sendToCashier` endpoint)
 - [x] Step 2.4e: "Send to Technician" button on invoice detail page
 - [x] Step 2.4f-print: Print receipt via `window.print()` with print CSS
 - [ ] Step 2.4f-digital: E-receipt via email/SMS (depends on Phase 4)
@@ -316,7 +319,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [ ] Print job label tag
 - [ ] Send quote via email/SMS with electronic quote link
 - [ ] Public electronic quote viewer page (SSR)
-- [ ] Hide "Send to Technician" from Floor Manager UI
+- [x] Hide "Send to Technician" from Floor Manager UI (replaced with "Send to Cashier")
 
 ---
 
@@ -368,7 +371,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 ### Resolved Design Decisions
 
 1. **Invoice items**: ✅ Decided — Copy from quote items (snapshot). Implemented in `createFromQuote` service.
-2. **"Send to Technician" enforcement**: ✅ Backend role-guard via `cashierProcedure`. UI hiding still needed on floor manager page.
+2. **"Send to Technician" enforcement**: ✅ Backend role-guard via `cashierProcedure`. ✅ Floor Manager UI now shows "Send to Cashier" (creates invoice directly), not "Send to Technician".
 3. **VIP discount**: ✅ Auto-applied at invoice conversion time (not at quote time per spec request).
 
 ### Remaining Design Decisions
@@ -388,6 +391,6 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ### Security Gaps to Address
 
-- "Send to Technician" is backend-enforced ✅ but still visible in Floor Manager UI ❌
+- "Send to Technician" is backend-enforced ✅ and hidden from Floor Manager UI ✅ (replaced with "Send to Cashier")
 - Authorization before changes/deletions (audit log system) — not implemented
 - Customer deletion validation (check for existing invoices/jobs) — not implemented

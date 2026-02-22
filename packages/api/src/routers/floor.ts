@@ -6,6 +6,8 @@ import type { JobTypeEntry } from "@rim-genie/db/schema";
 import { asc, eq, ilike, or, sql, sum } from "drizzle-orm";
 
 import { floorManagerProcedure, protectedProcedure, requireRole } from "../index";
+import * as InvoiceService from "../services/invoice.service";
+import { runEffect } from "../services/run-effect";
 
 async function recalcQuoteTotal(quoteId: string): Promise<void> {
   const result = await db
@@ -155,12 +157,11 @@ export const floorRouter = {
         return rows[0]!;
       }),
 
-    update: protectedProcedure
+    update: floorManagerProcedure
       .input(
         z.object({
           id: z.string(),
           comments: z.string().optional(),
-          status: z.enum(["draft", "pending", "in_progress", "completed"]).optional(),
           jobRack: z.string().optional(),
         }),
       )
@@ -170,7 +171,32 @@ export const floorRouter = {
         return rows[0]!;
       }),
 
-    delete: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+    sendToCashier: floorManagerProcedure
+      .input(z.object({ id: z.string() }))
+      .handler(async ({ input, context }) => {
+        const existing = await db.query.quote.findFirst({
+          where: eq(quote.id, input.id),
+          with: { items: true },
+        });
+
+        if (!existing) throw new Error("Quote not found");
+        if (existing.status !== "draft") throw new Error("Only draft quotes can be sent");
+        if (existing.items.length === 0) throw new Error("Cannot send an empty quote");
+
+        return runEffect(InvoiceService.createFromQuote(input.id, context.session.user.id));
+      }),
+
+    delete: floorManagerProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+      const existing = await db.query.quote.findFirst({
+        where: eq(quote.id, input.id),
+      });
+
+      if (!existing) throw new Error("Quote not found");
+
+      if (existing.status !== "draft") {
+        throw new Error("Only draft quotes can be deleted");
+      }
+
       await db.delete(quote).where(eq(quote.id, input.id));
       return { success: true as const };
     }),

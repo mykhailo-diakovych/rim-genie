@@ -10,8 +10,8 @@ import {
   Plus,
   Printer,
   Save,
+  Send,
   Trash2,
-  Wrench,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -110,15 +110,21 @@ function QuoteEditorPage() {
     );
   }
 
-  function handleToTechnician() {
-    updateQuote.mutate(
-      { id: quoteId, status: "pending", comments },
-      {
-        onSuccess: () => toast.success("Sent to technician"),
-      },
-    );
+  const sendToCashier = useMutation({
+    ...orpc.floor.quotes.sendToCashier.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateQuote();
+      await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
+      toast.success("Invoice created and sent to cashier");
+    },
+    onError: (err) => toast.error(`Failed to send: ${err.message}`),
+  });
+
+  function handleSendToCashier() {
+    sendToCashier.mutate({ id: quoteId });
   }
 
+  const isReadOnly = quote?.status !== "draft";
   const total = (quote?.total ?? 0) / 100;
 
   const formatDate = (d: Date | string | null | undefined) => {
@@ -141,17 +147,31 @@ function QuoteEditorPage() {
           </Button>
 
           <div className="flex items-center gap-2">
-            <Button color="success" onClick={handleSave} disabled={updateQuote.isPending}>
-              <Save />
-              Save
-            </Button>
-            <Button onClick={handleToTechnician} disabled={updateQuote.isPending}>
-              <Wrench />
-              To Technician
-            </Button>
+            {!isReadOnly && (
+              <>
+                <Button color="success" onClick={handleSave} disabled={updateQuote.isPending}>
+                  <Save />
+                  Save
+                </Button>
+                <Button
+                  onClick={handleSendToCashier}
+                  disabled={sendToCashier.isPending || !quote?.items?.length}
+                >
+                  <Send />
+                  Send to Cashier
+                </Button>
+              </>
+            )}
             <MoreDropdown quoteId={quoteId} />
           </div>
         </div>
+
+        {/* Status banner */}
+        {quote?.status === "completed" && (
+          <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 font-rubik text-sm text-green-800">
+            Converted to invoice
+          </div>
+        )}
 
         {/* Invoice card */}
         <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
@@ -257,23 +277,26 @@ function QuoteEditorPage() {
                         updateItem.mutate({ id: item.id, unitCost: cents })
                       }
                       isRemoving={removeItem.isPending && removeItem.variables?.id === item.id}
+                      readOnly={isReadOnly}
                     />
                   ))
                 )}
 
                 {/* Add Job row */}
-                <tr className="border-b border-field-line">
-                  <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
-                    <button
-                      type="button"
-                      onClick={() => setSheetOpen(true)}
-                      className="flex items-center gap-1.5 rounded-[8px] font-rubik text-[14px] leading-[18px] text-blue transition-opacity hover:opacity-70"
-                    >
-                      <Plus className="size-4" />
-                      Add Job
-                    </button>
-                  </td>
-                </tr>
+                {!isReadOnly && (
+                  <tr className="border-b border-field-line">
+                    <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
+                      <button
+                        type="button"
+                        onClick={() => setSheetOpen(true)}
+                        className="flex items-center gap-1.5 rounded-[8px] font-rubik text-[14px] leading-[18px] text-blue transition-opacity hover:opacity-70"
+                      >
+                        <Plus className="size-4" />
+                        Add Job
+                      </button>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -286,7 +309,8 @@ function QuoteEditorPage() {
               onChange={(e) => setComments(e.target.value)}
               placeholder="Enter note"
               rows={3}
-              className="w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none placeholder:text-ghost"
+              readOnly={isReadOnly}
+              className="w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none placeholder:text-ghost read-only:bg-page read-only:text-label"
             />
           </div>
 
@@ -394,6 +418,7 @@ function ItemRow({
   onRemove,
   onUnitCostChange,
   isRemoving,
+  readOnly,
 }: {
   item: {
     id: string;
@@ -405,6 +430,7 @@ function ItemRow({
   onRemove: () => void;
   onUnitCostChange: (cents: number) => void;
   isRemoving: boolean;
+  readOnly: boolean;
 }) {
   const [costStr, setCostStr] = useState((item.unitCost / 100).toFixed(2));
 
@@ -441,7 +467,8 @@ function ItemRow({
             value={costStr}
             onChange={(e) => setCostStr(e.target.value)}
             onBlur={handleBlur}
-            className="w-16 rounded-[4px] border border-transparent bg-transparent px-1 py-0.5 font-rubik text-[14px] text-body outline-none hover:border-field-line focus:border-field-line"
+            readOnly={readOnly}
+            className="w-16 rounded-[4px] border border-transparent bg-transparent px-1 py-0.5 font-rubik text-[14px] text-body outline-none read-only:pointer-events-none hover:border-field-line focus:border-field-line"
           />
         </div>
       </td>
@@ -449,10 +476,12 @@ function ItemRow({
         ${rowTotal.toFixed(2)}
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
-        <Button variant="outline" color="destructive" onClick={onRemove} disabled={isRemoving}>
-          <Trash2 className="size-3.5" />
-          Remove
-        </Button>
+        {!readOnly && (
+          <Button variant="outline" color="destructive" onClick={onRemove} disabled={isRemoving}>
+            <Trash2 className="size-3.5" />
+            Remove
+          </Button>
+        )}
       </td>
     </tr>
   );
