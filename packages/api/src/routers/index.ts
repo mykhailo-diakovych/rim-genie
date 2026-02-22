@@ -5,6 +5,7 @@ import { protectedProcedure, publicProcedure } from "../index";
 import { cashierRouter } from "./cashier";
 import { employeesRouter } from "./employees";
 import { floorRouter } from "./floor";
+import { inventoryRouter } from "./inventory";
 import { manageRouter } from "./manage";
 import { technicianRouter } from "./technician";
 
@@ -28,6 +29,7 @@ export const appRouter = {
   cashier: cashierRouter,
   employees: employeesRouter,
   floor: floorRouter,
+  inventory: inventoryRouter,
   manage: manageRouter,
   technician: technicianRouter,
   dashboard: {

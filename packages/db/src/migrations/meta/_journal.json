@@ -15,6 +15,13 @@
       "when": 1771517098352,
       "tag": "0001_nice_jigsaw",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771775295589,
+      "tag": "0002_previous_moira_mactaggert",
+      "breakpoints": true
     }
   ]
 }

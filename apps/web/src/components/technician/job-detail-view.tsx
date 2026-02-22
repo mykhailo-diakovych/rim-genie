@@ -123,9 +123,7 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
             </div>
 
             <div className="flex flex-col gap-2 px-3 py-3">
-              {job.status === "accepted" && (
-                <UploadProofsDialog group={group} />
-              )}
+              {job.status === "accepted" && <UploadProofsDialog group={group} />}
               {job.status === "in_progress" && (
                 <Button color="success">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">

@@ -29,6 +29,12 @@ const TAG_MAP: Record<
   },
   JobNotAccepted: { code: "BAD_REQUEST", message: "This job has not been accepted yet" },
   JobCannotBeReversed: { code: "BAD_REQUEST", message: "This job cannot be reversed" },
+  EODAlreadyExists: { code: "CONFLICT", message: "An EOD record already exists for this date" },
+  SODAlreadyExists: { code: "CONFLICT", message: "An SOD record already exists for this date" },
+  EODNotFound: {
+    code: "NOT_FOUND",
+    message: "No EOD record found — please submit an EOD before starting the day",
+  },
 };
 
 export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): Promise<A> {

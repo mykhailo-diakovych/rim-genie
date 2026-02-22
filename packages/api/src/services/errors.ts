@@ -49,3 +49,15 @@ export class JobsAlreadyCreated extends Data.TaggedError("JobsAlreadyCreated")<{
 export class JobCannotBeReversed extends Data.TaggedError("JobCannotBeReversed")<{
   jobId: string;
 }> {}
+
+export class EODAlreadyExists extends Data.TaggedError("EODAlreadyExists")<{
+  recordDate: string;
+}> {}
+
+export class SODAlreadyExists extends Data.TaggedError("SODAlreadyExists")<{
+  recordDate: string;
+}> {}
+
+export class EODNotFound extends Data.TaggedError("EODNotFound")<{
+  recordDate: string;
+}> {}
