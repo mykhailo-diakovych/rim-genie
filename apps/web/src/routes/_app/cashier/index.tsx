@@ -51,7 +51,7 @@ function TabCounter({ count, active }: { count: number; active: boolean }) {
   return (
     <span
       className={cn(
-        "flex h-[18px] min-w-7 items-center justify-center rounded-full px-1 font-rubik text-xs leading-[14px]",
+        "flex h-[18px] min-w-7 items-center justify-center rounded-full px-1 font-rubik text-xs leading-3.5",
         active ? "bg-blue text-white" : "bg-[#e2e4e5] text-label",
       )}
     >
@@ -112,25 +112,25 @@ function InvoiceCard({
   const canPay = invoice.status !== "paid";
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)] sm:min-h-16 sm:flex-row sm:items-center sm:gap-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:min-h-16 sm:flex-row sm:items-center sm:gap-4">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="truncate font-rubik text-sm leading-[18px] font-medium text-body">
+          <span className="truncate font-rubik text-sm leading-4.5 font-medium text-body">
             {invoice.customerName}
           </span>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-[14px]">
+        <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
           <span className="text-label">ID:</span>
           <span className="text-body">{invoice.invoiceNumber}</span>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-[14px]">
+        <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
           <span className="text-label">Date :</span>
           <span className="truncate text-body">{formatDate(invoice.createdAt)}</span>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-[14px]">
+        <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
           <span className="text-label">Total / Balance</span>
           <span className="text-body">
             {formatCents(invoice.total)} / {formatCents(invoice.balance)}
@@ -253,7 +253,7 @@ function CashierPage() {
   return (
     <div className="flex flex-col gap-5 p-5">
       <div className="flex items-center justify-between">
-        <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           List of Invoices
         </h1>
       </div>

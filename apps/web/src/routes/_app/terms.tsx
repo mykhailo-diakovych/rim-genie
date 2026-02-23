@@ -89,7 +89,7 @@ function TermsPage() {
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 px-5 pt-4">
         <div className="flex items-center justify-between">
-          <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+          <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
             Service Terms &amp; Acknowledgment
           </h1>
           <Button variant="outline" color="success" onClick={acceptAll} disabled={allAccepted}>
@@ -147,7 +147,7 @@ function TermsPage() {
                 </div>
 
                 {isExpanded && (
-                  <p className="font-rubik text-sm leading-[18px] text-body">{term.description}</p>
+                  <p className="font-rubik text-sm leading-4.5 text-body">{term.description}</p>
                 )}
               </div>
             );

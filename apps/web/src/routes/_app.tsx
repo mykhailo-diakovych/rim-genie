@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
   return (
-    <div className="flex h-svh flex-col bg-page">
+    <div className="flex h-svh flex-col bg-page font-rubik">
       <AppHeader />
       <div className="flex flex-1 overflow-hidden">
         <AppSidebar className="hidden md:flex" />

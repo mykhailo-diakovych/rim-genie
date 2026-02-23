@@ -67,7 +67,7 @@ function TechnicianPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-5">
-      <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">List of Jobs</h1>
+      <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Jobs</h1>
 
       <div>
         {/* Animated tab bar */}
@@ -83,7 +83,7 @@ function TechnicianPage() {
                 type="button"
                 onClick={() => handleTabChange(tab.value)}
                 className={cn(
-                  "flex h-9 cursor-pointer items-center gap-1.5 px-3 py-2 font-rubik text-[14px] leading-[18px] transition-colors outline-none",
+                  "flex h-9 cursor-pointer items-center gap-1.5 px-3 py-2 font-rubik text-sm leading-4.5 transition-colors outline-none",
                   isActive ? "text-blue" : "text-body hover:text-body/70",
                 )}
               >
@@ -91,7 +91,7 @@ function TechnicianPage() {
                 {tabCounts[tab.value] > 0 && (
                   <span
                     className={cn(
-                      "flex h-[18px] min-w-[28px] items-center justify-center rounded-full px-1 font-rubik text-[12px] leading-[14px] transition-colors duration-200",
+                      "flex h-[18px] min-w-[28px] items-center justify-center rounded-full px-1 font-rubik text-xs leading-3.5 transition-colors duration-200",
                       isActive ? "bg-blue text-white" : "bg-[#e2e4e5] text-label",
                     )}
                   >
@@ -110,7 +110,7 @@ function TechnicianPage() {
         </div>
 
         {isLoading && (
-          <p className="pt-3 font-rubik text-[12px] leading-[14px] text-label">Loading jobs...</p>
+          <p className="pt-3 font-rubik text-xs leading-3.5 text-label">Loading jobs...</p>
         )}
 
         {!isLoading && activeTab === "in-progress" && (
@@ -130,9 +130,7 @@ function TechnicianPage() {
                 />
               ))}
               {inProgress.length === 0 && (
-                <p className="font-rubik text-[12px] leading-[14px] text-label">
-                  No in-progress jobs.
-                </p>
+                <p className="font-rubik text-xs leading-3.5 text-label">No in-progress jobs.</p>
               )}
             </div>
           </div>
@@ -155,16 +153,14 @@ function TechnicianPage() {
                 />
               ))}
               {assign.length === 0 && (
-                <p className="font-rubik text-[12px] leading-[14px] text-label">
-                  No jobs to assign.
-                </p>
+                <p className="font-rubik text-xs leading-3.5 text-label">No jobs to assign.</p>
               )}
             </div>
           </div>
         )}
 
         {!isLoading && activeTab === "new" && (
-          <p className="pt-3 font-rubik text-[12px] leading-[14px] text-label">No new jobs.</p>
+          <p className="pt-3 font-rubik text-xs leading-3.5 text-label">No new jobs.</p>
         )}
 
         {!isLoading && activeTab === "completed" && (
@@ -184,9 +180,7 @@ function TechnicianPage() {
                 />
               ))}
               {completed.length === 0 && (
-                <p className="font-rubik text-[12px] leading-[14px] text-label">
-                  No completed jobs.
-                </p>
+                <p className="font-rubik text-xs leading-3.5 text-label">No completed jobs.</p>
               )}
             </div>
           </div>

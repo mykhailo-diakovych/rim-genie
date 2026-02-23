@@ -33,14 +33,14 @@ function QuoteCard({
   isDeleting: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)] sm:min-h-16 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:min-h-16 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <span className="font-rubik text-[14px] leading-[18px] font-medium text-body">
+          <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {quote.customer.name}
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-2 font-rubik text-[12px] leading-[14px]">
+        <div className="flex flex-wrap items-center gap-2 font-rubik text-xs leading-3.5">
           <span className="text-label">Quote ID:</span>
           <span className="text-body">{quote.quoteNumber}</span>
           <span className="size-1 rounded-full bg-ghost" />
@@ -105,9 +105,7 @@ function FloorPage() {
     <div className="flex flex-1 flex-col gap-5 p-5">
       {/* Title row */}
       <div className="flex items-center justify-between">
-        <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
-          List of Quotes
-        </h1>
+        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Quotes</h1>
         <Button className="w-32" nativeButton={false} render={<Link to="/floor/new-quote" />}>
           <Plus />
           New Quote
@@ -120,13 +118,13 @@ function FloorPage() {
           Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="h-16 animate-pulse rounded-[12px] border border-card-line bg-white"
+              className="h-16 animate-pulse rounded-xl border border-card-line bg-white"
             />
           ))
         ) : quotes.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-[12px] border border-card-line bg-white p-8 text-center">
-            <p className="font-rubik text-[14px] text-label">No quotes yet</p>
-            <p className="font-rubik text-[12px] text-ghost">
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-card-line bg-white p-8 text-center">
+            <p className="font-rubik text-sm text-label">No quotes yet</p>
+            <p className="font-rubik text-xs text-ghost">
               Click "New Quote" to create your first quote
             </p>
           </div>
