@@ -42,8 +42,8 @@ export function AppHeader() {
         </div>
 
         {/* Search — hidden on mobile, full bar on md+ */}
-        <div className="hidden w-80 items-center gap-4 rounded-[8px] border border-field-line bg-white px-3 py-[10px] md:flex">
-          <span className="min-w-0 flex-1 font-rubik text-[12px] leading-[14px] text-ghost">
+        <div className="hidden w-80 items-center gap-4 rounded-md border border-field-line bg-white px-3 py-[10px] md:flex">
+          <span className="min-w-0 flex-1 font-rubik text-xs leading-3.5 text-ghost">
             {m.header_search_placeholder()}
           </span>
           <Search className="size-4 shrink-0 text-ghost" />
@@ -55,7 +55,7 @@ export function AppHeader() {
         {/* Search icon — mobile only */}
         <button
           type="button"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f0f5fa] md:hidden"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#f0f5fa] md:hidden"
           aria-label={m.header_search_placeholder()}
         >
           <Search className="size-4 text-ghost" />
@@ -69,10 +69,10 @@ export function AppHeader() {
           </div>
         ) : (
           <div className="flex flex-col items-start justify-center gap-1">
-            <span className="font-rubik text-[14px] leading-[18px] font-medium text-body">
+            <span className="font-rubik text-sm leading-4.5 font-medium text-body">
               {session?.user.name}
             </span>
-            <span className="hidden font-rubik text-[12px] leading-[14px] text-label md:block">
+            <span className="hidden font-rubik text-xs leading-3.5 text-label md:block">
               {formatDateTime(now)}
             </span>
           </div>
@@ -82,7 +82,7 @@ export function AppHeader() {
         <button
           type="button"
           onClick={handleSignOut}
-          className="flex h-10 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f0f5fa] transition-colors hover:bg-[#e4ecf5]"
+          className="flex h-10 w-9 shrink-0 items-center justify-center rounded-md bg-[#f0f5fa] transition-colors hover:bg-[#e4ecf5]"
           aria-label={m.btn_logout()}
         >
           <LogOut className="size-4 text-blue" />
