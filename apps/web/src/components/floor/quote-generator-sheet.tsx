@@ -14,7 +14,14 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type JobType = "bend-fix" | "crack-fix" | "straighten" | "twist" | "reconstruct" | "general";
+export type JobType =
+  | "bend-fix"
+  | "crack-fix"
+  | "straighten"
+  | "twist"
+  | "reconstruct"
+  | "general"
+  | "welding";
 
 export type JobTypeEntry = {
   type: JobType;
@@ -27,6 +34,8 @@ export interface QuoteGeneratorSheetData {
   damageLevel: string | null;
   quantity: number;
   unitCost: number;
+  inches?: number;
+  itemType?: "rim" | "welding";
   jobTypes: JobTypeEntry[];
   description: string;
 }
@@ -73,11 +82,13 @@ export function FloorCheckbox({
 
 export interface QuoteGeneratorEditItem {
   id: string;
+  itemType: string;
   vehicleSize: string | null;
   sideOfVehicle: string | null;
   damageLevel: string | null;
   quantity: number;
   unitCost: number;
+  inches: number | null;
   jobTypes: JobTypeEntry[];
   description: string | null;
 }
@@ -108,11 +119,23 @@ export function QuoteGeneratorSheet({
   const [jobInputs, setJobInputs] = useState<Partial<Record<JobType, string>>>({});
   const [initialized, setInitialized] = useState<string | null>(null);
 
+  const [weldingDesc, setWeldingDesc] = useState("");
+  const [weldingInches, setWeldingInches] = useState("");
+  const [weldingPricePerInch, setWeldingPricePerInch] = useState("");
+
   if (editItem && initialized !== editItem.id) {
-    setVehicleSize(editItem.vehicleSize);
-    setSideOfVehicle(editItem.sideOfVehicle);
-    setDamageLevel(editItem.damageLevel);
-    setQuantity(String(editItem.quantity));
+    if (editItem.itemType === "welding") {
+      setTab("other-welding");
+      setWeldingDesc(editItem.description ?? "");
+      setWeldingInches(String(editItem.inches ?? ""));
+      setWeldingPricePerInch(editItem.unitCost ? (editItem.unitCost / 100).toFixed(2) : "");
+    } else {
+      setTab("rims");
+      setVehicleSize(editItem.vehicleSize);
+      setSideOfVehicle(editItem.sideOfVehicle);
+      setDamageLevel(editItem.damageLevel);
+      setQuantity(String(editItem.quantity));
+    }
     const checked: Partial<Record<JobType, boolean>> = {};
     const inputs: Partial<Record<JobType, string>> = {};
     for (const jt of editItem.jobTypes) {
@@ -140,9 +163,43 @@ export function QuoteGeneratorSheet({
     setCheckedJobs({});
     setJobInputs({});
     setInitialized(null);
+    setWeldingDesc("");
+    setWeldingInches("");
+    setWeldingPricePerInch("");
   }
 
   function handleSubmit() {
+    if (tab === "other-welding") {
+      const inches = parseInt(weldingInches, 10);
+      const pricePerInchCents = Math.round(parseFloat(weldingPricePerInch) * 100);
+      if (!inches || inches <= 0 || isNaN(pricePerInchCents) || pricePerInchCents <= 0) return;
+
+      const desc =
+        weldingDesc.trim() || `Welding: ${inches}" @ $${(pricePerInchCents / 100).toFixed(2)}/in`;
+
+      const data: QuoteGeneratorSheetData = {
+        vehicleSize: null,
+        sideOfVehicle: null,
+        damageLevel: null,
+        quantity: 1,
+        unitCost: pricePerInchCents,
+        inches,
+        itemType: "welding",
+        jobTypes: [{ type: "welding" }],
+        description: desc,
+      };
+
+      if (editItem && onEdit) {
+        onEdit(editItem.id, data);
+      } else {
+        onAdd(data);
+      }
+
+      resetForm();
+      onClose();
+      return;
+    }
+
     const selectedJobs = JOB_TYPES.filter((j) => checkedJobs[j.value]);
     if (selectedJobs.length === 0) return;
 
@@ -169,6 +226,7 @@ export function QuoteGeneratorSheet({
       damageLevel,
       quantity: parseInt(quantity, 10) || 1,
       unitCost: editItem?.unitCost ?? 0,
+      itemType: "rim",
       jobTypes,
       description,
     };
@@ -310,7 +368,7 @@ export function QuoteGeneratorSheet({
                 </p>
                 <div className="flex flex-col gap-2">
                   {JOB_TYPES.map((job) => (
-                    <div key={job.value} className="flex items-center gap-3 h-9">
+                    <div key={job.value} className="flex h-9 items-center gap-3">
                       <div className="flex flex-1 items-center gap-1.5">
                         <FloorCheckbox
                           checked={!!checkedJobs[job.value]}
@@ -338,9 +396,68 @@ export function QuoteGeneratorSheet({
             </TabsContent>
 
             <TabsContent value="other-welding" className="flex flex-col gap-4 pt-4">
-              <p className="font-rubik text-[12px] leading-[14px] text-label">
-                Other welding options coming soon.
-              </p>
+              <div className="flex items-center gap-3 rounded-lg bg-[#ebf5ff] px-3 py-2">
+                <div className="flex shrink-0 items-center justify-center rounded-full bg-[#cbe5fc] p-2">
+                  <Info className="size-5 text-blue" />
+                </div>
+                <p className="font-rubik text-xs leading-[14px] text-body">
+                  Enter welding details below. Price is calculated per inch.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="font-rubik text-xs leading-[14px] text-label">
+                    Description:
+                  </label>
+                  <input
+                    type="text"
+                    value={weldingDesc}
+                    onChange={(e) => setWeldingDesc(e.target.value)}
+                    placeholder="e.g. Barrel weld, lip reconstruction..."
+                    className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-[14px] text-body outline-none placeholder:text-ghost"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <div className="flex flex-1 flex-col gap-1">
+                    <label className="font-rubik text-xs leading-[14px] text-label">Inches:</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={weldingInches}
+                      onChange={(e) => setWeldingInches(e.target.value)}
+                      placeholder="0"
+                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-[14px] text-body outline-none placeholder:text-ghost"
+                    />
+                  </div>
+                  <div className="flex flex-1 flex-col gap-1">
+                    <label className="font-rubik text-xs leading-[14px] text-label">
+                      Price per inch ($):
+                    </label>
+                    <input
+                      type="text"
+                      value={weldingPricePerInch}
+                      onChange={(e) => setWeldingPricePerInch(e.target.value)}
+                      placeholder="0.00"
+                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-[14px] text-body outline-none placeholder:text-ghost"
+                    />
+                  </div>
+                </div>
+                {(() => {
+                  const inches = parseInt(weldingInches, 10);
+                  const price = parseFloat(weldingPricePerInch);
+                  if (inches > 0 && price > 0) {
+                    const total = inches * price;
+                    return (
+                      <div className="rounded-lg bg-page px-3 py-2 font-rubik text-sm text-body">
+                        {inches}" &times; ${price.toFixed(2)}/in ={" "}
+                        <span className="font-medium">${total.toFixed(2)}</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
             </TabsContent>
           </Tabs>
         </div>

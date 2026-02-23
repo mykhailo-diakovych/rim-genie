@@ -53,9 +53,10 @@ function CreateCustomerForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const fullPhone = phone.startsWith("+") ? phone : `+1 876 ${phone}`;
     const customer = await createCustomer.mutateAsync({
       name,
-      phone,
+      phone: fullPhone,
       email: email || undefined,
     });
     await createQuote.mutateAsync({ customerId: customer.id });
@@ -86,14 +87,19 @@ function CreateCustomerForm({
         </div>
         <div className="flex flex-col gap-1">
           <label className="font-rubik text-[12px] text-label">Phone *</label>
-          <input
-            type="tel"
-            required
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="876-000-0000"
-            className="flex h-9 w-full rounded-[8px] border border-field-line bg-white px-3 font-rubik text-[13px] text-body outline-none placeholder:text-ghost"
-          />
+          <div className="flex h-9 w-full items-center overflow-hidden rounded-[8px] border border-field-line bg-white">
+            <div className="flex h-full shrink-0 items-center border-r border-field-line px-2">
+              <span className="font-rubik text-[12px] leading-[14px] text-body">+1 876</span>
+            </div>
+            <input
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="000-0000"
+              className="min-w-0 flex-1 bg-transparent px-2 font-rubik text-[13px] text-body outline-none placeholder:text-ghost"
+            />
+          </div>
         </div>
         <div className="flex flex-col gap-1">
           <label className="font-rubik text-[12px] text-label">Email</label>

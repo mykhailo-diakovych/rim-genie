@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@rim-genie/db";
 import { customer, quote, quoteItem, invoice, payment, job } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { asc, eq, ilike, or, sql, sum } from "drizzle-orm";
+import { asc, eq, ilike, inArray, or, sql, sum } from "drizzle-orm";
 
 import { floorManagerProcedure, protectedProcedure, requireRole } from "../index";
 import * as InvoiceService from "../services/invoice.service";
@@ -11,16 +11,38 @@ import { runEffect } from "../services/run-effect";
 
 async function recalcQuoteTotal(quoteId: string): Promise<void> {
   const result = await db
-    .select({ total: sum(sql`${quoteItem.quantity} * ${quoteItem.unitCost}`) })
+    .select({
+      total: sum(
+        sql`CASE WHEN ${quoteItem.inches} IS NOT NULL THEN ${quoteItem.inches} * ${quoteItem.unitCost} ELSE ${quoteItem.quantity} * ${quoteItem.unitCost} END`,
+      ),
+    })
     .from(quoteItem)
     .where(eq(quoteItem.quoteId, quoteId));
 
-  const total = Number(result[0]?.total ?? 0);
-  await db.update(quote).set({ total }).where(eq(quote.id, quoteId));
+  const subtotal = Number(result[0]?.total ?? 0);
+
+  const quoteRow = await db
+    .select({ discountPercent: quote.discountPercent })
+    .from(quote)
+    .where(eq(quote.id, quoteId));
+
+  const discountPercent = quoteRow[0]?.discountPercent ?? 0;
+  const discountAmount = Math.round((subtotal * discountPercent) / 100);
+  const total = subtotal - discountAmount;
+
+  await db.update(quote).set({ subtotal, discountAmount, total }).where(eq(quote.id, quoteId));
 }
 
 const jobTypeEntrySchema = z.object({
-  type: z.enum(["bend-fix", "crack-fix", "straighten", "twist", "reconstruct", "general"]),
+  type: z.enum([
+    "bend-fix",
+    "crack-fix",
+    "straighten",
+    "twist",
+    "reconstruct",
+    "general",
+    "welding",
+  ]),
   input: z.string().optional(),
 });
 
@@ -113,16 +135,52 @@ export const floorRouter = {
   },
 
   quotes: {
-    list: protectedProcedure.handler(async () => {
-      return db.query.quote.findMany({
-        orderBy: (q, { desc }) => [desc(q.createdAt)],
-        with: {
-          customer: true,
-          items: true,
-          invoice: true,
-        },
-      });
-    }),
+    list: protectedProcedure
+      .input(z.object({ search: z.string().optional() }).optional())
+      .handler(async ({ input }) => {
+        const search = input?.search?.trim();
+
+        if (search && search.length > 0) {
+          const pattern = `%${search}%`;
+          const matchingQuoteIds = await db
+            .selectDistinct({ id: quote.id })
+            .from(quote)
+            .leftJoin(invoice, eq(invoice.quoteId, quote.id))
+            .innerJoin(customer, eq(customer.id, quote.customerId))
+            .where(
+              or(
+                sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
+                sql`${quote.quoteNumber}::text ILIKE ${pattern}`,
+                ilike(customer.name, pattern),
+                ilike(customer.phone, pattern),
+              ),
+            );
+
+          if (matchingQuoteIds.length === 0) return [];
+
+          return db.query.quote.findMany({
+            where: inArray(
+              quote.id,
+              matchingQuoteIds.map((r) => r.id),
+            ),
+            orderBy: (q, { desc }) => [desc(q.createdAt)],
+            with: {
+              customer: true,
+              items: true,
+              invoice: true,
+            },
+          });
+        }
+
+        return db.query.quote.findMany({
+          orderBy: (q, { desc }) => [desc(q.createdAt)],
+          with: {
+            customer: true,
+            items: true,
+            invoice: true,
+          },
+        });
+      }),
 
     get: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       return db.query.quote.findFirst({
@@ -147,6 +205,12 @@ export const floorRouter = {
       )
       .handler(async ({ input, context }) => {
         const validUntil = new Date(Date.now() + (input.validUntilDays ?? 7) * 86_400_000);
+
+        const cust = await db.query.customer.findFirst({
+          where: eq(customer.id, input.customerId),
+        });
+        const discountPercent = cust?.isVip && cust?.discount ? cust.discount : 0;
+
         const rows = await db
           .insert(quote)
           .values({
@@ -154,6 +218,7 @@ export const floorRouter = {
             createdById: context.session.user.id,
             status: "draft",
             validUntil,
+            discountPercent,
           })
           .returning();
         return rows[0]!;
@@ -165,11 +230,26 @@ export const floorRouter = {
           id: z.string(),
           comments: z.string().optional(),
           jobRack: z.string().optional(),
+          discountPercent: z.number().int().min(0).max(100).optional(),
         }),
       )
       .handler(async ({ input, context }) => {
-        const { id, ...fields } = input;
-        const rows = await db.update(quote).set(fields).where(eq(quote.id, id)).returning();
+        const { id, discountPercent, ...fields } = input;
+
+        const updateFields: Record<string, unknown> = { ...fields };
+        if (discountPercent !== undefined) {
+          updateFields.discountPercent = discountPercent;
+        }
+
+        const rows = await db
+          .update(quote)
+          .set(updateFields as Partial<typeof quote.$inferInsert>)
+          .where(eq(quote.id, id))
+          .returning();
+
+        if (discountPercent !== undefined) {
+          await recalcQuoteTotal(id);
+        }
 
         const itemCount = await db
           .select({ count: sql<number>`count(*)::int` })
@@ -209,11 +289,13 @@ export const floorRouter = {
       .input(
         z.object({
           quoteId: z.string(),
+          itemType: z.enum(["rim", "welding"]).default("rim"),
           vehicleSize: z.string().optional(),
           sideOfVehicle: z.string().optional(),
           damageLevel: z.string().optional(),
           quantity: z.number().int().min(1).default(1),
           unitCost: z.number().int().min(0).default(0),
+          inches: z.number().int().min(1).optional(),
           jobTypes: z.array(jobTypeEntrySchema).default([]),
           description: z.string().optional(),
         }),
@@ -232,11 +314,13 @@ export const floorRouter = {
           .insert(quoteItem)
           .values({
             quoteId: input.quoteId,
+            itemType: input.itemType,
             vehicleSize: input.vehicleSize,
             sideOfVehicle: input.sideOfVehicle,
             damageLevel: input.damageLevel,
             quantity: input.quantity,
             unitCost: input.unitCost,
+            inches: input.inches,
             jobTypes: input.jobTypes as JobTypeEntry[],
             description: input.description,
             sortOrder,
@@ -251,11 +335,13 @@ export const floorRouter = {
       .input(
         z.object({
           id: z.string(),
+          itemType: z.enum(["rim", "welding"]).optional(),
           vehicleSize: z.string().optional(),
           sideOfVehicle: z.string().optional(),
           damageLevel: z.string().optional(),
           quantity: z.number().int().min(1).optional(),
           unitCost: z.number().int().min(0).optional(),
+          inches: z.number().int().min(1).nullable().optional(),
           jobTypes: z.array(jobTypeEntrySchema).optional(),
           description: z.string().optional(),
           comments: z.string().optional(),

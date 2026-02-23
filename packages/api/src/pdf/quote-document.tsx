@@ -171,12 +171,16 @@ export type QuoteData = {
   validUntil: Date | string | null;
   customer: { name: string } | null;
   comments: string | null;
+  subtotal: number;
+  discountPercent: number;
+  discountAmount: number;
   total: number;
   items: Array<{
     id: string;
     description: string | null;
     quantity: number;
     unitCost: number;
+    inches: number | null;
   }>;
 };
 
@@ -220,8 +224,8 @@ function resolveLogoPath(): string {
 
 export function QuoteDocument({ data }: { data: QuoteData }) {
   const logoPath = resolveLogoPath();
+  const subtotal = data.subtotal;
   const total = data.total;
-  const subtotal = total; // no tax yet
 
   return (
     <Document title={`Quote #${data.quoteNumber}`}>
@@ -276,12 +280,16 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
 
           {/* Rows */}
           {data.items.map((item, idx) => {
-            const rowTotal = item.quantity * item.unitCost;
+            const rowTotal = item.inches
+              ? item.inches * item.unitCost
+              : item.quantity * item.unitCost;
             return (
               <View style={styles.tableRow} key={item.id}>
                 <Text style={[styles.cell, styles.colNum]}>{idx + 1}</Text>
                 <Text style={[styles.cell, styles.colDesc]}>{item.description ?? "Rim Job"}</Text>
-                <Text style={[styles.cell, styles.colQty]}>{item.quantity}</Text>
+                <Text style={[styles.cell, styles.colQty]}>
+                  {item.inches ? `${item.inches}"` : item.quantity}
+                </Text>
                 <Text style={[styles.cell, styles.colUnit]}>{fmtMoney(item.unitCost)}</Text>
                 <Text style={[styles.cell, styles.colTotal]}>{fmtMoney(rowTotal)}</Text>
               </View>
@@ -303,6 +311,12 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
             <Text style={styles.subtotalLabel}>Subtotal:</Text>
             <Text style={styles.subtotalValue}>{fmtMoney(subtotal)}</Text>
           </View>
+          {data.discountPercent > 0 && (
+            <View style={styles.subtotalRow}>
+              <Text style={styles.subtotalLabel}>Discount ({data.discountPercent}%):</Text>
+              <Text style={styles.subtotalValue}>-{fmtMoney(data.discountAmount)}</Text>
+            </View>
+          )}
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total:</Text>
             <Text style={styles.totalValue}>{fmtMoney(total)}</Text>

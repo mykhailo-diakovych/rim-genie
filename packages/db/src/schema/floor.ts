@@ -26,7 +26,7 @@ export const quoteStatusEnum = pgEnum("quote_status", [
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type JobTypeEntry = {
-  type: "bend-fix" | "crack-fix" | "straighten" | "twist" | "reconstruct" | "general";
+  type: "bend-fix" | "crack-fix" | "straighten" | "twist" | "reconstruct" | "general" | "welding";
   input?: string;
 };
 
@@ -71,6 +71,9 @@ export const quote = pgTable(
     jobRack: text("job_rack"),
     comments: text("comments"),
     validUntil: timestamp("valid_until"),
+    subtotal: integer("subtotal").default(0).notNull(),
+    discountPercent: integer("discount_percent").default(0).notNull(),
+    discountAmount: integer("discount_amount").default(0).notNull(),
     total: integer("total").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -92,11 +95,13 @@ export const quoteItem = pgTable("quote_item", {
   quoteId: text("quote_id")
     .notNull()
     .references(() => quote.id, { onDelete: "cascade" }),
+  itemType: text("item_type").default("rim").notNull(),
   vehicleSize: text("vehicle_size"),
   sideOfVehicle: text("side_of_vehicle"),
   damageLevel: text("damage_level"),
   quantity: integer("quantity").default(1).notNull(),
   unitCost: integer("unit_cost").default(0).notNull(),
+  inches: integer("inches"),
   jobTypes: jsonb("job_types").$type<JobTypeEntry[]>().default([]).notNull(),
   description: text("description"),
   comments: text("comments"),

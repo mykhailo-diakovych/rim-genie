@@ -34,10 +34,11 @@ export function createFromQuote(quoteId: string, userId: string) {
       return yield* Effect.fail(new QuoteAlreadyConverted({ quoteId }));
     }
 
-    const subtotal = found.items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0);
-    const customerDiscount =
-      found.customer.isVip && found.customer.discount ? found.customer.discount : 0;
-    const discountAmount = Math.round((subtotal * customerDiscount) / 100);
+    const subtotal = found.items.reduce(
+      (sum, i) => sum + (i.inches ? i.inches * i.unitCost : i.quantity * i.unitCost),
+      0,
+    );
+    const discountAmount = found.discountAmount;
     const total = subtotal - discountAmount;
 
     const result = yield* Effect.tryPromise(() =>
@@ -60,11 +61,13 @@ export function createFromQuote(quoteId: string, userId: string) {
           await tx.insert(invoiceItem).values(
             found.items.map((item) => ({
               invoiceId: inv!.id,
+              itemType: item.itemType,
               vehicleSize: item.vehicleSize,
               sideOfVehicle: item.sideOfVehicle,
               damageLevel: item.damageLevel,
               quantity: item.quantity,
               unitCost: item.unitCost,
+              inches: item.inches,
               jobTypes: item.jobTypes,
               description: item.description,
               comments: item.comments,
@@ -104,10 +107,11 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
       return yield* Effect.fail(new QuoteHasNoItems({ quoteId }));
     }
 
-    const subtotal = found.items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
-    const customerDiscount =
-      found.customer.isVip && found.customer.discount ? found.customer.discount : 0;
-    const discountAmount = Math.round((subtotal * customerDiscount) / 100);
+    const subtotal = found.items.reduce(
+      (s, i) => s + (i.inches ? i.inches * i.unitCost : i.quantity * i.unitCost),
+      0,
+    );
+    const discountAmount = found.discountAmount;
     const total = subtotal - discountAmount;
 
     if (!found.invoice) {
@@ -130,11 +134,13 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
           await tx.insert(invoiceItem).values(
             found.items.map((item) => ({
               invoiceId: inv!.id,
+              itemType: item.itemType,
               vehicleSize: item.vehicleSize,
               sideOfVehicle: item.sideOfVehicle,
               damageLevel: item.damageLevel,
               quantity: item.quantity,
               unitCost: item.unitCost,
+              inches: item.inches,
               jobTypes: item.jobTypes,
               description: item.description,
               comments: item.comments,
@@ -161,11 +167,13 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
         await tx.insert(invoiceItem).values(
           found.items.map((item) => ({
             invoiceId,
+            itemType: item.itemType,
             vehicleSize: item.vehicleSize,
             sideOfVehicle: item.sideOfVehicle,
             damageLevel: item.damageLevel,
             quantity: item.quantity,
             unitCost: item.unitCost,
+            inches: item.inches,
             jobTypes: item.jobTypes,
             description: item.description,
             comments: item.comments,

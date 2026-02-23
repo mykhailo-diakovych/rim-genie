@@ -95,11 +95,13 @@ function QuoteEditorPage() {
   function handleAdd(data: QuoteGeneratorSheetData) {
     addItem.mutate({
       quoteId,
+      itemType: data.itemType ?? "rim",
       vehicleSize: data.vehicleSize ?? undefined,
       sideOfVehicle: data.sideOfVehicle ?? undefined,
       damageLevel: data.damageLevel ?? undefined,
       quantity: data.quantity,
       unitCost: data.unitCost,
+      inches: data.inches,
       jobTypes: data.jobTypes,
       description: data.description || undefined,
     });
@@ -108,11 +110,13 @@ function QuoteEditorPage() {
   function handleEditItem(itemId: string, data: QuoteGeneratorSheetData) {
     updateItem.mutate({
       id: itemId,
+      itemType: data.itemType ?? "rim",
       vehicleSize: data.vehicleSize ?? undefined,
       sideOfVehicle: data.sideOfVehicle ?? undefined,
       damageLevel: data.damageLevel ?? undefined,
       quantity: data.quantity,
       unitCost: data.unitCost,
+      inches: data.inches ?? null,
       jobTypes: data.jobTypes,
       description: data.description || undefined,
     });
@@ -130,7 +134,18 @@ function QuoteEditorPage() {
     );
   }
 
+  const [discountStr, setDiscountStr] = useState("");
+  const [lastDiscountPercent, setLastDiscountPercent] = useState<number | null>(null);
+
+  if (quote && quote.discountPercent !== lastDiscountPercent) {
+    setDiscountStr(String(quote.discountPercent ?? 0));
+    setLastDiscountPercent(quote.discountPercent ?? 0);
+  }
+
+  const subtotal = (quote?.subtotal ?? quote?.total ?? 0) / 100;
+  const discountAmount = (quote?.discountAmount ?? 0) / 100;
   const total = (quote?.total ?? 0) / 100;
+  const discountPercent = quote?.discountPercent ?? 0;
 
   const formatDate = (d: Date | string | null | undefined) => {
     if (!d) return "—";
@@ -330,9 +345,32 @@ function QuoteEditorPage() {
 
             {/* Total */}
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-end gap-3 px-3 font-rubik text-[16px] leading-[20px]">
+              <div className="flex items-center justify-end gap-3 px-3 font-rubik text-base leading-5">
                 <span className="text-label">Subtotal:</span>
-                <span className="text-body">${total.toFixed(2)}</span>
+                <span className="text-body">${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-end gap-3 px-3 font-rubik text-sm leading-5">
+                <span className="text-label">Discount:</span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={discountStr}
+                    onChange={(e) => setDiscountStr(e.target.value)}
+                    onBlur={() => {
+                      const val = parseInt(discountStr, 10);
+                      if (!isNaN(val) && val >= 0 && val <= 100 && val !== discountPercent) {
+                        updateQuote.mutate({ id: quoteId, discountPercent: val });
+                      } else {
+                        setDiscountStr(String(discountPercent));
+                      }
+                    }}
+                    className="w-10 rounded border border-transparent bg-transparent px-1 py-0.5 text-right font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line"
+                  />
+                  <span className="text-label">%</span>
+                  {discountAmount > 0 && (
+                    <span className="text-body">(-${discountAmount.toFixed(2)})</span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-end gap-3 rounded-sm bg-green px-3 py-2 font-rubik text-[22px] leading-[26px] text-white">
                 <span>Total:</span>
@@ -420,6 +458,7 @@ function ItemRow({
     description: string | null;
     quantity: number;
     unitCost: number;
+    inches: number | null;
   };
   index: number;
   onRemove: () => void;
@@ -439,7 +478,9 @@ function ItemRow({
     }
   }
 
-  const rowTotal = (item.quantity * item.unitCost) / 100;
+  const rowTotal = item.inches
+    ? (item.inches * item.unitCost) / 100
+    : (item.quantity * item.unitCost) / 100;
 
   return (
     <tr className="border-b border-field-line align-top">
@@ -452,7 +493,7 @@ function ItemRow({
         </div>
       </td>
       <td className="border-l border-field-line px-2 py-2 text-[14px] text-body">
-        {item.quantity}
+        {item.inches ? `${item.inches}"` : item.quantity}
       </td>
       <td className="border-l border-field-line px-2 py-2">
         <div className="flex items-center gap-0.5">
@@ -471,11 +512,17 @@ function ItemRow({
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
         <div className="flex flex-col items-center gap-1">
-          <Button className='w-full' variant="outline" onClick={onEdit}>
+          <Button className="w-full" variant="outline" onClick={onEdit}>
             <Pencil className="size-3.5" />
             Edit
           </Button>
-          <Button className='w-full' variant="outline" color="destructive" onClick={onRemove} disabled={isRemoving}>
+          <Button
+            className="w-full"
+            variant="outline"
+            color="destructive"
+            onClick={onRemove}
+            disabled={isRemoving}
+          >
             <Trash2 className="size-3.5" />
             Remove
           </Button>

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Eye, Plus, Printer, Trash2 } from "lucide-react";
+import { Eye, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -88,8 +89,13 @@ function QuoteCard({
 
 function FloorPage() {
   const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
 
-  const quotesQuery = useQuery(orpc.floor.quotes.list.queryOptions());
+  const quotesQuery = useQuery(
+    orpc.floor.quotes.list.queryOptions({
+      input: search.trim() ? { search: search.trim() } : undefined,
+    }),
+  );
 
   const deleteQuote = useMutation({
     ...orpc.floor.quotes.delete.mutationOptions(),
@@ -112,6 +118,18 @@ function FloorPage() {
           <Plus />
           New Quote
         </Button>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ghost" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by invoice #, quote #, or customer..."
+          className="flex h-10 w-full rounded-lg border border-field-line bg-white pr-3 pl-9 font-rubik text-sm text-body outline-none placeholder:text-ghost"
+        />
       </div>
 
       {/* Quote list */}

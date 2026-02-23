@@ -74,11 +74,13 @@ export const invoiceItem = pgTable(
     invoiceId: text("invoice_id")
       .notNull()
       .references(() => invoice.id, { onDelete: "cascade" }),
+    itemType: text("item_type").default("rim").notNull(),
     vehicleSize: text("vehicle_size"),
     sideOfVehicle: text("side_of_vehicle"),
     damageLevel: text("damage_level"),
     quantity: integer("quantity").default(1).notNull(),
     unitCost: integer("unit_cost").default(0).notNull(),
+    inches: integer("inches"),
     jobTypes: jsonb("job_types").$type<JobTypeEntry[]>().default([]).notNull(),
     description: text("description"),
     comments: text("comments"),

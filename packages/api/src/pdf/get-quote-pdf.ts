@@ -29,12 +29,16 @@ export async function getQuotePdf(
     validUntil: quoteRow.validUntil,
     customer: quoteRow.customer,
     comments: quoteRow.comments,
+    subtotal: quoteRow.subtotal,
+    discountPercent: quoteRow.discountPercent,
+    discountAmount: quoteRow.discountAmount,
     total: quoteRow.total,
     items: quoteRow.items.map((item) => ({
       id: item.id,
       description: item.description,
       quantity: item.quantity,
       unitCost: item.unitCost,
+      inches: item.inches,
     })),
   });
 

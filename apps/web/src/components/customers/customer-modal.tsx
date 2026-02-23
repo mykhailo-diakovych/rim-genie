@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Checkbox } from "@base-ui/react/checkbox";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown } from "lucide-react";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -44,6 +44,16 @@ const customerSchema = z.object({
 
 const DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => String(i + 1));
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+
+const PHONE_PREFIX = "+1 876 ";
+
+function stripPhonePrefix(phone: string): string {
+  return phone.startsWith(PHONE_PREFIX) ? phone.slice(PHONE_PREFIX.length) : phone;
+}
+
+function addPhonePrefix(phone: string): string {
+  return phone.startsWith("+") ? phone : `${PHONE_PREFIX}${phone}`;
+}
 
 function splitName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/);
@@ -92,7 +102,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
   const initial = customer
     ? {
         ...splitName(customer.name),
-        phone: customer.phone,
+        phone: stripPhonePrefix(customer.phone),
         email: customer.email ?? "",
         birthdayDay: customer.birthdayDay?.toString() ?? "",
         birthdayMonth: customer.birthdayMonth?.toString() ?? "",
@@ -114,6 +124,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
     defaultValues: initial,
     onSubmit: ({ value }) => {
       const name = [value.firstName.trim(), value.lastName.trim()].filter(Boolean).join(" ");
+      const phone = addPhonePrefix(value.phone.trim());
       const emailValue = value.email || undefined;
       const birthdayDay = value.birthdayDay ? parseInt(value.birthdayDay) : undefined;
       const birthdayMonth = value.birthdayMonth ? parseInt(value.birthdayMonth) : undefined;
@@ -123,7 +134,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
         updateCustomer.mutate({
           id: customer.id,
           name,
-          phone: value.phone,
+          phone,
           email: emailValue,
           birthdayDay,
           birthdayMonth,
@@ -133,7 +144,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
       } else {
         createCustomer.mutate({
           name,
-          phone: value.phone,
+          phone,
           email: emailValue,
           birthdayDay,
           birthdayMonth,
@@ -250,9 +261,10 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
                         field.state.meta.errors.length > 0 ? "border-red/50" : "border-field-line",
                       )}
                     >
-                      <div className="flex h-full shrink-0 items-center gap-1 border-r border-field-line px-2">
-                        <span className="font-rubik text-[12px] leading-[14px] text-body">US</span>
-                        <ChevronDown className="size-3 text-ghost" />
+                      <div className="flex h-full shrink-0 items-center border-r border-field-line px-2">
+                        <span className="font-rubik text-[12px] leading-[14px] text-body">
+                          +1 876
+                        </span>
                       </div>
                       <input
                         name={field.name}
