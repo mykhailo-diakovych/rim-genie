@@ -119,7 +119,7 @@ function TermsPage() {
                     <button
                       onClick={() => toggleAccept(term.id)}
                       aria-pressed={isAccepted}
-                      className="flex h-9 cursor-pointer items-center gap-1.5"
+                      className="flex h-9 w-26 cursor-pointer items-center gap-1.5"
                     >
                       <span
                         className={cn(
