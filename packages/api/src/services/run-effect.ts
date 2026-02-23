@@ -31,6 +31,10 @@ const TAG_MAP: Record<
   JobCannotBeReversed: { code: "BAD_REQUEST", message: "This job cannot be reversed" },
   EODAlreadyExists: { code: "CONFLICT", message: "An EOD record already exists for this date" },
   SODAlreadyExists: { code: "CONFLICT", message: "An SOD record already exists for this date" },
+  QuoteHasNoItems: {
+    code: "BAD_REQUEST",
+    message: "Cannot save a quote with no items",
+  },
   EODNotFound: {
     code: "NOT_FOUND",
     message: "No EOD record found — please submit an EOD before starting the day",

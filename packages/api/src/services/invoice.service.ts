@@ -7,6 +7,7 @@ import { quote, invoice, invoiceItem, payment, job } from "@rim-genie/db/schema"
 import {
   QuoteNotFound,
   QuoteAlreadyConverted,
+  QuoteHasNoItems,
   InvoiceNotFound,
   InvoiceHasPayments,
   InvoiceHasJobs,
@@ -71,6 +72,120 @@ export function createFromQuote(quoteId: string, userId: string) {
             })),
           );
         }
+
+        await tx.update(quote).set({ status: "completed" }).where(eq(quote.id, quoteId));
+
+        return inv!;
+      }),
+    );
+
+    return result;
+  });
+}
+
+export function syncInvoiceFromQuote(quoteId: string, userId: string) {
+  return Effect.gen(function* () {
+    const found = yield* Effect.tryPromise(() =>
+      db.query.quote.findFirst({
+        where: eq(quote.id, quoteId),
+        with: {
+          customer: true,
+          items: { orderBy: (i, { asc }) => [asc(i.sortOrder)] },
+          invoice: true,
+        },
+      }),
+    );
+
+    if (!found) {
+      return yield* Effect.fail(new QuoteNotFound({ id: quoteId }));
+    }
+
+    if (found.items.length === 0) {
+      return yield* Effect.fail(new QuoteHasNoItems({ quoteId }));
+    }
+
+    const subtotal = found.items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
+    const customerDiscount =
+      found.customer.isVip && found.customer.discount ? found.customer.discount : 0;
+    const discountAmount = Math.round((subtotal * customerDiscount) / 100);
+    const total = subtotal - discountAmount;
+
+    if (!found.invoice) {
+      const result = yield* Effect.tryPromise(() =>
+        db.transaction(async (tx) => {
+          const [inv] = await tx
+            .insert(invoice)
+            .values({
+              quoteId,
+              customerId: found.customerId,
+              status: "unpaid",
+              subtotal,
+              discount: discountAmount,
+              tax: 0,
+              total,
+              createdById: userId,
+            })
+            .returning();
+
+          await tx.insert(invoiceItem).values(
+            found.items.map((item) => ({
+              invoiceId: inv!.id,
+              vehicleSize: item.vehicleSize,
+              sideOfVehicle: item.sideOfVehicle,
+              damageLevel: item.damageLevel,
+              quantity: item.quantity,
+              unitCost: item.unitCost,
+              jobTypes: item.jobTypes,
+              description: item.description,
+              comments: item.comments,
+              sortOrder: item.sortOrder,
+            })),
+          );
+
+          await tx.update(quote).set({ status: "completed" }).where(eq(quote.id, quoteId));
+
+          return inv!;
+        }),
+      );
+
+      return result;
+    }
+
+    const invoiceId = found.invoice.id;
+
+    const result = yield* Effect.tryPromise(() =>
+      db.transaction(async (tx) => {
+        await tx.delete(job).where(eq(job.invoiceId, invoiceId));
+        await tx.delete(invoiceItem).where(eq(invoiceItem.invoiceId, invoiceId));
+
+        await tx.insert(invoiceItem).values(
+          found.items.map((item) => ({
+            invoiceId,
+            vehicleSize: item.vehicleSize,
+            sideOfVehicle: item.sideOfVehicle,
+            damageLevel: item.damageLevel,
+            quantity: item.quantity,
+            unitCost: item.unitCost,
+            jobTypes: item.jobTypes,
+            description: item.description,
+            comments: item.comments,
+            sortOrder: item.sortOrder,
+          })),
+        );
+
+        const [paymentResult] = await tx
+          .select({ paid: sum(payment.amount) })
+          .from(payment)
+          .where(eq(payment.invoiceId, invoiceId));
+
+        const paid = Number(paymentResult?.paid ?? 0);
+        const status = paid >= total && total > 0 ? "paid" : paid > 0 ? "partially_paid" : "unpaid";
+
+        const [inv] = await tx
+          .update(invoice)
+          .set({ subtotal, discount: discountAmount, total, status })
+          .where(eq(invoice.id, invoiceId))
+          .returning();
 
         await tx.update(quote).set({ status: "completed" }).where(eq(quote.id, quoteId));
 

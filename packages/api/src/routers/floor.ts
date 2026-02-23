@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { db } from "@rim-genie/db";
-import { customer, quote, quoteItem } from "@rim-genie/db/schema";
+import { customer, quote, quoteItem, invoice, payment, job } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
 import { asc, eq, ilike, or, sql, sum } from "drizzle-orm";
 
@@ -119,6 +119,7 @@ export const floorRouter = {
         with: {
           customer: true,
           items: true,
+          invoice: true,
         },
       });
     }),
@@ -132,6 +133,7 @@ export const floorRouter = {
           items: {
             orderBy: (i, { asc }) => [asc(i.sortOrder)],
           },
+          invoice: true,
         },
       });
     }),
@@ -165,39 +167,41 @@ export const floorRouter = {
           jobRack: z.string().optional(),
         }),
       )
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
         const { id, ...fields } = input;
         const rows = await db.update(quote).set(fields).where(eq(quote.id, id)).returning();
+
+        const itemCount = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(quoteItem)
+          .where(eq(quoteItem.quoteId, id));
+
+        if (itemCount[0] && itemCount[0].count > 0) {
+          await runEffect(InvoiceService.syncInvoiceFromQuote(id, context.session.user.id));
+        }
+
         return rows[0]!;
-      }),
-
-    sendToCashier: floorManagerProcedure
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const existing = await db.query.quote.findFirst({
-          where: eq(quote.id, input.id),
-          with: { items: true },
-        });
-
-        if (!existing) throw new Error("Quote not found");
-        if (existing.status !== "draft") throw new Error("Only draft quotes can be sent");
-        if (existing.items.length === 0) throw new Error("Cannot send an empty quote");
-
-        return runEffect(InvoiceService.createFromQuote(input.id, context.session.user.id));
       }),
 
     delete: floorManagerProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       const existing = await db.query.quote.findFirst({
         where: eq(quote.id, input.id),
+        with: { invoice: true },
       });
 
       if (!existing) throw new Error("Quote not found");
 
-      if (existing.status !== "draft") {
-        throw new Error("Only draft quotes can be deleted");
-      }
+      await db.transaction(async (tx) => {
+        if (existing.invoice) {
+          const invoiceId = existing.invoice.id;
+          await tx.delete(job).where(eq(job.invoiceId, invoiceId));
+          await tx.delete(payment).where(eq(payment.invoiceId, invoiceId));
+          await tx.delete(invoice).where(eq(invoice.id, invoiceId));
+        }
+        await tx.delete(quoteItem).where(eq(quoteItem.quoteId, input.id));
+        await tx.delete(quote).where(eq(quote.id, input.id));
+      });
 
-      await db.delete(quote).where(eq(quote.id, input.id));
       return { success: true as const };
     }),
 

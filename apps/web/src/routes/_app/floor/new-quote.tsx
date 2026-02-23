@@ -132,8 +132,8 @@ function CustomerCard({
   isLoading: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)] sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-3 rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+      <div className="flex flex-1 gap-5">
         <div className="flex items-center gap-1.5">
           <span className="font-rubik text-[14px] font-medium text-body">{customer.name}</span>
           {customer.isVip && <Star className="size-3.5 fill-yellow-400 text-yellow-400" />}

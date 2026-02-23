@@ -71,14 +71,34 @@ export function FloorCheckbox({
 
 // ─── QuoteGeneratorSheet ──────────────────────────────────────────────────────
 
+export interface QuoteGeneratorEditItem {
+  id: string;
+  vehicleSize: string | null;
+  sideOfVehicle: string | null;
+  damageLevel: string | null;
+  quantity: number;
+  unitCost: number;
+  jobTypes: JobTypeEntry[];
+  description: string | null;
+}
+
 interface QuoteGeneratorSheetProps {
   open: boolean;
   onClose: () => void;
   onAdd: (data: QuoteGeneratorSheetData) => void;
+  onEdit?: (itemId: string, data: QuoteGeneratorSheetData) => void;
+  editItem?: QuoteGeneratorEditItem | null;
   isAdding?: boolean;
 }
 
-export function QuoteGeneratorSheet({ open, onClose, onAdd, isAdding }: QuoteGeneratorSheetProps) {
+export function QuoteGeneratorSheet({
+  open,
+  onClose,
+  onAdd,
+  onEdit,
+  editItem,
+  isAdding,
+}: QuoteGeneratorSheetProps) {
   const [tab, setTab] = useState("rims");
   const [vehicleSize, setVehicleSize] = useState<string | null>(null);
   const [sideOfVehicle, setSideOfVehicle] = useState<string | null>(null);
@@ -86,12 +106,43 @@ export function QuoteGeneratorSheet({ open, onClose, onAdd, isAdding }: QuoteGen
   const [quantity, setQuantity] = useState("1");
   const [checkedJobs, setCheckedJobs] = useState<Partial<Record<JobType, boolean>>>({});
   const [jobInputs, setJobInputs] = useState<Partial<Record<JobType, string>>>({});
+  const [initialized, setInitialized] = useState<string | null>(null);
+
+  if (editItem && initialized !== editItem.id) {
+    setVehicleSize(editItem.vehicleSize);
+    setSideOfVehicle(editItem.sideOfVehicle);
+    setDamageLevel(editItem.damageLevel);
+    setQuantity(String(editItem.quantity));
+    const checked: Partial<Record<JobType, boolean>> = {};
+    const inputs: Partial<Record<JobType, string>> = {};
+    for (const jt of editItem.jobTypes) {
+      checked[jt.type] = true;
+      if (jt.input) inputs[jt.type] = jt.input;
+    }
+    setCheckedJobs(checked);
+    setJobInputs(inputs);
+    setInitialized(editItem.id);
+  }
+
+  if (!editItem && initialized !== null) {
+    setInitialized(null);
+  }
 
   function toggleJob(type: JobType, checked: boolean) {
     setCheckedJobs((prev) => ({ ...prev, [type]: checked }));
   }
 
-  function handleAdd() {
+  function resetForm() {
+    setVehicleSize(null);
+    setSideOfVehicle(null);
+    setDamageLevel(null);
+    setQuantity("1");
+    setCheckedJobs({});
+    setJobInputs({});
+    setInitialized(null);
+  }
+
+  function handleSubmit() {
     const selectedJobs = JOB_TYPES.filter((j) => checkedJobs[j.value]);
     if (selectedJobs.length === 0) return;
 
@@ -112,23 +163,23 @@ export function QuoteGeneratorSheet({ open, onClose, onAdd, isAdding }: QuoteGen
       .filter(Boolean)
       .join(", ");
 
-    onAdd({
+    const data: QuoteGeneratorSheetData = {
       vehicleSize,
       sideOfVehicle,
       damageLevel,
       quantity: parseInt(quantity, 10) || 1,
-      unitCost: 0,
+      unitCost: editItem?.unitCost ?? 0,
       jobTypes,
       description,
-    });
+    };
 
-    // Reset form
-    setVehicleSize(null);
-    setSideOfVehicle(null);
-    setDamageLevel(null);
-    setQuantity("1");
-    setCheckedJobs({});
-    setJobInputs({});
+    if (editItem && onEdit) {
+      onEdit(editItem.id, data);
+    } else {
+      onAdd(data);
+    }
+
+    resetForm();
     onClose();
   }
 
@@ -157,10 +208,10 @@ export function QuoteGeneratorSheet({ open, onClose, onAdd, isAdding }: QuoteGen
         {/* Header */}
         <div className="flex flex-col gap-0.5 border-b border-field-line p-3">
           <p className="font-rubik text-[16px] leading-[20px] font-medium text-body">
-            Quote Generator
+            {editItem ? "Edit Item" : "Quote Generator"}
           </p>
           <p className="font-rubik text-[12px] leading-[16px] text-label">
-            Use options below to generate quote
+            {editItem ? "Modify the item details below" : "Use options below to generate quote"}
           </p>
         </div>
 
@@ -299,8 +350,14 @@ export function QuoteGeneratorSheet({ open, onClose, onAdd, isAdding }: QuoteGen
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button color="success" onClick={handleAdd} disabled={isAdding} className="w-32">
-            {isAdding ? "Adding..." : "Add to Quote"}
+          <Button color="success" onClick={handleSubmit} disabled={isAdding} className="w-32">
+            {isAdding
+              ? editItem
+                ? "Updating..."
+                : "Adding..."
+              : editItem
+                ? "Update Item"
+                : "Add to Quote"}
           </Button>
         </div>
       </div>

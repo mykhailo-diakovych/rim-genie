@@ -6,11 +6,11 @@ import {
   ChevronDown,
   Mail,
   MapPin,
+  Pencil,
   Phone,
   Plus,
   Printer,
   Save,
-  Send,
   Trash2,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +19,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
-import type { QuoteGeneratorSheetData } from "@/components/floor/quote-generator-sheet";
+import type {
+  QuoteGeneratorSheetData,
+  QuoteGeneratorEditItem,
+} from "@/components/floor/quote-generator-sheet";
 
 export const Route = createFileRoute("/_app/floor/$quoteId")({
   component: QuoteEditorPage,
@@ -38,6 +41,7 @@ function QuoteEditorPage() {
   const queryClient = useQueryClient();
 
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<QuoteGeneratorEditItem | null>(null);
   const [comments, setComments] = useState("");
   const [commentsSynced, setCommentsSynced] = useState(false);
 
@@ -101,30 +105,31 @@ function QuoteEditorPage() {
     });
   }
 
+  function handleEditItem(itemId: string, data: QuoteGeneratorSheetData) {
+    updateItem.mutate({
+      id: itemId,
+      vehicleSize: data.vehicleSize ?? undefined,
+      sideOfVehicle: data.sideOfVehicle ?? undefined,
+      damageLevel: data.damageLevel ?? undefined,
+      quantity: data.quantity,
+      unitCost: data.unitCost,
+      jobTypes: data.jobTypes,
+      description: data.description || undefined,
+    });
+  }
+
   function handleSave() {
     updateQuote.mutate(
       { id: quoteId, comments },
       {
-        onSuccess: () => toast.success("Quote saved"),
+        onSuccess: () => {
+          const hasItems = (quote?.items?.length ?? 0) > 0;
+          toast.success(hasItems ? "Quote saved and sent to cashier" : "Quote saved");
+        },
       },
     );
   }
 
-  const sendToCashier = useMutation({
-    ...orpc.floor.quotes.sendToCashier.mutationOptions(),
-    onSuccess: async () => {
-      await invalidateQuote();
-      await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
-      toast.success("Invoice created and sent to cashier");
-    },
-    onError: (err) => toast.error(`Failed to send: ${err.message}`),
-  });
-
-  function handleSendToCashier() {
-    sendToCashier.mutate({ id: quoteId });
-  }
-
-  const isReadOnly = quote?.status !== "draft";
   const total = (quote?.total ?? 0) / 100;
 
   const formatDate = (d: Date | string | null | undefined) => {
@@ -147,31 +152,13 @@ function QuoteEditorPage() {
           </Button>
 
           <div className="flex items-center gap-2">
-            {!isReadOnly && (
-              <>
-                <Button color="success" onClick={handleSave} disabled={updateQuote.isPending}>
-                  <Save />
-                  Save
-                </Button>
-                <Button
-                  onClick={handleSendToCashier}
-                  disabled={sendToCashier.isPending || !quote?.items?.length}
-                >
-                  <Send />
-                  Send to Cashier
-                </Button>
-              </>
-            )}
+            <Button color="success" onClick={handleSave} disabled={updateQuote.isPending}>
+              <Save />
+              Save
+            </Button>
             <MoreDropdown quoteId={quoteId} />
           </div>
         </div>
-
-        {/* Status banner */}
-        {quote?.status === "completed" && (
-          <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 font-rubik text-sm text-green-800">
-            Converted to invoice
-          </div>
-        )}
 
         {/* Invoice card */}
         <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
@@ -194,7 +181,7 @@ function QuoteEditorPage() {
           {/* Row 2: Dates + Address */}
           <div className="flex items-center gap-4">
             <div className="flex flex-1 gap-4 font-rubik">
-              <div className="flex flex-col gap-2">
+              <div className="flex w-34 flex-col gap-2">
                 <span className="text-[12px] leading-[14px] text-label">Quote Date:</span>
                 <span className="text-[14px] leading-[18px] text-body">
                   {quoteQuery.isLoading ? (
@@ -204,7 +191,7 @@ function QuoteEditorPage() {
                   )}
                 </span>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex w-34 flex-col gap-2">
                 <span className="text-[12px] leading-[14px] text-label">Valid Until:</span>
                 <span className="text-[14px] leading-[18px] text-body">
                   {quoteQuery.isLoading ? (
@@ -273,30 +260,34 @@ function QuoteEditorPage() {
                       item={item}
                       index={idx}
                       onRemove={() => removeItem.mutate({ id: item.id })}
+                      onEdit={() => {
+                        setEditingItem(item);
+                        setSheetOpen(true);
+                      }}
                       onUnitCostChange={(cents) =>
                         updateItem.mutate({ id: item.id, unitCost: cents })
                       }
                       isRemoving={removeItem.isPending && removeItem.variables?.id === item.id}
-                      readOnly={isReadOnly}
                     />
                   ))
                 )}
 
                 {/* Add Job row */}
-                {!isReadOnly && (
-                  <tr className="border-b border-field-line">
-                    <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
-                      <button
-                        type="button"
-                        onClick={() => setSheetOpen(true)}
-                        className="flex items-center gap-1.5 rounded-[8px] font-rubik text-[14px] leading-[18px] text-blue transition-opacity hover:opacity-70"
-                      >
-                        <Plus className="size-4" />
-                        Add Job
-                      </button>
-                    </td>
-                  </tr>
-                )}
+                <tr className="border-b border-field-line">
+                  <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingItem(null);
+                        setSheetOpen(true);
+                      }}
+                      className="flex items-center gap-1.5 rounded-[8px] font-rubik text-[14px] leading-[18px] text-blue transition-opacity hover:opacity-70"
+                    >
+                      <Plus className="size-4" />
+                      Add Job
+                    </button>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -309,8 +300,7 @@ function QuoteEditorPage() {
               onChange={(e) => setComments(e.target.value)}
               placeholder="Enter note"
               rows={3}
-              readOnly={isReadOnly}
-              className="w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none placeholder:text-ghost read-only:bg-page read-only:text-label"
+              className="w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none placeholder:text-ghost"
             />
           </div>
 
@@ -355,9 +345,14 @@ function QuoteEditorPage() {
 
       <QuoteGeneratorSheet
         open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+        onClose={() => {
+          setSheetOpen(false);
+          setEditingItem(null);
+        }}
         onAdd={handleAdd}
-        isAdding={addItem.isPending}
+        onEdit={handleEditItem}
+        editItem={editingItem}
+        isAdding={addItem.isPending || updateItem.isPending}
       />
     </>
   );
@@ -416,9 +411,9 @@ function ItemRow({
   item,
   index,
   onRemove,
+  onEdit,
   onUnitCostChange,
   isRemoving,
-  readOnly,
 }: {
   item: {
     id: string;
@@ -428,9 +423,9 @@ function ItemRow({
   };
   index: number;
   onRemove: () => void;
+  onEdit: () => void;
   onUnitCostChange: (cents: number) => void;
   isRemoving: boolean;
-  readOnly: boolean;
 }) {
   const [costStr, setCostStr] = useState((item.unitCost / 100).toFixed(2));
 
@@ -467,8 +462,7 @@ function ItemRow({
             value={costStr}
             onChange={(e) => setCostStr(e.target.value)}
             onBlur={handleBlur}
-            readOnly={readOnly}
-            className="w-16 rounded-[4px] border border-transparent bg-transparent px-1 py-0.5 font-rubik text-[14px] text-body outline-none read-only:pointer-events-none hover:border-field-line focus:border-field-line"
+            className="w-16 rounded-[4px] border border-transparent bg-transparent px-1 py-0.5 font-rubik text-[14px] text-body outline-none hover:border-field-line focus:border-field-line"
           />
         </div>
       </td>
@@ -476,12 +470,16 @@ function ItemRow({
         ${rowTotal.toFixed(2)}
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
-        {!readOnly && (
-          <Button variant="outline" color="destructive" onClick={onRemove} disabled={isRemoving}>
+        <div className="flex flex-col items-center gap-1">
+          <Button className='w-full' variant="outline" onClick={onEdit}>
+            <Pencil className="size-3.5" />
+            Edit
+          </Button>
+          <Button className='w-full' variant="outline" color="destructive" onClick={onRemove} disabled={isRemoving}>
             <Trash2 className="size-3.5" />
             Remove
           </Button>
-        )}
+        </div>
       </td>
     </tr>
   );

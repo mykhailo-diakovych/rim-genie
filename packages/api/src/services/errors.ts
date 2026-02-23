@@ -58,6 +58,10 @@ export class SODAlreadyExists extends Data.TaggedError("SODAlreadyExists")<{
   recordDate: string;
 }> {}
 
+export class QuoteHasNoItems extends Data.TaggedError("QuoteHasNoItems")<{
+  quoteId: string;
+}> {}
+
 export class EODNotFound extends Data.TaggedError("EODNotFound")<{
   recordDate: string;
 }> {}
