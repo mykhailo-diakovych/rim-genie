@@ -1,6 +1,6 @@
 # Rim Genie — Implementation Status & Plan
 
-> Updated: 2026-02-22 | Based on `docs/REQUIREMENTS.md`
+> Updated: 2026-02-24 | Based on `docs/REQUIREMENTS.md`
 
 ---
 
@@ -26,7 +26,7 @@
 - [x] Username-only login support (Better Auth username plugin)
 - [ ] Authorization before any change/deletion (system-wide audit — not implemented)
 
-### Floor Manager Module — §2.1 (Partially Complete)
+### Floor Manager Module — §2.1 (Mostly Complete)
 
 **Done:**
 
@@ -39,21 +39,22 @@
 - [x] Quote list with view/print/delete actions
 - [x] Quote editor with items table, comments, totals
 
-**Not Done:**
-
-- [ ] Search by invoice number (upgrade request)
-- [ ] Default phone prefix `+1 876` with replace option
-- [ ] Pricing by inches for welding/reconstruction
-- [ ] VIP auto-discount application at quote time (only applied at invoice conversion)
-- [ ] Manual discount input on quote
-- [ ] Send quote via email (Resend integration)
-- [ ] Send quote via SMS (external API)
-- [ ] Electronic quote viewer (public SSR page via link)
-- [ ] Print job label tag (rack identifier)
+- [x] Search by invoice number (`floor.ts` joins invoice table for ILIKE search, UI placeholder: "Search by invoice #...")
+- [x] Default phone prefix `+1 876` with replace option (`customer-modal.tsx` has `PHONE_PREFIX`, `stripPhonePrefix()`, hardcoded prefix display; `new-quote.tsx` too)
+- [x] Pricing by inches for welding/reconstruction (`quote-generator-sheet.tsx` welding tab, `quoteItem.inches` column, API total calc: `inches * unitCost`)
+- [x] VIP auto-discount application at quote time (`floor.ts` checks `isVip && discount` at quote creation, sets `discountPercent`)
+- [x] Manual discount input on quote (`$quoteId.tsx` editable discount field, calls `quotes.update` with `discountPercent` on blur)
 - [x] "Send to Technician" replaced with "Send to Cashier" on Floor Manager (creates invoice directly)
 - [x] Quote editor read-only mode for completed quotes (hides Save/Send/Add Job/Remove)
 - [x] Status badges on quote list (Draft / Invoiced)
 - [x] `quotes.update` and `quotes.delete` hardened to `floorManagerProcedure`
+
+**Not Done:**
+
+- [ ] Send quote via email (Resend integration — no email infra yet)
+- [ ] Send quote via SMS (external API — no SMS infra yet)
+- [ ] Electronic quote viewer (public SSR page via link — no public routes)
+- [ ] Print job label tag (rack identifier — `jobRack` field exists in schema but no print template)
 
 ### Cashier Module — §2.2 (Backend Complete, Frontend Mostly Complete)
 
@@ -75,13 +76,17 @@
 - [x] Print receipt via `window.print()` with print CSS
 - [x] Effect → oRPC error handling fixed (`runEffect` uses `runPromiseExit` with user-friendly messages)
 
+- [x] Quote → Invoice conversion UI (Floor Manager "Send to Cashier" button creates invoice directly)
+
+**Partially Done (easy wins):**
+
+- [ ] Apply admin-approved discounts and taxes — API supports `invoices.update` with `discount`/`tax` fields; checkout page has UI inputs but `handleConfirm()` never persists them (dead code — needs wiring)
+- [ ] Add special notes to invoice — API supports `notes` field; checkout page has textarea but `handleConfirm()` never saves (dead code — needs wiring)
+- [ ] Storage fee notice on every receipt — info banner exists on invoice detail page but has `print:hidden` class (need to remove it or add to print template)
+
 **Not Done:**
 
-- [x] Quote → Invoice conversion UI (Floor Manager "Send to Cashier" button creates invoice directly)
-- [ ] Apply admin-approved discounts and taxes (API supports discount/tax update, no UI)
-- [ ] Add special notes to invoice (API supports, no UI)
 - [ ] E-receipt via email/SMS (depends on notification infra — Phase 4)
-- [ ] Storage fee notice on every receipt
 - [ ] Job completion notification to cashier (depends on notification infra — Phase 4)
 - [ ] Outstanding payment auto-reminder to customer (depends on notification infra — Phase 4)
 
@@ -105,11 +110,14 @@
 - [x] Filter row wired: owner filter ("All"/"Mine") passes `technicianId` to API, date filter (today/week/month) filters client-side
 - [x] Filter state lifted to page level, shared across all tabs
 
+**Partially Done:**
+
+- [ ] Upload proof-of-work video — `UploadProofsDialog` UI component exists (file input, notes, before/after radio), `proofVideoUrl` DB column exists, but API endpoint + Azure Blob Storage missing
+
 **Not Done:**
 
-- [ ] Upload proof-of-work video (API endpoint missing, Azure Blob Storage not integrated)
-- [ ] Auto-notify customer on completion (SMS + email)
-- [ ] Notify cashier on job completion (in-app)
+- [ ] Auto-notify customer on completion (SMS + email — depends on Phase 4)
+- [ ] Notify cashier on job completion (in-app — depends on Phase 4)
 
 ### Inventory Module — §2.4 (UI Shell Only — Mock Data)
 
@@ -307,19 +315,19 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ---
 
-### Phase 7: Floor Manager Enhancements (Not Started)
+### Phase 7: Floor Manager Enhancements (Mostly Complete)
 
 > Priority: **Medium**
 
-- [ ] Default phone prefix `+1 876` in customer forms
-- [ ] Search by invoice number
-- [ ] Pricing by inches for welding/reconstruction services
-- [ ] VIP auto-discount at quote creation
-- [ ] Manual discount input on quote
-- [ ] Print job label tag
-- [ ] Send quote via email/SMS with electronic quote link
-- [ ] Public electronic quote viewer page (SSR)
+- [x] Default phone prefix `+1 876` in customer forms
+- [x] Search by invoice number
+- [x] Pricing by inches for welding/reconstruction services
+- [x] VIP auto-discount at quote creation
+- [x] Manual discount input on quote
 - [x] Hide "Send to Technician" from Floor Manager UI (replaced with "Send to Cashier")
+- [ ] Print job label tag
+- [ ] Send quote via email/SMS with electronic quote link (depends on Phase 4)
+- [ ] Public electronic quote viewer page (SSR)
 
 ---
 
@@ -372,7 +380,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 1. **Invoice items**: ✅ Decided — Copy from quote items (snapshot). Implemented in `createFromQuote` service.
 2. **"Send to Technician" enforcement**: ✅ Backend role-guard via `cashierProcedure`. ✅ Floor Manager UI now shows "Send to Cashier" (creates invoice directly), not "Send to Technician".
-3. **VIP discount**: ✅ Auto-applied at invoice conversion time (not at quote time per spec request).
+3. **VIP discount**: ✅ Auto-applied at both quote creation time (`floor.ts` checks `isVip && discount`) and carried through to invoice conversion (`createFromQuote` uses quote's `discountAmount`).
 
 ### Remaining Design Decisions
 
@@ -383,6 +391,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 - ~~Technician, Cashier pages use hardcoded mock data~~ → ✅ Both now wired to real API
 - ~~Accept dialog technician dropdown hardcoded~~ → ✅ Now loads from `technicians.list` API
+- ~~QuoteGeneratorSheet uses ~15 manual useState calls + hand-rolled validation~~ → ✅ Refactored to `@tanstack/react-form` with Zod schemas (two forms: rim + welding), matching project patterns from customer-modal/service-modal
 - Dashboard metrics currently use mock/calculated data — need real aggregation queries
 - Inventory page still uses hardcoded mock data
 - No real-time updates yet (polling could be interim via TanStack Query refetchInterval)
