@@ -6,7 +6,7 @@ const pinInputVariants = tv({
   slots: {
     root: "flex w-full gap-1",
     digit:
-      "h-9 min-w-0 flex-1 rounded-[8px] border bg-white text-center font-rubik text-[14px] leading-[18px] text-ghost outline-none transition-colors focus:border-blue",
+      "h-9 min-w-0 flex-1 rounded-md border bg-white text-center font-rubik text-sm leading-4.5 text-ghost outline-none transition-colors focus:border-blue",
   },
   variants: {
     error: {

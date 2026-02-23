@@ -20,6 +20,7 @@ const buttonVariants = cva(
       size: {
         default: "",
         "icon-sm": "size-7 p-0",
+        sm: "p-2",
       },
     },
     compoundVariants: [
