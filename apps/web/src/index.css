@@ -7,6 +7,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --error-50: #fef3f2;
+  --error-100: #fee4e2;
   --blue: #1583e4;
   --green: #21b84e;
   --red: #f04438;
@@ -94,6 +96,8 @@
   --font-sans: "Inter Variable", sans-serif;
   --font-rubik: "Rubik Variable", sans-serif;
   --font-poppins: "Poppins", sans-serif;
+  --color-error-50: var(--error-50);
+  --color-error-100: var(--error-100);
   --color-blue: var(--blue);
   --color-green: var(--green);
   --color-red: var(--red);

@@ -80,7 +80,7 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
             placeholder={m.manage_search_placeholder()}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="flex h-10 w-full rounded-lg border border-field-line bg-white px-3 py-2.5 pr-9 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
+            className="flex h-10 w-full rounded-md border border-field-line bg-white px-3 py-2.5 pr-9 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
           />
           <Search className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ghost" />
         </div>
@@ -149,7 +149,7 @@ function ManagePage() {
   return (
     <div className="flex flex-col gap-5 p-5">
       <div className="flex items-center justify-between">
-        <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           {m.manage_title()}
         </h1>
         <Button onClick={() => setAddOpen(true)}>

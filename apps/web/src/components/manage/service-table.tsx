@@ -56,6 +56,11 @@ export function ServiceTable({ services, onEdit, onDelete, isDeleting }: Service
   return (
     <div className="overflow-hidden rounded-lg bg-white">
       <div className="flex border-b border-field-line">
+        <div className="flex w-22 items-center border-r border-field-line px-2 py-[7px]">
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_label_vehicle_type()}
+          </span>
+        </div>
         <div className="flex flex-1 items-center border-r border-field-line px-2 py-[7px]">
           <span className="font-rubik text-xs leading-3.5 text-label">
             {m.manage_col_service_name()}
@@ -81,28 +86,35 @@ export function ServiceTable({ services, onEdit, onDelete, isDeleting }: Service
 
       {services.map((svc) => (
         <div key={svc.id} className="flex border-b border-field-line last:border-b-0">
+          <div className="flex w-22 items-center self-stretch border-r border-field-line p-2">
+            <span className="font-rubik text-sm leading-4.5 text-body">
+              {svc.vehicleType ?? "—"}
+            </span>
+          </div>
           <div className="flex flex-1 items-center self-stretch border-r border-field-line p-2">
-            <span className="font-rubik text-sm leading-[18px] text-body">{svc.name}</span>
+            <span className="font-rubik text-sm leading-4.5 text-body">{svc.name}</span>
           </div>
           <div className="flex w-20 items-center self-stretch border-r border-field-line p-2">
-            <span className="font-rubik text-sm leading-[18px] text-body">{svc.minSize}</span>
+            <span className="font-rubik text-sm leading-4.5 text-body">{svc.minSize}</span>
           </div>
           <div className="flex w-20 items-center self-stretch border-r border-field-line p-2">
-            <span className="font-rubik text-sm leading-[18px] text-body">{svc.maxSize}</span>
+            <span className="font-rubik text-sm leading-4.5 text-body">{svc.maxSize}</span>
           </div>
           <div className="flex w-28 items-center self-stretch border-r border-field-line p-2">
-            <span className="font-rubik text-sm leading-[18px] text-body">
+            <span className="font-rubik text-sm leading-4.5 text-body">
               {formatUSD(svc.unitCost)}
             </span>
           </div>
           <div className="flex items-center justify-end gap-2 self-stretch p-2">
-            <Button variant="outline" onClick={() => onEdit(svc)}>
+            <Button variant="outline" size="sm" className="w-18" onClick={() => onEdit(svc)}>
               <IconEdit />
               {m.employees_btn_edit()}
             </Button>
             <Button
               variant="outline"
               color="destructive"
+              size="sm"
+              className="w-18"
               onClick={() => onDelete(svc)}
               disabled={isDeleting === svc.id}
             >
@@ -119,6 +131,9 @@ export function ServiceTable({ services, onEdit, onDelete, isDeleting }: Service
 function TableRowSkeleton() {
   return (
     <div className="flex border-b border-field-line">
+      <div className="flex w-22 items-center border-r border-field-line p-2">
+        <Skeleton className="h-[18px] w-14 rounded" />
+      </div>
       <div className="flex flex-1 items-center border-r border-field-line p-2">
         <Skeleton className="h-[18px] w-32 rounded" />
       </div>
@@ -132,8 +147,8 @@ function TableRowSkeleton() {
         <Skeleton className="h-[18px] w-20 rounded" />
       </div>
       <div className="flex items-center justify-end gap-2 p-2">
-        <Skeleton className="h-9 w-18 rounded-lg" />
-        <Skeleton className="h-9 w-18 rounded-lg" />
+        <Skeleton className="h-8 w-18 rounded-lg" />
+        <Skeleton className="h-8 w-18 rounded-lg" />
       </div>
     </div>
   );
@@ -143,6 +158,11 @@ export function ServiceTableSkeleton({ rows }: { rows?: ReactNode }) {
   return (
     <div className="overflow-hidden rounded-lg bg-white">
       <div className="flex border-b border-field-line">
+        <div className="flex w-22 items-center border-r border-field-line px-2 py-[7px]">
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            {m.manage_label_vehicle_type()}
+          </span>
+        </div>
         <div className="flex flex-1 items-center border-r border-field-line px-2 py-[7px]">
           <span className="font-rubik text-xs leading-3.5 text-label">
             {m.manage_col_service_name()}

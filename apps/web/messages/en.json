@@ -116,9 +116,9 @@
   "customers_toast_updated": "Client updated successfully",
 
   "manage_title": "List of Services",
-  "manage_btn_add_service": "Add Service",
-  "manage_tab_rim": "Rim",
-  "manage_tab_general": "General",
+  "manage_btn_add_service": "Add New Service",
+  "manage_tab_rim": "Rim Service",
+  "manage_tab_general": "General Service",
   "manage_search_placeholder": "Search...",
   "manage_col_service_name": "Service Name",
   "manage_col_min_size": "Min Size",
