@@ -310,7 +310,7 @@ export function QuoteGeneratorSheet({
                 </p>
                 <div className="flex flex-col gap-2">
                   {JOB_TYPES.map((job) => (
-                    <div key={job.value} className="flex items-center gap-3 h-9">
+                    <div key={job.value} className="flex h-9 items-center gap-3">
                       <div className="flex flex-1 items-center gap-1.5">
                         <FloorCheckbox
                           checked={!!checkedJobs[job.value]}

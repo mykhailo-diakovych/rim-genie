@@ -471,11 +471,17 @@ function ItemRow({
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
         <div className="flex flex-col items-center gap-1">
-          <Button className='w-full' variant="outline" onClick={onEdit}>
+          <Button className="w-full" variant="outline" onClick={onEdit}>
             <Pencil className="size-3.5" />
             Edit
           </Button>
-          <Button className='w-full' variant="outline" color="destructive" onClick={onRemove} disabled={isRemoving}>
+          <Button
+            className="w-full"
+            variant="outline"
+            color="destructive"
+            onClick={onRemove}
+            disabled={isRemoving}
+          >
             <Trash2 className="size-3.5" />
             Remove
           </Button>
