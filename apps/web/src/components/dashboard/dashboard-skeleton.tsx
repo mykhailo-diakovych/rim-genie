@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function MetricCardSkeleton() {
   return (
-    <div className="flex flex-col gap-3 rounded-[8px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+    <div className="flex flex-col gap-3 rounded-md border border-card-line bg-white p-3 shadow-card">
       {/* Title row: icon circle + title/subtitle */}
       <div className="flex items-center gap-2">
         <Skeleton className="size-9 shrink-0 rounded-full" />
@@ -32,7 +32,7 @@ export function DashboardSkeleton() {
       {/* Title row */}
       <div className="flex items-center justify-between">
         <Skeleton className="h-[26px] w-32 rounded-[4px]" />
-        <Skeleton className="h-9 w-[200px] rounded-[8px]" />
+        <Skeleton className="h-9 w-[200px] rounded-md" />
       </div>
 
       {/* Metric cards 2×2 */}
@@ -45,7 +45,7 @@ export function DashboardSkeleton() {
       {/* Bottom row */}
       <div className="grid gap-3 lg:grid-cols-[1fr_248px]">
         {/* Team Activity */}
-        <div className="flex flex-col gap-[12px] rounded-[12px] border border-card-line bg-white p-[12px] shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+        <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card">
           <Skeleton className="h-[18px] w-28 rounded-[3px]" />
           <div className="flex w-full flex-col">
             {/* Header row */}
@@ -84,12 +84,12 @@ export function DashboardSkeleton() {
         </div>
 
         {/* Attention Required */}
-        <div className="flex flex-col gap-[12px] rounded-[12px] border border-[rgba(219,62,33,0.5)] bg-white p-[12px] shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+        <div className="flex flex-col gap-3 rounded-xl border border-[rgba(219,62,33,0.5)] bg-white p-3 shadow-card">
           <Skeleton className="h-[18px] w-36 rounded-[3px]" />
           <div className="flex w-full flex-col gap-[8px]">
             {/* Item 1 with divider */}
             <div className="flex flex-col gap-[8px]">
-              <div className="flex items-center gap-[12px]">
+              <div className="flex items-center gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-[4px]">
                   <Skeleton className="size-5 shrink-0 rounded-full" />
                   <Skeleton className="h-3.5 min-w-0 flex-1 rounded-[3px]" />
@@ -99,7 +99,7 @@ export function DashboardSkeleton() {
               <div className="h-px w-full bg-[rgba(219,62,33,0.08)]" />
             </div>
             {/* Item 2 */}
-            <div className="flex items-center gap-[12px]">
+            <div className="flex items-center gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-[4px]">
                 <Skeleton className="size-5 shrink-0 rounded-full" />
                 <Skeleton className="h-3.5 min-w-0 flex-1 rounded-[3px]" />

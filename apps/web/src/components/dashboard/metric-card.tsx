@@ -43,7 +43,7 @@ export function MetricCard({
   const gradientId = `grad-${title.replace(/\W+/g, "-")}`;
 
   return (
-    <div className="flex flex-col gap-3 rounded-[8px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+    <div className="flex flex-col gap-3 rounded-md border border-card-line bg-white p-3 shadow-card">
       {/* Title row: icon circle + title/subtitle */}
       <div className="flex items-center gap-2">
         <div
@@ -52,9 +52,9 @@ export function MetricCard({
         >
           <Icon className="size-6 text-white" />
         </div>
-        <div className="flex flex-col leading-[18px]">
-          <span className="font-rubik text-[14px] font-medium text-body">{title}</span>
-          <span className="font-rubik text-[12px] text-label">{subtitle}</span>
+        <div className="flex flex-col leading-4.5">
+          <span className="font-rubik text-sm font-medium text-body">{title}</span>
+          <span className="font-rubik text-xs text-label">{subtitle}</span>
         </div>
       </div>
 
@@ -77,10 +77,10 @@ export function MetricCard({
               ) : (
                 <IconArrowDown className="size-3" />
               )}
-              <span className="font-rubik text-[12px] leading-none">{Math.abs(change)}%</span>
+              <span className="font-rubik text-xs leading-none">{Math.abs(change)}%</span>
             </span>
           </div>
-          <span className="font-rubik text-[12px] leading-[18px] text-label">
+          <span className="font-rubik text-xs leading-4.5 text-label">
             {m.metric_vs_last_period()}
           </span>
         </div>
