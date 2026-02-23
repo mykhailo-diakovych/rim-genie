@@ -75,7 +75,7 @@ export function SignatureModal({ open, onOpenChange, onSign }: SignatureModalPro
           <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#c9e0f3]">
             <Info className="size-6 text-blue" />
           </div>
-          <p className="font-rubik text-sm leading-[18px] text-body">
+          <p className="font-rubik text-sm leading-4.5 text-body">
             Sign below to confirm acceptance of the service conditions
           </p>
         </div>

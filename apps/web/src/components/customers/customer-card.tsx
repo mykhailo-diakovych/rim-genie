@@ -23,10 +23,10 @@ interface CustomerCardProps {
 
 export function CustomerCard({ customer, actions }: CustomerCardProps) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card">
       <div className="flex flex-col gap-1">
         <div className="flex items-baseline gap-4">
-          <span className="font-rubik text-sm leading-[18px] font-medium text-body">
+          <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {customer.name}
           </span>
           <div className="flex items-center gap-2 font-rubik text-xs leading-3.5 text-body">
@@ -50,7 +50,7 @@ export function CustomerCard({ customer, actions }: CustomerCardProps) {
 
 export function CustomerCardSkeleton() {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card">
       <div className="flex flex-col gap-1">
         <div className="flex items-baseline gap-4">
           <Skeleton className="h-[18px] w-32 rounded" />
