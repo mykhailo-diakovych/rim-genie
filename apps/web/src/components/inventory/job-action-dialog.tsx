@@ -86,7 +86,7 @@ export function JobActionDialog({ job, action, trigger }: JobActionDialogProps) 
         </DialogHeader>
 
         <div className="flex flex-col gap-6 px-3 pt-0 pb-3">
-          <div className="flex items-baseline justify-between border-b border-field-line pt-3 pb-2 font-rubik text-sm leading-[18px]">
+          <div className="flex items-baseline justify-between border-b border-field-line pt-3 pb-2 font-rubik text-sm leading-4.5">
             <span className="font-medium text-body">{job.invoice.customer.name}</span>
             <div className="flex items-baseline gap-1">
               <span className="text-label">Job ID:</span>
@@ -99,7 +99,7 @@ export function JobActionDialog({ job, action, trigger }: JobActionDialogProps) 
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-label focus:border-blue"
+              className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-4.5 text-body outline-none placeholder:text-label focus:border-blue"
             />
           </div>
 

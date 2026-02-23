@@ -19,11 +19,11 @@ export function OvernightJobCard({ job }: { job: ApiJob }) {
   const jobTypesStr = formatJobTypes(job);
 
   return (
-    <div className="flex gap-4 rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+    <div className="flex gap-4 rounded-xl border border-card-line bg-white p-3 shadow-card">
       <div className="flex flex-1 flex-col gap-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-4">
-            <span className="font-rubik text-sm leading-[18px] font-medium text-body">
+            <span className="font-rubik text-sm leading-4.5 font-medium text-body">
               {job.invoice.customer.name}
             </span>
             <span className="rounded-[4px] bg-[#243a5e] px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-[#ebf0ff]">
@@ -35,7 +35,7 @@ export function OvernightJobCard({ job }: { job: ApiJob }) {
             <span className="text-body">{job.invoice.invoiceNumber}</span>
           </div>
         </div>
-        <div className="font-rubik text-sm leading-[18px] text-body">
+        <div className="font-rubik text-sm leading-4.5 text-body">
           {job.invoiceItem.description && <p>{job.invoiceItem.description}</p>}
           {jobTypesStr && <p>{jobTypesStr}</p>}
         </div>
