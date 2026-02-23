@@ -418,7 +418,7 @@ function MoreDropdown({ quoteId }: { quoteId: string }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-[72px] items-center justify-center gap-2 rounded-md border border-field-line bg-white font-rubik text-xs leading-3.5 text-body transition-colors hover:bg-page"
+        className="flex h-9 items-center justify-center gap-2 rounded-md border border-field-line bg-white px-3 font-rubik text-xs leading-3.5 text-body transition-colors hover:bg-page"
       >
         More
         <ChevronDown className="size-4 text-ghost" />
@@ -490,7 +490,7 @@ function ItemRow({
           <span className="text-sm leading-4.5 text-body">{item.description ?? "Rim Job"}</span>
         </div>
       </td>
-      <td className="border-l border-field-line px-2 py-2 text-[14px] text-body">
+      <td className="border-l border-field-line px-2 py-2 text-sm text-body">
         {item.inches ? `${item.inches}"` : item.quantity}
       </td>
       <td className="border-l border-field-line px-2 py-2">
@@ -501,7 +501,7 @@ function ItemRow({
             value={costStr}
             onChange={(e) => setCostStr(e.target.value)}
             onBlur={handleBlur}
-            className="w-16 rounded-[4px] border border-transparent bg-transparent px-1 py-0.5 font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line"
+            className="w-16 rounded-sm border border-transparent bg-transparent px-1 py-0.5 font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line"
           />
         </div>
       </td>
@@ -511,17 +511,9 @@ function ItemRow({
       <td className="border-r border-l border-field-line px-2 py-2">
         <div className="flex flex-col items-center gap-1">
           <Button className="w-full" variant="outline" onClick={onEdit}>
-          <Button className="w-full" variant="outline" onClick={onEdit}>
             <Pencil className="size-3.5" />
             Edit
           </Button>
-          <Button
-            className="w-full"
-            variant="outline"
-            color="destructive"
-            onClick={onRemove}
-            disabled={isRemoving}
-          >
           <Button
             className="w-full"
             variant="outline"
