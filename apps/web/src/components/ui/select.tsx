@@ -7,11 +7,17 @@ function Select<Value = string>({ ...props }: SelectPrimitive.Root.Props<Value>)
   return <SelectPrimitive.Root {...props} />;
 }
 
-function SelectTrigger({ className, children, ...props }: SelectPrimitive.Trigger.Props) {
+function SelectTrigger({
+  className,
+  children,
+  error,
+  ...props
+}: SelectPrimitive.Trigger.Props & { error?: boolean }) {
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "flex h-9 w-full items-center justify-between rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] transition-colors outline-none",
+        "flex h-9 w-full items-center justify-between rounded-[8px] border bg-white px-2 font-rubik text-[12px] leading-[14px] transition-colors outline-none",
+        error ? "border-red/50" : "border-field-line",
         className,
       )}
       {...props}

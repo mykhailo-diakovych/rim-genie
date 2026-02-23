@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
 import { Check, Info, X } from "lucide-react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,6 +13,7 @@ import {
   SelectPopup,
   SelectOption,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +58,24 @@ export const JOB_TYPES: {
   { value: "reconstruct", label: "Reconstruct", hasInput: true, inputPlaceholder: "No. of Bends" },
   { value: "general", label: "General" },
 ];
+
+// ─── Schemas ──────────────────────────────────────────────────────────────────
+
+const rimsSchema = z.object({
+  vehicleSize: z.string().min(1, "Vehicle size is required"),
+  sideOfVehicle: z.string().min(1, "Side of vehicle is required"),
+  damageLevel: z.string().min(1, "Damage level is required"),
+  quantity: z.string().refine((v) => parseInt(v, 10) >= 1, "Quantity must be at least 1"),
+});
+
+const weldingSchema = z.object({
+  weldingDesc: z.string(),
+  weldingInches: z.string().refine((v) => parseInt(v, 10) > 0, "Inches is required"),
+  weldingPricePerInch: z.string().refine((v) => {
+    const n = parseFloat(v);
+    return !isNaN(n) && n > 0;
+  }, "Price per inch is required"),
+});
 
 // ─── FloorCheckbox ────────────────────────────────────────────────────────────
 
@@ -102,6 +123,9 @@ interface QuoteGeneratorSheetProps {
   isAdding?: boolean;
 }
 
+const RIM_DEFAULTS = { vehicleSize: "", sideOfVehicle: "", damageLevel: "", quantity: "1" };
+const WELDING_DEFAULTS = { weldingDesc: "", weldingInches: "", weldingPricePerInch: "" };
+
 export function QuoteGeneratorSheet({
   open,
   onClose,
@@ -111,71 +135,69 @@ export function QuoteGeneratorSheet({
   isAdding,
 }: QuoteGeneratorSheetProps) {
   const [tab, setTab] = useState("rims");
-  const [vehicleSize, setVehicleSize] = useState<string | null>(null);
-  const [sideOfVehicle, setSideOfVehicle] = useState<string | null>(null);
-  const [damageLevel, setDamageLevel] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState("1");
   const [checkedJobs, setCheckedJobs] = useState<Partial<Record<JobType, boolean>>>({});
   const [jobInputs, setJobInputs] = useState<Partial<Record<JobType, string>>>({});
+  const [jobTypeError, setJobTypeError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState<string | null>(null);
 
-  const [weldingDesc, setWeldingDesc] = useState("");
-  const [weldingInches, setWeldingInches] = useState("");
-  const [weldingPricePerInch, setWeldingPricePerInch] = useState("");
+  const rimForm = useForm({
+    defaultValues: RIM_DEFAULTS,
+    onSubmit: ({ value }) => {
+      const hasJob = JOB_TYPES.some((j) => checkedJobs[j.value]);
+      if (!hasJob) {
+        setJobTypeError("Select at least one job type");
+        return;
+      }
 
-  if (editItem && initialized !== editItem.id) {
-    if (editItem.itemType === "welding") {
-      setTab("other-welding");
-      setWeldingDesc(editItem.description ?? "");
-      setWeldingInches(String(editItem.inches ?? ""));
-      setWeldingPricePerInch(editItem.unitCost ? (editItem.unitCost / 100).toFixed(2) : "");
-    } else {
-      setTab("rims");
-      setVehicleSize(editItem.vehicleSize);
-      setSideOfVehicle(editItem.sideOfVehicle);
-      setDamageLevel(editItem.damageLevel);
-      setQuantity(String(editItem.quantity));
-    }
-    const checked: Partial<Record<JobType, boolean>> = {};
-    const inputs: Partial<Record<JobType, string>> = {};
-    for (const jt of editItem.jobTypes) {
-      checked[jt.type] = true;
-      if (jt.input) inputs[jt.type] = jt.input;
-    }
-    setCheckedJobs(checked);
-    setJobInputs(inputs);
-    setInitialized(editItem.id);
-  }
+      const selectedJobs = JOB_TYPES.filter((j) => checkedJobs[j.value]);
+      const jobTypes: JobTypeEntry[] = selectedJobs.map((j) => ({
+        type: j.value,
+        input: jobInputs[j.value],
+      }));
 
-  if (!editItem && initialized !== null) {
-    setInitialized(null);
-  }
+      const description = [
+        value.vehicleSize ? `Vehicle: ${value.vehicleSize}` : null,
+        value.sideOfVehicle ? `Side: ${value.sideOfVehicle}` : null,
+        value.damageLevel ? `Damage: ${value.damageLevel.toUpperCase()}` : null,
+        ...selectedJobs.map((j) => {
+          const input = jobInputs[j.value];
+          return input ? `${j.label}: ${input}` : j.label;
+        }),
+      ]
+        .filter(Boolean)
+        .join(", ");
 
-  function toggleJob(type: JobType, checked: boolean) {
-    setCheckedJobs((prev) => ({ ...prev, [type]: checked }));
-  }
+      const data: QuoteGeneratorSheetData = {
+        vehicleSize: value.vehicleSize,
+        sideOfVehicle: value.sideOfVehicle,
+        damageLevel: value.damageLevel,
+        quantity: parseInt(value.quantity, 10) || 1,
+        unitCost: editItem?.unitCost ?? 0,
+        itemType: "rim",
+        jobTypes,
+        description,
+      };
 
-  function resetForm() {
-    setVehicleSize(null);
-    setSideOfVehicle(null);
-    setDamageLevel(null);
-    setQuantity("1");
-    setCheckedJobs({});
-    setJobInputs({});
-    setInitialized(null);
-    setWeldingDesc("");
-    setWeldingInches("");
-    setWeldingPricePerInch("");
-  }
+      if (editItem && onEdit) {
+        onEdit(editItem.id, data);
+      } else {
+        onAdd(data);
+      }
 
-  function handleSubmit() {
-    if (tab === "other-welding") {
-      const inches = parseInt(weldingInches, 10);
-      const pricePerInchCents = Math.round(parseFloat(weldingPricePerInch) * 100);
-      if (!inches || inches <= 0 || isNaN(pricePerInchCents) || pricePerInchCents <= 0) return;
+      handleClose();
+    },
+    validators: { onSubmit: rimsSchema },
+  });
+
+  const weldingForm = useForm({
+    defaultValues: WELDING_DEFAULTS,
+    onSubmit: ({ value }) => {
+      const inches = parseInt(value.weldingInches, 10);
+      const pricePerInchCents = Math.round(parseFloat(value.weldingPricePerInch) * 100);
 
       const desc =
-        weldingDesc.trim() || `Welding: ${inches}" @ $${(pricePerInchCents / 100).toFixed(2)}/in`;
+        value.weldingDesc.trim() ||
+        `Welding: ${inches}" @ $${(pricePerInchCents / 100).toFixed(2)}/in`;
 
       const data: QuoteGeneratorSheetData = {
         vehicleSize: null,
@@ -195,49 +217,55 @@ export function QuoteGeneratorSheet({
         onAdd(data);
       }
 
-      resetForm();
-      onClose();
-      return;
-    }
+      handleClose();
+    },
+    validators: { onSubmit: weldingSchema },
+  });
 
-    const selectedJobs = JOB_TYPES.filter((j) => checkedJobs[j.value]);
-    if (selectedJobs.length === 0) return;
-
-    const jobTypes: JobTypeEntry[] = selectedJobs.map((j) => ({
-      type: j.value,
-      input: jobInputs[j.value],
-    }));
-
-    const description = [
-      vehicleSize ? `Vehicle: ${vehicleSize}` : null,
-      sideOfVehicle ? `Side: ${sideOfVehicle}` : null,
-      damageLevel ? `Damage: ${damageLevel.toUpperCase()}` : null,
-      ...selectedJobs.map((j) => {
-        const input = jobInputs[j.value];
-        return input ? `${j.label}: ${input}` : j.label;
-      }),
-    ]
-      .filter(Boolean)
-      .join(", ");
-
-    const data: QuoteGeneratorSheetData = {
-      vehicleSize,
-      sideOfVehicle,
-      damageLevel,
-      quantity: parseInt(quantity, 10) || 1,
-      unitCost: editItem?.unitCost ?? 0,
-      itemType: "rim",
-      jobTypes,
-      description,
-    };
-
-    if (editItem && onEdit) {
-      onEdit(editItem.id, data);
+  if (editItem && initialized !== editItem.id) {
+    if (editItem.itemType === "welding") {
+      setTab("other-welding");
+      weldingForm.reset({
+        weldingDesc: editItem.description ?? "",
+        weldingInches: String(editItem.inches ?? ""),
+        weldingPricePerInch: editItem.unitCost ? (editItem.unitCost / 100).toFixed(2) : "",
+      });
     } else {
-      onAdd(data);
+      setTab("rims");
+      rimForm.reset({
+        vehicleSize: editItem.vehicleSize ?? "",
+        sideOfVehicle: editItem.sideOfVehicle ?? "",
+        damageLevel: editItem.damageLevel ?? "",
+        quantity: String(editItem.quantity),
+      });
     }
+    const checked: Partial<Record<JobType, boolean>> = {};
+    const inputs: Partial<Record<JobType, string>> = {};
+    for (const jt of editItem.jobTypes) {
+      checked[jt.type] = true;
+      if (jt.input) inputs[jt.type] = jt.input;
+    }
+    setCheckedJobs(checked);
+    setJobInputs(inputs);
+    setInitialized(editItem.id);
+  }
 
-    resetForm();
+  if (!editItem && initialized !== null) {
+    setInitialized(null);
+  }
+
+  function toggleJob(type: JobType, checked: boolean) {
+    setCheckedJobs((prev) => ({ ...prev, [type]: checked }));
+    if (checked) setJobTypeError(null);
+  }
+
+  function handleClose() {
+    rimForm.reset();
+    weldingForm.reset();
+    setCheckedJobs({});
+    setJobInputs({});
+    setJobTypeError(null);
+    setInitialized(null);
     onClose();
   }
 
@@ -246,7 +274,7 @@ export function QuoteGeneratorSheet({
       {/* Backdrop */}
       <div
         className={`fixed inset-0 z-40 bg-black/75 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Sheet */}
@@ -256,7 +284,7 @@ export function QuoteGeneratorSheet({
         {/* Close button */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           className={`absolute top-3 -left-9 flex items-center justify-center rounded-tl-[8px] rounded-bl-[8px] bg-blue p-2 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
           aria-label="Close"
         >
@@ -294,72 +322,131 @@ export function QuoteGeneratorSheet({
               </div>
 
               {/* Form */}
-              <div className="flex flex-col gap-3">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  rimForm.handleSubmit();
+                }}
+                id="rim-form"
+                className="flex flex-col gap-3"
+              >
                 <div className="flex gap-3">
-                  <div className="flex flex-1 flex-col gap-1">
-                    <label className="font-rubik text-[12px] leading-[14px] text-label">
-                      Vehicle Size:
-                    </label>
-                    <Select value={vehicleSize} onValueChange={setVehicleSize}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Small cars" />
-                      </SelectTrigger>
-                      <SelectPopup>
-                        <SelectOption value="sedan">Sedan / Small cars</SelectOption>
-                        <SelectOption value="mid-suv">Mid-Size SUV / Pick-up</SelectOption>
-                        <SelectOption value="full-suv">Full-Size SUV / Pick-up</SelectOption>
-                      </SelectPopup>
-                    </Select>
-                  </div>
-                  <div className="flex flex-1 flex-col gap-1">
-                    <label className="font-rubik text-[12px] leading-[14px] text-label">
-                      Side of Vehicle:
-                    </label>
-                    <Select value={sideOfVehicle} onValueChange={setSideOfVehicle}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Left" />
-                      </SelectTrigger>
-                      <SelectPopup>
-                        <SelectOption value="left">Left</SelectOption>
-                        <SelectOption value="right">Right</SelectOption>
-                        <SelectOption value="front">Front</SelectOption>
-                        <SelectOption value="rear">Rear</SelectOption>
-                        <SelectOption value="all">All</SelectOption>
-                      </SelectPopup>
-                    </Select>
-                  </div>
+                  <rimForm.Field name="vehicleSize">
+                    {(field) => (
+                      <div className="flex flex-1 flex-col gap-1">
+                        <label className="font-rubik text-[12px] leading-[14px] text-label">
+                          Vehicle Size:
+                        </label>
+                        <Select
+                          value={field.state.value || null}
+                          onValueChange={(v) => field.handleChange(v as string)}
+                        >
+                          <SelectTrigger error={field.state.meta.errors.length > 0}>
+                            <SelectValue placeholder="Small cars" />
+                          </SelectTrigger>
+                          <SelectPopup>
+                            <SelectOption value="sedan">Sedan / Small cars</SelectOption>
+                            <SelectOption value="mid-suv">Mid-Size SUV / Pick-up</SelectOption>
+                            <SelectOption value="full-suv">Full-Size SUV / Pick-up</SelectOption>
+                          </SelectPopup>
+                        </Select>
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </rimForm.Field>
+                  <rimForm.Field name="sideOfVehicle">
+                    {(field) => (
+                      <div className="flex flex-1 flex-col gap-1">
+                        <label className="font-rubik text-[12px] leading-[14px] text-label">
+                          Side of Vehicle:
+                        </label>
+                        <Select
+                          value={field.state.value || null}
+                          onValueChange={(v) => field.handleChange(v as string)}
+                        >
+                          <SelectTrigger error={field.state.meta.errors.length > 0}>
+                            <SelectValue placeholder="Left" />
+                          </SelectTrigger>
+                          <SelectPopup>
+                            <SelectOption value="left">Left</SelectOption>
+                            <SelectOption value="right">Right</SelectOption>
+                            <SelectOption value="front">Front</SelectOption>
+                            <SelectOption value="rear">Rear</SelectOption>
+                            <SelectOption value="all">All</SelectOption>
+                          </SelectPopup>
+                        </Select>
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </rimForm.Field>
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="flex flex-1 flex-col gap-1">
-                    <label className="font-rubik text-[12px] leading-[14px] text-label">
-                      Damage Level:
-                    </label>
-                    <Select value={damageLevel} onValueChange={setDamageLevel}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Medium" />
-                      </SelectTrigger>
-                      <SelectPopup>
-                        <SelectOption value="low">Low</SelectOption>
-                        <SelectOption value="medium">Medium</SelectOption>
-                        <SelectOption value="high">High</SelectOption>
-                      </SelectPopup>
-                    </Select>
-                  </div>
-                  <div className="flex flex-1 flex-col gap-1">
-                    <label className="font-rubik text-[12px] leading-[14px] text-label">
-                      Quantity:
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      className="flex h-9 w-full rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none"
-                    />
-                  </div>
+                  <rimForm.Field name="damageLevel">
+                    {(field) => (
+                      <div className="flex flex-1 flex-col gap-1">
+                        <label className="font-rubik text-[12px] leading-[14px] text-label">
+                          Damage Level:
+                        </label>
+                        <Select
+                          value={field.state.value || null}
+                          onValueChange={(v) => field.handleChange(v as string)}
+                        >
+                          <SelectTrigger error={field.state.meta.errors.length > 0}>
+                            <SelectValue placeholder="Medium" />
+                          </SelectTrigger>
+                          <SelectPopup>
+                            <SelectOption value="low">Low</SelectOption>
+                            <SelectOption value="medium">Medium</SelectOption>
+                            <SelectOption value="high">High</SelectOption>
+                          </SelectPopup>
+                        </Select>
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </rimForm.Field>
+                  <rimForm.Field name="quantity">
+                    {(field) => (
+                      <div className="flex flex-1 flex-col gap-1">
+                        <label className="font-rubik text-[12px] leading-[14px] text-label">
+                          Quantity:
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          className={cn(
+                            "flex h-9 w-full rounded-[8px] border bg-white px-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none",
+                            field.state.meta.errors.length > 0
+                              ? "border-red/50"
+                              : "border-field-line",
+                          )}
+                        />
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </rimForm.Field>
                 </div>
-              </div>
+              </form>
 
               {/* Job Types */}
               <div className="flex flex-col gap-1">
@@ -392,6 +479,7 @@ export function QuoteGeneratorSheet({
                     </div>
                   ))}
                 </div>
+                {jobTypeError && <p className="font-rubik text-xs text-red">{jobTypeError}</p>}
               </div>
             </TabsContent>
 
@@ -405,77 +493,156 @@ export function QuoteGeneratorSheet({
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="font-rubik text-xs leading-[14px] text-label">
-                    Description:
-                  </label>
-                  <input
-                    type="text"
-                    value={weldingDesc}
-                    onChange={(e) => setWeldingDesc(e.target.value)}
-                    placeholder="e.g. Barrel weld, lip reconstruction..."
-                    className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-[14px] text-body outline-none placeholder:text-ghost"
-                  />
-                </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  weldingForm.handleSubmit();
+                }}
+                id="welding-form"
+                className="flex flex-col gap-3"
+              >
+                <weldingForm.Field name="weldingDesc">
+                  {(field) => (
+                    <div className="flex flex-col gap-1">
+                      <label className="font-rubik text-xs leading-[14px] text-label">
+                        Description:
+                      </label>
+                      <input
+                        type="text"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        placeholder="e.g. Barrel weld, lip reconstruction..."
+                        className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-[14px] text-body outline-none placeholder:text-ghost"
+                      />
+                    </div>
+                  )}
+                </weldingForm.Field>
                 <div className="flex gap-3">
-                  <div className="flex flex-1 flex-col gap-1">
-                    <label className="font-rubik text-xs leading-[14px] text-label">Inches:</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={weldingInches}
-                      onChange={(e) => setWeldingInches(e.target.value)}
-                      placeholder="0"
-                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-[14px] text-body outline-none placeholder:text-ghost"
-                    />
-                  </div>
-                  <div className="flex flex-1 flex-col gap-1">
-                    <label className="font-rubik text-xs leading-[14px] text-label">
-                      Price per inch ($):
-                    </label>
-                    <input
-                      type="text"
-                      value={weldingPricePerInch}
-                      onChange={(e) => setWeldingPricePerInch(e.target.value)}
-                      placeholder="0.00"
-                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-[14px] text-body outline-none placeholder:text-ghost"
-                    />
-                  </div>
-                </div>
-                {(() => {
-                  const inches = parseInt(weldingInches, 10);
-                  const price = parseFloat(weldingPricePerInch);
-                  if (inches > 0 && price > 0) {
-                    const total = inches * price;
-                    return (
-                      <div className="rounded-lg bg-page px-3 py-2 font-rubik text-sm text-body">
-                        {inches}" &times; ${price.toFixed(2)}/in ={" "}
-                        <span className="font-medium">${total.toFixed(2)}</span>
+                  <weldingForm.Field name="weldingInches">
+                    {(field) => (
+                      <div className="flex flex-1 flex-col gap-1">
+                        <label className="font-rubik text-xs leading-[14px] text-label">
+                          Inches:
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder="0"
+                          className={cn(
+                            "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-[14px] text-body outline-none placeholder:text-ghost",
+                            field.state.meta.errors.length > 0
+                              ? "border-red/50"
+                              : "border-field-line",
+                          )}
+                        />
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
                       </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
+                    )}
+                  </weldingForm.Field>
+                  <weldingForm.Field name="weldingPricePerInch">
+                    {(field) => (
+                      <div className="flex flex-1 flex-col gap-1">
+                        <label className="font-rubik text-xs leading-[14px] text-label">
+                          Price per inch ($):
+                        </label>
+                        <input
+                          type="text"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder="0.00"
+                          className={cn(
+                            "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-[14px] text-body outline-none placeholder:text-ghost",
+                            field.state.meta.errors.length > 0
+                              ? "border-red/50"
+                              : "border-field-line",
+                          )}
+                        />
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </weldingForm.Field>
+                </div>
+                <weldingForm.Subscribe selector={(state) => state.values}>
+                  {(values) => {
+                    const inches = parseInt(values.weldingInches, 10);
+                    const price = parseFloat(values.weldingPricePerInch);
+                    if (inches > 0 && price > 0) {
+                      const total = inches * price;
+                      return (
+                        <div className="rounded-lg bg-page px-3 py-2 font-rubik text-sm text-body">
+                          {inches}" &times; ${price.toFixed(2)}/in ={" "}
+                          <span className="font-medium">${total.toFixed(2)}</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                </weldingForm.Subscribe>
+              </form>
             </TabsContent>
           </Tabs>
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-center gap-2 border-t border-field-line bg-white p-3">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={handleClose}>
             Cancel
           </Button>
-          <Button color="success" onClick={handleSubmit} disabled={isAdding} className="w-32">
-            {isAdding
-              ? editItem
-                ? "Updating..."
-                : "Adding..."
-              : editItem
-                ? "Update Item"
-                : "Add to Quote"}
-          </Button>
+          {tab === "rims" ? (
+            <rimForm.Subscribe selector={(state) => ({ canSubmit: state.canSubmit })}>
+              {({ canSubmit }) => (
+                <Button
+                  color="success"
+                  type="submit"
+                  form="rim-form"
+                  disabled={isAdding || !canSubmit}
+                  className="w-32"
+                >
+                  {isAdding
+                    ? editItem
+                      ? "Updating..."
+                      : "Adding..."
+                    : editItem
+                      ? "Update Item"
+                      : "Add to Quote"}
+                </Button>
+              )}
+            </rimForm.Subscribe>
+          ) : (
+            <weldingForm.Subscribe selector={(state) => ({ canSubmit: state.canSubmit })}>
+              {({ canSubmit }) => (
+                <Button
+                  color="success"
+                  type="submit"
+                  form="welding-form"
+                  disabled={isAdding || !canSubmit}
+                  className="w-32"
+                >
+                  {isAdding
+                    ? editItem
+                      ? "Updating..."
+                      : "Adding..."
+                    : editItem
+                      ? "Update Item"
+                      : "Add to Quote"}
+                </Button>
+              )}
+            </weldingForm.Subscribe>
+          )}
         </div>
       </div>
     </>
