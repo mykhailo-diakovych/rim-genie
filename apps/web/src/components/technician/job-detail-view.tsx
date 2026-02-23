@@ -42,12 +42,12 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
         Back to list
       </Button>
 
-      <div className="flex items-center justify-between rounded-[12px] border border-card-line bg-white px-4 py-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+      <div className="flex items-center justify-between rounded-xl border border-card-line bg-white px-4 py-3 shadow-card">
         <div className="flex items-baseline gap-3">
-          <span className="font-rubik text-[22px] leading-[26px] font-bold text-body">
+          <span className="font-rubik text-[22px] leading-6.5 font-bold text-body">
             {group.customer}
           </span>
-          <div className="flex items-baseline gap-1 font-rubik text-[14px] leading-[18px]">
+          <div className="flex items-baseline gap-1 font-rubik text-sm leading-4.5">
             <span className="text-label">Job ID:</span>
             <span className="font-medium text-body">{group.invoiceNumber}</span>
           </div>
@@ -56,7 +56,7 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
           customer={group.customer}
           jobId={String(group.invoiceNumber)}
           jobIds={group.jobs.map((j) => j.id)}
-          triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-[8px] border border-[#db3e21] font-rubik text-[12px] leading-[14px] text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
+          triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
           triggerContent={
             <>
               <ReverseIcon />
@@ -66,15 +66,15 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
         />
       </div>
 
-      <div className="overflow-hidden rounded-[12px] border border-card-line bg-white shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+      <div className="overflow-hidden rounded-xl border border-card-line bg-white shadow-card">
         <div className="grid grid-cols-[48px_1fr_120px_124px] border-b border-card-line">
-          <span className="border-r border-card-line px-3 py-2 font-rubik text-[12px] leading-[14px] text-label">
+          <span className="border-r border-card-line px-3 py-2 font-rubik text-xs leading-3.5 text-label">
             #
           </span>
-          <span className="border-r border-card-line px-3 py-2 font-rubik text-[12px] leading-[14px] text-label">
+          <span className="border-r border-card-line px-3 py-2 font-rubik text-xs leading-3.5 text-label">
             Description
           </span>
-          <span className="border-r border-card-line px-3 py-2 font-rubik text-[12px] leading-[14px] text-label">
+          <span className="border-r border-card-line px-3 py-2 font-rubik text-xs leading-3.5 text-label">
             Status
           </span>
           <span />
@@ -88,24 +88,24 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
               idx < group.jobs.length - 1 && "border-b border-card-line",
             )}
           >
-            <span className="border-r border-card-line px-3 py-3 pt-3.5 font-rubik text-[14px] leading-[18px] text-body">
+            <span className="border-r border-card-line px-3 py-3 pt-3.5 font-rubik text-sm leading-4.5 text-body">
               {idx + 1}
             </span>
 
             <div className="flex flex-col gap-2 border-r border-card-line px-3 py-3">
-              <div className="font-rubik text-[14px] leading-[18px] font-normal text-body">
+              <div className="font-rubik text-sm leading-4.5 font-normal text-body">
                 <p>{job.invoiceItem.vehicleSize}&quot; Rims</p>
                 <p>
                   {job.invoiceItem.description}
                   {job.invoiceItem.damageLevel && `, Damage: ${job.invoiceItem.damageLevel}`}
                 </p>
               </div>
-              <div className="flex gap-1 font-rubik text-[14px] leading-[18px]">
+              <div className="flex gap-1 font-rubik text-sm leading-4.5">
                 <span className="text-label">Comments:</span>
                 <span className="text-body">{job.invoiceItem.comments}</span>
               </div>
               {job.technician && (
-                <span className="inline-flex w-fit rounded-[4px] bg-[#32cbfa] px-1.5 py-0.5 font-rubik text-[12px] leading-[14px] text-white">
+                <span className="inline-flex w-fit rounded-[4px] bg-[#32cbfa] px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white">
                   {job.technician.name}
                 </span>
               )}
@@ -114,7 +114,7 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
             <div className="flex items-center border-r border-card-line px-3 py-3">
               <span
                 className={cn(
-                  "rounded-[4px] px-1.5 py-0.5 font-rubik text-[12px] leading-[14px] text-white",
+                  "rounded-[4px] px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white",
                   job.status === "completed" ? "bg-[#55ce63]" : "bg-[#f9b62e]",
                 )}
               >
@@ -141,7 +141,7 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
                 customer={group.customer}
                 jobId={String(group.invoiceNumber)}
                 jobIds={[job.id]}
-                triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-[8px] font-rubik text-[12px] leading-[14px] transition-colors border border-[#db3e21] text-[#db3e21] hover:bg-[#db3e21]/5"
+                triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md font-rubik text-xs leading-3.5 transition-colors border border-[#db3e21] text-[#db3e21] hover:bg-[#db3e21]/5"
                 triggerContent={
                   <>
                     <ReverseIcon />

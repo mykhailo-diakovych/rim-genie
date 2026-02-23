@@ -94,9 +94,7 @@ export function CompleteJobDialog({ group }: { group: JobGroup }) {
             <AlertCircle className="size-6 text-[#d92d20]" />
           </div>
           <div className="flex flex-col gap-0.5 py-1">
-            <p className="font-rubik text-sm leading-[18px] font-medium text-body">
-              Please Remember
-            </p>
+            <p className="font-rubik text-sm leading-4.5 font-medium text-body">Please Remember</p>
             <p className="font-rubik text-xs leading-3.5 text-label">
               Please remember to upload all photos and videos of the job before completing
             </p>
@@ -112,7 +110,7 @@ export function CompleteJobDialog({ group }: { group: JobGroup }) {
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-label focus:border-blue"
+                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-4.5 text-body outline-none placeholder:text-label focus:border-blue"
               />
             </div>
 
