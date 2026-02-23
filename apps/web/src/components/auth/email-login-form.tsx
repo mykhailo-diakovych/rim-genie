@@ -62,9 +62,7 @@ export function EmailLoginForm() {
                 onChange={(e) => field.handleChange(e.target.value)}
               />
               {field.state.meta.errors.length > 0 && (
-                <p className="font-rubik text-[12px] text-red">
-                  {field.state.meta.errors[0]?.message}
-                </p>
+                <p className="font-rubik text-xs text-red">{field.state.meta.errors[0]?.message}</p>
               )}
             </div>
           )}
@@ -85,9 +83,7 @@ export function EmailLoginForm() {
                 onChange={(e) => field.handleChange(e.target.value)}
               />
               {field.state.meta.errors.length > 0 && (
-                <p className="font-rubik text-[12px] text-red">
-                  {field.state.meta.errors[0]?.message}
-                </p>
+                <p className="font-rubik text-xs text-red">{field.state.meta.errors[0]?.message}</p>
               )}
             </div>
           )}
