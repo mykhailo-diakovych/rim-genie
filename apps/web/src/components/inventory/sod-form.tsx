@@ -48,11 +48,11 @@ export function SODForm() {
   return (
     <div className="flex flex-col gap-5 pt-3">
       {latest?.eod && (
-        <div className="rounded-xl border border-card-line bg-white p-4 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
-          <h3 className="font-rubik text-sm leading-[18px] font-medium text-body">
+        <div className="rounded-xl border border-card-line bg-white p-4 shadow-card">
+          <h3 className="font-rubik text-sm leading-4.5 font-medium text-body">
             Previous EOD Summary
           </h3>
-          <div className="flex flex-col gap-1 pt-2 font-rubik text-sm leading-[18px] text-body">
+          <div className="flex flex-col gap-1 pt-2 font-rubik text-sm leading-4.5 text-body">
             <p>
               <span className="text-label">Date:</span> {latest.eod.recordDate}
             </p>
@@ -74,14 +74,14 @@ export function SODForm() {
       {!latest?.eod && !isLoading && (
         <div className="flex items-start gap-3 rounded-xl border border-[#fecdca] bg-[#fee4e2] p-4">
           <AlertCircle className="size-5 shrink-0 text-[#d92d20]" />
-          <p className="font-rubik text-sm leading-[18px] text-body">
+          <p className="font-rubik text-sm leading-4.5 text-body">
             No previous EOD record found. Please submit an End of Day report first.
           </p>
         </div>
       )}
 
-      <div className="flex max-w-md flex-col gap-4 rounded-xl border border-card-line bg-white p-4 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
-        <h3 className="font-rubik text-sm leading-[18px] font-medium text-body">
+      <div className="flex max-w-md flex-col gap-4 rounded-xl border border-card-line bg-white p-4 shadow-card">
+        <h3 className="font-rubik text-sm leading-4.5 font-medium text-body">
           Start of Day Report
         </h3>
 
@@ -93,7 +93,7 @@ export function SODForm() {
             value={rimCount}
             onChange={(e) => setRimCount(e.target.value)}
             placeholder="Enter rim count"
-            className="h-9 w-full rounded-md border border-field-line bg-white px-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-label focus:border-blue"
+            className="h-9 w-full rounded-md border border-field-line bg-white px-2 font-rubik text-sm leading-4.5 text-body outline-none placeholder:text-label focus:border-blue"
           />
         </div>
 
@@ -102,7 +102,7 @@ export function SODForm() {
             <div className="flex items-start gap-3 rounded-lg border border-[#fecdca] bg-[#fee4e2] p-3">
               <AlertCircle className="size-5 shrink-0 text-[#d92d20]" />
               <div className="flex flex-col gap-0.5">
-                <p className="font-rubik text-sm leading-[18px] font-medium text-body">
+                <p className="font-rubik text-sm leading-4.5 font-medium text-body">
                   Discrepancy Detected
                 </p>
                 <p className="font-rubik text-xs leading-3.5 text-label">
@@ -119,7 +119,7 @@ export function SODForm() {
                 value={discrepancyNotes}
                 onChange={(e) => setDiscrepancyNotes(e.target.value)}
                 placeholder="Explain the difference in count..."
-                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-label focus:border-blue"
+                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-4.5 text-body outline-none placeholder:text-label focus:border-blue"
               />
             </div>
           </div>
@@ -131,7 +131,7 @@ export function SODForm() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Any notes about this morning's inventory..."
-            className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-label focus:border-blue"
+            className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-4.5 text-body outline-none placeholder:text-label focus:border-blue"
           />
         </div>
 

@@ -110,13 +110,13 @@ function CustomerProfilePage() {
       </div>
 
       {/* Profile Card */}
-      <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+      <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
         {isLoading ? (
           <ProfileCardSkeleton />
         ) : customer ? (
           <>
             <div className="flex items-center justify-between">
-              <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+              <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
                 {customer.name}
               </h1>
               <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ function CustomerProfilePage() {
                 <span className="font-rubik text-xs leading-3.5 text-label">Email:</span>
                 <div className="flex items-center gap-1.5">
                   <Mail className="size-4 shrink-0 text-label" />
-                  <span className="font-rubik text-sm leading-[18px] text-body">
+                  <span className="font-rubik text-sm leading-4.5 text-body">
                     {customer.email ?? "—"}
                   </span>
                 </div>
@@ -155,9 +155,7 @@ function CustomerProfilePage() {
                 <span className="font-rubik text-xs leading-3.5 text-label">Mobile:</span>
                 <div className="flex items-center gap-1.5">
                   <Phone className="size-4 shrink-0 text-label" />
-                  <span className="font-rubik text-sm leading-[18px] text-body">
-                    {customer.phone}
-                  </span>
+                  <span className="font-rubik text-sm leading-4.5 text-body">{customer.phone}</span>
                 </div>
               </div>
 
@@ -165,7 +163,7 @@ function CustomerProfilePage() {
 
               <div className="flex w-[144px] flex-col gap-2 font-rubik">
                 <span className="text-xs leading-3.5 text-label">Birthday:</span>
-                <span className="text-sm leading-[18px] text-body">
+                <span className="text-sm leading-4.5 text-body">
                   {formatBirthday(customer.birthdayDay, customer.birthdayMonth)}
                 </span>
               </div>
@@ -179,11 +177,11 @@ function CustomerProfilePage() {
                     <span className="flex size-4 items-center justify-center rounded-full border border-blue">
                       <span className="size-2 rounded-full bg-blue" />
                     </span>
-                    <span className="font-rubik text-sm leading-[18px] text-body">SMS</span>
+                    <span className="font-rubik text-sm leading-4.5 text-body">SMS</span>
                   </label>
                   <label className="flex items-center gap-1.5">
                     <span className="size-4 rounded-full border border-[#cdcfd1]" />
-                    <span className="font-rubik text-sm leading-[18px] text-body">Email</span>
+                    <span className="font-rubik text-sm leading-4.5 text-body">Email</span>
                   </label>
                 </div>
               </div>
@@ -195,7 +193,7 @@ function CustomerProfilePage() {
       </div>
 
       {/* Latest Quotes Card */}
-      <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+      <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
         <div className="flex items-center justify-between">
           <h2 className="font-rubik text-base leading-5 font-medium text-body">Latest Quotes</h2>
           <Button
@@ -215,7 +213,7 @@ function CustomerProfilePage() {
       </div>
 
       {/* Latest Jobs Card */}
-      <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+      <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
         <h2 className="font-rubik text-base leading-5 font-medium text-body">Latest Jobs</h2>
         <JobsTable jobs={latestJobs} />
       </div>
@@ -293,12 +291,12 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
             return (
               <tr key={q.id}>
                 <td
-                  className={`border-t border-l border-field-line p-2 text-sm leading-[18px] text-body ${borderB}`}
+                  className={`border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
                 >
                   {formatDate(q.createdAt)}
                 </td>
                 <td
-                  className={`border-t border-l border-field-line p-2 text-sm leading-[18px] ${borderB}`}
+                  className={`border-t border-l border-field-line p-2 text-sm leading-4.5 ${borderB}`}
                 >
                   <button
                     type="button"
@@ -311,7 +309,7 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
                   </button>
                 </td>
                 <td
-                  className={`border-t border-l border-field-line p-2 text-sm leading-[18px] text-body ${borderB}`}
+                  className={`border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
                 >
                   {formatTotal(q.total)}
                 </td>
@@ -397,17 +395,17 @@ function JobsTable({ jobs }: { jobs: QuoteRow[] }) {
             return (
               <tr key={job.id}>
                 <td
-                  className={`h-12 w-[144px] border-t border-l border-field-line p-2 text-sm leading-[18px] text-body ${borderB}`}
+                  className={`h-12 w-[144px] border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
                 >
                   {formatDate(job.createdAt)}
                 </td>
                 <td
-                  className={`h-12 w-[104px] border-t border-l border-field-line p-2 text-sm leading-[18px] ${borderB}`}
+                  className={`h-12 w-[104px] border-t border-l border-field-line p-2 text-sm leading-4.5 ${borderB}`}
                 >
                   <span className="text-blue underline">{jobNumber}</span>
                 </td>
                 <td
-                  className={`h-12 border-t border-l border-field-line p-2 text-sm leading-[18px] text-body ${borderB}`}
+                  className={`h-12 border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
                 >
                   {description}
                 </td>

@@ -22,7 +22,7 @@ const navItem = tv({
   slots: {
     root: "flex cursor-pointer items-center transition-colors",
     icon: "shrink-0 size-6",
-    label: "font-rubik text-[12px] leading-[18px] font-normal",
+    label: "font-rubik text-xs leading-4.5 font-normal",
   },
   variants: {
     orientation: {

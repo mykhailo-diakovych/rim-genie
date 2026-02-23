@@ -12,7 +12,7 @@ function InventoryPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-5">
-      <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+      <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
         List of Overnight Jobs
       </h1>
       {isLoading && <p className="font-rubik text-xs leading-3.5 text-label">Loading jobs...</p>}

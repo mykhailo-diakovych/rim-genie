@@ -35,8 +35,8 @@ function SeverityIcon({ severity }: { severity: Severity }) {
 
 export function AttentionRequiredCard({ items }: AttentionRequiredCardProps) {
   return (
-    <div className="flex flex-col gap-[12px] overflow-hidden rounded-[12px] border border-[rgba(219,62,33,0.5)] bg-white p-[12px] shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
-      <p className="font-rubik text-[14px] leading-[18px] font-medium text-body">
+    <div className="flex flex-col gap-3 overflow-hidden rounded-xl border border-[rgba(219,62,33,0.5)] bg-white p-3 shadow-card">
+      <p className="font-rubik text-sm leading-4.5 font-medium text-body">
         {m.attention_required_title()}
       </p>
       <div className="flex w-full flex-col gap-[8px]">
@@ -45,7 +45,7 @@ export function AttentionRequiredCard({ items }: AttentionRequiredCardProps) {
           const labelFn = LABEL_MAP[item.label];
           return (
             <div key={item.id} className="flex flex-col gap-[8px]">
-              <div className="flex w-full items-center gap-[12px]">
+              <div className="flex w-full items-center gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-[4px]">
                   <div
                     className="flex shrink-0 items-center rounded-full p-[4px]"
@@ -53,7 +53,7 @@ export function AttentionRequiredCard({ items }: AttentionRequiredCardProps) {
                   >
                     <SeverityIcon severity={item.severity} />
                   </div>
-                  <p className="min-w-0 flex-1 font-rubik text-[12px] leading-[14px] font-normal whitespace-pre-wrap text-body">
+                  <p className="min-w-0 flex-1 font-rubik text-xs leading-3.5 font-normal whitespace-pre-wrap text-body">
                     {labelFn ? labelFn() : item.label}
                   </p>
                 </div>
@@ -61,7 +61,7 @@ export function AttentionRequiredCard({ items }: AttentionRequiredCardProps) {
                   className="flex w-[36px] shrink-0 items-center justify-center gap-[2px] rounded-[4px] border py-[3px] pl-[4px]"
                   style={{ borderColor: style.badgeColor, color: style.badgeColor }}
                 >
-                  <span className="text-center font-rubik text-[12px] leading-none font-normal">
+                  <span className="text-center font-rubik text-xs leading-none font-normal">
                     {item.count}
                   </span>
                   <IconArrowRight className="size-3" />

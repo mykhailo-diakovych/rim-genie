@@ -58,7 +58,7 @@ export function UploadProofsDialog({ group }: { group: JobGroup }) {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-1">
-                    <p className="text-center font-rubik text-sm leading-[18px] text-body">
+                    <p className="text-center font-rubik text-sm leading-4.5 text-body">
                       Click to upload photo or video recording
                     </p>
                     <p className="text-center font-rubik text-xs leading-normal text-label">
@@ -91,7 +91,7 @@ export function UploadProofsDialog({ group }: { group: JobGroup }) {
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-label focus:border-blue"
+                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-4.5 text-body outline-none placeholder:text-label focus:border-blue"
               />
             </div>
 
@@ -116,7 +116,7 @@ export function UploadProofsDialog({ group }: { group: JobGroup }) {
                       checked={photoStatus === val}
                       onChange={() => setPhotoStatus(val)}
                     />
-                    <span className="font-rubik text-sm leading-[18px] text-body">
+                    <span className="font-rubik text-sm leading-4.5 text-body">
                       {val === "before" ? "Before" : "After"}
                     </span>
                   </label>

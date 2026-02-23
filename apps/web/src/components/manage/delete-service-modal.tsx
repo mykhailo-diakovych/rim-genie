@@ -31,7 +31,7 @@ export function DeleteServiceModal({
       <DialogContent>
         <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
           <div className="flex flex-col items-center gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-destructive/10 bg-destructive/15">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-error-50 bg-error-100">
               <IconDelete className="size-6 text-destructive" />
             </div>
 

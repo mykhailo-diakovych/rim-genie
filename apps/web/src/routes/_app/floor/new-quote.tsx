@@ -65,31 +65,31 @@ function CreateCustomerForm({
   const isLoading = createCustomer.isPending || createQuote.isPending;
 
   return (
-    <div className="flex flex-col gap-4 rounded-[12px] border border-card-line bg-white p-4 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+    <div className="flex flex-col gap-4 rounded-xl border border-card-line bg-white p-4 shadow-card">
       <div className="flex items-center gap-2">
         <div className="flex size-8 items-center justify-center rounded-full bg-blue/10">
           <User className="size-4 text-blue" />
         </div>
-        <p className="font-rubik text-[14px] font-medium text-body">New Customer</p>
+        <p className="font-rubik text-sm font-medium text-body">New Customer</p>
       </div>
 
       <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="font-rubik text-[12px] text-label">Name *</label>
+          <label className="font-rubik text-xs text-label">Name *</label>
           <input
             type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Full name"
-            className="flex h-9 w-full rounded-[8px] border border-field-line bg-white px-3 font-rubik text-[13px] text-body outline-none placeholder:text-ghost"
+            className="flex h-9 w-full rounded-md border border-field-line bg-white px-3 font-rubik text-[13px] text-body outline-none placeholder:text-ghost"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="font-rubik text-[12px] text-label">Phone *</label>
-          <div className="flex h-9 w-full items-center overflow-hidden rounded-[8px] border border-field-line bg-white">
+          <label className="font-rubik text-xs text-label">Phone *</label>
+          <div className="flex h-9 w-full items-center overflow-hidden rounded-md border border-field-line bg-white">
             <div className="flex h-full shrink-0 items-center border-r border-field-line px-2">
-              <span className="font-rubik text-[12px] leading-[14px] text-body">+1 876</span>
+              <span className="font-rubik text-xs leading-3.5 text-body">+1 876</span>
             </div>
             <input
               type="tel"
@@ -97,18 +97,18 @@ function CreateCustomerForm({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="000-0000"
-              className="min-w-0 flex-1 bg-transparent px-2 font-rubik text-[13px] text-body outline-none placeholder:text-ghost"
+              className="min-w-0 flex-1 bg-transparent px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
             />
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="font-rubik text-[12px] text-label">Email</label>
+          <label className="font-rubik text-xs text-label">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="customer@email.com"
-            className="flex h-9 w-full rounded-[8px] border border-field-line bg-white px-3 font-rubik text-[13px] text-body outline-none placeholder:text-ghost"
+            className="flex h-9 w-full rounded-md border border-field-line bg-white px-3 font-rubik text-[13px] text-body outline-none placeholder:text-ghost"
           />
         </div>
 
@@ -138,13 +138,13 @@ function CustomerCard({
   isLoading: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card">
       <div className="flex flex-1 gap-5">
         <div className="flex items-center gap-1.5">
-          <span className="font-rubik text-[14px] font-medium text-body">{customer.name}</span>
+          <span className="font-rubik text-sm font-medium text-body">{customer.name}</span>
           {customer.isVip && <Star className="size-3.5 fill-yellow-400 text-yellow-400" />}
         </div>
-        <div className="flex flex-wrap items-center gap-2 font-rubik text-[12px] text-label">
+        <div className="flex flex-wrap items-center gap-2 font-rubik text-xs text-label">
           <Phone className="size-3.5" />
           <span className="text-body">{customer.phone}</span>
           {customer.email && (
@@ -205,7 +205,7 @@ function NewQuotePage() {
           <ArrowLeft />
           Back to list
         </Button>
-        <h1 className="font-rubik text-[18px] font-medium text-body">New Quote</h1>
+        <h1 className="text-[22px] leading-6.5 font-medium text-body">New Quote</h1>
       </div>
 
       {/* Search */}
@@ -220,7 +220,7 @@ function NewQuotePage() {
               setShowCreateForm(false);
             }}
             placeholder="Search by name or phone number..."
-            className="flex h-10 w-full rounded-[8px] border border-field-line bg-white pr-3 pl-9 font-rubik text-[13px] text-body outline-none placeholder:text-ghost"
+            className="flex h-10 w-full rounded-md border border-field-line bg-white pr-3 pl-9 font-rubik text-[13px] text-body outline-none placeholder:text-ghost"
             autoFocus
           />
         </div>
@@ -244,10 +244,8 @@ function NewQuotePage() {
             ))}
 
             {noResults && !showCreateForm && (
-              <div className="flex flex-col items-center gap-3 rounded-[12px] border border-card-line bg-white p-6 text-center">
-                <p className="font-rubik text-[14px] text-label">
-                  No customers found for "{query}"
-                </p>
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-card-line bg-white p-6 text-center">
+                <p className="font-rubik text-sm text-label">No customers found for "{query}"</p>
                 <Button onClick={() => setShowCreateForm(true)}>
                   <Plus />
                   Create New Customer

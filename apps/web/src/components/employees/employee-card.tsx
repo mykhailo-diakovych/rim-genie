@@ -49,10 +49,10 @@ interface EmployeeCardProps {
 
 export function EmployeeCard({ employee, actions }: EmployeeCardProps) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-4">
-          <span className="font-rubik text-sm leading-[18px] font-medium text-body">
+          <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {employee.name}
           </span>
           {employee.role && <RoleBadge role={employee.role} />}
@@ -72,7 +72,7 @@ export function EmployeeCard({ employee, actions }: EmployeeCardProps) {
 
 export function EmployeeCardSkeleton() {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-4">
           <Skeleton className="h-4.5 w-32 rounded" />

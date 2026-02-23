@@ -4,10 +4,9 @@ import { tv } from "tailwind-variants";
 
 const inputVariants = tv({
   slots: {
-    wrapper:
-      "flex h-9 w-full items-center gap-2 rounded-[8px] border bg-white px-2 transition-colors",
+    wrapper: "flex h-9 w-full items-center gap-2 rounded-md border bg-white px-2 transition-colors",
     field:
-      "min-w-0 flex-1 bg-transparent font-rubik text-[12px] leading-[14px] text-body placeholder:text-ghost outline-none",
+      "min-w-0 flex-1 bg-transparent font-rubik text-xs leading-3.5 text-body placeholder:text-ghost outline-none",
     icon: "size-4 shrink-0 text-ghost",
     action: "size-4 shrink-0 text-ghost transition-colors hover:text-body",
   },

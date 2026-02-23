@@ -29,7 +29,7 @@ function EmployeesPage() {
   return (
     <div className="flex flex-col gap-5 p-5">
       <div className="flex items-center justify-between">
-        <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           {m.employees_title()}
         </h1>
         <EmployeeModal

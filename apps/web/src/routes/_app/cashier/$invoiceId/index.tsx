@@ -189,10 +189,10 @@ function InvoiceDetailPage() {
         />
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)] print:border-0 print:shadow-none">
+      <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card print:border-0 print:shadow-none">
         <div className="flex items-center justify-between">
           <img src="/logo.png" alt="Rim Genie" className="h-12 w-auto" />
-          <h2 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+          <h2 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
             {invoiceQuery.isLoading ? <Skeleton className="h-6 w-32" /> : "Invoice"}
           </h2>
         </div>
@@ -248,7 +248,7 @@ function InvoiceDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1 font-rubik">
             <span className="text-base text-label">Total:</span>
-            <span className="text-[22px] leading-[26px] font-medium text-body">
+            <span className="text-[22px] leading-6.5 font-medium text-body">
               {invoiceQuery.isLoading ? (
                 <Skeleton className="h-6 w-32" />
               ) : (
@@ -342,7 +342,7 @@ function InvoiceDetailPage() {
             <span className="text-label">Subtotal:</span>
             <span className="text-body">{formatCents(inv?.subtotal ?? 0)}</span>
           </div>
-          <div className="flex items-center gap-3 rounded-sm bg-green px-3 py-2 font-rubik text-[22px] leading-[26px] text-white">
+          <div className="flex items-center gap-3 rounded-sm bg-green px-3 py-2 font-rubik text-[22px] leading-6.5 text-white">
             <span>Total:</span>
             <span className="font-medium">{formatCents(inv?.total ?? 0)}</span>
           </div>

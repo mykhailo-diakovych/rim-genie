@@ -296,7 +296,7 @@ export function QuoteGeneratorSheet({
           <p className="font-rubik text-[16px] leading-[20px] font-medium text-body">
             {editItem ? "Edit Item" : "Quote Generator"}
           </p>
-          <p className="font-rubik text-[12px] leading-[16px] text-label">
+          <p className="font-rubik text-xs leading-4 text-label">
             {editItem ? "Modify the item details below" : "Use options below to generate quote"}
           </p>
         </div>
@@ -311,11 +311,11 @@ export function QuoteGeneratorSheet({
 
             <TabsContent value="rims" className="flex flex-col gap-4 pt-4">
               {/* Info banner */}
-              <div className="flex items-center gap-3 rounded-[8px] bg-[#ebf5ff] px-3 py-2">
+              <div className="flex items-center gap-3 rounded-md bg-[#ebf5ff] px-3 py-2">
                 <div className="flex shrink-0 items-center justify-center rounded-full bg-[#cbe5fc] p-2">
                   <Info className="size-5 text-blue" />
                 </div>
-                <p className="font-rubik text-[12px] leading-[14px] text-body">
+                <p className="font-rubik text-xs leading-3.5 text-body">
                   Enter description of rim job below and then tap{" "}
                   <span className="font-medium">Add to Quote</span>
                 </p>
@@ -450,18 +450,17 @@ export function QuoteGeneratorSheet({
 
               {/* Job Types */}
               <div className="flex flex-col gap-1">
-                <p className="font-rubik text-[12px] leading-[14px] font-medium text-body">
-                  Job Type:
-                </p>
+                <p className="font-rubik text-xs leading-3.5 font-medium text-body">Job Type:</p>
                 <div className="flex flex-col gap-2">
                   {JOB_TYPES.map((job) => (
+                    <div key={job.value} className="flex h-9 items-center gap-3">
                     <div key={job.value} className="flex h-9 items-center gap-3">
                       <div className="flex flex-1 items-center gap-1.5">
                         <FloorCheckbox
                           checked={!!checkedJobs[job.value]}
                           onCheckedChange={(c) => toggleJob(job.value, !!c)}
                         />
-                        <span className="font-rubik text-[14px] leading-[18px] text-body">
+                        <span className="font-rubik text-sm leading-4.5 text-body">
                           {job.label}
                         </span>
                       </div>
@@ -473,7 +472,7 @@ export function QuoteGeneratorSheet({
                           onChange={(e) =>
                             setJobInputs((prev) => ({ ...prev, [job.value]: e.target.value }))
                           }
-                          className="flex h-9 w-[172px] shrink-0 rounded-[8px] border border-field-line bg-white px-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none placeholder:text-ghost"
+                          className="flex h-9 w-[172px] shrink-0 rounded-md border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body transition-colors outline-none placeholder:text-ghost"
                         />
                       )}
                     </div>

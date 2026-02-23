@@ -2,8 +2,8 @@ import { tv } from "tailwind-variants";
 
 const segmentedControl = tv({
   slots: {
-    root: "flex items-start rounded-[8px] border border-toggle-line bg-white p-[2px]",
-    tab: "flex items-center justify-center rounded-[6px] px-3 py-[5px] font-rubik text-[14px] leading-[18px] transition-colors",
+    root: "flex items-start rounded-md border border-toggle-line bg-white p-[2px]",
+    tab: "flex items-center justify-center rounded-[6px] px-3 py-[5px] font-rubik text-sm leading-4.5 transition-colors",
   },
   variants: {
     active: {

@@ -16,7 +16,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
       className={cn(
-        "flex h-9 cursor-pointer items-center justify-center px-3 py-2 font-rubik text-[14px] leading-[18px] text-body transition-colors outline-none",
+        "flex h-9 cursor-pointer items-center justify-center px-3 py-2 font-rubik text-sm leading-4.5 text-body transition-colors outline-none",
         "data-[active]:border-b-2 data-[active]:border-blue data-[active]:text-blue",
         className,
       )}

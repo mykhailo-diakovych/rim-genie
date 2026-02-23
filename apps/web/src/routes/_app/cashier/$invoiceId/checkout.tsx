@@ -263,7 +263,7 @@ function CheckoutPage() {
 
       <div className="flex flex-1 items-start gap-4 p-5">
         <div className="flex flex-1 flex-col gap-4">
-          <h1 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+          <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
             Payment method
           </h1>
 
@@ -318,7 +318,7 @@ function CheckoutPage() {
 
         <div className="w-[284px] shrink-0 rounded-xl bg-white py-3">
           <div className="px-3">
-            <h2 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+            <h2 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
               Order summary:
             </h2>
           </div>
@@ -347,10 +347,7 @@ function CheckoutPage() {
                   { label: "Cheque", amount: chequeTotal },
                   { label: "Bank", amount: bankTotal },
                 ].map(({ label, amount }) => (
-                  <div
-                    key={label}
-                    className="flex items-start px-2 font-rubik text-sm leading-[18px]"
-                  >
+                  <div key={label} className="flex items-start px-2 font-rubik text-sm leading-4.5">
                     <span className="flex-1 text-label">{label}</span>
                     <span className="text-body">{formatDollars(amount)}</span>
                   </div>

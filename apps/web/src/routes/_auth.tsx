@@ -20,7 +20,7 @@ function AuthLayout() {
         <Outlet />
       </div>
       <footer className="flex h-10 items-center justify-center border-t border-card-line bg-white px-5">
-        <p className="font-poppins text-[12px] leading-[18px] text-dim">{m.copyright()}</p>
+        <p className="font-poppins text-xs leading-4.5 text-dim">{m.copyright()}</p>
       </footer>
     </div>
   );

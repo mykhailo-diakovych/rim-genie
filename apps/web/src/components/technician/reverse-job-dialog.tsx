@@ -99,7 +99,7 @@ export function ReverseJobDialog({
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-label focus:border-blue"
+                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-4.5 text-body outline-none placeholder:text-label focus:border-blue"
               />
             </div>
 

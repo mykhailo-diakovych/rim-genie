@@ -257,7 +257,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
                     <Label>{m.customers_label_mobile_phone()}</Label>
                     <div
                       className={cn(
-                        "flex h-9 w-full items-center overflow-hidden rounded-[8px] border bg-white transition-colors",
+                        "flex h-9 w-full items-center overflow-hidden rounded-md border bg-white transition-colors",
                         field.state.meta.errors.length > 0 ? "border-red/50" : "border-field-line",
                       )}
                     >
@@ -272,7 +272,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
                         placeholder={m.customers_placeholder_phone()}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
-                        className="min-w-0 flex-1 bg-transparent px-2 font-rubik text-[12px] leading-[14px] text-body outline-none placeholder:text-ghost"
+                        className="min-w-0 flex-1 bg-transparent px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
                       />
                     </div>
                     {field.state.meta.errors.length > 0 && (
@@ -364,7 +364,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
                         <Check className="size-3" />
                       </Checkbox.Indicator>
                     </Checkbox.Root>
-                    <span className="font-rubik text-sm leading-[18px] text-body">
+                    <span className="font-rubik text-sm leading-4.5 text-body">
                       {m.customers_label_vip()}
                     </span>
                   </label>

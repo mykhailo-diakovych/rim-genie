@@ -176,11 +176,11 @@ function QuoteEditorPage() {
         </div>
 
         {/* Invoice card */}
-        <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-[12px] border border-card-line bg-white p-3 shadow-[0px_2px_8px_0px_rgba(116,117,118,0.04)]">
+        <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card">
           {/* Row 1: Logo + Title */}
           <div className="flex items-center justify-between">
             <img src="/logo.png" alt="Rim Genie" className="h-12 w-auto" />
-            <h2 className="font-rubik text-[22px] leading-[26px] font-medium text-body">
+            <h2 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
               {quoteQuery.isLoading ? (
                 <Skeleton className="h-6 w-32" />
               ) : quote ? (
@@ -197,8 +197,8 @@ function QuoteEditorPage() {
           <div className="flex items-center gap-4">
             <div className="flex flex-1 gap-4 font-rubik">
               <div className="flex w-34 flex-col gap-2">
-                <span className="text-[12px] leading-[14px] text-label">Quote Date:</span>
-                <span className="text-[14px] leading-[18px] text-body">
+                <span className="text-xs leading-3.5 text-label">Quote Date:</span>
+                <span className="text-sm leading-4.5 text-body">
                   {quoteQuery.isLoading ? (
                     <Skeleton className="h-4 w-24" />
                   ) : (
@@ -207,8 +207,8 @@ function QuoteEditorPage() {
                 </span>
               </div>
               <div className="flex w-34 flex-col gap-2">
-                <span className="text-[12px] leading-[14px] text-label">Valid Until:</span>
-                <span className="text-[14px] leading-[18px] text-body">
+                <span className="text-xs leading-3.5 text-label">Valid Until:</span>
+                <span className="text-sm leading-4.5 text-body">
                   {quoteQuery.isLoading ? (
                     <Skeleton className="h-4 w-24" />
                   ) : (
@@ -221,7 +221,7 @@ function QuoteEditorPage() {
             <div className="w-px self-stretch bg-field-line" />
 
             <div className="flex flex-1 justify-end">
-              <div className="flex flex-col gap-1 font-rubik text-[14px] leading-[18px] text-body">
+              <div className="flex flex-col gap-1 font-rubik text-sm leading-4.5 text-body">
                 <div className="flex items-center gap-1.5">
                   <Building2 className="size-4 shrink-0 text-ghost" />
                   <span>82c Waltham Park Rd,</span>
@@ -242,7 +242,7 @@ function QuoteEditorPage() {
 
           {/* Jobs table */}
           <div className="flex-1 overflow-x-auto">
-            <table className="w-full font-rubik text-[12px]">
+            <table className="w-full font-rubik text-xs">
               <thead>
                 <tr className="border-t border-b border-field-line text-left text-label">
                   <th className="w-12 border-l border-field-line px-2 py-1.5 font-normal">#</th>
@@ -296,7 +296,7 @@ function QuoteEditorPage() {
                         setEditingItem(null);
                         setSheetOpen(true);
                       }}
-                      className="flex items-center gap-1.5 rounded-[8px] font-rubik text-[14px] leading-[18px] text-blue transition-opacity hover:opacity-70"
+                      className="flex items-center gap-1.5 rounded-md font-rubik text-sm leading-4.5 text-blue transition-opacity hover:opacity-70"
                     >
                       <Plus className="size-4" />
                       Add Job
@@ -309,13 +309,13 @@ function QuoteEditorPage() {
 
           {/* Comments */}
           <div className="flex flex-col gap-1">
-            <label className="font-rubik text-[12px] leading-[14px] text-label">Comments:</label>
+            <label className="font-rubik text-xs leading-3.5 text-label">Comments:</label>
             <textarea
               value={comments}
               onChange={(e) => setComments(e.target.value)}
               placeholder="Enter note"
               rows={3}
-              className="w-full resize-none rounded-[8px] border border-field-line bg-white p-2 font-rubik text-[12px] leading-[14px] text-body transition-colors outline-none placeholder:text-ghost"
+              className="w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-xs leading-3.5 text-body transition-colors outline-none placeholder:text-ghost"
             />
           </div>
 
@@ -325,8 +325,8 @@ function QuoteEditorPage() {
           <div className="flex items-end justify-between gap-4">
             {/* Share Quote */}
             <div className="flex flex-col gap-1">
-              <span className="font-rubik text-[12px] leading-[14px] text-label">Share Quote:</span>
-              <div className="flex flex-col gap-1 font-rubik text-[14px] leading-[18px] text-body">
+              <span className="font-rubik text-xs leading-3.5 text-label">Share Quote:</span>
+              <div className="flex flex-col gap-1 font-rubik text-sm leading-4.5 text-body">
                 {quote?.customer?.email && (
                   <div className="flex items-center gap-1.5">
                     <Mail className="size-4 shrink-0 text-ghost" />
@@ -372,7 +372,7 @@ function QuoteEditorPage() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center justify-end gap-3 rounded-sm bg-green px-3 py-2 font-rubik text-[22px] leading-[26px] text-white">
+              <div className="flex items-center justify-end gap-3 rounded-sm bg-green px-3 py-2 font-rubik text-[22px] leading-6.5 text-white">
                 <span>Total:</span>
                 <span className="font-medium">${total.toFixed(2)}</span>
               </div>
@@ -418,21 +418,21 @@ function MoreDropdown({ quoteId }: { quoteId: string }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-[72px] items-center justify-center gap-2 rounded-[8px] border border-field-line bg-white font-rubik text-[12px] leading-[14px] text-body transition-colors hover:bg-page"
+        className="flex h-9 w-[72px] items-center justify-center gap-2 rounded-md border border-field-line bg-white font-rubik text-xs leading-3.5 text-body transition-colors hover:bg-page"
       >
         More
         <ChevronDown className="size-4 text-ghost" />
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 z-10 mt-1 w-36 rounded-[8px] border border-card-line bg-white py-1 shadow-md">
+        <div className="absolute top-full right-0 z-10 mt-1 w-36 rounded-md border border-card-line bg-white py-1 shadow-md">
           <button
             type="button"
             onClick={() => {
               setOpen(false);
               window.open(`/api/quotes/${quoteId}/pdf`, "_blank");
             }}
-            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-[12px] text-body transition-colors hover:bg-page"
+            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-page"
           >
             <Printer className="size-4 text-ghost" />
             Print PDF
@@ -484,12 +484,10 @@ function ItemRow({
 
   return (
     <tr className="border-b border-field-line align-top">
-      <td className="border-l border-field-line px-2 py-2 text-[14px] text-body">{index + 1}</td>
+      <td className="border-l border-field-line px-2 py-2 text-sm text-body">{index + 1}</td>
       <td className="border-l border-field-line px-2 py-2">
         <div className="flex flex-col gap-1">
-          <span className="text-[14px] leading-[18px] text-body">
-            {item.description ?? "Rim Job"}
-          </span>
+          <span className="text-sm leading-4.5 text-body">{item.description ?? "Rim Job"}</span>
         </div>
       </td>
       <td className="border-l border-field-line px-2 py-2 text-[14px] text-body">
@@ -497,25 +495,33 @@ function ItemRow({
       </td>
       <td className="border-l border-field-line px-2 py-2">
         <div className="flex items-center gap-0.5">
-          <span className="text-[14px] text-ghost">$</span>
+          <span className="text-sm text-ghost">$</span>
           <input
             type="text"
             value={costStr}
             onChange={(e) => setCostStr(e.target.value)}
             onBlur={handleBlur}
-            className="w-16 rounded-[4px] border border-transparent bg-transparent px-1 py-0.5 font-rubik text-[14px] text-body outline-none hover:border-field-line focus:border-field-line"
+            className="w-16 rounded-[4px] border border-transparent bg-transparent px-1 py-0.5 font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line"
           />
         </div>
       </td>
-      <td className="border-l border-field-line px-2 py-2 text-[14px] text-body">
+      <td className="border-l border-field-line px-2 py-2 text-sm text-body">
         ${rowTotal.toFixed(2)}
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
         <div className="flex flex-col items-center gap-1">
           <Button className="w-full" variant="outline" onClick={onEdit}>
+          <Button className="w-full" variant="outline" onClick={onEdit}>
             <Pencil className="size-3.5" />
             Edit
           </Button>
+          <Button
+            className="w-full"
+            variant="outline"
+            color="destructive"
+            onClick={onRemove}
+            disabled={isRemoving}
+          >
           <Button
             className="w-full"
             variant="outline"

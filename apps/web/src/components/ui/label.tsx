@@ -1,7 +1,7 @@
 import { tv } from "tailwind-variants";
 
 const labelVariants = tv({
-  base: "select-none font-rubik text-[12px] leading-[14px] text-label",
+  base: "select-none font-rubik text-xs leading-3.5 text-label",
 });
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
