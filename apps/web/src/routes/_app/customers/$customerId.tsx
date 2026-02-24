@@ -404,17 +404,18 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
                 </td>
                 <td className={`border-t border-r border-l border-field-line p-2 ${borderB}`}>
                   <div className="flex flex-col items-stretch gap-2">
-                    <Button>
+                    <Button size="sm">
                       <IconSendQuote />
                       Send Quote
                     </Button>
                     {q.status === "completed" && (
-                      <Button variant="outline" color="success">
+                      <Button size="sm" variant="outline" color="success">
                         <IconCashier />
                         To Cashier
                       </Button>
                     )}
                     <Button
+                      size="sm"
                       variant="outline"
                       onClick={() =>
                         void navigate({ to: "/floor/$quoteId", params: { quoteId: q.id } })
@@ -424,7 +425,7 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
                       Edit Quote
                     </Button>
                     {q.status === "completed" && (
-                      <Button variant="outline">
+                      <Button size="sm" variant="outline">
                         <IconSignedDoc />
                         Signed Doc
                       </Button>
@@ -503,7 +504,7 @@ function JobsTable({ jobs }: { jobs: QuoteRow[] }) {
                 >
                   <div className="flex flex-col items-stretch">
                     {job.status === "completed" && (
-                      <Button variant="outline">
+                      <Button size="sm" variant="outline">
                         <IconSignedDoc />
                         Signed Doc
                       </Button>
