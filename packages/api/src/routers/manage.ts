@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { db } from "@rim-genie/db";
 import { service, serviceTypeEnum, vehicleTypeEnum } from "@rim-genie/db/schema";
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, asc, count, eq, ilike } from "drizzle-orm";
 
 import { adminProcedure } from "../index";
 
@@ -40,7 +40,7 @@ export const manageRouter = {
             .select()
             .from(service)
             .where(where)
-            .orderBy(desc(service.createdAt))
+            .orderBy(asc(service.name))
             .limit(pageSize)
             .offset(offset),
           db.select({ total: count() }).from(service).where(where),

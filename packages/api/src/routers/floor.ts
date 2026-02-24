@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { db } from "@rim-genie/db";
-import { customer, quote, quoteItem, invoice, payment, job } from "@rim-genie/db/schema";
+import { customer, quote, quoteItem, invoice, payment, job, service, serviceTypeEnum } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { desc, eq, ilike, inArray, or, sql, sum } from "drizzle-orm";
+import { asc, desc, eq, ilike, inArray, or, sql, sum } from "drizzle-orm";
 
 import { floorManagerProcedure, protectedProcedure, requireRole } from "../index";
 import * as InvoiceService from "../services/invoice.service";
@@ -47,6 +47,18 @@ const jobTypeEntrySchema = z.object({
 });
 
 export const floorRouter = {
+  services: {
+    list: protectedProcedure
+      .input(z.object({ type: z.enum(serviceTypeEnum.enumValues) }))
+      .handler(async ({ input }) => {
+        return db
+          .select()
+          .from(service)
+          .where(eq(service.type, input.type))
+          .orderBy(asc(service.name));
+      }),
+  },
+
   customers: {
     search: protectedProcedure
       .input(z.object({ query: z.string().min(1) }))

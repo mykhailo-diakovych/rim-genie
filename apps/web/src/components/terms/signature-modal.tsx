@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import SignaturePad from "signature_pad";
 
 import { Info } from "lucide-react";
-import SignaturePad from "signature_pad";
 
 import { Button } from "@/components/ui/button";
 import {

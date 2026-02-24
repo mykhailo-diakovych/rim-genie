@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { Check, Info, X } from "lucide-react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { z } from "zod";
@@ -14,6 +15,7 @@ import {
   SelectOption,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { orpc } from "@/utils/orpc";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -139,6 +141,12 @@ export function QuoteGeneratorSheet({
   const [jobInputs, setJobInputs] = useState<Partial<Record<JobType, string>>>({});
   const [jobTypeError, setJobTypeError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState<string | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [rimSelects, setRimSelects] = useState({ vehicleSize: "", sideOfVehicle: "", damageLevel: "" });
+
+  const { data: rimServices } = useQuery(
+    orpc.floor.services.list.queryOptions({ input: { type: "rim" } }),
+  );
 
   const rimForm = useForm({
     defaultValues: RIM_DEFAULTS,
@@ -167,12 +175,15 @@ export function QuoteGeneratorSheet({
         .filter(Boolean)
         .join(", ");
 
+      const selectedService = rimServices?.find((s) => s.id === selectedServiceId);
+      const unitCost = selectedService ? selectedService.unitCost : (editItem?.unitCost ?? 0);
+
       const data: QuoteGeneratorSheetData = {
         vehicleSize: value.vehicleSize,
         sideOfVehicle: value.sideOfVehicle,
         damageLevel: value.damageLevel,
         quantity: parseInt(value.quantity, 10) || 1,
-        unitCost: editItem?.unitCost ?? 0,
+        unitCost,
         itemType: "rim",
         jobTypes,
         description,
@@ -222,7 +233,13 @@ export function QuoteGeneratorSheet({
     validators: { onSubmit: weldingSchema },
   });
 
-  if (editItem && initialized !== editItem.id) {
+  useEffect(() => {
+    if (!editItem) {
+      setInitialized(null);
+      return;
+    }
+    if (initialized === editItem.id) return;
+
     if (editItem.itemType === "welding") {
       setTab("other-welding");
       weldingForm.reset({
@@ -230,15 +247,21 @@ export function QuoteGeneratorSheet({
         weldingInches: String(editItem.inches ?? ""),
         weldingPricePerInch: editItem.unitCost ? (editItem.unitCost / 100).toFixed(2) : "",
       });
+      setSelectedServiceId(null);
     } else {
       setTab("rims");
-      rimForm.reset({
-        vehicleSize: editItem.vehicleSize ?? "",
-        sideOfVehicle: editItem.sideOfVehicle ?? "",
-        damageLevel: editItem.damageLevel ?? "",
-        quantity: String(editItem.quantity),
-      });
+      const vs = editItem.vehicleSize ?? "";
+      const sv = editItem.sideOfVehicle ?? "";
+      const dl = editItem.damageLevel ?? "";
+      setRimSelects({ vehicleSize: vs, sideOfVehicle: sv, damageLevel: dl });
+      rimForm.setFieldValue("vehicleSize", vs);
+      rimForm.setFieldValue("sideOfVehicle", sv);
+      rimForm.setFieldValue("damageLevel", dl);
+      rimForm.setFieldValue("quantity", String(editItem.quantity));
+      const matchedService = rimServices?.find((s) => s.unitCost === editItem.unitCost);
+      setSelectedServiceId(matchedService?.id ?? null);
     }
+
     const checked: Partial<Record<JobType, boolean>> = {};
     const inputs: Partial<Record<JobType, string>> = {};
     for (const jt of editItem.jobTypes) {
@@ -248,11 +271,8 @@ export function QuoteGeneratorSheet({
     setCheckedJobs(checked);
     setJobInputs(inputs);
     setInitialized(editItem.id);
-  }
-
-  if (!editItem && initialized !== null) {
-    setInitialized(null);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editItem?.id]);
 
   function toggleJob(type: JobType, checked: boolean) {
     setCheckedJobs((prev) => ({ ...prev, [type]: checked }));
@@ -266,6 +286,8 @@ export function QuoteGeneratorSheet({
     setJobInputs({});
     setJobTypeError(null);
     setInitialized(null);
+    setSelectedServiceId(null);
+    setRimSelects({ vehicleSize: "", sideOfVehicle: "", damageLevel: "" });
     onClose();
   }
 
@@ -339,8 +361,12 @@ export function QuoteGeneratorSheet({
                           Vehicle Size:
                         </label>
                         <Select
-                          value={field.state.value || null}
-                          onValueChange={(v) => field.handleChange(v as string)}
+                          value={rimSelects.vehicleSize || null}
+                          onValueChange={(v) => {
+                            const val = v as string;
+                            setRimSelects((prev) => ({ ...prev, vehicleSize: val }));
+                            field.handleChange(val);
+                          }}
                         >
                           <SelectTrigger error={field.state.meta.errors.length > 0}>
                             <SelectValue placeholder="Small cars" />
@@ -366,8 +392,12 @@ export function QuoteGeneratorSheet({
                           Side of Vehicle:
                         </label>
                         <Select
-                          value={field.state.value || null}
-                          onValueChange={(v) => field.handleChange(v as string)}
+                          value={rimSelects.sideOfVehicle || null}
+                          onValueChange={(v) => {
+                            const val = v as string;
+                            setRimSelects((prev) => ({ ...prev, sideOfVehicle: val }));
+                            field.handleChange(val);
+                          }}
                         >
                           <SelectTrigger error={field.state.meta.errors.length > 0}>
                             <SelectValue placeholder="Left" />
@@ -398,8 +428,12 @@ export function QuoteGeneratorSheet({
                           Damage Level:
                         </label>
                         <Select
-                          value={field.state.value || null}
-                          onValueChange={(v) => field.handleChange(v as string)}
+                          value={rimSelects.damageLevel || null}
+                          onValueChange={(v) => {
+                            const val = v as string;
+                            setRimSelects((prev) => ({ ...prev, damageLevel: val }));
+                            field.handleChange(val);
+                          }}
                         >
                           <SelectTrigger error={field.state.meta.errors.length > 0}>
                             <SelectValue placeholder="Medium" />
@@ -447,6 +481,39 @@ export function QuoteGeneratorSheet({
                   </rimForm.Field>
                 </div>
               </form>
+
+              {/* Service */}
+              <div className="flex flex-col gap-1">
+                <label className="font-rubik text-[12px] leading-[14px] text-label">Service:</label>
+                {rimServices && rimServices.length > 0 ? (
+                  <Select
+                    value={selectedServiceId}
+                    onValueChange={(v) => setSelectedServiceId(v as string)}
+                  >
+                    <SelectTrigger>
+                      {selectedServiceId ? (
+                        <span className="min-w-0 flex-1 truncate text-left text-body">
+                          {(() => {
+                            const s = rimServices.find((s) => s.id === selectedServiceId);
+                            return s ? `${s.name} — $${(s.unitCost / 100).toFixed(2)}` : "Select a service";
+                          })()}
+                        </span>
+                      ) : (
+                        <SelectValue placeholder="Select a service" />
+                      )}
+                    </SelectTrigger>
+                    <SelectPopup>
+                      {rimServices.map((s) => (
+                        <SelectOption key={s.id} value={s.id}>
+                          {s.name} — ${(s.unitCost / 100).toFixed(2)}
+                        </SelectOption>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                ) : (
+                  <p className="font-rubik text-xs text-ghost">No services available</p>
+                )}
+              </div>
 
               {/* Job Types */}
               <div className="flex flex-col gap-1">
