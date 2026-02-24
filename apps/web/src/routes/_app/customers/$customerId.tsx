@@ -7,6 +7,9 @@ import { orpc } from "@/utils/orpc";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/customers/$customerId")({
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Customer" }],
+  }),
   component: CustomerProfilePage,
 });
 

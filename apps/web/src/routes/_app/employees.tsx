@@ -20,6 +20,9 @@ export const Route = createFileRoute("/_app/employees")({
       throw redirect({ to: "/dashboard" });
     }
   },
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Employees" }],
+  }),
   component: EmployeesPage,
 });
 

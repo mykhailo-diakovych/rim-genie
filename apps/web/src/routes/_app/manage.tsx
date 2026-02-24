@@ -23,6 +23,9 @@ export const Route = createFileRoute("/_app/manage")({
       throw redirect({ to: "/dashboard" });
     }
   },
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Manage" }],
+  }),
   component: ManagePage,
 });
 

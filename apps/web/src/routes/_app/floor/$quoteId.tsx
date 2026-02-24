@@ -25,6 +25,9 @@ import type {
 } from "@/components/floor/quote-generator-sheet";
 
 export const Route = createFileRoute("/_app/floor/$quoteId")({
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Quote" }],
+  }),
   component: QuoteEditorPage,
 });
 

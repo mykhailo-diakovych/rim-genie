@@ -14,6 +14,9 @@ import { TAB_CONFIG, type JobGroup, type TabValue } from "@/components/technicia
 import { useJobs } from "@/components/technician/use-jobs";
 
 export const Route = createFileRoute("/_app/technician")({
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Technician" }],
+  }),
   component: TechnicianPage,
 });
 

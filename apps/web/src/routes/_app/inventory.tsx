@@ -4,6 +4,9 @@ import { OvernightJobCard } from "@/components/inventory/overnight-job-card";
 import { useOvernightJobs } from "@/components/inventory/use-inventory";
 
 export const Route = createFileRoute("/_app/inventory")({
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Inventory" }],
+  }),
   component: InventoryPage,
 });
 
