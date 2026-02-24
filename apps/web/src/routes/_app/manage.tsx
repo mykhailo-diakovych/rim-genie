@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,6 +18,11 @@ import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/manage")({
+  validateSearch: (search: Record<string, unknown>): { tab: ServiceType } => ({
+    tab: (["rim", "general"] as const).includes(search.tab as ServiceType)
+      ? (search.tab as ServiceType)
+      : "rim",
+  }),
   beforeLoad: ({ context }) => {
     if (context.session.user.role !== "admin") {
       throw redirect({ to: "/dashboard" });
@@ -147,7 +152,8 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
 }
 
 function ManagePage() {
-  const [activeTab, setActiveTab] = useState<ServiceType>("rim");
+  const { tab: activeTab } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   const [addOpen, setAddOpen] = useState(false);
 
   return (
@@ -162,7 +168,10 @@ function ManagePage() {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as ServiceType)}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => navigate({ search: { tab: val as ServiceType } })}
+      >
         <TabsList>
           {SERVICE_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>

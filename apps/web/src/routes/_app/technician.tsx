@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { cn } from "@/lib/utils";
 import { AssignDetailView } from "@/components/technician/assign-detail-view";
@@ -13,7 +13,12 @@ import { JobDetailView } from "@/components/technician/job-detail-view";
 import { TAB_CONFIG, type JobGroup, type TabValue } from "@/components/technician/types";
 import { useJobs } from "@/components/technician/use-jobs";
 
+const TAB_VALUES = TAB_CONFIG.map((t) => t.value);
+
 export const Route = createFileRoute("/_app/technician")({
+  validateSearch: (search: Record<string, unknown>): { tab: TabValue } => ({
+    tab: TAB_VALUES.includes(search.tab as TabValue) ? (search.tab as TabValue) : "in-progress",
+  }),
   head: () => ({
     meta: [{ title: "Rim-Genie | Technician" }],
   }),
@@ -23,10 +28,11 @@ export const Route = createFileRoute("/_app/technician")({
 type DetailView = { group: JobGroup; source: "in-progress" | "assign" | "completed" };
 
 function TechnicianPage() {
+  const { tab: activeTab } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("");
   const { assign, inProgress, completed, isLoading } = useJobs({ ownerFilter, dateFilter });
-  const [activeTab, setActiveTab] = useState<TabValue>("in-progress");
   const [detailView, setDetailView] = useState<DetailView | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<TabValue, HTMLButtonElement | null>>(new Map());
@@ -53,7 +59,7 @@ function TechnicianPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleTabChange(tab: TabValue) {
-    setActiveTab(tab);
+    void navigate({ search: { tab } });
     measureIndicator(tab);
   }
 

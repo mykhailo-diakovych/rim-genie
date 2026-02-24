@@ -142,7 +142,11 @@ export function QuoteGeneratorSheet({
   const [jobTypeError, setJobTypeError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState<string | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
-  const [rimSelects, setRimSelects] = useState({ vehicleSize: "", sideOfVehicle: "", damageLevel: "" });
+  const [rimSelects, setRimSelects] = useState({
+    vehicleSize: "",
+    sideOfVehicle: "",
+    damageLevel: "",
+  });
 
   const { data: rimServices } = useQuery(
     orpc.floor.services.list.queryOptions({ input: { type: "rim" } }),
@@ -495,7 +499,9 @@ export function QuoteGeneratorSheet({
                         <span className="min-w-0 flex-1 truncate text-left text-body">
                           {(() => {
                             const s = rimServices.find((s) => s.id === selectedServiceId);
-                            return s ? `${s.name} — $${(s.unitCost / 100).toFixed(2)}` : "Select a service";
+                            return s
+                              ? `${s.name} — $${(s.unitCost / 100).toFixed(2)}`
+                              : "Select a service";
                           })()}
                         </span>
                       ) : (
