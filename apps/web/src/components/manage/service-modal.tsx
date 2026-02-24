@@ -174,12 +174,12 @@ export function ServiceModal({ open, onOpenChange, serviceType, service }: Servi
                       value={field.state.value}
                       onValueChange={(val) => field.handleChange(val ?? "")}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="capitalize">
                         <SelectValue placeholder="—" />
                       </SelectTrigger>
                       <SelectPopup>
                         {vehicleTypeEnum.enumValues.map((vt) => (
-                          <SelectOption key={vt} value={vt}>
+                          <SelectOption key={vt} value={vt} className="capitalize">
                             {VEHICLE_TYPE_LABELS[vt]?.()}
                           </SelectOption>
                         ))}
