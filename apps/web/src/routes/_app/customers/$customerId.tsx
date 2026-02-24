@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, FileCheck, Mail, Pencil, Phone, Plus, Send, Trash2 } from "lucide-react";
+import { ChevronLeft, FileCheck, Mail, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { orpc } from "@/utils/orpc";
@@ -107,7 +107,7 @@ function CustomerProfilePage() {
       {/* Back button */}
       <div>
         <Button variant="outline" nativeButton={false} render={<Link to="/customers" />}>
-          <ArrowLeft />
+          <ChevronLeft />
           Back to list
         </Button>
       </div>
@@ -322,7 +322,7 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
                 <td className={`border-t border-r border-l border-field-line p-2 ${borderB}`}>
                   <div className="flex flex-col items-end gap-2">
                     <Button>
-                      <Send />
+                      <Mail />
                       Send Quote
                     </Button>
                     {q.status === "completed" && (
