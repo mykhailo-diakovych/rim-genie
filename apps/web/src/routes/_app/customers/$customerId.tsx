@@ -15,8 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { quoteStatusEnum } from "@rim-genie/db/schema";
-import type { JobStatus } from "@rim-genie/db/schema";
+import type { AppRouterClient } from "@rim-genie/api/routers/index";
 
 import { client, orpc } from "@/utils/orpc";
 
@@ -60,31 +59,23 @@ function formatTotal(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-type QuoteStatus = (typeof quoteStatusEnum.enumValues)[number];
-type AnyStatus = QuoteStatus | JobStatus;
+type CustomerDetail = Awaited<ReturnType<AppRouterClient["floor"]["customers"]["getById"]>>;
+type QuoteStatus = NonNullable<CustomerDetail>["quotes"][number]["status"];
 
-const STATUS_LABELS: Record<AnyStatus, string> = {
-  draft: "Draft",
-  pending: "Pending",
-  in_progress: "In Progress",
-  accepted: "Accepted",
-  completed: "Complete",
-};
-
-const STATUS_BG: Record<AnyStatus, string> = {
+const STATUS_BG: Record<QuoteStatus, string> = {
   draft: "bg-ghost",
   pending: "bg-blue",
   in_progress: "bg-badge-orange",
-  accepted: "bg-badge-orange",
   completed: "bg-green",
 };
 
-function StatusBadge({ status }: { status: AnyStatus }) {
+function StatusBadge({ status }: { status: QuoteStatus }) {
+  const label = status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   return (
     <span
       className={`inline-flex items-center justify-center rounded ${STATUS_BG[status]} px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white`}
     >
-      {STATUS_LABELS[status]}
+      {label}
     </span>
   );
 }
