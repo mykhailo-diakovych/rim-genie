@@ -1,4 +1,4 @@
-import { AlertCircle, Moon, Recycle } from "lucide-react";
+import { IconMissing, IconNight, IconPickup } from "@/components/ui/nav-icons";
 
 import { JobActionDialog } from "./job-action-dialog";
 import type { ApiJob } from "./types";
@@ -42,9 +42,9 @@ export function OvernightJobCard({ job }: { job: ApiJob }) {
       </div>
 
       <div className="flex shrink-0 flex-col gap-2">
-        <JobActionDialog job={job} action="pickup" trigger={<Recycle />} />
-        <JobActionDialog job={job} action="overnight" trigger={<Moon />} />
-        <JobActionDialog job={job} action="missing" trigger={<AlertCircle />} />
+        <JobActionDialog job={job} action="pickup" trigger={<IconPickup />} />
+        <JobActionDialog job={job} action="overnight" trigger={<IconNight />} />
+        <JobActionDialog job={job} action="missing" trigger={<IconMissing />} />
       </div>
     </div>
   );

@@ -47,7 +47,7 @@ export function ServicesPagination({
             onPageSizeChange(Number(e.target.value));
             onPageChange(1);
           }}
-          className="flex h-8 w-14 items-center justify-between rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none"
+          className="flex h-8 w-14 items-center justify-between rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body capitalize outline-none"
         >
           {PAGE_SIZE_OPTIONS.map((size) => (
             <option key={size} value={size}>

@@ -154,6 +154,31 @@ export const floorRouter = {
         const rows = await db.update(customer).set(fields).where(eq(customer.id, id)).returning();
         return rows[0]!;
       }),
+
+    delete: floorManagerProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+      const existing = await db.query.customer.findFirst({
+        where: eq(customer.id, input.id),
+        with: { quotes: { with: { invoice: true } } },
+      });
+
+      if (!existing) throw new Error("Customer not found");
+
+      await db.transaction(async (tx) => {
+        for (const q of existing.quotes) {
+          if (q.invoice) {
+            const invoiceId = q.invoice.id;
+            await tx.delete(job).where(eq(job.invoiceId, invoiceId));
+            await tx.delete(payment).where(eq(payment.invoiceId, invoiceId));
+            await tx.delete(invoice).where(eq(invoice.id, invoiceId));
+          }
+          await tx.delete(quoteItem).where(eq(quoteItem.quoteId, q.id));
+          await tx.delete(quote).where(eq(quote.id, q.id));
+        }
+        await tx.delete(customer).where(eq(customer.id, input.id));
+      });
+
+      return { success: true as const };
+    }),
   },
 
   quotes: {

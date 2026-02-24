@@ -372,7 +372,10 @@ export function QuoteGeneratorSheet({
                             field.handleChange(val);
                           }}
                         >
-                          <SelectTrigger error={field.state.meta.errors.length > 0}>
+                          <SelectTrigger
+                            className="capitalize"
+                            error={field.state.meta.errors.length > 0}
+                          >
                             <SelectValue placeholder="Small cars" />
                           </SelectTrigger>
                           <SelectPopup>
@@ -403,7 +406,10 @@ export function QuoteGeneratorSheet({
                             field.handleChange(val);
                           }}
                         >
-                          <SelectTrigger error={field.state.meta.errors.length > 0}>
+                          <SelectTrigger
+                            className="capitalize"
+                            error={field.state.meta.errors.length > 0}
+                          >
                             <SelectValue placeholder="Left" />
                           </SelectTrigger>
                           <SelectPopup>
@@ -439,7 +445,10 @@ export function QuoteGeneratorSheet({
                             field.handleChange(val);
                           }}
                         >
-                          <SelectTrigger error={field.state.meta.errors.length > 0}>
+                          <SelectTrigger
+                            className="capitalize"
+                            error={field.state.meta.errors.length > 0}
+                          >
                             <SelectValue placeholder="Medium" />
                           </SelectTrigger>
                           <SelectPopup>
@@ -494,7 +503,7 @@ export function QuoteGeneratorSheet({
                     value={selectedServiceId}
                     onValueChange={(v) => setSelectedServiceId(v as string)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="capitalize">
                       {selectedServiceId ? (
                         <span className="min-w-0 flex-1 truncate text-left text-body">
                           {(() => {
