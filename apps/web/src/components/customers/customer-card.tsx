@@ -29,6 +29,11 @@ export function CustomerCard({ customer, actions }: CustomerCardProps) {
           <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {customer.name}
           </span>
+          {customer.isVip && (
+            <span className="inline-flex items-center rounded bg-badge-orange px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white">
+              VIP{customer.discount ? ` ${customer.discount}%` : ""}
+            </span>
+          )}
           <div className="flex items-center gap-2 font-rubik text-xs leading-3.5 text-body">
             {customer.email && <span>{customer.email}</span>}
             {customer.email && customer.phone && <span className="size-1 rounded-full bg-body" />}

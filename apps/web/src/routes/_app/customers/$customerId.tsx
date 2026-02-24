@@ -271,6 +271,19 @@ function CustomerProfilePage() {
                   </label>
                 </div>
               </div>
+
+              <div className="w-px self-stretch bg-field-line" />
+
+              <div className="flex w-[144px] flex-col gap-2">
+                <span className="font-rubik text-xs leading-3.5 text-label">VIP Status:</span>
+                {customer.isVip ? (
+                  <span className="inline-flex w-fit items-center rounded bg-badge-orange px-1.5 py-0.5 font-rubik text-xs text-white">
+                    VIP{customer.discount ? ` (${customer.discount}% off)` : ""}
+                  </span>
+                ) : (
+                  <span className="font-rubik text-sm leading-4.5 text-label">Standard</span>
+                )}
+              </div>
             </div>
           </>
         ) : (
@@ -332,7 +345,7 @@ interface QuoteRow {
   id: string;
   quoteNumber: number;
   total: number;
-  status: AnyStatus;
+  status: QuoteStatus;
   createdAt: Date | string;
   items: { id: string; description: string | null; quantity: number; jobTypes: unknown[] }[];
 }

@@ -56,7 +56,7 @@
 - [ ] Electronic quote viewer (public SSR page via link — no public routes)
 - [ ] Print job label tag (rack identifier — `jobRack` field exists in schema but no print template)
 
-### Cashier Module — §2.2 (Backend Complete, Frontend Mostly Complete)
+### Cashier Module — §2.2 (Backend Complete, Frontend Complete)
 
 **Done:**
 
@@ -75,14 +75,13 @@
 - [x] Date filter wired to API (DateRangeDropdown passes `dateFrom` to all 3 tab queries)
 - [x] Print receipt via `window.print()` with print CSS
 - [x] Effect → oRPC error handling fixed (`runEffect` uses `runPromiseExit` with user-friendly messages)
-
 - [x] Quote → Invoice conversion UI (Floor Manager "Send to Cashier" button creates invoice directly)
-
-**Partially Done (easy wins):**
-
-- [ ] Apply admin-approved discounts and taxes — API supports `invoices.update` with `discount`/`tax` fields; checkout page has UI inputs but `handleConfirm()` never persists them (dead code — needs wiring)
-- [ ] Add special notes to invoice — API supports `notes` field; checkout page has textarea but `handleConfirm()` never saves (dead code — needs wiring)
-- [ ] Storage fee notice on every receipt — info banner exists on invoice detail page but has `print:hidden` class (need to remove it or add to print template)
+- [x] Discount + notes persisted from checkout (`handleConfirm()` calls `invoices.update` before recording payments)
+- [x] Invoice detail shows notes, discount row, tax row in totals section
+- [x] Payment history table on invoice detail (Date, Method, Amount, Reference, Received By)
+- [x] Storage fee notice visible during print (removed `print:hidden`, added print-friendly styles)
+- [x] "To Technician" button shows "Sent to Technician" (disabled) when jobs exist + job status summary bar
+- [x] `jobs` Drizzle relation added to `invoiceRelations`, included in `invoices.get` API response
 
 **Not Done:**
 
@@ -140,12 +139,12 @@
 
 - [x] Service catalog CRUD (rim + general types, vehicle types, sizes, costs)
 - [x] Employee management (create, edit, reset PIN, role assignment)
-- [x] Dashboard with metrics, team activity, attention items (mock/calculated data)
+- [x] Dashboard with metrics, team activity, attention items (real DB aggregation)
 - [x] VIP discount auto-applied at invoice creation time (in `createFromQuote` service)
+- [x] VIP badge on customer list cards + VIP status column on customer profile
 
 **Not Done:**
 
-- [ ] Dashboard metrics from real DB aggregation (currently hardcoded multipliers)
 - [ ] VIP client management UI (upgrade/downgrade customers)
 - [ ] Discount approval workflow (Floor Manager requests → Admin approves)
 - [ ] Remove customer with invoice/job validation
@@ -201,9 +200,9 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ---
 
-### Phase 2: Cashier Module ✅ Backend Complete, ✅ Frontend Mostly Complete
+### Phase 2: Cashier Module ✅ COMPLETE (except email/SMS — Phase 4)
 
-> Priority: **High**
+> ~~Priority: **High**~~ — Done
 
 - [x] Step 2.1: Invoice API — all 5 procedures implemented
 - [x] Step 2.2: Payment API — record + list implemented, auto-status recalculation works
@@ -212,10 +211,12 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [x] Step 2.4b: Invoice detail view (View button → `$invoiceId/index.tsx`)
 - [x] Step 2.4c: Payment recording form (Pay button → `$invoiceId/checkout.tsx`)
 - [x] Step 2.4d: Quote → Invoice conversion UI (Floor Manager "Send to Cashier" → `sendToCashier` endpoint)
-- [x] Step 2.4e: "Send to Technician" button on invoice detail page
+- [x] Step 2.4e: "Send to Technician" button on invoice detail page (with job-aware disabled state)
 - [x] Step 2.4f-print: Print receipt via `window.print()` with print CSS
 - [ ] Step 2.4f-digital: E-receipt via email/SMS (depends on Phase 4)
 - [x] Step 2.4g: Date filter wired to API
+- [x] Step 2.4h: Discount + notes checkout wiring, invoice detail display (notes, discount/tax rows, payment history table)
+- [x] Step 2.4i: Storage fee notice print-visible
 
 ---
 
@@ -295,7 +296,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [ ] View invoices and payments
 - [ ] Expense recording (new `expense` table + CRUD)
 - [ ] Daily reports: revenue, expenses, quotes, invoices
-- [ ] Dashboard metrics from real DB aggregation queries
+- [x] Dashboard metrics from real DB aggregation queries
 
 #### Step 6.2: Workforce
 
@@ -342,13 +343,13 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ---
 
-### Phase 9: Print & Receipt Optimization (Not Started)
+### Phase 9: Print & Receipt Optimization (Partially Done)
 
 > Priority: **Low-Medium**
 
 - [ ] `@media print` stylesheets for receipts, invoices, job tags
 - [ ] Receipt layout: 8+ services per page, address beside logo
-- [ ] Storage fee notice on all receipts
+- [x] Storage fee notice on all receipts (removed `print:hidden`, added print-friendly border/bg styles)
 - [ ] Job label tag print format
 
 ---
@@ -392,7 +393,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - ~~Technician, Cashier pages use hardcoded mock data~~ → ✅ Both now wired to real API
 - ~~Accept dialog technician dropdown hardcoded~~ → ✅ Now loads from `technicians.list` API
 - ~~QuoteGeneratorSheet uses ~15 manual useState calls + hand-rolled validation~~ → ✅ Refactored to `@tanstack/react-form` with Zod schemas (two forms: rim + welding), matching project patterns from customer-modal/service-modal
-- Dashboard metrics currently use mock/calculated data — need real aggregation queries
+- ~~Dashboard metrics currently use mock/calculated data~~ → ✅ Real DB aggregation via `dashboard.ts` router (revenue, open/active jobs, overnight, team activity, attention counts)
 - Inventory page still uses hardcoded mock data
 - No real-time updates yet (polling could be interim via TanStack Query refetchInterval)
 - No file upload infrastructure (Azure Blob Storage needed for proof-of-work videos)
