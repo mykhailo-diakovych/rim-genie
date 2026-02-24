@@ -1,9 +1,10 @@
+import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 
 import { auth } from "@rim-genie/auth";
 import { db } from "@rim-genie/db";
 import { userRoleEnum, user } from "@rim-genie/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and, ne } from "drizzle-orm";
 
 import { adminProcedure } from "../index";
 
@@ -30,18 +31,34 @@ export const employeesRouter = {
     return db.select().from(user).orderBy(desc(user.createdAt));
   }),
 
-  create: adminProcedure.input(createEmployeeSchema).handler(({ input }) => {
-    return auth.api.createUser({
-      body: {
-        name: `${input.firstName} ${input.lastName}`,
-        email: input.email,
-        password: input.pin,
-        role: input.role,
-      },
-    });
+  create: adminProcedure.input(createEmployeeSchema).handler(async ({ input }) => {
+    try {
+      return await auth.api.createUser({
+        body: {
+          name: `${input.firstName} ${input.lastName}`,
+          email: input.email,
+          password: input.pin,
+          role: input.role,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ORPCError) throw error;
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("already exists")) {
+        throw new ORPCError("CONFLICT", { message: "A user with this email already exists" });
+      }
+      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create employee" });
+    }
   }),
 
   update: adminProcedure.input(updateEmployeeSchema).handler(async ({ input }) => {
+    const existing = await db.select({ id: user.id }).from(user).where(
+      and(eq(user.email, input.email), ne(user.id, input.id)),
+    );
+    if (existing.length > 0) {
+      throw new ORPCError("CONFLICT", { message: "A user with this email already exists" });
+    }
+
     const [updated] = await db
       .update(user)
       .set({
@@ -51,6 +68,11 @@ export const employeesRouter = {
       })
       .where(eq(user.id, input.id))
       .returning();
+
+    if (!updated) {
+      throw new ORPCError("NOT_FOUND", { message: "Employee not found" });
+    }
+
     return updated;
   }),
 

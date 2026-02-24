@@ -74,6 +74,9 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
       toast.success(m.employees_toast_created());
       setOpen(false);
     },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 
   const updateEmployee = useMutation({
@@ -82,6 +85,9 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
       await queryClient.invalidateQueries({ queryKey: orpc.employees.key() });
       toast.success(m.employees_toast_updated());
       setOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -123,7 +129,11 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
-        if (!nextOpen) form.reset();
+        if (!nextOpen) {
+          form.reset();
+          createEmployee.reset();
+          updateEmployee.reset();
+        }
       }}
     >
       <DialogTrigger render={trigger} />
