@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@rim-genie/db";
 import { customer, quote, quoteItem, invoice, payment, job } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { asc, eq, ilike, inArray, or, sql, sum } from "drizzle-orm";
+import { desc, eq, ilike, inArray, or, sql, sum } from "drizzle-orm";
 
 import { floorManagerProcedure, protectedProcedure, requireRole } from "../index";
 import * as InvoiceService from "../services/invoice.service";
@@ -57,6 +57,7 @@ export const floorRouter = {
           .where(
             or(ilike(customer.phone, `%${input.query}%`), ilike(customer.name, `%${input.query}%`)),
           )
+          .orderBy(desc(customer.createdAt))
           .limit(20);
       }),
 
@@ -95,7 +96,7 @@ export const floorRouter = {
         .leftJoin(quote, eq(quote.customerId, customer.id))
         .leftJoin(quoteItem, eq(quoteItem.quoteId, quote.id))
         .groupBy(customer.id)
-        .orderBy(asc(customer.name));
+        .orderBy(desc(customer.createdAt));
     }),
 
     getById: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 import { verifyPassword } from "@rim-genie/auth/crypto";
 
 import { db } from "@rim-genie/db";
@@ -15,6 +15,7 @@ export const technicianRouter = {
       return db.query.user.findMany({
         where: eq(user.role, "technician"),
         columns: { id: true, name: true },
+        orderBy: [desc(user.createdAt)],
       });
     }),
   },

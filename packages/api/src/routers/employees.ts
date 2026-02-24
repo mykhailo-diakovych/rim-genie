@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth } from "@rim-genie/auth";
 import { db } from "@rim-genie/db";
 import { userRoleEnum, user } from "@rim-genie/db/schema";
-import { asc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 import { adminProcedure } from "../index";
 
@@ -27,7 +27,7 @@ const updateEmployeeSchema = z.object({
 
 export const employeesRouter = {
   list: adminProcedure.handler(() => {
-    return db.select().from(user).orderBy(asc(user.name));
+    return db.select().from(user).orderBy(desc(user.createdAt));
   }),
 
   create: adminProcedure.input(createEmployeeSchema).handler(({ input }) => {
