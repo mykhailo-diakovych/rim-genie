@@ -23,6 +23,9 @@ export const Route = createFileRoute("/_app/manage")({
       throw redirect({ to: "/dashboard" });
     }
   },
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Manage" }],
+  }),
   component: ManagePage,
 });
 
@@ -87,10 +90,10 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
 
         <div className="overflow-hidden rounded-lg border border-field-line bg-white">
           {isLoading ? (
-            <ServiceTableSkeleton />
+            <ServiceTableSkeleton showVehicleType={type === "general"} />
           ) : services.length === 0 ? (
             <>
-              <ServiceTableSkeleton rows={null} />
+              <ServiceTableSkeleton rows={null} showVehicleType={type === "general"} />
               <p className="py-10 text-center font-rubik text-sm text-label">{m.manage_empty()}</p>
             </>
           ) : (
@@ -100,6 +103,7 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
                 onEdit={setEditService}
                 onDelete={setDeleteConfirm}
                 isDeleting={deleteService.isPending ? deleteService.variables?.id : undefined}
+                showVehicleType={type === "general"}
               />
               <div className="border-t border-field-line">
                 <ServicesPagination

@@ -20,6 +20,9 @@ import { Button } from "@/components/ui/button";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/cashier/$invoiceId/")({
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Invoice" }],
+  }),
   component: InvoiceDetailPage,
 });
 

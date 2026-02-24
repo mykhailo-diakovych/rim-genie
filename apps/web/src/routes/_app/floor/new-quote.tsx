@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/floor/new-quote")({
+  head: () => ({
+    meta: [{ title: "Rim-Genie | New Quote" }],
+  }),
   component: NewQuotePage,
 });
 

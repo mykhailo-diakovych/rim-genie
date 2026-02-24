@@ -8,6 +8,9 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { m } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/_auth/login")({
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Login" }],
+  }),
   component: LoginPage,
 });
 

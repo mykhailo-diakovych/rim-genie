@@ -27,7 +27,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "Rim Genie",
+        title: "Rim-Genie",
       },
     ],
     links: [

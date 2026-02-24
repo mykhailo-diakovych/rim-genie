@@ -53,6 +53,9 @@ const SERVICE_TERMS = [
 ];
 
 export const Route = createFileRoute("/_app/terms")({
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Terms" }],
+  }),
   component: TermsPage,
 });
 

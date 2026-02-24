@@ -15,6 +15,9 @@ import { orpc } from "@/utils/orpc";
 type Period = "today" | "week" | "month";
 
 export const Route = createFileRoute("/_app/dashboard")({
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Dashboard" }],
+  }),
   component: RouteComponent,
 });
 

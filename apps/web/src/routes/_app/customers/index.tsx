@@ -21,6 +21,9 @@ export const Route = createFileRoute("/_app/customers/")({
       throw redirect({ to: "/dashboard" });
     }
   },
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Customers" }],
+  }),
   component: CustomersPage,
 });
 

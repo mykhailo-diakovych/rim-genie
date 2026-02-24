@@ -50,17 +50,26 @@ interface ServiceTableProps {
   onEdit: (service: ServiceRow) => void;
   onDelete: (service: ServiceRow) => void;
   isDeleting?: string;
+  showVehicleType?: boolean;
 }
 
-export function ServiceTable({ services, onEdit, onDelete, isDeleting }: ServiceTableProps) {
+export function ServiceTable({
+  services,
+  onEdit,
+  onDelete,
+  isDeleting,
+  showVehicleType,
+}: ServiceTableProps) {
   return (
     <div className="overflow-hidden rounded-lg bg-white">
       <div className="flex border-b border-field-line">
-        <div className="flex w-22 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">
-            {m.manage_label_vehicle_type()}
-          </span>
-        </div>
+        {showVehicleType && (
+          <div className="flex w-22 items-center border-r border-field-line px-2 py-[7px]">
+            <span className="font-rubik text-xs leading-3.5 text-label">
+              {m.manage_label_vehicle_type()}
+            </span>
+          </div>
+        )}
         <div className="flex flex-1 items-center border-r border-field-line px-2 py-[7px]">
           <span className="font-rubik text-xs leading-3.5 text-label">
             {m.manage_col_service_name()}
@@ -86,11 +95,13 @@ export function ServiceTable({ services, onEdit, onDelete, isDeleting }: Service
 
       {services.map((svc) => (
         <div key={svc.id} className="flex border-b border-field-line last:border-b-0">
-          <div className="flex w-22 items-center self-stretch border-r border-field-line p-2">
-            <span className="font-rubik text-sm leading-4.5 text-body">
-              {svc.vehicleType ?? "—"}
-            </span>
-          </div>
+          {showVehicleType && (
+            <div className="flex w-22 items-center self-stretch border-r border-field-line p-2">
+              <span className="font-rubik text-sm leading-4.5 text-body capitalize">
+                {svc.vehicleType ?? "—"}
+              </span>
+            </div>
+          )}
           <div className="flex flex-1 items-center self-stretch border-r border-field-line p-2">
             <span className="font-rubik text-sm leading-4.5 text-body">{svc.name}</span>
           </div>
@@ -128,12 +139,14 @@ export function ServiceTable({ services, onEdit, onDelete, isDeleting }: Service
   );
 }
 
-function TableRowSkeleton() {
+function TableRowSkeleton({ showVehicleType }: { showVehicleType?: boolean }) {
   return (
     <div className="flex border-b border-field-line">
-      <div className="flex w-22 items-center border-r border-field-line p-2">
-        <Skeleton className="h-[18px] w-14 rounded" />
-      </div>
+      {showVehicleType && (
+        <div className="flex w-22 items-center border-r border-field-line p-2">
+          <Skeleton className="h-[18px] w-14 rounded" />
+        </div>
+      )}
       <div className="flex flex-1 items-center border-r border-field-line p-2">
         <Skeleton className="h-[18px] w-32 rounded" />
       </div>
@@ -154,15 +167,23 @@ function TableRowSkeleton() {
   );
 }
 
-export function ServiceTableSkeleton({ rows }: { rows?: ReactNode }) {
+export function ServiceTableSkeleton({
+  rows,
+  showVehicleType,
+}: {
+  rows?: ReactNode;
+  showVehicleType?: boolean;
+}) {
   return (
     <div className="overflow-hidden rounded-lg bg-white">
       <div className="flex border-b border-field-line">
-        <div className="flex w-22 items-center border-r border-field-line px-2 py-[7px]">
-          <span className="font-rubik text-xs leading-3.5 text-label">
-            {m.manage_label_vehicle_type()}
-          </span>
-        </div>
+        {showVehicleType && (
+          <div className="flex w-22 items-center border-r border-field-line px-2 py-[7px]">
+            <span className="font-rubik text-xs leading-3.5 text-label">
+              {m.manage_label_vehicle_type()}
+            </span>
+          </div>
+        )}
         <div className="flex flex-1 items-center border-r border-field-line px-2 py-[7px]">
           <span className="font-rubik text-xs leading-3.5 text-label">
             {m.manage_col_service_name()}
@@ -187,7 +208,9 @@ export function ServiceTableSkeleton({ rows }: { rows?: ReactNode }) {
       </div>
       {rows !== undefined
         ? rows
-        : Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} />)}
+        : Array.from({ length: 5 }).map((_, i) => (
+            <TableRowSkeleton key={i} showVehicleType={showVehicleType} />
+          ))}
     </div>
   );
 }

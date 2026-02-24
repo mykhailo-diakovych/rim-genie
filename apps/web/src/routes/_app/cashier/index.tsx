@@ -44,6 +44,9 @@ export const Route = createFileRoute("/_app/cashier/")({
       ? (search.dateRange as DateRange)
       : "30d",
   }),
+  head: () => ({
+    meta: [{ title: "Rim-Genie | Cashier" }],
+  }),
   component: CashierPage,
 });
 
