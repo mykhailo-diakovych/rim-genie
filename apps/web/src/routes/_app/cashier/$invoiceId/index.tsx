@@ -43,6 +43,17 @@ function formatCents(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+function formatPaymentMode(mode: string) {
+  const map: Record<string, string> = {
+    cash: "Cash",
+    credit_card: "Credit Card",
+    debit_card: "Debit Card",
+    bank_transfer: "Bank Transfer",
+    cheque: "Cheque",
+  };
+  return map[mode] ?? mode;
+}
+
 function MoreDropdown({
   onPrint,
   onDelete,
@@ -152,6 +163,15 @@ function InvoiceDetailPage() {
   });
 
   const canPay = inv?.status !== "paid";
+  const hasJobs = (inv?.jobs?.length ?? 0) > 0;
+
+  const jobStatusCounts = inv?.jobs?.reduce(
+    (acc, j) => {
+      acc[j.status] = (acc[j.status] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-5">
@@ -178,10 +198,10 @@ function InvoiceDetailPage() {
           <Button
             variant="outline"
             onClick={() => sendToTechnician.mutate({ invoiceId })}
-            disabled={sendToTechnician.isPending}
+            disabled={sendToTechnician.isPending || hasJobs}
           >
             <Send />
-            To Technician
+            {hasJobs ? "Sent to Technician" : "To Technician"}
           </Button>
         </div>
 
@@ -191,6 +211,24 @@ function InvoiceDetailPage() {
           isDeleting={deleteInvoice.isPending}
         />
       </div>
+
+      {hasJobs && jobStatusCounts && (
+        <div className="flex items-center gap-3 rounded-md bg-page px-3 py-2 font-rubik text-xs text-body print:hidden">
+          <span className="font-medium">Jobs:</span>
+          {jobStatusCounts.pending && (
+            <span className="text-label">{jobStatusCounts.pending} pending</span>
+          )}
+          {jobStatusCounts.accepted && (
+            <span className="text-label">{jobStatusCounts.accepted} accepted</span>
+          )}
+          {jobStatusCounts.in_progress && (
+            <span className="text-blue">{jobStatusCounts.in_progress} in progress</span>
+          )}
+          {jobStatusCounts.completed && (
+            <span className="text-green">{jobStatusCounts.completed} completed</span>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card print:border-0 print:shadow-none">
         <div className="flex items-center justify-between">
@@ -334,7 +372,12 @@ function InvoiceDetailPage() {
           </table>
         </div>
 
-        <div className="font-rubik text-xs text-label">Comments:</div>
+        {inv?.notes && (
+          <div className="font-rubik text-xs">
+            <span className="text-label">Comments: </span>
+            <span className="text-body">{inv.notes}</span>
+          </div>
+        )}
 
         <div className="flex-1" />
 
@@ -345,6 +388,18 @@ function InvoiceDetailPage() {
             <span className="text-label">Subtotal:</span>
             <span className="text-body">{formatCents(inv?.subtotal ?? 0)}</span>
           </div>
+          {(inv?.discount ?? 0) > 0 && (
+            <div className="flex items-center gap-3 px-3 font-rubik text-base">
+              <span className="text-label">Discount:</span>
+              <span className="text-body">-{formatCents(inv?.discount ?? 0)}</span>
+            </div>
+          )}
+          {(inv?.tax ?? 0) > 0 && (
+            <div className="flex items-center gap-3 px-3 font-rubik text-base">
+              <span className="text-label">Tax:</span>
+              <span className="text-body">+{formatCents(inv?.tax ?? 0)}</span>
+            </div>
+          )}
           <div className="flex items-center gap-3 rounded-sm bg-green px-3 py-2 font-rubik text-[22px] leading-6.5 text-white">
             <span>Total:</span>
             <span className="font-medium">{formatCents(inv?.total ?? 0)}</span>
@@ -362,8 +417,48 @@ function InvoiceDetailPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 rounded-md bg-[#ebf5ff] px-3 py-3 print:hidden">
-        <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#cbe5fc]">
+      {(inv?.payments?.length ?? 0) > 0 && (
+        <div className="overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card print:border-0 print:shadow-none">
+          <h3 className="mb-2 font-rubik text-base font-medium text-body">Payment History</h3>
+          <table className="w-full font-rubik text-xs">
+            <thead>
+              <tr className="border-t border-b border-field-line text-left text-label">
+                <th className="border-l border-field-line px-2 py-1.5 font-normal">Date</th>
+                <th className="border-l border-field-line px-2 py-1.5 font-normal">Method</th>
+                <th className="border-l border-field-line px-2 py-1.5 font-normal">Amount</th>
+                <th className="border-l border-field-line px-2 py-1.5 font-normal">Reference</th>
+                <th className="border-r border-l border-field-line px-2 py-1.5 font-normal">
+                  Received By
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {inv?.payments?.map((p) => (
+                <tr key={p.id} className="border-b border-field-line">
+                  <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                    {formatDate(p.createdAt)}
+                  </td>
+                  <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                    {formatPaymentMode(p.mode)}
+                  </td>
+                  <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                    {formatCents(p.amount)}
+                  </td>
+                  <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                    {p.reference ?? "\u2014"}
+                  </td>
+                  <td className="border-r border-l border-field-line px-2 py-2 text-sm text-body">
+                    {p.receivedBy?.name ?? "\u2014"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="flex items-center gap-3 rounded-md bg-[#ebf5ff] px-3 py-3 print:border print:border-field-line print:bg-transparent">
+        <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#cbe5fc] print:bg-transparent">
           <Info className="size-3 text-blue" />
         </div>
         <p className="font-rubik text-xs text-body">

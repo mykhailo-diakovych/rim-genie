@@ -219,6 +219,19 @@ function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
+      const discountCents = Math.round((parseFloat(discount) || 0) * 100);
+      const trimmedNotes = notes.trim();
+      if (discountCents > 0 || trimmedNotes) {
+        await orpc.cashier.invoices.update.call({
+          id: invoiceId,
+          ...(discountCents > 0 && { discount: discountCents }),
+          ...(trimmedNotes && { notes: trimmedNotes }),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: orpc.cashier.invoices.get.key({ input: { id: invoiceId } }),
+        });
+      }
+
       for (const entry of paymentEntries) {
         const cents = Math.round(entry.amount * 100);
         await orpc.cashier.payments.record.call({

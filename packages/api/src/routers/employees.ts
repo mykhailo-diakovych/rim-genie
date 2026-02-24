@@ -52,9 +52,10 @@ export const employeesRouter = {
   }),
 
   update: adminProcedure.input(updateEmployeeSchema).handler(async ({ input }) => {
-    const existing = await db.select({ id: user.id }).from(user).where(
-      and(eq(user.email, input.email), ne(user.id, input.id)),
-    );
+    const existing = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(and(eq(user.email, input.email), ne(user.id, input.id)));
     if (existing.length > 0) {
       throw new ORPCError("CONFLICT", { message: "A user with this email already exists" });
     }

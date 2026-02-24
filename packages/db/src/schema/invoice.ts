@@ -14,6 +14,7 @@ import {
 import type { JobTypeEntry } from "./floor";
 import { customer, quote } from "./floor";
 import { user } from "./auth";
+import { job } from "./job";
 
 export const invoiceStatusEnum = pgEnum("invoice_status", ["unpaid", "partially_paid", "paid"]);
 
@@ -132,6 +133,7 @@ export const invoiceRelations = relations(invoice, ({ one, many }) => ({
   }),
   items: many(invoiceItem),
   payments: many(payment),
+  jobs: many(job),
 }));
 
 export const invoiceItemRelations = relations(invoiceItem, ({ one }) => ({

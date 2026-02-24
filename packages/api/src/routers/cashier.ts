@@ -98,6 +98,7 @@ export const cashierRouter = {
             orderBy: (p, { desc }) => [desc(p.createdAt)],
             with: { receivedBy: true },
           },
+          jobs: true,
         },
       });
     }),
