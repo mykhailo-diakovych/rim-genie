@@ -1,15 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import {
-  Banknote,
-  ChevronDown,
-  ChevronLeft,
-  ChevronUp,
-  CreditCard,
-  FileCheck,
-  Landmark,
-  Wallet,
-} from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronUp } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -38,14 +29,14 @@ type PaymentMethod = "cash" | "credit" | "debit" | "cheque" | "bank";
 const PAYMENT_METHODS: {
   key: PaymentMethod;
   label: string;
-  icon: typeof Banknote;
+  iconSrc: string;
   apiMode: "cash" | "credit_card" | "debit_card" | "cheque" | "bank_transfer";
 }[] = [
-  { key: "cash", label: "Cash", icon: Banknote, apiMode: "cash" },
-  { key: "credit", label: "Credit", icon: CreditCard, apiMode: "credit_card" },
-  { key: "debit", label: "Debit", icon: Wallet, apiMode: "debit_card" },
-  { key: "cheque", label: "Cheque", icon: FileCheck, apiMode: "cheque" },
-  { key: "bank", label: "Bank Transfer", icon: Landmark, apiMode: "bank_transfer" },
+  { key: "cash", label: "Cash", iconSrc: "/icons/payment/cash.svg", apiMode: "cash" },
+  { key: "credit", label: "Credit", iconSrc: "/icons/payment/credit.svg", apiMode: "credit_card" },
+  { key: "debit", label: "Debit", iconSrc: "/icons/payment/debit.svg", apiMode: "debit_card" },
+  { key: "cheque", label: "Cheque", iconSrc: "/icons/payment/cheque.svg", apiMode: "cheque" },
+  { key: "bank", label: "Bank Transfer", iconSrc: "/icons/payment/bank.svg", apiMode: "bank_transfer" },
 ];
 
 function formatDollars(dollars: number) {
@@ -53,12 +44,12 @@ function formatDollars(dollars: number) {
 }
 
 function PaymentAccordionHeader({
-  icon: Icon,
+  iconSrc,
   label,
   isOpen,
   onClick,
 }: {
-  icon: typeof Banknote;
+  iconSrc: string;
   label: string;
   isOpen: boolean;
   onClick: () => void;
@@ -73,7 +64,7 @@ function PaymentAccordionHeader({
       )}
     >
       <div className="flex items-center gap-1.5">
-        <Icon className="size-6" />
+        <img src={iconSrc} alt="" className="size-6" />
         <span
           className={cn("font-rubik text-base font-medium", isOpen ? "text-blue" : "text-body")}
         >
@@ -97,7 +88,7 @@ function CashContent({
   onChange: (denomValue: number, inputValue: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 p-3">
+    <div className="flex flex-col gap-2 px-3">
       <span className="font-rubik text-sm text-label">Cash breakdown:</span>
       <div className="flex flex-col gap-1">
         {CASH_DENOMINATIONS.map((denom) => (
@@ -131,7 +122,7 @@ function AmountContent({
   referencePlaceholder?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2 p-3">
+    <div className="flex flex-col gap-2 px-3">
       <label className="flex flex-col gap-1">
         <span className="font-rubik text-xs text-label">Amount ($)</span>
         <input
@@ -284,12 +275,12 @@ function CheckoutPage() {
           </h1>
 
           <div className="flex flex-col gap-2">
-            {PAYMENT_METHODS.map(({ key, label, icon }) => {
+            {PAYMENT_METHODS.map(({ key, label, iconSrc }) => {
               const isOpen = expanded === key;
               return (
-                <div key={key} className="rounded-xl bg-white">
+                <div key={key} className={cn("flex flex-col rounded-xl bg-white", isOpen && "gap-4 pb-3")}>
                   <PaymentAccordionHeader
-                    icon={icon}
+                    iconSrc={iconSrc}
                     label={label}
                     isOpen={isOpen}
                     onClick={() => toggleAccordion(key)}
@@ -332,14 +323,14 @@ function CheckoutPage() {
           </div>
         </div>
 
-        <div className="w-[284px] shrink-0 rounded-xl bg-white py-3">
+        <div className="flex w-[284px] shrink-0 flex-col gap-4 rounded-xl bg-white py-3">
           <div className="px-3">
             <h2 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
               Order summary:
             </h2>
           </div>
 
-          <div className="mt-4 flex flex-col gap-1 px-3">
+          <div className="flex flex-col gap-1 px-3">
             <div className="flex items-start p-2 font-rubik text-base leading-5">
               <span className="flex-1 text-body">Total Due:</span>
               <span className={cn("font-medium", totalDue < 0 ? "text-red" : "text-green")}>
@@ -374,7 +365,7 @@ function CheckoutPage() {
 
           <div className="h-px bg-field-line" />
 
-          <div className="flex flex-col gap-1 px-3 pt-4">
+          <div className="flex flex-col gap-1 px-3">
             <span className="font-rubik text-xs text-label">Discount:</span>
             <input
               type="number"
@@ -386,9 +377,9 @@ function CheckoutPage() {
             />
           </div>
 
-          <div className="mt-4 h-px bg-field-line" />
+          <div className="h-px bg-field-line" />
 
-          <div className="flex flex-col gap-1 px-3 pt-4">
+          <div className="flex flex-col gap-1 px-3">
             <span className="font-rubik text-xs text-label">Notes:</span>
             <textarea
               value={notes}

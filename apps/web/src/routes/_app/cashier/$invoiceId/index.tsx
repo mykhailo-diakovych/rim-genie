@@ -240,7 +240,7 @@ function InvoiceDetailPage() {
 
         <div className="h-px bg-field-line" />
 
-        <div className="flex items-start gap-4">
+        <div className="flex items-center gap-4">
           <div className="flex gap-4">
             <div className="flex flex-col gap-2 pr-4 font-rubik">
               <span className="text-xs text-label">Invoice #:</span>
@@ -265,8 +265,8 @@ function InvoiceDetailPage() {
 
           <div className="w-px self-stretch bg-field-line" />
 
-          <div className="flex flex-1 items-start gap-3 font-rubik">
-            <span className="shrink-0 pt-0.5 text-xs text-label">Invoice to:</span>
+          <div className="flex flex-1 items-center justify-end gap-3 font-rubik">
+            <span className="shrink-0 text-xs text-label">Invoice to:</span>
             {inv?.customer && (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
@@ -286,9 +286,9 @@ function InvoiceDetailPage() {
 
         <div className="h-px bg-field-line" />
 
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-1 font-rubik">
-            <span className="text-base text-label">Total:</span>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-1 flex-col gap-2 font-rubik">
+            <span className="text-base text-body">Total:</span>
             <span className="text-[22px] leading-6.5 font-medium text-body">
               {invoiceQuery.isLoading ? (
                 <Skeleton className="h-6 w-32" />
@@ -298,18 +298,22 @@ function InvoiceDetailPage() {
             </span>
           </div>
 
-          <div className="flex flex-col gap-1 font-rubik text-sm text-body">
-            <div className="flex items-center gap-1.5">
-              <Building2 className="size-4 shrink-0 text-ghost" />
-              <span>82c Waltham Park Rd,</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <MapPin className="size-4 shrink-0 text-ghost" />
-              <span>Kingston, Jamaica</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Phone className="size-4 shrink-0 text-ghost" />
-              <span>876-830-9624</span>
+          <div className="w-px self-stretch bg-field-line" />
+
+          <div className="flex items-center justify-end">
+            <div className="flex flex-col gap-1 font-rubik text-sm text-body">
+              <div className="flex items-center gap-1.5">
+                <Building2 className="size-4 shrink-0 text-ghost" />
+                <span>82c Waltham Park Rd,</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <MapPin className="size-4 shrink-0 text-ghost" />
+                <span>Kingston, Jamaica</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Phone className="size-4 shrink-0 text-ghost" />
+                <span>876-830-9624</span>
+              </div>
             </div>
           </div>
         </div>
@@ -320,15 +324,15 @@ function InvoiceDetailPage() {
           <table className="w-full font-rubik text-xs">
             <thead>
               <tr className="border-t border-b border-field-line text-left text-label">
-                <th className="w-12 border-l border-field-line px-2 py-1.5 font-normal">#</th>
+                <th className="w-18 border-l border-field-line px-2 py-1.5 font-normal">#</th>
                 <th className="border-l border-field-line px-2 py-1.5 font-normal">Description</th>
-                <th className="w-20 border-l border-field-line px-2 py-1.5 font-normal">
+                <th className="w-18 border-l border-field-line px-2 py-1.5 font-normal">
                   Quantity
                 </th>
-                <th className="w-28 border-l border-field-line px-2 py-1.5 font-normal">
+                <th className="w-30 border-l border-field-line px-2 py-1.5 font-normal">
                   Unit Cost
                 </th>
-                <th className="w-28 border-r border-l border-field-line px-2 py-1.5 font-normal">
+                <th className="w-30 border-r border-l border-field-line px-2 py-1.5 font-normal">
                   Total
                 </th>
               </tr>
@@ -400,7 +404,7 @@ function InvoiceDetailPage() {
               <span className="text-body">+{formatCents(inv?.tax ?? 0)}</span>
             </div>
           )}
-          <div className="flex items-center gap-3 rounded-sm bg-green px-3 py-2 font-rubik text-[22px] leading-6.5 text-white">
+          <div className="flex items-center gap-3 bg-green px-3 py-2 font-rubik text-[22px] leading-6.5 text-white">
             <span>Total:</span>
             <span className="font-medium">{formatCents(inv?.total ?? 0)}</span>
           </div>

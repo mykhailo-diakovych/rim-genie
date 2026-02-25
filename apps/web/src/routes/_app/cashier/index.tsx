@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Calendar, ChevronDown, CircleDollarSign, Eye, Trash2 } from "lucide-react";
+import { Calendar, ChevronDown, Eye, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { IconPay } from "@/components/ui/nav-icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { orpc } from "@/utils/orpc";
@@ -64,11 +65,11 @@ function TabCounter({ count, active }: { count: number; active: boolean }) {
 }
 
 function formatDate(date: Date | string) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const d = new Date(date);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}.${mm}.${yy}`;
 }
 
 function formatCents(cents: number) {
@@ -115,7 +116,7 @@ function InvoiceCard({
   const canPay = invoice.status !== "paid";
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:min-h-16 sm:flex-row sm:items-center sm:gap-4">
+    <div className="flex flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card sm:min-h-16 sm:flex-row sm:items-center sm:gap-4">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="truncate font-rubik text-sm leading-4.5 font-medium text-body">
@@ -123,17 +124,17 @@ function InvoiceCard({
           </span>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
-          <span className="text-label">ID:</span>
+        <div className="flex w-8 shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
+          <span className="text-label">Invoice #:</span>
           <span className="text-body">{invoice.invoiceNumber}</span>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
-          <span className="text-label">Date :</span>
+        <div className="flex w-12 shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
+          <span className="text-label">Date:</span>
           <span className="truncate text-body">{formatDate(invoice.createdAt)}</span>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
+        <div className="flex w-28 shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
           <span className="text-label">Total / Balance</span>
           <span className="text-body">
             {formatCents(invoice.total)} / {formatCents(invoice.balance)}
@@ -143,17 +144,18 @@ function InvoiceCard({
 
       <div className="flex shrink-0 items-center gap-2">
         <Button
+          className="w-18"
           nativeButton={false}
           render={<Link to="/cashier/$invoiceId" params={{ invoiceId: invoice.id }} />}
         >
           <Eye />
           View
         </Button>
-        <Button variant="outline" color="success" disabled={!canPay} onClick={onPay}>
-          <CircleDollarSign />
+        <Button className="w-18" variant="outline" color="success" disabled={!canPay} onClick={onPay}>
+          <IconPay />
           Pay
         </Button>
-        <Button variant="outline" color="destructive" onClick={onDelete} disabled={isDeleting}>
+        <Button className="w-18" variant="outline" color="destructive" onClick={onDelete} disabled={isDeleting}>
           <Trash2 />
           Delete
         </Button>
@@ -176,7 +178,7 @@ function DateRangeDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 items-center justify-between gap-1.5 rounded-md border border-field-line bg-white px-2 py-2.5 font-rubik text-xs text-body"
+        className="flex h-9 w-36 items-center justify-between gap-1.5 rounded-md border border-field-line bg-white px-2 py-2.5 font-rubik text-xs text-body"
       >
         <Calendar className="size-4 text-label" />
         {DATE_RANGE_LABELS[value]}
@@ -254,7 +256,7 @@ function CashierPage() {
   });
 
   return (
-    <div className="flex flex-col gap-5 p-5">
+    <div className="flex flex-col gap-4 px-5 pt-4 pb-5">
       <div className="flex items-center justify-between">
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           List of Invoices
