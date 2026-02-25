@@ -5,6 +5,7 @@ import { db } from "@rim-genie/db";
 import { inventoryRecord, job } from "@rim-genie/db/schema";
 
 import { EODAlreadyExists, SODAlreadyExists, EODNotFound } from "./errors";
+import * as NotificationService from "./notification.service";
 
 export function createEOD(input: {
   recordDate: string;
@@ -108,6 +109,17 @@ export function createSOD(input: {
         })
         .returning(),
     );
+
+    if (hasDiscrepancy) {
+      const diff = input.rimCount - latestEod.rimCount;
+      yield* NotificationService.notifyAdmins({
+        type: "inventory_discrepancy",
+        title: "Inventory Discrepancy Detected",
+        message: `SOD rim count (${input.rimCount}) does not match EOD count (${latestEod.rimCount}). Difference: ${diff > 0 ? "+" : ""}${diff}.${input.discrepancyNotes ? ` Notes: ${input.discrepancyNotes}` : ""}`,
+        referenceId: record!.id,
+        referenceType: "inventory_record",
+      });
+    }
 
     return record!;
   });

@@ -36,7 +36,12 @@ const PAYMENT_METHODS: {
   { key: "credit", label: "Credit", iconSrc: "/icons/payment/credit.svg", apiMode: "credit_card" },
   { key: "debit", label: "Debit", iconSrc: "/icons/payment/debit.svg", apiMode: "debit_card" },
   { key: "cheque", label: "Cheque", iconSrc: "/icons/payment/cheque.svg", apiMode: "cheque" },
-  { key: "bank", label: "Bank Transfer", iconSrc: "/icons/payment/bank.svg", apiMode: "bank_transfer" },
+  {
+    key: "bank",
+    label: "Bank Transfer",
+    iconSrc: "/icons/payment/bank.svg",
+    apiMode: "bank_transfer",
+  },
 ];
 
 function formatDollars(dollars: number) {
@@ -278,7 +283,10 @@ function CheckoutPage() {
             {PAYMENT_METHODS.map(({ key, label, iconSrc }) => {
               const isOpen = expanded === key;
               return (
-                <div key={key} className={cn("flex flex-col rounded-xl bg-white", isOpen && "gap-4 pb-3")}>
+                <div
+                  key={key}
+                  className={cn("flex flex-col rounded-xl bg-white", isOpen && "gap-4 pb-3")}
+                >
                   <PaymentAccordionHeader
                     iconSrc={iconSrc}
                     label={label}

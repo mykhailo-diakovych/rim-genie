@@ -22,6 +22,13 @@
       "when": 1771775295589,
       "tag": "0002_previous_moira_mactaggert",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772050679093,
+      "tag": "0003_windy_cobalt_man",
+      "breakpoints": true
     }
   ]
 }

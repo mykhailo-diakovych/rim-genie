@@ -118,20 +118,24 @@
 - [ ] Auto-notify customer on completion (SMS + email — depends on Phase 4)
 - [ ] Notify cashier on job completion (in-app — depends on Phase 4)
 
-### Inventory Module — §2.4 (UI Shell Only — Mock Data)
+### Inventory Module — §2.4 (Backend Complete, Frontend Complete)
 
 **Done:**
 
-- [x] Page with mock job cards
-- [x] Notes modal for pickup/overnight/missing actions
-
-**Not Done:**
-
-- [ ] **Inventory record schema** — no table in DB
-- [ ] End-of-day verification flow
-- [ ] Start-of-day reconciliation against previous close
-- [ ] Discrepancy flagging and admin notification
-- [ ] Track all overnight jobs
+- [x] Page with overnight job cards wired to real API
+- [x] Notes modal for pickup/overnight/missing actions (wired to `markPickup`/`markMissing` API)
+- [x] Inventory record schema (`inventoryRecord` table with EOD/SOD types, discrepancy tracking)
+- [x] Inventory API — jobs: list (with filters), unfinished, markPickup, markMissing
+- [x] Inventory API — records: createEOD, createSOD (with auto-discrepancy detection), list, latest
+- [x] End-of-day verification flow (counts unfinished overnight jobs, records rim count)
+- [x] Start-of-day reconciliation against previous EOD (compares rim counts, links to previousEodId)
+- [x] Discrepancy flagging and admin notification (auto-detects mismatch → dispatches in-app notification to all admins)
+- [x] Track all overnight jobs (`isOvernight` flag on jobs, `jobs.unfinished` endpoint)
+- [x] Notification schema (`notification` table — types: inventory_discrepancy, discount_request, discount_approved/rejected, job_completed)
+- [x] Notification API — list, unreadCount, markRead, markAllRead (protected, per-user)
+- [x] Notification service — create, notifyAdmins, listForUser, unreadCount, markRead, markAllRead
+- [x] SOD form component (compares with latest EOD, discrepancy alert, explanation field)
+- [x] Frontend hooks: useOvernightJobs, useUnfinishedJobs, useInventoryRecords, useLatestRecords
 
 ### Admin Module — §2.5 (Partially Complete)
 
@@ -168,13 +172,20 @@
 - [ ] Save disclaimer under customer profile
 - [ ] 7 disclaimer sections as per spec
 
-### Notifications & Communication (Not Started)
+### Notifications & Communication (Partially Complete)
+
+**Done:**
+
+- [x] Notification schema (`notification` table with type enum, recipient FK, read status)
+- [x] In-app notification system (API: list, unreadCount, markRead, markAllRead)
+- [x] Inventory discrepancy → admin notification trigger (wired in createSOD)
+
+**Not Done:**
 
 - [ ] SMS integration (external API endpoint)
 - [ ] Email integration (Resend — configured but not wired)
-- [ ] In-app notification system
-- [ ] Notification schema (no table in DB)
-- [ ] All notification triggers per spec table
+- [ ] Notification bell UI in header with unread count
+- [ ] Remaining notification triggers per spec table (quote sent, job completed, payment reminder, discount request/approval)
 
 ### Cross-Cutting Concerns (Not Started)
 
@@ -236,14 +247,15 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ---
 
-### Phase 4: Notification System (Not Started)
+### Phase 4: Notification System (Partially Complete)
 
 > Priority: **High** — Multiple modules depend on notifications
 
 #### Step 4.1: In-App Notifications
 
-- [ ] Notification schema (DB table)
-- [ ] Notification API (list, mark read, mark all read)
+- [x] Notification schema (DB table — `notification` with type enum, recipient FK, read status, reference linking)
+- [x] Notification API (list, unreadCount, markRead, markAllRead — `protectedProcedure`)
+- [x] Notification service (create, notifyAdmins, listForUser, unreadCount, markRead, markAllRead)
 - [ ] Notification bell in header with unread count
 - [ ] Notification dropdown/panel
 
@@ -263,27 +275,24 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 #### Step 4.4: Notification Triggers
 
-- [ ] Wire all triggers per spec: quote sent, job completed, payment reminder, inventory discrepancy, discount request, discount approved/rejected
+- [x] Inventory discrepancy → admin notification (wired in `createSOD` service)
+- [ ] Quote sent → customer notification
+- [ ] Job completed → customer SMS + cashier in-app
+- [ ] Payment reminder → customer
+- [ ] Discount request → admin
+- [ ] Discount approved/rejected → floor manager
 
 ---
 
-### Phase 5: Inventory Module (Not Started)
+### Phase 5: Inventory Module ✅ COMPLETE
 
-> Priority: **Medium** — Depends on Job schema (now complete)
+> ~~Priority: **Medium**~~ — Done
 
-#### Step 5.1: Inventory API
-
-- [ ] `inventory.overnightJobs.list` — all overnight/unfinished jobs
-- [ ] `inventory.records.createEOD` — end-of-day count
-- [ ] `inventory.records.createSOD` — start-of-day verification
-- [ ] `inventory.records.flagDiscrepancy` — flag + notify admin
-
-#### Step 5.2: Inventory Frontend
-
-- [ ] Replace mock data with real queries
-- [ ] EOD verification form
-- [ ] SOD reconciliation view
-- [ ] Discrepancy flagging UI
+- [x] Step 5.1: Inventory API — `jobs.list`, `jobs.unfinished`, `jobs.markPickup`, `jobs.markMissing`
+- [x] Step 5.1: Inventory records API — `records.createEOD`, `records.createSOD`, `records.list`, `records.latest`
+- [x] Step 5.1: Discrepancy auto-detection in `createSOD` + admin notification dispatch
+- [x] Step 5.2: Frontend wired to real API (overnight jobs, SOD form, hooks for all endpoints)
+- [x] Step 5.2: SOD reconciliation view with previous EOD comparison and discrepancy alert
 
 ---
 
@@ -394,7 +403,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - ~~Accept dialog technician dropdown hardcoded~~ → ✅ Now loads from `technicians.list` API
 - ~~QuoteGeneratorSheet uses ~15 manual useState calls + hand-rolled validation~~ → ✅ Refactored to `@tanstack/react-form` with Zod schemas (two forms: rim + welding), matching project patterns from customer-modal/service-modal
 - ~~Dashboard metrics currently use mock/calculated data~~ → ✅ Real DB aggregation via `dashboard.ts` router (revenue, open/active jobs, overnight, team activity, attention counts)
-- Inventory page still uses hardcoded mock data
+- ~~Inventory page still uses hardcoded mock data~~ → ✅ Now wired to real API
 - No real-time updates yet (polling could be interim via TanStack Query refetchInterval)
 - No file upload infrastructure (Azure Blob Storage needed for proof-of-work videos)
 - `acceptedById`/`completedById` audit columns missing from job table

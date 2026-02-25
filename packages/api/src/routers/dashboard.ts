@@ -56,7 +56,10 @@ async function jobCountSparkline(
 ): Promise<number[]> {
   const statusCondition =
     statusFilter && statusFilter.length > 0
-      ? sql`AND j.status IN (${sql.join(statusFilter.map((s) => sql`${s}`), sql`, `)})`
+      ? sql`AND j.status IN (${sql.join(
+          statusFilter.map((s) => sql`${s}`),
+          sql`, `,
+        )})`
       : sql``;
 
   const result = await db.execute<{ val: string }>(sql`

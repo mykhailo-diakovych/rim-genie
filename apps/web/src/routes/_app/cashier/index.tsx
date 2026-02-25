@@ -151,11 +151,23 @@ function InvoiceCard({
           <Eye />
           View
         </Button>
-        <Button className="w-18" variant="outline" color="success" disabled={!canPay} onClick={onPay}>
+        <Button
+          className="w-18"
+          variant="outline"
+          color="success"
+          disabled={!canPay}
+          onClick={onPay}
+        >
           <IconPay />
           Pay
         </Button>
-        <Button className="w-18" variant="outline" color="destructive" onClick={onDelete} disabled={isDeleting}>
+        <Button
+          className="w-18"
+          variant="outline"
+          color="destructive"
+          onClick={onDelete}
+          disabled={isDeleting}
+        >
           <Trash2 />
           Delete
         </Button>
