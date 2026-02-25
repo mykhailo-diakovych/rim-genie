@@ -136,7 +136,7 @@ export function setDueDate(jobId: string, dueDate: Date, isOvernight: boolean) {
   });
 }
 
-export function addNote(jobId: string, specialNotes: string) {
+export function addNote(jobId: string, note: string) {
   return Effect.gen(function* () {
     const found = yield* Effect.tryPromise(() =>
       db.query.job.findFirst({ where: eq(job.id, jobId) }),
@@ -146,8 +146,10 @@ export function addNote(jobId: string, specialNotes: string) {
       return yield* Effect.fail(new JobNotFound({ id: jobId }));
     }
 
+    const combined = found.specialNotes ? `${found.specialNotes}\n${note}` : note;
+
     const [updated] = yield* Effect.tryPromise(() =>
-      db.update(job).set({ specialNotes }).where(eq(job.id, jobId)).returning(),
+      db.update(job).set({ specialNotes: combined }).where(eq(job.id, jobId)).returning(),
     );
 
     return updated!;

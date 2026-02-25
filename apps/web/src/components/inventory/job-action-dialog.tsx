@@ -47,10 +47,7 @@ export function JobActionDialog({ job, action, trigger }: JobActionDialogProps) 
       } else if (action === "missing") {
         await client.inventory.jobs.markMissing({ jobId: job.id, notes: notes || undefined });
       } else {
-        await client.inventory.jobs.markMissing({
-          jobId: job.id,
-          notes: `[OVERNIGHT]: ${notes || "Kept overnight"}`,
-        });
+        await client.inventory.jobs.markOvernight({ jobId: job.id, notes: notes || undefined });
       }
     },
     onSuccess: async () => {

@@ -78,7 +78,11 @@ export function AcceptJobDialog({
       const dueDate = getDateValue(completionDate);
       for (const id of jobIds) {
         await client.technician.jobs.accept({ jobId: id, technicianId: technician });
-        await client.technician.jobs.setDueDate({ jobId: id, dueDate });
+        await client.technician.jobs.setDueDate({
+          jobId: id,
+          dueDate,
+          isOvernight: completionDate !== "today",
+        });
       }
     },
     onSuccess: async () => {

@@ -59,6 +59,13 @@ export const inventoryRouter = {
         return runEffect(JobService.completeJob(input.jobId));
       }),
 
+    markOvernight: inventoryClerkProcedure
+      .input(z.object({ jobId: z.string(), notes: z.string().optional() }))
+      .handler(async ({ input }) => {
+        const note = input.notes ? `[OVERNIGHT]: ${input.notes}` : "[OVERNIGHT]: Kept overnight";
+        return runEffect(JobService.addNote(input.jobId, note));
+      }),
+
     markMissing: inventoryClerkProcedure
       .input(z.object({ jobId: z.string(), notes: z.string().optional() }))
       .handler(async ({ input }) => {
