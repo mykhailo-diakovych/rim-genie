@@ -72,6 +72,7 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: orpc.employees.key() });
       toast.success(m.employees_toast_created());
+      form.reset();
       setOpen(false);
     },
     onError: (error) => {
