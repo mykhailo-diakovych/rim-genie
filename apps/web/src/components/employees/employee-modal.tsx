@@ -40,6 +40,11 @@ const baseFieldsSchema = z.object({
     .string()
     .min(1, m.employees_validation_email_required())
     .email(m.employees_validation_email_invalid()),
+  employeeId: z
+    .string()
+    .min(3, m.validation_employee_id_required())
+    .max(30)
+    .regex(/^[a-zA-Z0-9_.]+$/, m.validation_employee_id_required()),
   role: z.enum(userRoleEnum.enumValues, { message: m.employees_validation_role_required() }),
 });
 
@@ -96,10 +101,11 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
     ? {
         ...splitName(employee.name),
         email: employee.email,
+        employeeId: employee.username ?? "",
         role: employee.role ?? ("" as string),
         pin: "",
       }
-    : { firstName: "", lastName: "", email: "", role: "" as string, pin: "" };
+    : { firstName: "", lastName: "", email: "", employeeId: "", role: "" as string, pin: "" };
 
   const form = useForm({
     defaultValues: initial,
@@ -110,6 +116,7 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
           firstName: value.firstName,
           lastName: value.lastName,
           email: value.email,
+          employeeId: value.employeeId,
           role: value.role as UserRole,
         });
       } else {
@@ -260,6 +267,27 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
                 )}
               </form.Field>
             </div>
+
+            <form.Field name="employeeId">
+              {(field) => (
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor={field.name}>{m.employees_label_employee_id()}</Label>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    error={field.state.meta.errors.length > 0}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <p className="font-rubik text-xs text-red">
+                      {field.state.meta.errors[0]?.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            </form.Field>
 
             {!isEdit && (
               <form.Field name="pin">

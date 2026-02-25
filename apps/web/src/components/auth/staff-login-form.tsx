@@ -1,10 +1,12 @@
 import { useState } from "react";
 
 import { useForm } from "@tanstack/react-form";
+import { useNavigate } from "@tanstack/react-router";
 import { UserRound } from "lucide-react";
 import { toast } from "sonner";
 import z from "zod";
 
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,12 +14,24 @@ import { PinInput } from "@/components/ui/pin-input";
 import { m } from "@/paraglide/messages";
 
 export function StaffLoginForm() {
+  const navigate = useNavigate();
   const [pin, setPin] = useState("");
 
   const form = useForm({
     defaultValues: { employeeId: "" },
-    onSubmit: async () => {
-      toast.info(m.toast_staff_login_soon());
+    onSubmit: async ({ value }) => {
+      await authClient.signIn.username(
+        { username: value.employeeId, password: pin },
+        {
+          onSuccess: () => {
+            navigate({ to: "/dashboard" });
+            toast.success(m.toast_signed_in());
+          },
+          onError: (error) => {
+            toast.error(error.error.message || error.error.statusText);
+          },
+        },
+      );
     },
     validators: {
       onSubmit: z.object({
@@ -65,7 +79,11 @@ export function StaffLoginForm() {
 
       <form.Subscribe>
         {(state) => (
-          <Button type="submit" fullWidth disabled={!state.canSubmit || state.isSubmitting}>
+          <Button
+            type="submit"
+            fullWidth
+            disabled={!state.canSubmit || state.isSubmitting || pin.length !== 6}
+          >
             {state.isSubmitting ? m.btn_logging_in() : m.btn_login()}
           </Button>
         )}

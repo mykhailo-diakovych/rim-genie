@@ -11,6 +11,7 @@ export interface EmployeeCardData {
   id: string;
   name: string;
   email: string;
+  username: string | null;
   role: UserRole | null;
 }
 
@@ -58,8 +59,8 @@ export function EmployeeCard({ employee, actions }: EmployeeCardProps) {
           {employee.role && <RoleBadge role={employee.role} />}
         </div>
         <div className="flex items-center gap-2 font-rubik text-xs leading-3.5">
-          <span className="text-label">{m.employees_label_user_id()}</span>
-          <span className="text-body">{employee.id.slice(0, 8)}</span>
+          <span className="text-label">{m.employees_label_employee_id()}</span>
+          <span className="text-body">{employee.username ?? employee.id.slice(0, 8)}</span>
           <span className="size-1 rounded-full bg-label" />
           <span className="text-label">{m.employees_label_email()}</span>
           <span className="text-body">{employee.email}</span>

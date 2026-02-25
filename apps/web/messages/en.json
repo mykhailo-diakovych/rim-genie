@@ -78,6 +78,7 @@
   "employees_label_first_name": "First Name:",
   "employees_label_last_name": "Last Name:",
   "employees_label_role": "Role:",
+  "employees_label_employee_id": "Employee ID:",
   "employees_label_pin": "PIN:",
   "employees_role_placeholder": "Select role",
   "employees_validation_first_name_required": "First name is required",

@@ -10,10 +10,17 @@ import { adminProcedure } from "../index";
 
 const pinField = z.string().length(6).regex(/^\d+$/);
 
+const employeeIdField = z
+  .string()
+  .min(3)
+  .max(30)
+  .regex(/^[a-zA-Z0-9_.]+$/);
+
 const createEmployeeSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.email(),
+  employeeId: employeeIdField,
   pin: pinField,
   role: z.enum(userRoleEnum.enumValues),
 });
@@ -23,6 +30,7 @@ const updateEmployeeSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.email(),
+  employeeId: employeeIdField,
   role: z.enum(userRoleEnum.enumValues),
 });
 
@@ -32,8 +40,16 @@ export const employeesRouter = {
   }),
 
   create: adminProcedure.input(createEmployeeSchema).handler(async ({ input }) => {
+    const existingUsername = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.username, input.employeeId));
+    if (existingUsername.length > 0) {
+      throw new ORPCError("CONFLICT", { message: "A user with this Employee ID already exists" });
+    }
+
     try {
-      return await auth.api.createUser({
+      const created = await auth.api.createUser({
         body: {
           name: `${input.firstName} ${input.lastName}`,
           email: input.email,
@@ -41,6 +57,10 @@ export const employeesRouter = {
           role: input.role,
         },
       });
+
+      await db.update(user).set({ username: input.employeeId }).where(eq(user.id, created.user.id));
+
+      return { ...created, user: { ...created.user, username: input.employeeId } };
     } catch (error) {
       if (error instanceof ORPCError) throw error;
       const msg = error instanceof Error ? error.message : String(error);
@@ -52,12 +72,20 @@ export const employeesRouter = {
   }),
 
   update: adminProcedure.input(updateEmployeeSchema).handler(async ({ input }) => {
-    const existing = await db
+    const existingEmail = await db
       .select({ id: user.id })
       .from(user)
       .where(and(eq(user.email, input.email), ne(user.id, input.id)));
-    if (existing.length > 0) {
+    if (existingEmail.length > 0) {
       throw new ORPCError("CONFLICT", { message: "A user with this email already exists" });
+    }
+
+    const existingUsername = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(and(eq(user.username, input.employeeId), ne(user.id, input.id)));
+    if (existingUsername.length > 0) {
+      throw new ORPCError("CONFLICT", { message: "A user with this Employee ID already exists" });
     }
 
     const [updated] = await db
@@ -65,6 +93,7 @@ export const employeesRouter = {
       .set({
         name: `${input.firstName} ${input.lastName}`,
         email: input.email,
+        username: input.employeeId,
         role: input.role,
       })
       .where(eq(user.id, input.id))
