@@ -13,7 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { authClient } from "@/lib/auth-client";
 import { client, orpc } from "@/utils/orpc";
 
 import { DialogCustomerRow } from "./dialog-shared";
@@ -23,6 +22,7 @@ interface ReverseJobDialogProps {
   customer: string;
   jobId: string;
   jobIds: string[];
+  technicianId: string;
   triggerClassName: string;
   triggerContent: React.ReactNode;
 }
@@ -31,6 +31,7 @@ export function ReverseJobDialog({
   customer,
   jobId,
   jobIds,
+  technicianId,
   triggerClassName,
   triggerContent,
 }: ReverseJobDialogProps) {
@@ -38,17 +39,15 @@ export function ReverseJobDialog({
   const [reason, setReason] = useState("");
   const { pin, inputsRef, handlePinChange, handlePinKeyDown, resetPin } = usePinState();
   const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
 
   const reverseMutation = useMutation({
     mutationFn: async () => {
       const pinString = pin.join("");
       if (!reason.trim()) throw new Error("Please enter a reversal reason");
       if (pinString.length !== 6) throw new Error("Please enter a complete 6-digit code");
-      if (!session?.user?.id) throw new Error("Not authenticated");
 
       const { valid } = await client.technician.jobs.verifyPin({
-        userId: session.user.id,
+        userId: technicianId,
         pin: pinString,
       });
       if (!valid) throw new Error("Invalid technician code");

@@ -107,27 +107,24 @@ export function useJobs(params?: UseJobsParams) {
         completed: [] as JobGroup[],
       };
 
-    const allGroups = groupJobsByInvoice(data);
+    const assignJobs: ApiJob[] = [];
+    const inProgressJobs: ApiJob[] = [];
+    const completedJobs: ApiJob[] = [];
 
-    const assign: JobGroup[] = [];
-    const inProgress: JobGroup[] = [];
-    const completed: JobGroup[] = [];
-
-    for (const group of allGroups) {
-      const statuses = group.jobs.map((j) => j.status);
-      if (statuses.every((s) => s === "completed")) {
-        completed.push(group);
-      } else if (statuses.some((s) => s === "accepted" || s === "in_progress")) {
-        inProgress.push(group);
-      } else if (statuses.every((s) => s === "pending")) {
-        assign.push(group);
+    for (const job of data) {
+      if (job.status === "completed") {
+        completedJobs.push(job);
+      } else if (job.status === "accepted" || job.status === "in_progress") {
+        inProgressJobs.push(job);
+      } else {
+        assignJobs.push(job);
       }
     }
 
     return {
-      assign: filterGroupsByDate(assign, dateFilter),
-      inProgress: filterGroupsByDate(inProgress, dateFilter),
-      completed: filterGroupsByDate(completed, dateFilter),
+      assign: filterGroupsByDate(groupJobsByInvoice(assignJobs), dateFilter),
+      inProgress: filterGroupsByDate(groupJobsByInvoice(inProgressJobs), dateFilter),
+      completed: filterGroupsByDate(groupJobsByInvoice(completedJobs), dateFilter),
     };
   }, [data, dateFilter]);
 

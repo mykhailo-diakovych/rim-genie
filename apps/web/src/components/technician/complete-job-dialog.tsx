@@ -14,7 +14,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { authClient } from "@/lib/auth-client";
 import { client, orpc } from "@/utils/orpc";
 
 import { DialogCustomerRow } from "./dialog-shared";
@@ -25,15 +24,15 @@ export function CompleteJobDialog({ group }: { group: JobGroup }) {
   const [notes, setNotes] = useState("");
   const [techCode, setTechCode] = useState("");
   const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
+  const technicianId = group.jobs[0]?.technician?.id;
 
   const completeMutation = useMutation({
     mutationFn: async () => {
       if (!techCode.trim()) throw new Error("Please enter the technician code");
-      if (!session?.user?.id) throw new Error("Not authenticated");
+      if (!technicianId) throw new Error("No technician assigned");
 
       const { valid } = await client.technician.jobs.verifyPin({
-        userId: session.user.id,
+        userId: technicianId,
         pin: techCode,
       });
       if (!valid) throw new Error("Invalid technician code");

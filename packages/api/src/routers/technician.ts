@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { desc, eq, and } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { verifyPassword } from "@rim-genie/auth/crypto";
 
 import { db } from "@rim-genie/db";
@@ -108,7 +108,7 @@ export const technicianRouter = {
       .input(z.object({ userId: z.string(), pin: z.string() }))
       .handler(async ({ input }) => {
         const found = await db.query.account.findFirst({
-          where: and(eq(account.userId, input.userId), eq(account.providerId, "credential")),
+          where: eq(account.userId, input.userId),
         });
 
         if (!found?.password) {

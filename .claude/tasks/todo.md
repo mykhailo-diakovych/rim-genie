@@ -101,11 +101,11 @@
 - [x] Technicians list API — returns `{id, name}[]` for dropdowns
 - [x] Page with tabs wired to real API via `useJobs()` hook (New, Assign, In Progress, Completed)
 - [x] Jobs grouped by invoiceId client-side (one card per invoice)
-- [x] Tab categorization: Assign (all pending), In Progress (any accepted/in_progress), Completed (all completed)
+- [x] Tab categorization: per-job status categorization (each job individually sorted into Assign/In Progress/Completed, then grouped by invoice — same invoice can appear in multiple tabs)
 - [x] Accept job dialog: dynamic technician dropdown from API, due date (Today/Tomorrow/In a week), PIN verification, overnight flag auto-set
-- [x] Complete job dialog: tech code verification via `verifyPin`, notes saved via `addNote`
-- [x] Reverse job dialog: wired to `reverse` API with reason + PIN verification
-- [x] Detail views (3 variants: assign, job, completed) display real job data from invoiceItem relations
+- [x] Complete job dialog: tech code verification via `verifyPin` (verifies assigned technician's PIN), notes saved via `addNote`
+- [x] Reverse job dialog: wired to `reverse` API with reason + PIN verification (verifies assigned technician's PIN); "Reverse all" filters out pending jobs; per-row Reverse hidden for pending jobs
+- [x] Detail views (3 variants: assign, job, completed) display real job data from invoiceItem relations; detail view derives group from live query data (no stale snapshots), auto-closes when group disappears after reversal
 - [x] Cache invalidation on mutations, toast feedback
 - [x] Filter row wired: owner filter ("All"/"Mine") passes `technicianId` to API, date filter (Today/This week/This month) filters client-side
 - [x] Filter state lifted to page level, shared across all tabs
@@ -145,6 +145,8 @@
 
 - [x] Service catalog CRUD (rim + general types, vehicle types, sizes, costs) — `manage.ts` router + `/manage` page with tabs, search, pagination
 - [x] Employee management (create, edit, reset PIN, role assignment) — `employees.ts` router + `/employees` page with cards, modals
+- [x] Reset PIN requires old PIN verification (backend verifies hash via `verifyPassword` before allowing change)
+- [x] Auto-generated Employee ID (`employees.generateId` procedure — `firstname.lastname` slug with numeric suffix if taken, debounced auto-fill in create modal)
 - [x] Employee deactivation & deletion flow — deactivate (ban), activate (unban), delete (requires deactivated first) with confirmation modals, visual "Deactivated" badge + dimmed card styling
 - [x] Dashboard with metrics, team activity, attention items (real DB aggregation) — `dashboard.ts` router + `/dashboard` page with sparkline charts, period selector (Today/Week/Month)
 - [x] VIP discount auto-applied at quote creation time (in `floor.ts` — checks `isVip && discount`)
@@ -420,6 +422,11 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - ~~QuoteGeneratorSheet uses ~15 manual useState calls~~ → ✅ Refactored to `@tanstack/react-form` with Zod schemas
 - ~~Dashboard metrics use mock data~~ → ✅ Real DB aggregation via `dashboard.ts` router
 - ~~Inventory page uses mock data~~ → ✅ Now wired to real API
+- ~~Job grouping bug: entire invoice group moved tabs when one job accepted~~ → ✅ Fixed: per-job categorization before grouping by invoice
+- ~~Stale detail view: technician detail view held snapshot of group data~~ → ✅ Fixed: stores invoiceId ref, derives group from live useJobs data, auto-closes on group disappearance
+- ~~Reverse/complete dialogs verified logged-in user's PIN instead of assigned technician's~~ → ✅ Fixed: all dialogs now pass technician's userId to verifyPin
+- ~~Reverse all included pending job IDs causing backend rejection~~ → ✅ Fixed: filters to non-pending jobs only; per-row Reverse hidden for pending
+- ~~verifyPin filtered by providerId="credential" which could miss accounts~~ → ✅ Fixed: queries by userId only (matches resetPin pattern)
 - No real-time updates yet (polling could be interim via TanStack Query refetchInterval)
 - No file upload infrastructure (Azure Blob Storage needed for proof-of-work videos)
 - `acceptedById`/`completedById` audit columns missing from job table

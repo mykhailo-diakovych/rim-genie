@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
@@ -11,7 +11,7 @@ import { CompletedJobCard } from "@/components/technician/completed-job-card";
 import { FilterRow, type DateFilter, type OwnerFilter } from "@/components/technician/filter-row";
 import { JobCard } from "@/components/technician/job-card";
 import { JobDetailView } from "@/components/technician/job-detail-view";
-import { TAB_CONFIG, type JobGroup, type TabValue } from "@/components/technician/types";
+import { TAB_CONFIG, type TabValue } from "@/components/technician/types";
 import { useJobs } from "@/components/technician/use-jobs";
 
 const TAB_VALUES = TAB_CONFIG.map((t) => t.value);
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_app/technician")({
   component: TechnicianPage,
 });
 
-type DetailView = { group: JobGroup; source: "in-progress" | "assign" | "completed" };
+type DetailView = { invoiceId: string; source: "in-progress" | "assign" | "completed" };
 
 function TechnicianPage() {
   const { tab: activeTab } = Route.useSearch();
@@ -66,15 +66,25 @@ function TechnicianPage() {
     measureIndicator(tab);
   }
 
-  if (detailView !== null) {
+  const detailGroup = useMemo(() => {
+    if (!detailView) return null;
+    const sourceMap = { assign, "in-progress": inProgress, completed };
+    return sourceMap[detailView.source].find((g) => g.invoiceId === detailView.invoiceId) ?? null;
+  }, [detailView, assign, inProgress, completed]);
+
+  useEffect(() => {
+    if (detailView && !detailGroup && !isLoading) setDetailView(null);
+  }, [detailView, detailGroup, isLoading]);
+
+  if (detailView && detailGroup) {
     const onBack = () => setDetailView(null);
     if (detailView.source === "assign") {
-      return <AssignDetailView group={detailView.group} onBack={onBack} />;
+      return <AssignDetailView group={detailGroup} onBack={onBack} />;
     }
     if (detailView.source === "completed") {
-      return <CompletedDetailView group={detailView.group} onBack={onBack} />;
+      return <CompletedDetailView group={detailGroup} onBack={onBack} />;
     }
-    return <JobDetailView group={detailView.group} onBack={onBack} />;
+    return <JobDetailView group={detailGroup} onBack={onBack} />;
   }
 
   return (
@@ -138,7 +148,9 @@ function TechnicianPage() {
                 <JobCard
                   key={group.invoiceId}
                   group={group}
-                  onView={() => setDetailView({ group, source: "in-progress" })}
+                  onView={() =>
+                    setDetailView({ invoiceId: group.invoiceId, source: "in-progress" })
+                  }
                 />
               ))}
               {inProgress.length === 0 && (
@@ -161,7 +173,7 @@ function TechnicianPage() {
                 <AssignJobCard
                   key={group.invoiceId}
                   group={group}
-                  onView={() => setDetailView({ group, source: "assign" })}
+                  onView={() => setDetailView({ invoiceId: group.invoiceId, source: "assign" })}
                 />
               ))}
               {assign.length === 0 && (
@@ -188,7 +200,7 @@ function TechnicianPage() {
                 <CompletedJobCard
                   key={group.invoiceId}
                   group={group}
-                  onView={() => setDetailView({ group, source: "completed" })}
+                  onView={() => setDetailView({ invoiceId: group.invoiceId, source: "completed" })}
                 />
               ))}
               {completed.length === 0 && (
