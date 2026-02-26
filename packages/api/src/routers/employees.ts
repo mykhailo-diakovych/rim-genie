@@ -115,4 +115,40 @@ export const employeesRouter = {
       });
       return { success: true };
     }),
+
+  deactivate: adminProcedure
+    .input(z.object({ userId: z.string().min(1) }))
+    .handler(async ({ input, context }) => {
+      await auth.api.banUser({
+        body: { userId: input.userId },
+        headers: context.headers,
+      });
+      return { success: true };
+    }),
+
+  activate: adminProcedure
+    .input(z.object({ userId: z.string().min(1) }))
+    .handler(async ({ input }) => {
+      await db.update(user).set({ banned: false }).where(eq(user.id, input.userId));
+      return { success: true };
+    }),
+
+  delete: adminProcedure
+    .input(z.object({ userId: z.string().min(1) }))
+    .handler(async ({ input, context }) => {
+      const [target] = await db
+        .select({ banned: user.banned })
+        .from(user)
+        .where(eq(user.id, input.userId));
+      if (!target?.banned) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Employee must be deactivated before deletion",
+        });
+      }
+      await auth.api.removeUser({
+        body: { userId: input.userId },
+        headers: context.headers,
+      });
+      return { success: true };
+    }),
 };

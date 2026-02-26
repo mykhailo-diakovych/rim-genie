@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { UserRole } from "@rim-genie/db/schema";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
 import { RoleBadge } from "./role-badge";
@@ -13,6 +14,7 @@ export interface EmployeeCardData {
   email: string;
   username: string | null;
   role: UserRole | null;
+  banned: boolean | null;
 }
 
 export function IconEdit({ className }: { className?: string }) {
@@ -49,14 +51,26 @@ interface EmployeeCardProps {
 }
 
 export function EmployeeCard({ employee, actions }: EmployeeCardProps) {
+  const isDeactivated = employee.banned === true;
+
   return (
-    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card">
+    <div
+      className={cn(
+        "flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card",
+        isDeactivated && "opacity-60",
+      )}
+    >
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-4">
           <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {employee.name}
           </span>
           {employee.role && <RoleBadge role={employee.role} />}
+          {isDeactivated && (
+            <span className="rounded-full bg-error-100 px-2 py-0.5 font-rubik text-xs text-destructive">
+              {m.employees_badge_deactivated()}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 font-rubik text-xs leading-3.5">
           <span className="text-label">{m.employees_label_employee_id()}</span>

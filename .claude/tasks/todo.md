@@ -145,6 +145,7 @@
 
 - [x] Service catalog CRUD (rim + general types, vehicle types, sizes, costs) — `manage.ts` router + `/manage` page with tabs, search, pagination
 - [x] Employee management (create, edit, reset PIN, role assignment) — `employees.ts` router + `/employees` page with cards, modals
+- [x] Employee deactivation & deletion flow — deactivate (ban), activate (unban), delete (requires deactivated first) with confirmation modals, visual "Deactivated" badge + dimmed card styling
 - [x] Dashboard with metrics, team activity, attention items (real DB aggregation) — `dashboard.ts` router + `/dashboard` page with sparkline charts, period selector (Today/Week/Month)
 - [x] VIP discount auto-applied at quote creation time (in `floor.ts` — checks `isVip && discount`)
 - [x] VIP badge on customer list cards + VIP status on customer profile
@@ -434,4 +435,4 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - ~~Frontend routes wide open — no `beforeLoad` guards on floor/cashier/technician/inventory~~ → ✅ All role-restricted routes now have `beforeLoad` guards via centralized `requireRoles()`; sidebar uses `hasRouteAccess()` to hide unauthorized nav items
 - Authorization before changes/deletions (audit log system) — not implemented
 - No soft deletes — accidental deletions are unrecoverable
-- Ban enforcement — schema supports `user.banned`/`banReason`/`banExpires` but enforcement not verified in middleware
+- [x] Ban enforcement — admin can deactivate (ban) employees via `employees.deactivate`, reactivate via `employees.activate`, and delete (only if banned) via `employees.delete`; UI shows conditional actions based on `banned` state

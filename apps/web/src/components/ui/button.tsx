@@ -16,6 +16,7 @@ const buttonVariants = cva(
         default: "",
         destructive: "",
         success: "",
+        warning: "",
       },
       size: {
         default: "",
@@ -40,6 +41,11 @@ const buttonVariants = cva(
         className: "bg-green hover:bg-green/90 focus-visible:ring-green/50",
       },
       {
+        variant: "default",
+        color: "warning",
+        className: "text-badge-orange hover:bg-badge-orange/90 focus-visible:ring-badge-orange/50",
+      },
+      {
         variant: "outline",
         color: "default",
         className: "text-blue ring-blue hover:bg-blue/5 focus-visible:ring-blue/50",
@@ -54,6 +60,12 @@ const buttonVariants = cva(
         variant: "outline",
         color: "success",
         className: "text-green ring-green hover:bg-green/5 focus-visible:ring-green/50",
+      },
+      {
+        variant: "outline",
+        color: "warning",
+        className:
+          "text-badge-orange ring-badge-orange hover:bg-badge-orange/5 focus-visible:ring-badge-orange/50",
       },
     ],
     defaultVariants: {
