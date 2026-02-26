@@ -18,6 +18,16 @@ function SparklineTooltip({ active, payload }: TooltipContentProps<number, strin
   );
 }
 
+function ActiveDot({ cx, cy, fill }: { cx?: number; cy?: number; fill?: string }) {
+  if (cx === undefined || cy === undefined) return null;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={9} fill={fill} fillOpacity={0.15} />
+      <circle cx={cx} cy={cy} r={3.5} fill={fill} stroke="white" strokeWidth={2} />
+    </g>
+  );
+}
+
 interface MetricCardProps {
   title: string;
   subtitle: string;
@@ -97,7 +107,7 @@ export function MetricCard({
               </defs>
               <Tooltip
                 content={SparklineTooltip}
-                cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: "3 3" }}
+                cursor={{ stroke: chartColor, strokeWidth: 1, strokeOpacity: 0.35 }}
               />
               <Area
                 type="monotone"
@@ -106,7 +116,7 @@ export function MetricCard({
                 strokeWidth={1.5}
                 fill={`url(#${gradientId})`}
                 dot={false}
-                activeDot={{ r: 3, fill: chartColor, stroke: "white", strokeWidth: 1.5 }}
+                activeDot={<ActiveDot />}
                 isAnimationActive={false}
               />
             </AreaChart>
