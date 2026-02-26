@@ -18,7 +18,7 @@ const TAB_VALUES = TAB_CONFIG.map((t) => t.value);
 
 export const Route = createFileRoute("/_app/technician")({
   validateSearch: (search: Record<string, unknown>): { tab: TabValue } => ({
-    tab: TAB_VALUES.includes(search.tab as TabValue) ? (search.tab as TabValue) : "in-progress",
+    tab: TAB_VALUES.includes(search.tab as TabValue) ? (search.tab as TabValue) : "new",
   }),
   beforeLoad: requireRoles(["admin", "technician"]),
   head: () => ({
