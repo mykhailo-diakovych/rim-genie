@@ -326,12 +326,8 @@ function InvoiceDetailPage() {
               <tr className="border-t border-b border-field-line text-left text-label">
                 <th className="w-18 border-l border-field-line px-2 py-2 font-normal">#</th>
                 <th className="border-l border-field-line px-2 py-2 font-normal">Description</th>
-                <th className="w-18 border-l border-field-line px-2 py-2 font-normal">
-                  Quantity
-                </th>
-                <th className="w-30 border-l border-field-line px-2 py-2 font-normal">
-                  Unit Cost
-                </th>
+                <th className="w-18 border-l border-field-line px-2 py-2 font-normal">Quantity</th>
+                <th className="w-30 border-l border-field-line px-2 py-2 font-normal">Unit Cost</th>
                 <th className="w-30 border-r border-l border-field-line px-2 py-2 font-normal">
                   Total
                 </th>
