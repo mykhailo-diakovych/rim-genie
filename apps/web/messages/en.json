@@ -152,5 +152,15 @@
   "manage_modal_delete_undone": "This action cannot be undone.",
   "manage_pagination_show": "Show",
   "manage_pagination_of": "of",
-  "manage_pagination_entries": "entries"
+  "manage_pagination_entries": "entries",
+
+  "search_placeholder": "Search customers, quotes, invoices…",
+  "search_group_customers": "Customers",
+  "search_group_quotes": "Quotes",
+  "search_group_invoices": "Invoices",
+  "search_group_employees": "Employees",
+  "search_no_results": "No results found.",
+  "search_empty": "Start typing to search…",
+  "search_quote_number": "Quote #{number}",
+  "search_invoice_number": "INV #{number}"
 }

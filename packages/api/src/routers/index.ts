@@ -8,6 +8,7 @@ import { floorRouter } from "./floor";
 import { inventoryRouter } from "./inventory";
 import { manageRouter } from "./manage";
 import { notificationRouter } from "./notification";
+import { searchRouter } from "./search";
 import { technicianRouter } from "./technician";
 
 export const appRouter = {
@@ -24,6 +25,7 @@ export const appRouter = {
   inventory: inventoryRouter,
   manage: manageRouter,
   notifications: notificationRouter,
+  search: searchRouter,
   technician: technicianRouter,
   dashboard: dashboardRouter,
 };
