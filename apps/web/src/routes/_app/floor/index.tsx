@@ -5,6 +5,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/floor/")({
@@ -93,6 +101,7 @@ function QuoteCard({
 function FloorPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const quotesQuery = useQuery(
     orpc.floor.quotes.list.queryOptions({
@@ -104,6 +113,7 @@ function FloorPage() {
     ...orpc.floor.quotes.delete.mutationOptions(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
+      setDeleteConfirm(null);
     },
     onError: (err) => toast.error(`Failed to delete quote: ${err.message}`),
   });
@@ -155,12 +165,48 @@ function FloorPage() {
               key={quote.id}
               quote={quote}
               quoteId={quote.id}
-              onDelete={() => deleteQuote.mutate({ id: quote.id })}
-              isDeleting={deleteQuote.isPending && deleteQuote.variables?.id === quote.id}
+              onDelete={() => setDeleteConfirm(quote.id)}
+              isDeleting={false}
             />
           ))
         )}
       </div>
+
+      <Dialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirm(null);
+        }}
+      >
+        <DialogContent>
+          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-error-50 bg-error-100">
+                <Trash2 className="size-6 text-destructive" />
+              </div>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <DialogTitle>Delete quote</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete this quote?
+                  <br />
+                  This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose render={<Button variant="ghost" type="button">Cancel</Button>} />
+              <Button
+                color="destructive"
+                className="w-32"
+                onClick={() => deleteConfirm && deleteQuote.mutate({ id: deleteConfirm })}
+                disabled={deleteQuote.isPending}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

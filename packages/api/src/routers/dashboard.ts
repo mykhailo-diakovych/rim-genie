@@ -190,7 +190,7 @@ export const dashboardRouter = {
       },
       {
         key: "sleep_time",
-        value: `${overnight}h`,
+        value: String(overnight),
         change: changePercent(overnight, prvOvernight),
         sparkline: overnightSparkline,
       },

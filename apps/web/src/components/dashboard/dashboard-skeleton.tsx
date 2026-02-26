@@ -28,7 +28,7 @@ function MetricCardSkeleton() {
 
 export function DashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-5 p-5">
+    <div className="flex flex-col gap-4 px-5 pt-4 pb-5">
       {/* Title row */}
       <div className="flex items-center justify-between">
         <Skeleton className="h-[26px] w-32 rounded-[4px]" />
@@ -36,14 +36,14 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Metric cards 2×2 */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (
           <MetricCardSkeleton key={i} />
         ))}
       </div>
 
       {/* Bottom row */}
-      <div className="grid gap-3 lg:grid-cols-[1fr_248px]">
+      <div className="grid gap-4 sm:grid-cols-[1fr_248px] lg:grid-cols-[3fr_1fr]">
         {/* Team Activity */}
         <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card">
           <Skeleton className="h-[18px] w-28 rounded-[3px]" />

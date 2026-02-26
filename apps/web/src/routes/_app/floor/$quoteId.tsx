@@ -17,6 +17,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
 import type {
@@ -45,6 +53,7 @@ function QuoteEditorPage() {
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<QuoteGeneratorEditItem | null>(null);
+  const [removeConfirm, setRemoveConfirm] = useState<string | null>(null);
   const [comments, setComments] = useState("");
   const [commentsSynced, setCommentsSynced] = useState(false);
 
@@ -74,6 +83,7 @@ function QuoteEditorPage() {
     ...orpc.floor.quotes.removeItem.mutationOptions(),
     onSuccess: async () => {
       await invalidateQuote();
+      setRemoveConfirm(null);
     },
     onError: (err) => toast.error(`Failed to remove item: ${err.message}`),
   });
@@ -277,7 +287,7 @@ function QuoteEditorPage() {
                       key={item.id}
                       item={item}
                       index={idx}
-                      onRemove={() => removeItem.mutate({ id: item.id })}
+                      onRemove={() => setRemoveConfirm(item.id)}
                       onEdit={() => {
                         setEditingItem(item);
                         setSheetOpen(true);
@@ -395,6 +405,42 @@ function QuoteEditorPage() {
         editItem={editingItem}
         isAdding={addItem.isPending || updateItem.isPending}
       />
+
+      <Dialog
+        open={!!removeConfirm}
+        onOpenChange={(open) => {
+          if (!open) setRemoveConfirm(null);
+        }}
+      >
+        <DialogContent>
+          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-error-50 bg-error-100">
+                <Trash2 className="size-6 text-destructive" />
+              </div>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <DialogTitle>Remove item</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to remove this item?
+                  <br />
+                  This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose render={<Button variant="ghost" type="button">Cancel</Button>} />
+              <Button
+                color="destructive"
+                className="w-32"
+                onClick={() => removeConfirm && removeItem.mutate({ id: removeConfirm })}
+                disabled={removeItem.isPending}
+              >
+                Remove
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

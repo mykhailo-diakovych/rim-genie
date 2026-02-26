@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-2.5 font-rubik text-xs font-normal whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-2.5 font-rubik text-xs font-normal whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -54,7 +54,7 @@ const buttonVariants = cva(
         variant: "outline",
         color: "destructive",
         className:
-          "text-destructive ring-destructive hover:bg-destructive/5 focus-visible:ring-destructive/50 disabled:bg-transparent disabled:text-ghost disabled:ring-ghost",
+          "text-destructive ring-destructive hover:bg-destructive/5 focus-visible:ring-destructive/50",
       },
       {
         variant: "outline",

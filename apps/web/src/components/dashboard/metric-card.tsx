@@ -9,12 +9,27 @@ import { m } from "@/paraglide/messages";
 const CHART_GREEN = "#21b84e";
 const CHART_RED = "#f04438";
 
-function SparklineTooltip({ active, payload }: TooltipContentProps<number, string>) {
-  if (!active || !payload?.length) return null;
+function makeTooltip(chartColor: string) {
+  return function SparklineTooltip({ active, payload }: TooltipContentProps<number, string>) {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="rounded-md border border-card-line bg-white px-2.5 py-1.5 shadow-card">
+        <div className="flex items-center gap-1.5">
+          <div className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: chartColor }} />
+          <span className="font-rubik text-xs font-medium text-body">{payload[0].value}</span>
+        </div>
+      </div>
+    );
+  };
+}
+
+function ActiveDot({ cx, cy, fill }: { cx?: number; cy?: number; fill?: string }) {
+  if (cx === undefined || cy === undefined) return null;
   return (
-    <div className="rounded-[4px] bg-body px-2 py-1 shadow-sm">
-      <span className="font-rubik text-[11px] leading-none text-white">{payload[0].value}</span>
-    </div>
+    <g>
+      <circle cx={cx} cy={cy} r={9} fill={fill} fillOpacity={0.15} />
+      <circle cx={cx} cy={cy} r={3.5} fill={fill} stroke="white" strokeWidth={2} />
+    </g>
   );
 }
 
@@ -41,6 +56,7 @@ export function MetricCard({
   const chartColor = isPositive ? CHART_GREEN : CHART_RED;
   const chartData = sparkline.map((v, i) => ({ i, v }));
   const gradientId = `grad-${title.replace(/\W+/g, "-")}`;
+  const SparklineTooltip = makeTooltip(chartColor);
 
   return (
     <div className="flex flex-col gap-3 rounded-md border border-card-line bg-white p-3 shadow-card">
@@ -86,7 +102,7 @@ export function MetricCard({
         </div>
 
         {/* Right: sparkline chart */}
-        <div className="h-12 w-24 shrink-0 md:w-36">
+        <div className="h-12 w-24 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
               <defs>
@@ -97,7 +113,7 @@ export function MetricCard({
               </defs>
               <Tooltip
                 content={SparklineTooltip}
-                cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: "3 3" }}
+                cursor={{ stroke: chartColor, strokeWidth: 1, strokeOpacity: 0.35 }}
               />
               <Area
                 type="monotone"
@@ -106,7 +122,7 @@ export function MetricCard({
                 strokeWidth={1.5}
                 fill={`url(#${gradientId})`}
                 dot={false}
-                activeDot={{ r: 3, fill: chartColor, stroke: "white", strokeWidth: 1.5 }}
+                activeDot={<ActiveDot />}
                 isAnimationActive={false}
               />
             </AreaChart>

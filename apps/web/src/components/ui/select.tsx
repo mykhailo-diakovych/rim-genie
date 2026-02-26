@@ -37,7 +37,7 @@ function SelectValue({
 }: SelectPrimitive.Value.Props & { placeholder?: string }) {
   return (
     <SelectPrimitive.Value
-      className={cn("min-w-0 flex-1 truncate text-left text-body", className)}
+      className={cn("min-w-0 flex-1 truncate text-left text-body capitalize", className)}
       placeholder={<span className="text-ghost">{placeholder}</span>}
       {...props}
     />
@@ -66,7 +66,7 @@ function SelectOption({ className, children, ...props }: SelectPrimitive.Item.Pr
   return (
     <SelectPrimitive.Item
       className={cn(
-        "flex cursor-default items-center justify-between px-3 py-2 font-rubik text-xs leading-3.5 text-body outline-none select-none",
+        "flex cursor-default items-center justify-between px-3 py-2 font-rubik text-xs leading-3.5 text-body capitalize outline-none select-none",
         "data-highlighted:bg-blue/5 data-selected:text-blue",
         className,
       )}

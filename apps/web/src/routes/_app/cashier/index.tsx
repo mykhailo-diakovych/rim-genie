@@ -5,6 +5,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { IconPay } from "@/components/ui/nav-icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -34,7 +42,7 @@ function getDateFrom(range: DateRange): string | undefined {
   const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
   const d = new Date();
   d.setDate(d.getDate() - days);
-  d.setMilliseconds(0);
+  d.setHours(0, 0, 0, 0);
   return d.toISOString();
 }
 
@@ -113,7 +121,7 @@ function InvoiceCard({
   isDeleting: boolean;
   onPay: () => void;
 }) {
-  const canPay = invoice.status !== "paid";
+  const canPay = invoice.status === "unpaid";
 
   return (
     <div className="flex flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card sm:min-h-16 sm:flex-row sm:items-center sm:gap-4">
@@ -125,7 +133,7 @@ function InvoiceCard({
         </div>
 
         <div className="flex w-8 shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
-          <span className="text-label">Invoice #:</span>
+          <span className="text-label">ID:</span>
           <span className="text-body">{invoice.invoiceNumber}</span>
         </div>
 
@@ -166,7 +174,7 @@ function InvoiceCard({
           variant="outline"
           color="destructive"
           onClick={onDelete}
-          disabled={isDeleting}
+          disabled={isDeleting || invoice.status === "unpaid"}
         >
           <Trash2 />
           Delete
@@ -258,11 +266,14 @@ function CashierPage() {
     paid: paidQuery.data?.total ?? 0,
   };
 
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
   const deleteInvoice = useMutation({
     ...orpc.cashier.invoices.delete.mutationOptions(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: orpc.cashier.invoices.list.key() });
       toast.success("Invoice deleted");
+      setDeleteConfirm(null);
     },
     onError: (err: Error) => toast.error(`Failed to delete: ${err.message}`),
   });
@@ -310,10 +321,8 @@ function CashierPage() {
                     <InvoiceCard
                       key={invoice.id}
                       invoice={invoice}
-                      onDelete={() => deleteInvoice.mutate({ id: invoice.id })}
-                      isDeleting={
-                        deleteInvoice.isPending && deleteInvoice.variables?.id === invoice.id
-                      }
+                      onDelete={() => setDeleteConfirm(invoice.id)}
+                      isDeleting={false}
                       onPay={() =>
                         navigate({
                           to: "/cashier/$invoiceId/checkout",
@@ -333,6 +342,42 @@ function CashierPage() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <Dialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirm(null);
+        }}
+      >
+        <DialogContent>
+          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-error-50 bg-error-100">
+                <Trash2 className="size-6 text-destructive" />
+              </div>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <DialogTitle>Delete invoice</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete this invoice?
+                  <br />
+                  This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose render={<Button variant="ghost" type="button">Cancel</Button>} />
+              <Button
+                color="destructive"
+                className="w-32"
+                onClick={() => deleteConfirm && deleteInvoice.mutate({ id: deleteConfirm })}
+                disabled={deleteInvoice.isPending}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

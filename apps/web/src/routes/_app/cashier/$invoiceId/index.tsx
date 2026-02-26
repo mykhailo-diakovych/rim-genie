@@ -17,6 +17,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/cashier/$invoiceId/")({
@@ -123,6 +131,7 @@ function InvoiceDetailPage() {
   const { invoiceId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const invoiceQuery = useQuery(
     orpc.cashier.invoices.get.queryOptions({ input: { id: invoiceId } }),
@@ -148,6 +157,7 @@ function InvoiceDetailPage() {
         queryKey: orpc.cashier.invoices.list.key(),
       });
       toast.success("Invoice deleted");
+      setShowDeleteConfirm(false);
       navigate({ to: "/cashier", search: { tab: "unpaid", dateRange: "30d" } });
     },
     onError: (err: Error) => toast.error(`Failed to delete: ${err.message}`),
@@ -207,7 +217,7 @@ function InvoiceDetailPage() {
 
         <MoreDropdown
           onPrint={() => window.print()}
-          onDelete={() => deleteInvoice.mutate({ id: invoiceId })}
+          onDelete={() => setShowDeleteConfirm(true)}
           isDeleting={deleteInvoice.isPending}
         />
       </div>
@@ -324,15 +334,11 @@ function InvoiceDetailPage() {
           <table className="w-full font-rubik text-xs">
             <thead>
               <tr className="border-t border-b border-field-line text-left text-label">
-                <th className="w-18 border-l border-field-line px-2 py-1.5 font-normal">#</th>
-                <th className="border-l border-field-line px-2 py-1.5 font-normal">Description</th>
-                <th className="w-18 border-l border-field-line px-2 py-1.5 font-normal">
-                  Quantity
-                </th>
-                <th className="w-30 border-l border-field-line px-2 py-1.5 font-normal">
-                  Unit Cost
-                </th>
-                <th className="w-30 border-r border-l border-field-line px-2 py-1.5 font-normal">
+                <th className="w-18 border-l border-field-line px-2 py-2 font-normal">#</th>
+                <th className="border-l border-field-line px-2 py-2 font-normal">Description</th>
+                <th className="w-18 border-l border-field-line px-2 py-2 font-normal">Quantity</th>
+                <th className="w-30 border-l border-field-line px-2 py-2 font-normal">Unit Cost</th>
+                <th className="w-30 border-r border-l border-field-line px-2 py-2 font-normal">
                   Total
                 </th>
               </tr>
@@ -382,8 +388,6 @@ function InvoiceDetailPage() {
             <span className="text-body">{inv.notes}</span>
           </div>
         )}
-
-        <div className="flex-1" />
 
         <div className="h-px bg-field-line" />
 
@@ -470,6 +474,37 @@ function InvoiceDetailPage() {
           <strong>$500 daily</strong>
         </p>
       </div>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-error-50 bg-error-100">
+                <Trash2 className="size-6 text-destructive" />
+              </div>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <DialogTitle>Delete invoice</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete this invoice?
+                  <br />
+                  This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose render={<Button variant="ghost" type="button">Cancel</Button>} />
+              <Button
+                color="destructive"
+                className="w-32"
+                onClick={() => deleteInvoice.mutate({ id: invoiceId })}
+                disabled={deleteInvoice.isPending}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

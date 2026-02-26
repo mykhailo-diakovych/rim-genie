@@ -53,7 +53,7 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex flex-col gap-5 p-5">
+    <div className="flex flex-col gap-4 px-5 pt-4 pb-5">
       {/* Title row */}
       <div className="flex items-center justify-between">
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
@@ -75,7 +75,7 @@ function RouteComponent() {
       </div>
 
       {/* Metric cards 2×2 */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         {metricsQuery.data?.map((metric) => {
           const config = METRIC_CONFIG[metric.key as keyof typeof METRIC_CONFIG] ?? {
             icon: IconRevenue,
@@ -100,7 +100,7 @@ function RouteComponent() {
       </div>
 
       {/* Bottom row */}
-      <div className="grid items-start gap-3 lg:grid-cols-[1fr_248px]">
+      <div className="grid items-start gap-4 sm:grid-cols-[1fr_248px] lg:grid-cols-[2fr_1fr]">
         {teamQuery.data && <TeamActivityTable rows={teamQuery.data.rows} />}
         {attentionQuery.data && <AttentionRequiredCard items={attentionQuery.data.items} />}
       </div>

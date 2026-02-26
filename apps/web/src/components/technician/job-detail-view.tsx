@@ -37,7 +37,7 @@ function formatJobStatus(status: ApiJob["status"]) {
 export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
   return (
     <div className="flex flex-1 flex-col gap-5 p-5">
-      <Button variant="outline" onClick={onBack}>
+      <Button variant="outline" className="self-start" onClick={onBack}>
         <ChevronLeft />
         Back to list
       </Button>

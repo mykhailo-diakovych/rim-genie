@@ -125,7 +125,9 @@ export function AcceptJobDialog({
 
             <Select value={technician} onValueChange={(v) => setTechnician(v ?? "")}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Technician" />
+                <SelectValue placeholder="Select Technician">
+                  {technicians?.find((t) => t.id === technician)?.name}
+                </SelectValue>
               </SelectTrigger>
               <SelectPopup>
                 {technicians?.map((t) => (
