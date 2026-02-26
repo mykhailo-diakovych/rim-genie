@@ -58,7 +58,8 @@ function TechnicianPage() {
 
   useEffect(() => {
     measureIndicator(activeTab);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    document.fonts.ready.then(() => measureIndicator(activeTab));
+  }, [activeTab, tabCounts.assign, tabCounts["in-progress"], tabCounts.completed]);
 
   function handleTabChange(tab: TabValue) {
     void navigate({ search: { tab } });
