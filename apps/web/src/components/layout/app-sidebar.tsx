@@ -5,6 +5,7 @@ import type { UserRole } from "@rim-genie/db/schema";
 
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
+import { hasRouteAccess } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
 import {
   IconCashier,
@@ -90,18 +91,8 @@ const NAV_ITEMS = [
   { to: "/inventory", labelKey: "nav_inventory" as const, icon: IconInventory },
   { to: "/cashier", labelKey: "nav_cashier" as const, icon: IconCashier },
   { to: "/technician", labelKey: "nav_technician" as const, icon: IconTechnician },
-  {
-    to: "/employees",
-    labelKey: "nav_employees" as const,
-    icon: IconEmployees,
-    roles: ["admin"] as UserRole[],
-  },
-  {
-    to: "/customers",
-    labelKey: "nav_customers" as const,
-    icon: IconCustomers,
-    roles: ["admin", "floorManager", "cashier"] as UserRole[],
-  },
+  { to: "/employees", labelKey: "nav_employees" as const, icon: IconEmployees },
+  { to: "/customers", labelKey: "nav_customers" as const, icon: IconCustomers },
   { to: "/manage", labelKey: "nav_manage" as const, icon: IconManage },
   { to: "/terms", labelKey: "nav_terms" as const, icon: IconTerms },
 ];
@@ -117,9 +108,7 @@ export function AppSidebar({ horizontal = false, className }: AppSidebarProps) {
   const userRole = session?.user.role as UserRole | undefined;
   const orientation = horizontal ? "horizontal" : "vertical";
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.roles || (userRole && item.roles.includes(userRole)),
-  );
+  const visibleItems = NAV_ITEMS.filter((item) => hasRouteAccess(item.to, userRole));
 
   if (horizontal) {
     return (

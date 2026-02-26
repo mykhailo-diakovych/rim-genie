@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute, redirect } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { Eye, Plus } from "lucide-react";
 
 import type { UserRole } from "@rim-genie/db/schema";
@@ -8,19 +8,14 @@ import { CustomerCard, CustomerCardSkeleton } from "@/components/customers/custo
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
+import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 
-const ALLOWED_ROLES: UserRole[] = ["admin", "floorManager", "cashier"];
 const CAN_EDIT_ROLES: UserRole[] = ["admin", "floorManager"];
 
 export const Route = createFileRoute("/_app/customers/")({
-  beforeLoad: ({ context }) => {
-    const role = context.session.user.role as UserRole | null;
-    if (!role || !ALLOWED_ROLES.includes(role)) {
-      throw redirect({ to: "/dashboard" });
-    }
-  },
+  beforeLoad: requireRoles(["admin", "floorManager", "cashier"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Customers" }],
   }),

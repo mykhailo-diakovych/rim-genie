@@ -1,6 +1,6 @@
 # Rim Genie — Implementation Status & Plan
 
-> Updated: 2026-02-25 | Based on `docs/REQUIREMENTS.md` + full codebase audit
+> Updated: 2026-02-26 | Based on `docs/REQUIREMENTS.md` + full codebase audit
 
 ---
 
@@ -17,12 +17,13 @@
 - [x] Environment validation via `@t3-oss/env-core` (server + web entry points)
 - [x] UI: shadcn-style components on Base UI, Tailwind v4, dark mode (OKLch color tokens)
 - [x] Role-specific procedure builders: `adminProcedure`, `floorManagerProcedure`, `cashierProcedure`, `technicianProcedure`, `inventoryClerkProcedure`
+- [x] Frontend route guards: centralized `requireRoles()` + `hasRouteAccess()` in `route-permissions.ts`, `beforeLoad` guards on all role-restricted routes, sidebar filtered by role
 
 ### Authentication Module — §2.6 (Partially Complete)
 
 - [x] Email/password login (Better Auth, minPasswordLength: 6)
 - [ ] Staff PIN-based login — **UI exists** (`StaffLoginForm` with PIN input) but **shows "coming soon" toast on submit; no backend PIN auth endpoint**
-- [x] Role-based dashboards (sidebar filters by role)
+- [x] Role-based dashboards (sidebar filters by role via `hasRouteAccess`, `beforeLoad` guards redirect unauthorized users to `/dashboard`)
 - [x] Session management (cookie-based via `tanstackStartCookies()` plugin, SSR-compatible)
 - [x] Username-only login support (Better Auth username plugin enabled)
 - [ ] Authorization before any change/deletion (system-wide audit log — not implemented; no `audit_log` table)
@@ -186,12 +187,13 @@
 
 - [ ] SMS integration (external API endpoint)
 - [ ] Email integration (Resend — not configured or wired)
-- [ ] Notification bell UI in header with unread count (header has logo, search, user info, logout — no bell)
+- [ ] Notification bell UI in header with unread count (header has logo, global search command palette, user info, logout — no bell)
 - [ ] Notification dropdown/panel
 - [ ] Remaining notification triggers: quote sent, job completed, payment reminder, discount request/approval
 
-### Cross-Cutting Concerns (Not Started)
+### Cross-Cutting Concerns (Partially Complete)
 
+- [x] Global search / command palette (Cmd/Ctrl+K) — `cmdk` + `@base-ui/react/dialog`, `search.global` oRPC procedure with 4 parallel DB queries (customers, quotes, invoices, employees), debounced input, grouped results, keyboard nav, navigation on select
 - [ ] Real-time updates (WebSocket/SSE)
 - [ ] Video/file storage (Azure Blob Storage)
 - [ ] Print optimization (`@media print` CSS — basic print styles exist for receipt but not comprehensive)
@@ -349,7 +351,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [ ] Print job label tag
 - [ ] Send quote via email/SMS with electronic quote link (depends on Phase 4)
 - [ ] Public electronic quote viewer page (SSR)
-- [ ] Staff PIN login implementation (backend auth endpoint needed)
+- [x] Staff PIN login implementation (backend auth endpoint needed)
 
 ---
 
@@ -429,6 +431,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 ### Security Gaps to Address
 
 - "Send to Technician" is backend-enforced ✅ (via `cashierProcedure`)
+- ~~Frontend routes wide open — no `beforeLoad` guards on floor/cashier/technician/inventory~~ → ✅ All role-restricted routes now have `beforeLoad` guards via centralized `requireRoles()`; sidebar uses `hasRouteAccess()` to hide unauthorized nav items
 - Authorization before changes/deletions (audit log system) — not implemented
 - No soft deletes — accidental deletions are unrecoverable
 - Ban enforcement — schema supports `user.banned`/`banReason`/`banExpires` but enforcement not verified in middleware

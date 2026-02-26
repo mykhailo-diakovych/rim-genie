@@ -17,9 +17,11 @@ import {
 } from "@/components/ui/dialog";
 import type { AppRouterClient } from "@rim-genie/api/routers/index";
 
+import { requireRoles } from "@/lib/route-permissions";
 import { client, orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/customers/$customerId")({
+  beforeLoad: requireRoles(["admin", "floorManager", "cashier"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Customer" }],
   }),

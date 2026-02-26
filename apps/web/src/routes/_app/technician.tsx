@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
+import { requireRoles } from "@/lib/route-permissions";
 import { cn } from "@/lib/utils";
 import { AssignDetailView } from "@/components/technician/assign-detail-view";
 import { AssignJobCard } from "@/components/technician/assign-job-card";
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_app/technician")({
   validateSearch: (search: Record<string, unknown>): { tab: TabValue } => ({
     tab: TAB_VALUES.includes(search.tab as TabValue) ? (search.tab as TabValue) : "in-progress",
   }),
+  beforeLoad: requireRoles(["admin", "technician"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Technician" }],
   }),

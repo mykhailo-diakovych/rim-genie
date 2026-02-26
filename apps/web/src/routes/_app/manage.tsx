@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,6 +14,7 @@ import type { ServiceRow } from "@/components/manage/service-table";
 import { ServicesPagination } from "@/components/manage/services-pagination";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 
@@ -23,11 +24,7 @@ export const Route = createFileRoute("/_app/manage")({
       ? (search.tab as ServiceType)
       : "rim",
   }),
-  beforeLoad: ({ context }) => {
-    if (context.session.user.role !== "admin") {
-      throw redirect({ to: "/dashboard" });
-    }
-  },
+  beforeLoad: requireRoles(["admin"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Manage" }],
   }),

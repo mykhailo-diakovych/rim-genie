@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { OvernightJobCard } from "@/components/inventory/overnight-job-card";
 import { useOvernightJobs } from "@/components/inventory/use-inventory";
+import { requireRoles } from "@/lib/route-permissions";
 
 export const Route = createFileRoute("/_app/inventory")({
+  beforeLoad: requireRoles(["admin", "inventoryClerk"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Inventory" }],
   }),

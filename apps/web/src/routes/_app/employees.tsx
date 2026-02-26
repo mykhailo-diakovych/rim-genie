@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
 import { ResetPinModal } from "@/components/auth/reset-pin-modal";
@@ -11,15 +11,12 @@ import {
 } from "@/components/employees/employee-card";
 import { EmployeeModal } from "@/components/employees/employee-modal";
 import { Button } from "@/components/ui/button";
+import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/employees")({
-  beforeLoad: ({ context }) => {
-    if (context.session.user.role !== "admin") {
-      throw redirect({ to: "/dashboard" });
-    }
-  },
+  beforeLoad: requireRoles(["admin"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Employees" }],
   }),
