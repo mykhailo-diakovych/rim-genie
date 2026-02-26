@@ -92,6 +92,7 @@ export const floorRouter = {
           birthdayMonth: z.number().int().min(1).max(12).optional(),
           isVip: z.boolean().optional(),
           discount: z.number().int().min(0).max(100).optional(),
+          communicationPreference: z.enum(["sms", "email"]).optional(),
         }),
       )
       .handler(async ({ input }) => {
@@ -132,6 +133,13 @@ export const floorRouter = {
               },
             },
           },
+          invoices: {
+            with: {
+              jobs: {
+                with: { invoiceItem: true },
+              },
+            },
+          },
         },
       });
     }),
@@ -147,6 +155,7 @@ export const floorRouter = {
           birthdayMonth: z.number().int().min(1).max(12).optional(),
           isVip: z.boolean().optional(),
           discount: z.number().int().min(0).max(100).optional(),
+          communicationPreference: z.enum(["sms", "email"]).optional(),
         }),
       )
       .handler(async ({ input }) => {

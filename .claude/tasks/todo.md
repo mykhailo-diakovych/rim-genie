@@ -1,6 +1,6 @@
 # Rim Genie — Implementation Status & Plan
 
-> Updated: 2026-02-26 | Based on `docs/REQUIREMENTS.md` + full codebase audit
+> Updated: 2026-02-27 | Based on `docs/REQUIREMENTS.md` + full codebase audit
 
 ---
 
@@ -33,7 +33,7 @@
 **Done:**
 
 - [x] Customer search by phone and name (`floor.customers.search` — ILIKE, up to 20 results)
-- [x] Create/edit customer profiles (name, phone, email, birthday day/month, VIP, discount)
+- [x] Create/edit customer profiles (name, phone, email, birthday day/month, VIP, discount, communication preference)
 - [x] VIP flag + discount percentage on customer profile
 - [x] Generate quotes (create quote → add line items with job types via `QuoteGeneratorSheet`)
 - [x] Quote PDF generation (`/api/quotes/{quoteId}/pdf` endpoint, React PDF renderer)
@@ -47,6 +47,10 @@
 - [x] Quote → Invoice conversion happens automatically on save when items exist (backend `syncInvoiceFromQuote`); toast shows "Quote saved and sent to cashier"
 - [x] `quotes.update` and `quotes.delete` hardened to `floorManagerProcedure`
 - [x] Customer detail page with quotes section showing status badges (draft=gray, pending=blue, in_progress=orange, completed=green)
+- [x] Customer profile communication preference toggle (SMS/Email, persisted to DB via `communicationPreference` column)
+- [x] Customer profile "Add Quote" creates quote directly and navigates to editor (skips customer search step)
+- [x] Customer profile "Latest Jobs" section shows real job data from invoices→jobs (with job-specific statuses: pending/accepted/in_progress/completed)
+- [x] Customer profile job numbers link to quote detail page
 - [x] Customer deletion with cascading delete (quotes, invoices, payments, jobs)
 
 **Not Done:**
@@ -427,6 +431,10 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - ~~Reverse/complete dialogs verified logged-in user's PIN instead of assigned technician's~~ → ✅ Fixed: all dialogs now pass technician's userId to verifyPin
 - ~~Reverse all included pending job IDs causing backend rejection~~ → ✅ Fixed: filters to non-pending jobs only; per-row Reverse hidden for pending
 - ~~verifyPin filtered by providerId="credential" which could miss accounts~~ → ✅ Fixed: queries by userId only (matches resetPin pattern)
+- ~~Customer profile communication toggle hardcoded to SMS~~ → ✅ Fixed: `communicationPreference` DB column + functional toggle with mutation
+- ~~Customer profile "Add Quote" navigated to /floor/new-quote with ignored search param~~ → ✅ Fixed: directly creates quote via API and navigates to editor
+- ~~Customer profile "Latest Jobs" showed filtered quotes instead of real jobs~~ → ✅ Fixed: `getById` includes invoices→jobs, UI shows actual job data with proper statuses
+- ~~Customer profile job numbers were non-clickable styled spans~~ → ✅ Fixed: clickable buttons that navigate to quote detail page
 - No real-time updates yet (polling could be interim via TanStack Query refetchInterval)
 - No file upload infrastructure (Azure Blob Storage needed for proof-of-work videos)
 - `acceptedById`/`completedById` audit columns missing from job table

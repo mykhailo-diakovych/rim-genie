@@ -45,6 +45,7 @@ export const customer = pgTable(
     birthdayMonth: integer("birthday_month"),
     isVip: boolean("is_vip").default(false).notNull(),
     discount: integer("discount"),
+    communicationPreference: text("communication_preference").default("sms").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

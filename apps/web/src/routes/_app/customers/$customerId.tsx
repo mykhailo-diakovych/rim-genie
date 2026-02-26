@@ -63,15 +63,17 @@ function formatTotal(cents: number) {
 
 type CustomerDetail = Awaited<ReturnType<AppRouterClient["floor"]["customers"]["getById"]>>;
 type QuoteStatus = NonNullable<CustomerDetail>["quotes"][number]["status"];
+type JobStatus = NonNullable<CustomerDetail>["invoices"][number]["jobs"][number]["status"];
 
-const STATUS_BG: Record<QuoteStatus, string> = {
+const STATUS_BG: Record<QuoteStatus | JobStatus, string> = {
   draft: "bg-ghost",
   pending: "bg-blue",
+  accepted: "bg-blue",
   in_progress: "bg-badge-orange",
   completed: "bg-green",
 };
 
-function StatusBadge({ status }: { status: QuoteStatus }) {
+function StatusBadge({ status }: { status: QuoteStatus | JobStatus }) {
   const label = status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   return (
     <span
@@ -176,23 +178,92 @@ function DeleteProfileDialog({
   );
 }
 
+function CommunicationToggle({
+  customerId,
+  customerName,
+  customerPhone,
+  value,
+}: {
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  value: string;
+}) {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (pref: "sms" | "email") =>
+      client.floor.customers.update({
+        id: customerId,
+        name: customerName,
+        phone: customerPhone,
+        communicationPreference: pref,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: orpc.floor.customers.getById.key({ input: { id: customerId } }),
+      });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const current = value === "email" ? "email" : "sms";
+
+  return (
+    <div className="flex items-center gap-6">
+      {(["sms", "email"] as const).map((pref) => (
+        <label
+          key={pref}
+          className="flex cursor-pointer items-center gap-1.5"
+          onClick={() => {
+            if (pref !== current && !mutation.isPending) mutation.mutate(pref);
+          }}
+        >
+          <span
+            className={`flex size-4 items-center justify-center rounded-full border ${
+              pref === current ? "border-blue" : "border-field-line"
+            }`}
+          >
+            {pref === current && <span className="size-2 rounded-full bg-blue" />}
+          </span>
+          <span className="font-rubik text-sm leading-4.5 text-body">
+            {pref === "sms" ? "SMS" : "Email"}
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 function CustomerProfilePage() {
   const { customerId } = Route.useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: customer, isLoading } = useQuery(
     orpc.floor.customers.getById.queryOptions({ input: { id: customerId } }),
   );
 
+  const createQuoteMutation = useMutation({
+    mutationFn: () => client.floor.quotes.create({ customerId }),
+    onSuccess: (newQuote) => {
+      void queryClient.invalidateQueries({
+        queryKey: orpc.floor.customers.getById.key({ input: { id: customerId } }),
+      });
+      void navigate({ to: "/floor/$quoteId", params: { quoteId: newQuote.id } });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const quotes = customer?.quotes ?? [];
   const latestQuotes = quotes.slice(0, 10);
-  const latestJobs = quotes
-    .filter((q) => q.status === "completed" || q.status === "in_progress")
-    .slice(0, 10);
+
+  const allJobs = (customer?.invoices ?? []).flatMap((inv) =>
+    inv.jobs.map((j) => ({ ...j, quoteId: inv.quoteId })),
+  );
+  const latestJobs = allJobs.slice(0, 10);
 
   return (
     <div className="flex flex-1 flex-col gap-3 p-5">
-      {/* Back button */}
       <div>
         <Button variant="outline" nativeButton={false} render={<Link to="/customers" />}>
           <ChevronLeft />
@@ -200,7 +271,6 @@ function CustomerProfilePage() {
         </Button>
       </div>
 
-      {/* Profile Card */}
       <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
         {isLoading ? (
           <ProfileCardSkeleton />
@@ -260,18 +330,12 @@ function CustomerProfilePage() {
 
               <div className="flex w-[144px] flex-col gap-2">
                 <span className="font-rubik text-xs leading-3.5 text-label">Communication:</span>
-                <div className="flex items-center gap-6">
-                  <label className="flex items-center gap-1.5">
-                    <span className="flex size-4 items-center justify-center rounded-full border border-blue">
-                      <span className="size-2 rounded-full bg-blue" />
-                    </span>
-                    <span className="font-rubik text-sm leading-4.5 text-body">SMS</span>
-                  </label>
-                  <label className="flex items-center gap-1.5">
-                    <span className="size-4 rounded-full border border-[#cdcfd1]" />
-                    <span className="font-rubik text-sm leading-4.5 text-body">Email</span>
-                  </label>
-                </div>
+                <CommunicationToggle
+                  customerId={customer.id}
+                  customerName={customer.name}
+                  customerPhone={customer.phone}
+                  value={customer.communicationPreference}
+                />
               </div>
 
               <div className="w-px self-stretch bg-field-line" />
@@ -293,27 +357,21 @@ function CustomerProfilePage() {
         )}
       </div>
 
-      {/* Latest Quotes Card */}
       <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
         <div className="flex items-center justify-between">
           <h2 className="font-rubik text-base leading-5 font-medium text-body">Latest Quotes</h2>
           <Button
-            onClick={() =>
-              void navigate({
-                to: "/floor/new-quote",
-                search: { customerId },
-              })
-            }
+            disabled={createQuoteMutation.isPending}
+            onClick={() => createQuoteMutation.mutate()}
           >
             <Plus />
-            Add Quote
+            {createQuoteMutation.isPending ? "Creating..." : "Add Quote"}
           </Button>
         </div>
 
         <QuotesTable quotes={latestQuotes} />
       </div>
 
-      {/* Latest Jobs Card */}
       <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
         <h2 className="font-rubik text-base leading-5 font-medium text-body">Latest Jobs</h2>
         <JobsTable jobs={latestJobs} />
@@ -456,14 +514,25 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
   );
 }
 
-function JobsTable({ jobs }: { jobs: QuoteRow[] }) {
+interface JobRow {
+  id: string;
+  quoteId: string;
+  status: JobStatus;
+  completedAt: Date | string | null;
+  createdAt: Date | string;
+  invoiceItem: { description: string | null } | null;
+}
+
+function JobsTable({ jobs }: { jobs: JobRow[] }) {
+  const navigate = useNavigate();
+
   return (
     <div className="w-full overflow-x-auto">
       <table className="w-full font-rubik text-xs">
         <thead>
           <tr className="text-left text-label">
             <th className="h-8 w-[144px] border-t border-l border-field-line px-2 py-1.5 font-normal">
-              Completion Date
+              Date
             </th>
             <th className="h-8 w-[104px] border-t border-l border-field-line px-2 py-1.5 font-normal">
               Job #
@@ -491,20 +560,27 @@ function JobsTable({ jobs }: { jobs: QuoteRow[] }) {
           {jobs.map((job, idx) => {
             const isLast = idx === jobs.length - 1;
             const borderB = isLast ? "border-b" : "";
-            const description = buildJobDescription(job.items);
-            const jobNumber = String(job.quoteNumber).padStart(7, "0");
+            const description = job.invoiceItem?.description ?? "—";
 
             return (
               <tr key={job.id}>
                 <td
                   className={`h-12 w-[144px] border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
                 >
-                  {formatDate(job.createdAt)}
+                  {formatDate(job.completedAt ?? job.createdAt)}
                 </td>
                 <td
                   className={`h-12 w-[104px] border-t border-l border-field-line p-2 text-sm leading-4.5 ${borderB}`}
                 >
-                  <span className="text-blue underline">{jobNumber}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void navigate({ to: "/floor/$quoteId", params: { quoteId: job.quoteId } })
+                    }
+                    className="cursor-pointer text-blue underline"
+                  >
+                    {job.id.slice(0, 7).toUpperCase()}
+                  </button>
                 </td>
                 <td
                   className={`h-12 border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
@@ -533,19 +609,4 @@ function JobsTable({ jobs }: { jobs: QuoteRow[] }) {
       </table>
     </div>
   );
-}
-
-function buildJobDescription(
-  items: { description: string | null; quantity: number; jobTypes: unknown[] }[],
-) {
-  if (items.length === 0) return "—";
-
-  const parts: string[] = [];
-  for (const item of items) {
-    if (item.description) {
-      parts.push(item.description);
-    }
-  }
-
-  return parts.length > 0 ? parts.join(", ") : `${items.length} item(s)`;
 }
