@@ -9,13 +9,18 @@ import { m } from "@/paraglide/messages";
 const CHART_GREEN = "#21b84e";
 const CHART_RED = "#f04438";
 
-function SparklineTooltip({ active, payload }: TooltipContentProps<number, string>) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-[4px] bg-body px-2 py-1 shadow-sm">
-      <span className="font-rubik text-[11px] leading-none text-white">{payload[0].value}</span>
-    </div>
-  );
+function makeTooltip(chartColor: string) {
+  return function SparklineTooltip({ active, payload }: TooltipContentProps<number, string>) {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="rounded-md border border-card-line bg-white px-2.5 py-1.5 shadow-card">
+        <div className="flex items-center gap-1.5">
+          <div className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: chartColor }} />
+          <span className="font-rubik text-xs font-medium text-body">{payload[0].value}</span>
+        </div>
+      </div>
+    );
+  };
 }
 
 function ActiveDot({ cx, cy, fill }: { cx?: number; cy?: number; fill?: string }) {
@@ -51,6 +56,7 @@ export function MetricCard({
   const chartColor = isPositive ? CHART_GREEN : CHART_RED;
   const chartData = sparkline.map((v, i) => ({ i, v }));
   const gradientId = `grad-${title.replace(/\W+/g, "-")}`;
+  const SparklineTooltip = makeTooltip(chartColor);
 
   return (
     <div className="flex flex-col gap-3 rounded-md border border-card-line bg-white p-3 shadow-card">
