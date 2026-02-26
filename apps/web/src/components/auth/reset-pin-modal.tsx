@@ -37,15 +37,20 @@ export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
   const resetPin = useMutation(orpc.employees.resetPin.mutationOptions());
 
   const form = useForm({
-    defaultValues: { newPin: "", confirmPin: "" },
+    defaultValues: { oldPin: "", newPin: "", confirmPin: "" },
     onSubmit: async ({ value }) => {
-      await resetPin.mutateAsync({ userId: employeeId, newPin: value.newPin });
+      await resetPin.mutateAsync({
+        userId: employeeId,
+        oldPin: value.oldPin,
+        newPin: value.newPin,
+      });
       toast.success(m.employees_toast_pin_reset());
       setOpen(false);
     },
     validators: {
       onSubmit: z
         .object({
+          oldPin: pinField,
           newPin: pinField,
           confirmPin: z.string(),
         })
@@ -80,6 +85,27 @@ export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
           className="flex flex-col gap-6 p-3"
         >
           <div className="flex flex-col gap-3">
+            <form.Field name="oldPin">
+              {(field) => (
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor={field.name}>{m.label_old_pin()}</Label>
+                  <Input
+                    id={field.name}
+                    type="password"
+                    value={field.state.value}
+                    error={field.state.meta.errors.length > 0}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <p className="font-rubik text-xs text-red">
+                      {field.state.meta.errors[0]?.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
             <form.Field name="newPin">
               {(field) => (
                 <div className="flex flex-col gap-1">

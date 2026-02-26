@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectOption, SelectPopup, SelectTrigger } from "@/components/ui/select";
 import { m } from "@/paraglide/messages";
-import { orpc } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
 
 import type { EmployeeCardData } from "./employee-card";
 import { ROLE_LABELS } from "./role-badge";
@@ -132,6 +132,31 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
 
   const isPending = createEmployee.isPending || updateEmployee.isPending;
 
+  const generateIdTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const employeeIdTouchedRef = useRef(false);
+
+  const scheduleGenerateId = (firstName: string, lastName: string) => {
+    if (isEdit || employeeIdTouchedRef.current) return;
+    if (generateIdTimer.current) clearTimeout(generateIdTimer.current);
+    if (!firstName || !lastName) return;
+    generateIdTimer.current = setTimeout(async () => {
+      try {
+        const result = await client.employees.generateId({ firstName, lastName });
+        if (!employeeIdTouchedRef.current) {
+          form.setFieldValue("employeeId", result.employeeId);
+        }
+      } catch {
+        // ignore — user can still type manually
+      }
+    }, 500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (generateIdTimer.current) clearTimeout(generateIdTimer.current);
+    };
+  }, []);
+
   return (
     <Dialog
       open={open}
@@ -141,6 +166,7 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
           form.reset();
           createEmployee.reset();
           updateEmployee.reset();
+          employeeIdTouchedRef.current = false;
         }
       }}
     >
@@ -173,7 +199,10 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
                       value={field.state.value}
                       error={field.state.meta.errors.length > 0}
                       onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => {
+                        field.handleChange(e.target.value);
+                        scheduleGenerateId(e.target.value, form.getFieldValue("lastName"));
+                      }}
                     />
                     {field.state.meta.errors.length > 0 && (
                       <p className="font-rubik text-xs text-red">
@@ -194,7 +223,10 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
                       value={field.state.value}
                       error={field.state.meta.errors.length > 0}
                       onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => {
+                        field.handleChange(e.target.value);
+                        scheduleGenerateId(form.getFieldValue("firstName"), e.target.value);
+                      }}
                     />
                     {field.state.meta.errors.length > 0 && (
                       <p className="font-rubik text-xs text-red">
@@ -278,7 +310,10 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
                     value={field.state.value}
                     error={field.state.meta.errors.length > 0}
                     onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={(e) => {
+                      field.handleChange(e.target.value);
+                      if (!isEdit) employeeIdTouchedRef.current = true;
+                    }}
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="font-rubik text-xs text-red">

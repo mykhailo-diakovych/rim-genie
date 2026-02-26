@@ -428,7 +428,13 @@ function QuoteEditorPage() {
               </div>
             </div>
             <DialogFooter>
-              <DialogClose render={<Button variant="ghost" type="button">Cancel</Button>} />
+              <DialogClose
+                render={
+                  <Button variant="ghost" type="button">
+                    Cancel
+                  </Button>
+                }
+              />
               <Button
                 color="destructive"
                 className="w-32"

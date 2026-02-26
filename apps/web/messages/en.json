@@ -92,6 +92,7 @@
   "employees_badge_deactivated": "Deactivated",
   "employees_toast_created": "Employee created successfully",
   "employees_toast_updated": "Employee updated successfully",
+  "employees_error_old_pin_wrong": "Current PIN is incorrect",
   "employees_toast_pin_reset": "PIN reset successfully",
   "employees_toast_deactivated": "Employee deactivated",
   "employees_toast_activated": "Employee activated",
