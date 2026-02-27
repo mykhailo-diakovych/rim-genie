@@ -114,10 +114,13 @@ export const floorRouter = {
           discount: customer.discount,
           quotesCount: sql<number>`count(distinct ${quote.id})::int`,
           jobsCount: sql<number>`count(${quoteItem.id})::int`,
+          paidInvoiceCount: sql<number>`count(distinct ${invoice.id}) filter (where ${invoice.status} = 'paid')::int`,
+          totalSpent: sql<number>`coalesce(sum(distinct case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end), 0)::int`,
         })
         .from(customer)
         .leftJoin(quote, eq(quote.customerId, customer.id))
         .leftJoin(quoteItem, eq(quoteItem.quoteId, quote.id))
+        .leftJoin(invoice, eq(invoice.customerId, customer.id))
         .groupBy(customer.id)
         .orderBy(desc(customer.createdAt));
     }),

@@ -42,6 +42,7 @@ function CustomersPage() {
   const canEdit = !!userRole && CAN_EDIT_ROLES.includes(userRole);
 
   const { data: customers, isLoading } = useQuery(orpc.floor.customers.list.queryOptions({}));
+  const { data: loyaltyConfig } = useQuery(orpc.loyalty.config.get.queryOptions());
 
   return (
     <div className="flex flex-col gap-5 p-5">
@@ -68,34 +69,43 @@ function CustomersPage() {
           <p className="py-8 text-center font-rubik text-sm text-label">{m.customers_empty()}</p>
         )}
 
-        {customers?.map((customer) => (
-          <CustomerCard
-            key={customer.id}
-            customer={customer}
-            actions={
-              <>
-                <Button
-                  render={<Link to="/customers/$customerId" params={{ customerId: customer.id }} />}
-                  nativeButton={false}
-                >
-                  <Eye />
-                  {m.customers_btn_view()}
-                </Button>
-                {canEdit && (
-                  <CustomerModal
-                    customer={customer}
-                    trigger={
-                      <Button variant="outline">
-                        <IconEdit />
-                        {m.customers_btn_edit()}
-                      </Button>
+        {customers?.map((customer) => {
+          const isLoyal = loyaltyConfig
+            ? customer.paidInvoiceCount >= loyaltyConfig.purchaseThreshold ||
+              customer.totalSpent >= loyaltyConfig.spendThreshold
+            : false;
+          return (
+            <CustomerCard
+              key={customer.id}
+              customer={customer}
+              isLoyal={isLoyal}
+              actions={
+                <>
+                  <Button
+                    render={
+                      <Link to="/customers/$customerId" params={{ customerId: customer.id }} />
                     }
-                  />
-                )}
-              </>
-            }
-          />
-        ))}
+                    nativeButton={false}
+                  >
+                    <Eye />
+                    {m.customers_btn_view()}
+                  </Button>
+                  {canEdit && (
+                    <CustomerModal
+                      customer={customer}
+                      trigger={
+                        <Button variant="outline">
+                          <IconEdit />
+                          {m.customers_btn_edit()}
+                        </Button>
+                      }
+                    />
+                  )}
+                </>
+              }
+            />
+          );
+        })}
       </div>
     </div>
   );

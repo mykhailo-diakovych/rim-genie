@@ -1,6 +1,6 @@
 # Rim Genie — Implementation Status & Plan
 
-> Updated: 2026-02-27 | Based on `docs/REQUIREMENTS.md` + full codebase audit
+> Updated: 2026-02-28 | Based on `docs/REQUIREMENTS.md` + full codebase audit
 
 ---
 
@@ -10,19 +10,19 @@
 
 - [x] Monorepo: Turborepo + Bun workspaces (7 packages)
 - [x] Frontend: TanStack Start (React 19, Vite 8 beta, SSR), port 3001
-- [x] API: oRPC with type-safe procedures + OpenAPI docs (7 domain routers + healthCheck)
+- [x] API: oRPC with type-safe procedures + OpenAPI docs (8 domain routers + healthCheck)
 - [x] Auth: Better Auth (email/password, cookie sessions, username plugin, admin plugin)
-- [x] Database: PostgreSQL + Drizzle ORM with migrations (8 schema modules, Docker on port 5439)
+- [x] Database: PostgreSQL + Drizzle ORM with migrations (9 schema modules, Docker on port 5439)
 - [x] Role-based access control: 5 roles (admin, floorManager, cashier, technician, inventoryClerk) with granular resource/action permissions
 - [x] Environment validation via `@t3-oss/env-core` (server + web entry points)
 - [x] UI: shadcn-style components on Base UI, Tailwind v4, dark mode (OKLch color tokens)
 - [x] Role-specific procedure builders: `adminProcedure`, `floorManagerProcedure`, `cashierProcedure`, `technicianProcedure`, `inventoryClerkProcedure`
 - [x] Frontend route guards: centralized `requireRoles()` + `hasRouteAccess()` in `route-permissions.ts`, `beforeLoad` guards on all role-restricted routes, sidebar filtered by role
 
-### Authentication Module — §2.6 (Partially Complete)
+### Authentication Module — §2.6 (Mostly Complete)
 
 - [x] Email/password login (Better Auth, minPasswordLength: 6)
-- [ ] Staff PIN-based login — **UI exists** (`StaffLoginForm` with PIN input) but **shows "coming soon" toast on submit; no backend PIN auth endpoint**
+- [x] Staff PIN-based login — `StaffLoginForm` calls `authClient.signIn.username()` with employee ID + 6-digit PIN; Better Auth `username()` plugin handles auth; PINs stored as hashed passwords in `account` table during employee creation
 - [x] Role-based dashboards (sidebar filters by role via `hasRouteAccess`, `beforeLoad` guards redirect unauthorized users to `/dashboard`)
 - [x] Session management (cookie-based via `tanstackStartCookies()` plugin, SSR-compatible)
 - [x] Username-only login support (Better Auth username plugin enabled)
@@ -168,11 +168,11 @@
 - [ ] Multi-site support (no `site` table, no location scoping)
 - [ ] Admin job monitoring dashboard (technician module exists but no admin-only job reassignment/monitoring view)
 
-### Loyalty / Birthday Module — §2.7 (Not Started)
+### Loyalty / Birthday Module — §2.7 (Complete)
 
-- [ ] Track customer purchase frequency
-- [ ] Surface loyalty data in customer profiles across modules
-- [ ] Admin-configurable loyalty thresholds and benefits
+- [x] Track customer purchase frequency — computed on-the-fly from `invoice` table (paid invoices count + total spent), exposed via `loyalty.customerStats` API and `customers.list` subquery
+- [x] Surface loyalty data in customer profiles — `LoyaltyStatsCard` on customer profile page with progress bars (purchases + spend vs thresholds), eligibility badge, reward %; "Loyal" badge on customer list cards
+- [x] Admin-configurable loyalty thresholds and benefits — `loyaltyConfig` singleton table, "Loyalty" tab on `/manage` page with purchase threshold, spend threshold ($), reward discount % fields
 
 ### Digital Disclaimer / Signature — §2.8 (Partially Complete)
 
@@ -361,7 +361,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [ ] Print job label tag
 - [ ] Send quote via email/SMS with electronic quote link (depends on Phase 4)
 - [ ] Public electronic quote viewer page (SSR)
-- [x] Staff PIN login implementation (backend auth endpoint needed)
+- [x] Staff PIN login implementation (fully wired — `signIn.username()` + Better Auth `username()` plugin)
 
 ---
 
@@ -387,13 +387,13 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ---
 
-### Phase 10: Loyalty Program — §2.7 (Not Started)
+### Phase 10: Loyalty Program — §2.7 ✅ COMPLETE
 
-> Priority: **Low**
+> ~~Priority: **Low**~~ — Done
 
-- [ ] Purchase frequency tracking
-- [ ] Loyalty data in customer profiles
-- [ ] Admin-configurable thresholds
+- [x] Purchase frequency tracking — `loyalty.customerStats` computes from paid invoices; `customers.list` includes `paidInvoiceCount` + `totalSpent` subquery fields
+- [x] Loyalty data in customer profiles — `LoyaltyStatsCard` component with progress bars, eligibility badge, reward %; "Loyal" badge on customer cards
+- [x] Admin-configurable thresholds — `loyaltyConfig` DB table (singleton), `loyalty.config.get/update` API, "Loyalty" tab on `/manage` page
 
 ---
 
@@ -422,7 +422,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 1. **Multi-site**: Add `siteId` to all tables or use a junction? → Recommend FK on quote/invoice/job (Phase 6.4)
 2. **Discount workflow**: Inline on invoice or separate approval entity? → Recommend separate `discountRequest` table for audit trail (Phase 6.3)
-3. **PIN login**: Separate auth endpoint or reuse Better Auth password flow? → PIN stored as password in accounts table during employee creation; need dedicated verification route
+3. **PIN login**: ✅ Decided — Reuses Better Auth password flow via `username()` plugin. PIN stored as hashed password in `account` table during `employees.create`; `signIn.username()` authenticates with employee ID + PIN
 
 ### Technical Debt / Improvements
 
@@ -445,7 +445,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - `acceptedById`/`completedById` audit columns missing from job table
 - No audit log system (all mutations are fire-and-forget)
 - No soft deletes anywhere (hard deletes with cascading throughout)
-- Staff PIN login form exists but submits "coming soon" toast
+- ~~Staff PIN login form exists but submits "coming soon" toast~~ → ✅ Fully functional: calls `authClient.signIn.username()` with employee ID + PIN
 - Inventory EOD form has no frontend (only SOD form exists)
 - Upload proofs dialog has full UI but no backend integration
 

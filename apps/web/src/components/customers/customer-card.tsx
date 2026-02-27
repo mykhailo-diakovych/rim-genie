@@ -14,14 +14,17 @@ export interface CustomerCardData {
   discount: number | null;
   quotesCount: number;
   jobsCount: number;
+  paidInvoiceCount: number;
+  totalSpent: number;
 }
 
 interface CustomerCardProps {
   customer: CustomerCardData;
+  isLoyal?: boolean;
   actions: ReactNode;
 }
 
-export function CustomerCard({ customer, actions }: CustomerCardProps) {
+export function CustomerCard({ customer, isLoyal, actions }: CustomerCardProps) {
   return (
     <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card">
       <div className="flex flex-col gap-1">
@@ -32,6 +35,11 @@ export function CustomerCard({ customer, actions }: CustomerCardProps) {
           {customer.isVip && (
             <span className="inline-flex items-center rounded bg-badge-orange px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white">
               VIP{customer.discount ? ` ${customer.discount}%` : ""}
+            </span>
+          )}
+          {isLoyal && (
+            <span className="inline-flex items-center rounded bg-green px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white">
+              {m.loyalty_badge()}
             </span>
           )}
           <div className="flex items-center gap-2 font-rubik text-xs leading-3.5 text-body">

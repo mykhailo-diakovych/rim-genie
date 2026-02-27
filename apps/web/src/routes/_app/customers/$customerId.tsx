@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft, Mail, Pencil, Phone, Plus, Trash2 } from "lucide-react";
+import { Award, ChevronLeft, Mail, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { CustomerModal } from "@/components/customers/customer-modal";
@@ -18,6 +18,7 @@ import {
 import type { AppRouterClient } from "@rim-genie/api/routers/index";
 
 import { requireRoles } from "@/lib/route-permissions";
+import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/customers/$customerId")({
@@ -234,6 +235,98 @@ function CommunicationToggle({
   );
 }
 
+function LoyaltyProgressBar({ value, max }: { value: number; max: number }) {
+  const pct = Math.min((value / max) * 100, 100);
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-page">
+      <div className="h-full rounded-full bg-blue transition-all" style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+function LoyaltyStatsCard({ customerId }: { customerId: string }) {
+  const { data, isLoading } = useQuery(
+    orpc.loyalty.customerStats.queryOptions({ input: { customerId } }),
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
+        <div className="h-5 w-32 animate-pulse rounded bg-page" />
+        <div className="flex gap-6">
+          <div className="h-16 flex-1 animate-pulse rounded bg-page" />
+          <div className="h-16 flex-1 animate-pulse rounded bg-page" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const purchasesRemaining = Math.max(0, data.purchaseThreshold - data.paidInvoiceCount);
+
+  return (
+    <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
+      <div className="flex items-center justify-between">
+        <h2 className="font-rubik text-base leading-5 font-medium text-body">
+          {m.loyalty_stats_title()}
+        </h2>
+        <div className="flex items-center gap-2">
+          {data.isEligible ? (
+            <span className="inline-flex items-center gap-1 rounded bg-green px-2 py-0.5 font-rubik text-xs leading-3.5 text-white">
+              <Award className="size-3" />
+              {m.loyalty_eligible()}
+            </span>
+          ) : (
+            <span className="font-rubik text-xs leading-3.5 text-label">
+              {m.loyalty_not_eligible({ count: String(purchasesRemaining) })}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="h-px bg-field-line" />
+
+      <div className="flex items-start gap-6">
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="font-rubik text-xs leading-3.5 text-label">
+              {m.loyalty_purchases()}
+            </span>
+            <span className="font-rubik text-xs leading-3.5 text-body">
+              {data.paidInvoiceCount} / {data.purchaseThreshold}
+            </span>
+          </div>
+          <LoyaltyProgressBar value={data.paidInvoiceCount} max={data.purchaseThreshold} />
+        </div>
+
+        <div className="w-px self-stretch bg-field-line" />
+
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="font-rubik text-xs leading-3.5 text-label">
+              {m.loyalty_total_spent()}
+            </span>
+            <span className="font-rubik text-xs leading-3.5 text-body">
+              ${(data.totalSpent / 100).toFixed(0)} / ${(data.spendThreshold / 100).toFixed(0)}
+            </span>
+          </div>
+          <LoyaltyProgressBar value={data.totalSpent} max={data.spendThreshold} />
+        </div>
+
+        <div className="w-px self-stretch bg-field-line" />
+
+        <div className="flex w-[144px] flex-col gap-1">
+          <span className="font-rubik text-xs leading-3.5 text-label">{m.loyalty_reward()}</span>
+          <span className="font-rubik text-sm leading-4.5 font-medium text-body">
+            {data.rewardPercent}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CustomerProfilePage() {
   const { customerId } = Route.useParams();
   const navigate = useNavigate();
@@ -356,6 +449,8 @@ function CustomerProfilePage() {
           <p className="py-4 text-center font-rubik text-sm text-label">Customer not found</p>
         )}
       </div>
+
+      <LoyaltyStatsCard customerId={customerId} />
 
       <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
         <div className="flex items-center justify-between">

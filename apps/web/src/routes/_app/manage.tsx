@@ -16,12 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
-import { orpc } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
+
+type ManageTab = ServiceType | "loyalty";
 
 export const Route = createFileRoute("/_app/manage")({
-  validateSearch: (search: Record<string, unknown>): { tab: ServiceType } => ({
-    tab: (["rim", "general"] as const).includes(search.tab as ServiceType)
-      ? (search.tab as ServiceType)
+  validateSearch: (search: Record<string, unknown>): { tab: ManageTab } => ({
+    tab: (["rim", "general", "loyalty"] as const).includes(search.tab as ManageTab)
+      ? (search.tab as ManageTab)
       : "rim",
   }),
   beforeLoad: requireRoles(["admin"]),
@@ -149,10 +151,123 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
   );
 }
 
+function LoyaltyTab() {
+  const queryClient = useQueryClient();
+
+  const { data: config, isLoading } = useQuery(orpc.loyalty.config.get.queryOptions());
+
+  const [purchaseThreshold, setPurchaseThreshold] = useState("");
+  const [spendThreshold, setSpendThreshold] = useState("");
+  const [rewardPercent, setRewardPercent] = useState("");
+
+  useEffect(() => {
+    if (config) {
+      setPurchaseThreshold(String(config.purchaseThreshold));
+      setSpendThreshold(String(config.spendThreshold / 100));
+      setRewardPercent(String(config.rewardPercent));
+    }
+  }, [config]);
+
+  const updateMutation = useMutation({
+    mutationFn: (input: {
+      purchaseThreshold: number;
+      spendThreshold: number;
+      rewardPercent: number;
+    }) => client.loyalty.config.update(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: orpc.loyalty.config.get.key() });
+      toast.success(m.loyalty_toast_updated());
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const handleSave = () => {
+    const pt = Number.parseInt(purchaseThreshold, 10);
+    const st = Math.round(Number.parseFloat(spendThreshold) * 100);
+    const rp = Number.parseInt(rewardPercent, 10);
+
+    if (Number.isNaN(pt) || pt < 1) return;
+    if (Number.isNaN(st) || st < 1) return;
+    if (Number.isNaN(rp) || rp < 1 || rp > 100) return;
+
+    updateMutation.mutate({ purchaseThreshold: pt, spendThreshold: st, rewardPercent: rp });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex max-w-md flex-col gap-4">
+        <div className="h-10 w-full animate-pulse rounded-md bg-page" />
+        <div className="h-10 w-full animate-pulse rounded-md bg-page" />
+        <div className="h-10 w-full animate-pulse rounded-md bg-page" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex max-w-md flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label className="font-rubik text-sm leading-4.5 text-body">
+          {m.loyalty_purchase_threshold()}
+        </label>
+        <input
+          type="number"
+          min={1}
+          value={purchaseThreshold}
+          onChange={(e) => setPurchaseThreshold(e.target.value)}
+          className="flex h-10 w-full rounded-md border border-field-line bg-white px-3 py-2.5 font-rubik text-sm text-body outline-none placeholder:text-ghost"
+        />
+        <span className="font-rubik text-xs leading-3.5 text-label">
+          {m.loyalty_purchase_threshold_desc()}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="font-rubik text-sm leading-4.5 text-body">
+          {m.loyalty_spend_threshold()}
+        </label>
+        <input
+          type="number"
+          min={1}
+          step={1}
+          value={spendThreshold}
+          onChange={(e) => setSpendThreshold(e.target.value)}
+          className="flex h-10 w-full rounded-md border border-field-line bg-white px-3 py-2.5 font-rubik text-sm text-body outline-none placeholder:text-ghost"
+        />
+        <span className="font-rubik text-xs leading-3.5 text-label">
+          {m.loyalty_spend_threshold_desc()}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="font-rubik text-sm leading-4.5 text-body">
+          {m.loyalty_reward_percent()}
+        </label>
+        <input
+          type="number"
+          min={1}
+          max={100}
+          value={rewardPercent}
+          onChange={(e) => setRewardPercent(e.target.value)}
+          className="flex h-10 w-full rounded-md border border-field-line bg-white px-3 py-2.5 font-rubik text-sm text-body outline-none placeholder:text-ghost"
+        />
+        <span className="font-rubik text-xs leading-3.5 text-label">
+          {m.loyalty_reward_percent_desc()}
+        </span>
+      </div>
+
+      <Button className="self-start" disabled={updateMutation.isPending} onClick={handleSave}>
+        {updateMutation.isPending ? "Saving..." : m.btn_save()}
+      </Button>
+    </div>
+  );
+}
+
 function ManagePage() {
   const { tab: activeTab } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [addOpen, setAddOpen] = useState(false);
+
+  const isServiceTab = activeTab === "rim" || activeTab === "general";
 
   return (
     <div className="flex flex-col gap-5 p-5">
@@ -160,15 +275,17 @@ function ManagePage() {
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           {m.manage_title()}
         </h1>
-        <Button onClick={() => setAddOpen(true)}>
-          <Plus />
-          {m.manage_btn_add_service()}
-        </Button>
+        {isServiceTab && (
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus />
+            {m.manage_btn_add_service()}
+          </Button>
+        )}
       </div>
 
       <Tabs
         value={activeTab}
-        onValueChange={(val) => navigate({ search: { tab: val as ServiceType } })}
+        onValueChange={(val) => navigate({ search: { tab: val as ManageTab } })}
       >
         <TabsList>
           {SERVICE_TABS.map((tab) => (
@@ -176,6 +293,7 @@ function ManagePage() {
               {tab.label()}
             </TabsTrigger>
           ))}
+          <TabsTrigger value="loyalty">{m.loyalty_tab()}</TabsTrigger>
         </TabsList>
 
         {SERVICE_TABS.map((tab) => (
@@ -187,6 +305,10 @@ function ManagePage() {
             />
           </TabsContent>
         ))}
+
+        <TabsContent value="loyalty" className="pt-3">
+          <LoyaltyTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
