@@ -59,6 +59,7 @@ function QuoteEditorPage() {
 
   const quoteQuery = useQuery(orpc.floor.quotes.get.queryOptions({ input: { id: quoteId } }));
   const quote = quoteQuery.data;
+  const isReadOnly = quote?.status === "completed";
 
   // Sync comments from server on first load
   if (quote && !commentsSynced) {
@@ -180,7 +181,11 @@ function QuoteEditorPage() {
           </Button>
 
           <div className="flex items-center gap-2">
-            <Button color="success" onClick={handleSave} disabled={updateQuote.isPending}>
+            <Button
+              color="success"
+              onClick={handleSave}
+              disabled={isReadOnly || updateQuote.isPending}
+            >
               <Save />
               Save
             </Button>
@@ -296,26 +301,28 @@ function QuoteEditorPage() {
                         updateItem.mutate({ id: item.id, unitCost: cents })
                       }
                       isRemoving={removeItem.isPending && removeItem.variables?.id === item.id}
+                      isReadOnly={isReadOnly}
                     />
                   ))
                 )}
 
-                {/* Add Job row */}
-                <tr className="border-b border-field-line">
-                  <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingItem(null);
-                        setSheetOpen(true);
-                      }}
-                      className="flex items-center gap-1.5 rounded-md font-rubik text-sm leading-4.5 text-blue transition-opacity hover:opacity-70"
-                    >
-                      <Plus className="size-4" />
-                      Add Job
-                    </button>
-                  </td>
-                </tr>
+                {!isReadOnly && (
+                  <tr className="border-b border-field-line">
+                    <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingItem(null);
+                          setSheetOpen(true);
+                        }}
+                        className="flex items-center gap-1.5 rounded-md font-rubik text-sm leading-4.5 text-blue transition-opacity hover:opacity-70"
+                      >
+                        <Plus className="size-4" />
+                        Add Job
+                      </button>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -328,7 +335,8 @@ function QuoteEditorPage() {
               onChange={(e) => setComments(e.target.value)}
               placeholder="Enter note"
               rows={3}
-              className="w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-xs leading-3.5 text-body transition-colors outline-none placeholder:text-ghost"
+              disabled={isReadOnly}
+              className="w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-xs leading-3.5 text-body transition-colors outline-none placeholder:text-ghost disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
@@ -377,7 +385,8 @@ function QuoteEditorPage() {
                         setDiscountStr(String(discountPercent));
                       }
                     }}
-                    className="w-10 rounded border border-transparent bg-transparent px-1 py-0.5 text-right font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line"
+                    disabled={isReadOnly}
+                    className="w-10 rounded border border-transparent bg-transparent px-1 py-0.5 text-right font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <span className="text-label">%</span>
                   {discountAmount > 0 && (
@@ -507,6 +516,7 @@ function ItemRow({
   onEdit,
   onUnitCostChange,
   isRemoving,
+  isReadOnly,
 }: {
   item: {
     id: string;
@@ -520,6 +530,7 @@ function ItemRow({
   onEdit: () => void;
   onUnitCostChange: (cents: number) => void;
   isRemoving: boolean;
+  isReadOnly?: boolean;
 }) {
   const [costStr, setCostStr] = useState((item.unitCost / 100).toFixed(2));
 
@@ -556,7 +567,8 @@ function ItemRow({
             value={costStr}
             onChange={(e) => setCostStr(e.target.value)}
             onBlur={handleBlur}
-            className="w-16 rounded-sm border border-transparent bg-transparent px-1 py-0.5 font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line"
+            disabled={isReadOnly}
+            className="w-16 rounded-sm border border-transparent bg-transparent px-1 py-0.5 font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line disabled:cursor-not-allowed"
           />
         </div>
       </td>
@@ -564,22 +576,24 @@ function ItemRow({
         ${rowTotal.toFixed(2)}
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
-        <div className="flex flex-col items-center gap-1">
-          <Button className="w-full" variant="outline" onClick={onEdit}>
-            <Pencil className="size-3.5" />
-            Edit
-          </Button>
-          <Button
-            className="w-full"
-            variant="outline"
-            color="destructive"
-            onClick={onRemove}
-            disabled={isRemoving}
-          >
-            <Trash2 className="size-3.5" />
-            Remove
-          </Button>
-        </div>
+        {!isReadOnly && (
+          <div className="flex flex-col items-center gap-1">
+            <Button className="w-full" variant="outline" onClick={onEdit}>
+              <Pencil className="size-3.5" />
+              Edit
+            </Button>
+            <Button
+              className="w-full"
+              variant="outline"
+              color="destructive"
+              onClick={onRemove}
+              disabled={isRemoving}
+            >
+              <Trash2 className="size-3.5" />
+              Remove
+            </Button>
+          </div>
+        )}
       </td>
     </tr>
   );

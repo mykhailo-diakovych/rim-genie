@@ -56,8 +56,8 @@
 **Not Done:**
 
 - [ ] Explicit "Send to Cashier" button — conversion is implicit on save (no user-visible button/confirmation)
-- [ ] Quote editor read-only mode for completed quotes — UI remains fully editable regardless of status
-- [ ] Status badges on quote list page — status field is available but not rendered in `QuoteCard`
+- [x] Quote editor read-only mode for completed quotes — editing controls (add/edit/remove items, comments, discount, save) disabled when `status === "completed"`
+- [x] Status badges on quote list page — `StatusBadge` component renders colored pill (draft=gray, pending=blue, in_progress=orange, completed=green) next to customer name in `QuoteCard`
 - [ ] Send quote via email (Resend integration — no email infra yet)
 - [ ] Send quote via SMS (external API — no SMS infra yet)
 - [ ] Electronic quote viewer (public SSR page via link — no public routes)
@@ -356,8 +356,8 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [x] Manual discount input on quote
 - [x] Quote → Invoice conversion on save (automatic when items exist)
 - [ ] Explicit "Send to Cashier" button with confirmation dialog
-- [ ] Quote read-only mode for completed quotes (lock editing)
-- [ ] Status badges on quote list page
+- [x] Quote read-only mode for completed quotes (lock editing)
+- [x] Status badges on quote list page
 - [ ] Print job label tag
 - [ ] Send quote via email/SMS with electronic quote link (depends on Phase 4)
 - [ ] Public electronic quote viewer page (SSR)

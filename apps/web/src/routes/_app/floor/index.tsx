@@ -22,6 +22,26 @@ export const Route = createFileRoute("/_app/floor/")({
   component: FloorPage,
 });
 
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+
+const STATUS_BG: Record<string, string> = {
+  draft: "bg-ghost",
+  pending: "bg-blue",
+  in_progress: "bg-badge-orange",
+  completed: "bg-green",
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const label = status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return (
+    <span
+      className={`inline-flex items-center justify-center rounded ${STATUS_BG[status] ?? "bg-ghost"} px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white`}
+    >
+      {label}
+    </span>
+  );
+}
+
 // ─── Quote Card ───────────────────────────────────────────────────────────────
 
 type QuoteListItem = {
@@ -51,6 +71,7 @@ function QuoteCard({
           <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {quote.customer.name}
           </span>
+          <StatusBadge status={quote.status} />
         </div>
         <div className="flex flex-wrap items-center gap-2 font-rubik text-xs leading-3.5">
           <span className="text-label">Quote ID:</span>
