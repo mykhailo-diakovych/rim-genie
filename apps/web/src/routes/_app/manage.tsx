@@ -71,6 +71,7 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
       toast.success(m.manage_toast_deleted());
       setDeleteConfirm(null);
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const services = data?.items ?? [];
