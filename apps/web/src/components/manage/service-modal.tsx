@@ -96,6 +96,7 @@ export function ServiceModal({ open, onOpenChange, serviceType, service }: Servi
       toast.success(m.manage_toast_created());
       onOpenChange(false);
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const update = useMutation({
@@ -105,6 +106,7 @@ export function ServiceModal({ open, onOpenChange, serviceType, service }: Servi
       toast.success(m.manage_toast_updated());
       onOpenChange(false);
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const makeInitial = () =>

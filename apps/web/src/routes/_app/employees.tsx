@@ -80,6 +80,7 @@ function EmployeeActions({ employee }: { employee: EmployeeCardData }) {
       setDeactivateOpen(false);
       invalidateList();
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const activate = useMutation({
@@ -88,6 +89,7 @@ function EmployeeActions({ employee }: { employee: EmployeeCardData }) {
       toast.success(m.employees_toast_activated());
       invalidateList();
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const deleteMutation = useMutation({
@@ -97,6 +99,7 @@ function EmployeeActions({ employee }: { employee: EmployeeCardData }) {
       setDeleteOpen(false);
       invalidateList();
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const isDeactivated = employee.banned === true;

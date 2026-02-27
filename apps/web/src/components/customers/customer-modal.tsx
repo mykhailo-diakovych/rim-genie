@@ -88,6 +88,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
       toast.success(m.customers_toast_created());
       setOpen(false);
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const updateCustomer = useMutation({
@@ -97,6 +98,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
       toast.success(m.customers_toast_updated());
       setOpen(false);
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const initial = customer

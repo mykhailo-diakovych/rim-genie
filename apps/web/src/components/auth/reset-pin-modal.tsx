@@ -39,13 +39,17 @@ export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
   const form = useForm({
     defaultValues: { oldPin: "", newPin: "", confirmPin: "" },
     onSubmit: async ({ value }) => {
-      await resetPin.mutateAsync({
-        userId: employeeId,
-        oldPin: value.oldPin,
-        newPin: value.newPin,
-      });
-      toast.success(m.employees_toast_pin_reset());
-      setOpen(false);
+      try {
+        await resetPin.mutateAsync({
+          userId: employeeId,
+          oldPin: value.oldPin,
+          newPin: value.newPin,
+        });
+        toast.success(m.employees_toast_pin_reset());
+        setOpen(false);
+      } catch (err) {
+        toast.error((err as Error).message);
+      }
     },
     validators: {
       onSubmit: z

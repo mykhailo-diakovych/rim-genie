@@ -1,6 +1,13 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { m } from "@/paraglide/messages";
+import {
+  Select,
+  SelectOption,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ServicesPaginationProps {
   page: number;
@@ -41,20 +48,24 @@ export function ServicesPagination({
         <span className="font-rubik text-xs leading-3.5 text-body">
           {m.manage_pagination_show()}
         </span>
-        <select
-          value={pageSize}
-          onChange={(e) => {
-            onPageSizeChange(Number(e.target.value));
+        <Select
+          value={String(pageSize)}
+          onValueChange={(v) => {
+            onPageSizeChange(Number(v));
             onPageChange(1);
           }}
-          className="flex h-8 w-14 items-center justify-between rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body capitalize outline-none"
         >
-          {PAGE_SIZE_OPTIONS.map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-8 w-14">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectPopup>
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <SelectOption key={size} value={String(size)}>
+                {size}
+              </SelectOption>
+            ))}
+          </SelectPopup>
+        </Select>
         <span className="font-rubik text-xs leading-3.5 text-body">
           {m.manage_pagination_of()} <strong>{total}</strong> {m.manage_pagination_entries()}
         </span>
