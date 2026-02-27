@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Calendar, ChevronDown, Eye, Trash2 } from "lucide-react";
+import { Calendar, Eye, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectOption,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogClose,
@@ -184,53 +191,6 @@ function InvoiceCard({
   );
 }
 
-function DateRangeDropdown({
-  value,
-  onChange,
-}: {
-  value: DateRange;
-  onChange: (range: DateRange) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-36 items-center justify-between gap-1.5 rounded-md border border-field-line bg-white px-2 py-2.5 font-rubik text-xs text-body"
-      >
-        <Calendar className="size-4 text-label" />
-        {DATE_RANGE_LABELS[value]}
-        <ChevronDown className="size-4 text-label" />
-      </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full right-0 z-50 mt-1 w-40 rounded-md border border-card-line bg-white py-1 shadow-md">
-            {DATE_RANGES.map((range) => (
-              <button
-                key={range}
-                type="button"
-                onClick={() => {
-                  onChange(range);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-blue/5",
-                  value === range && "text-blue",
-                )}
-              >
-                {DATE_RANGE_LABELS[range]}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 function CashierPage() {
   const { tab, dateRange } = Route.useSearch();
@@ -302,10 +262,26 @@ function CashierPage() {
         </TabsList>
 
         <div className="flex justify-end pt-3">
-          <DateRangeDropdown
+          <Select
             value={dateRange}
-            onChange={(range) => navigate({ search: (prev) => ({ ...prev, dateRange: range }) })}
-          />
+            onValueChange={(v) =>
+              navigate({ search: (prev) => ({ ...prev, dateRange: v as DateRange }) })
+            }
+          >
+            <SelectTrigger className="w-36">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="size-4 shrink-0 text-label" />
+                <SelectValue />
+              </div>
+            </SelectTrigger>
+            <SelectPopup>
+              {DATE_RANGES.map((range) => (
+                <SelectOption key={range} value={range}>
+                  {DATE_RANGE_LABELS[range]}
+                </SelectOption>
+              ))}
+            </SelectPopup>
+          </Select>
         </div>
 
         {TAB_VALUES.map((value) => (
