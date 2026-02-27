@@ -191,7 +191,6 @@ function InvoiceCard({
   );
 }
 
-
 function CashierPage() {
   const { tab, dateRange } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });

@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, ChevronDown, SquareCheckBig } from "lucide-react";
 import { useState } from "react";
@@ -6,6 +7,7 @@ import { toast } from "sonner";
 import { SignatureModal } from "@/components/terms/signature-modal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { orpc } from "@/utils/orpc";
 
 const SERVICE_TERMS = [
   {
@@ -53,6 +55,9 @@ const SERVICE_TERMS = [
 ];
 
 export const Route = createFileRoute("/_app/terms")({
+  validateSearch: (search: Record<string, unknown>): { quoteId?: string } => ({
+    quoteId: typeof search.quoteId === "string" ? search.quoteId : undefined,
+  }),
   head: () => ({
     meta: [{ title: "Rim-Genie | Terms" }],
   }),
@@ -60,10 +65,36 @@ export const Route = createFileRoute("/_app/terms")({
 });
 
 function TermsPage() {
+  const { quoteId } = Route.useSearch();
+  const queryClient = useQueryClient();
+
   const [accepted, setAccepted] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [signatureOpen, setSignatureOpen] = useState(false);
 
+  const signatureQuery = useQuery({
+    ...orpc.floor.termsSignature.getByQuoteId.queryOptions({
+      input: { quoteId: quoteId! },
+    }),
+    enabled: !!quoteId,
+  });
+
+  const signMutation = useMutation({
+    ...orpc.floor.termsSignature.sign.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Terms signed successfully");
+      queryClient.invalidateQueries({
+        queryKey: orpc.floor.termsSignature.getByQuoteId.queryOptions({
+          input: { quoteId: quoteId! },
+        }).queryKey,
+      });
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const isSigned = !!signatureQuery.data;
   const allAccepted = accepted.size === SERVICE_TERMS.length;
 
   function toggleAccept(id: number) {
@@ -86,6 +117,38 @@ function TermsPage() {
 
   function acceptAll() {
     setAccepted(new Set(SERVICE_TERMS.map((t) => t.id)));
+  }
+
+  function handleSign(signatureDataUrl: string) {
+    if (!quoteId) return;
+    signMutation.mutate({ quoteId, signatureDataUrl });
+  }
+
+  if (!quoteId) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-2">
+        <p className="font-rubik text-sm text-label">
+          No quote specified. Please access this page from a quote.
+        </p>
+      </div>
+    );
+  }
+
+  if (isSigned) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-2">
+        <Check className="size-12 text-green" />
+        <p className="font-rubik text-sm font-medium text-body">Terms already signed</p>
+        <p className="font-rubik text-xs text-label">
+          Signed on{" "}
+          {new Date(signatureQuery.data!.signedAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -162,18 +225,14 @@ function TermsPage() {
         <Button
           color="success"
           className="w-32"
-          disabled={!allAccepted}
+          disabled={!allAccepted || signMutation.isPending}
           onClick={() => setSignatureOpen(true)}
         >
           Sign
         </Button>
       </div>
 
-      <SignatureModal
-        open={signatureOpen}
-        onOpenChange={setSignatureOpen}
-        onSign={() => toast.success("Terms signed successfully")}
-      />
+      <SignatureModal open={signatureOpen} onOpenChange={setSignatureOpen} onSign={handleSign} />
     </div>
   );
 }

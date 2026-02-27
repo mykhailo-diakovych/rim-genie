@@ -9,6 +9,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
@@ -114,6 +115,29 @@ export const quoteItem = pgTable("quote_item", {
     .notNull(),
 });
 
+export const termsSignature = pgTable(
+  "terms_signature",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    quoteId: text("quote_id")
+      .notNull()
+      .references(() => quote.id, { onDelete: "cascade" }),
+    signatureDataUrl: text("signature_data_url").notNull(),
+    signedById: text("signed_by_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    signedAt: timestamp("signed_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [unique("terms_signature_quoteId_unique").on(table.quoteId)],
+);
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const customerRelations = relations(customer, ({ many }) => ({
@@ -135,11 +159,26 @@ export const quoteRelations = relations(quote, ({ one, many }) => ({
     fields: [quote.id],
     references: [invoice.quoteId],
   }),
+  termsSignature: one(termsSignature, {
+    fields: [quote.id],
+    references: [termsSignature.quoteId],
+  }),
 }));
 
 export const quoteItemRelations = relations(quoteItem, ({ one }) => ({
   quote: one(quote, {
     fields: [quoteItem.quoteId],
     references: [quote.id],
+  }),
+}));
+
+export const termsSignatureRelations = relations(termsSignature, ({ one }) => ({
+  quote: one(quote, {
+    fields: [termsSignature.quoteId],
+    references: [quote.id],
+  }),
+  signedBy: one(user, {
+    fields: [termsSignature.signedById],
+    references: [user.id],
   }),
 }));

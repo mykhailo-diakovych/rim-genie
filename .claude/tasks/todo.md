@@ -174,12 +174,15 @@
 - [ ] Surface loyalty data in customer profiles across modules
 - [ ] Admin-configurable loyalty thresholds and benefits
 
-### Digital Disclaimer / Signature — §2.8 (Not Started — Stage 3)
+### Digital Disclaimer / Signature — §2.8 (Partially Complete)
 
-- [ ] Interactive tablet disclaimer with section-based signing
-- [ ] Signature pad capture (`signature_pad` package is installed but not used)
-- [ ] Save disclaimer under customer profile
-- [ ] 7 disclaimer sections as per spec
+- [x] `termsSignature` DB table (`terms_signature` — 1:1 with quote via unique constraint on `quoteId`, cascade delete, stores base64 signature data URL)
+- [x] API procedures: `floor.termsSignature.sign` (validates quote, prevents duplicates, links to session user) + `floor.termsSignature.getByQuoteId`
+- [x] Terms page accepts `quoteId` search param, persists signature via mutation, shows "already signed" state on revisit
+- [x] Signature pad capture (`signature_pad` integrated in `SignatureModal`, base64 data URL passed to API)
+- [x] 7 disclaimer sections with accept-all, per-section expand/accept
+- [ ] Save disclaimer under customer profile (currently linked to quote, not customer)
+- [ ] Interactive tablet disclaimer with section-based signing (individual section signatures — current flow is single signature after accepting all)
 
 ### Notifications & Communication (Partially Complete)
 
@@ -394,14 +397,16 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ---
 
-### Phase 11: Digital Disclaimer / Signature — §2.8 (Not Started — Stage 3)
+### Phase 11: Digital Disclaimer / Signature — §2.8 (Partially Complete)
 
 > Priority: **Low** (explicitly Stage 3)
 
-- [ ] Tablet signature capture (`signature_pad` installed, not integrated)
-- [ ] 7 disclaimer sections
-- [ ] Section-based signing
-- [ ] Save to customer profile
+- [x] `termsSignature` table in `packages/db/src/schema/floor.ts` (1:1 with quote, unique constraint, relations)
+- [x] `floor.termsSignature.sign` + `floor.termsSignature.getByQuoteId` API procedures
+- [x] Terms page (`/terms?quoteId=...`) — accepts quoteId param, mutation to persist, "already signed" state, error state for missing quoteId
+- [x] 7 disclaimer sections with expand/accept UX + signature pad capture
+- [ ] Save disclaimer under customer profile (currently per-quote)
+- [ ] Section-based individual signing (current: single signature after accepting all sections)
 
 ---
 

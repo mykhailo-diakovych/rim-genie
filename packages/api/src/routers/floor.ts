@@ -5,6 +5,7 @@ import {
   customer,
   quote,
   quoteItem,
+  termsSignature,
   invoice,
   payment,
   job,
@@ -441,6 +442,48 @@ export const floorRouter = {
         }
 
         return { success: true as const };
+      }),
+  },
+
+  termsSignature: {
+    sign: protectedProcedure
+      .input(
+        z.object({
+          quoteId: z.string(),
+          signatureDataUrl: z.string().min(1),
+        }),
+      )
+      .handler(async ({ input, context }) => {
+        const existing = await db.query.quote.findFirst({
+          where: eq(quote.id, input.quoteId),
+        });
+        if (!existing) throw new Error("Quote not found");
+
+        const duplicate = await db
+          .select({ id: termsSignature.id })
+          .from(termsSignature)
+          .where(eq(termsSignature.quoteId, input.quoteId))
+          .limit(1);
+        if (duplicate.length > 0) throw new Error("Terms already signed for this quote");
+
+        const rows = await db
+          .insert(termsSignature)
+          .values({
+            quoteId: input.quoteId,
+            signatureDataUrl: input.signatureDataUrl,
+            signedById: context.session.user.id,
+          })
+          .returning();
+        return rows[0]!;
+      }),
+
+    getByQuoteId: protectedProcedure
+      .input(z.object({ quoteId: z.string() }))
+      .handler(async ({ input }) => {
+        const row = await db.query.termsSignature.findFirst({
+          where: eq(termsSignature.quoteId, input.quoteId),
+        });
+        return row ?? null;
       }),
   },
 };
