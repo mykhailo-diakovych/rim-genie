@@ -49,7 +49,7 @@
     "@types/node": "catalog:",
     "oxfmt": "^0.26.0",
     "oxlint": "^1.41.0",
-    "turbo": "^2.8.11",
+    "turbo": "^2.8.12",
     "typescript": "catalog:"
   },
   "packageManager": "bun@1.3.0"
