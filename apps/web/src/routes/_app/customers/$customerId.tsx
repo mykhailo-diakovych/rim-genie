@@ -287,7 +287,7 @@ function LoyaltyStatsCard({ customerId }: { customerId: string }) {
 
       <div className="h-px bg-field-line" />
 
-      <div className="flex items-start gap-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-6">
         <div className="flex flex-1 flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="font-rubik text-xs leading-3.5 text-label">
@@ -300,7 +300,7 @@ function LoyaltyStatsCard({ customerId }: { customerId: string }) {
           <LoyaltyProgressBar value={data.paidInvoiceCount} max={data.purchaseThreshold} />
         </div>
 
-        <div className="w-px self-stretch bg-field-line" />
+        <div className="hidden w-px self-stretch bg-field-line sm:block" />
 
         <div className="flex flex-1 flex-col gap-2">
           <div className="flex items-center justify-between">
@@ -314,9 +314,9 @@ function LoyaltyStatsCard({ customerId }: { customerId: string }) {
           <LoyaltyProgressBar value={data.totalSpent} max={data.spendThreshold} />
         </div>
 
-        <div className="w-px self-stretch bg-field-line" />
+        <div className="hidden w-px self-stretch bg-field-line sm:block" />
 
-        <div className="flex w-[144px] flex-col gap-1">
+        <div className="flex flex-col gap-1 sm:w-[144px]">
           <span className="font-rubik text-xs leading-3.5 text-label">{m.loyalty_reward()}</span>
           <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {data.rewardPercent}%
@@ -356,7 +356,7 @@ function CustomerProfilePage() {
   const latestJobs = allJobs.slice(0, 10);
 
   return (
-    <div className="flex flex-1 flex-col gap-3 p-5">
+    <div className="flex flex-1 flex-col gap-3 p-3 sm:p-5">
       <div>
         <Button variant="outline" nativeButton={false} render={<Link to="/customers" />}>
           <ChevronLeft />
@@ -369,7 +369,7 @@ function CustomerProfilePage() {
           <ProfileCardSkeleton />
         ) : customer ? (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
                 {customer.name}
               </h1>
@@ -389,7 +389,7 @@ function CustomerProfilePage() {
 
             <div className="h-px bg-field-line" />
 
-            <div className="flex items-center gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
               <div className="flex flex-1 flex-col gap-2">
                 <span className="font-rubik text-xs leading-3.5 text-label">Email:</span>
                 <div className="flex items-center gap-1.5">
@@ -400,9 +400,9 @@ function CustomerProfilePage() {
                 </div>
               </div>
 
-              <div className="w-px self-stretch bg-field-line" />
+              <div className="hidden w-px self-stretch bg-field-line sm:block" />
 
-              <div className="flex w-[144px] flex-col gap-2">
+              <div className="flex flex-col gap-2 sm:w-[144px]">
                 <span className="font-rubik text-xs leading-3.5 text-label">Mobile:</span>
                 <div className="flex items-center gap-1.5">
                   <Phone className="size-4 shrink-0 text-ghost" />
@@ -410,18 +410,18 @@ function CustomerProfilePage() {
                 </div>
               </div>
 
-              <div className="w-px self-stretch bg-field-line" />
+              <div className="hidden w-px self-stretch bg-field-line sm:block" />
 
-              <div className="flex w-[144px] flex-col gap-2 font-rubik">
+              <div className="flex flex-col gap-2 font-rubik sm:w-[144px]">
                 <span className="text-xs leading-3.5 text-label">Birthday:</span>
                 <span className="text-sm leading-4.5 text-body">
                   {formatBirthday(customer.birthdayDay, customer.birthdayMonth)}
                 </span>
               </div>
 
-              <div className="w-px self-stretch bg-field-line" />
+              <div className="hidden w-px self-stretch bg-field-line sm:block" />
 
-              <div className="flex w-[144px] flex-col gap-2">
+              <div className="flex flex-col gap-2 sm:w-[144px]">
                 <span className="font-rubik text-xs leading-3.5 text-label">Communication:</span>
                 <CommunicationToggle
                   customerId={customer.id}
@@ -431,9 +431,9 @@ function CustomerProfilePage() {
                 />
               </div>
 
-              <div className="w-px self-stretch bg-field-line" />
+              <div className="hidden w-px self-stretch bg-field-line sm:block" />
 
-              <div className="flex w-[144px] flex-col gap-2">
+              <div className="flex flex-col gap-2 sm:w-[144px]">
                 <span className="font-rubik text-xs leading-3.5 text-label">VIP Status:</span>
                 {customer.isVip ? (
                   <span className="inline-flex w-fit items-center rounded bg-badge-orange px-1.5 py-0.5 font-rubik text-xs text-white">
@@ -478,7 +478,7 @@ function CustomerProfilePage() {
 function ProfileCardSkeleton() {
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="h-[26px] w-40 animate-pulse rounded bg-page" />
         <div className="flex gap-2">
           <div className="h-9 w-[128px] animate-pulse rounded-lg bg-page" />
@@ -486,11 +486,11 @@ function ProfileCardSkeleton() {
         </div>
       </div>
       <div className="h-px bg-field-line" />
-      <div className="flex items-center gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
         <div className="h-10 flex-1 animate-pulse rounded bg-page" />
-        <div className="h-10 w-[144px] animate-pulse rounded bg-page" />
-        <div className="h-10 w-[144px] animate-pulse rounded bg-page" />
-        <div className="h-10 w-[144px] animate-pulse rounded bg-page" />
+        <div className="h-10 animate-pulse rounded bg-page sm:w-[144px]" />
+        <div className="h-10 animate-pulse rounded bg-page sm:w-[144px]" />
+        <div className="h-10 animate-pulse rounded bg-page sm:w-[144px]" />
       </div>
     </div>
   );
@@ -510,7 +510,7 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full font-rubik text-xs">
+      <table className="min-w-[600px] w-full font-rubik text-xs">
         <thead>
           <tr className="text-left text-label">
             <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
@@ -623,7 +623,7 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full font-rubik text-xs">
+      <table className="min-w-[600px] w-full font-rubik text-xs">
         <thead>
           <tr className="text-left text-label">
             <th className="h-8 w-[144px] border-t border-l border-field-line px-2 py-1.5 font-normal">

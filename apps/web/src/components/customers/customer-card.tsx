@@ -26,9 +26,9 @@ interface CustomerCardProps {
 
 export function CustomerCard({ customer, isLoyal, actions }: CustomerCardProps) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card">
+    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-1">
-        <div className="flex items-baseline gap-4">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {customer.name}
           </span>
@@ -63,7 +63,7 @@ export function CustomerCard({ customer, isLoyal, actions }: CustomerCardProps) 
 
 export function CustomerCardSkeleton() {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card">
+    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-1">
         <div className="flex items-baseline gap-4">
           <Skeleton className="h-[18px] w-32 rounded" />
@@ -75,7 +75,7 @@ export function CustomerCardSkeleton() {
           <Skeleton className="h-3.5 w-12 rounded" />
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex self-start gap-2 sm:self-auto">
         <Skeleton className="h-9 w-[72px] rounded-lg" />
         <Skeleton className="h-9 w-[72px] rounded-lg" />
       </div>
