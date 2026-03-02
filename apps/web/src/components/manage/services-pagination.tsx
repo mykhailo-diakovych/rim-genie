@@ -43,8 +43,8 @@ export function ServicesPagination({
   const visiblePages = getVisiblePages(page, totalPages);
 
   return (
-    <div className="flex items-center justify-between px-3 py-3">
-      <div className="flex items-center gap-1.5">
+    <div className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-center gap-1.5 sm:justify-start">
         <span className="font-rubik text-xs leading-3.5 text-body">
           {m.manage_pagination_show()}
         </span>
@@ -71,7 +71,7 @@ export function ServicesPagination({
         </span>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-center gap-1.5 sm:justify-end">
         <button
           type="button"
           disabled={page <= 1}

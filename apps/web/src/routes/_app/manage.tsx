@@ -82,7 +82,7 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
   return (
     <>
       <div className="flex flex-col gap-3">
-        <div className="relative w-80">
+        <div className="relative w-full sm:w-80">
           <input
             type="text"
             placeholder={m.manage_search_placeholder()}
@@ -270,8 +270,8 @@ function ManagePage() {
   const isServiceTab = activeTab === "rim" || activeTab === "general";
 
   return (
-    <div className="flex flex-col gap-5 p-5">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-5 p-3 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           {m.manage_title()}
         </h1>
