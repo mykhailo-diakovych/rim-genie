@@ -57,7 +57,7 @@ export function FilterRow({
   onDateFilterChange,
 }: FilterRowProps) {
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <Select
         value={ownerFilter}
         onValueChange={(v) => onOwnerFilterChange((v ?? "all") as OwnerFilter)}

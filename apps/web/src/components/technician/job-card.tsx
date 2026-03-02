@@ -11,7 +11,7 @@ export function JobCard({ group, onView }: { group: JobGroup; onView: () => void
   const action = getGroupAction(group);
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-card-line bg-white p-3 shadow-card">
+    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center">
       <div className="flex flex-1 flex-col gap-1">
         <div className="flex items-center gap-4">
           <span className="font-rubik text-sm leading-4.5 font-medium text-body">
@@ -23,7 +23,7 @@ export function JobCard({ group, onView }: { group: JobGroup; onView: () => void
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 font-rubik text-xs leading-3.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-rubik text-xs leading-3.5">
           <span className="text-label">Job ID:</span>
           <span className="text-body">{group.invoiceNumber}</span>
           <span className="size-1 rounded-full bg-ghost" />
@@ -32,7 +32,7 @@ export function JobCard({ group, onView }: { group: JobGroup; onView: () => void
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button onClick={onView}>
           <Eye />
           View

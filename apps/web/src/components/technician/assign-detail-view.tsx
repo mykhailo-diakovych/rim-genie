@@ -7,13 +7,13 @@ import { type JobGroup } from "./types";
 
 export function AssignDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
   return (
-    <div className="flex flex-1 flex-col gap-5 p-5">
+    <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <Button variant="outline" className="self-start" onClick={onBack}>
         <ChevronLeft />
         Back to list
       </Button>
 
-      <div className="flex items-center justify-between rounded-xl border border-card-line bg-white px-4 py-3 shadow-card">
+      <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white px-4 py-3 shadow-card sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-baseline gap-3">
           <span className="font-rubik text-[22px] leading-6.5 font-bold text-body">
             {group.customer}

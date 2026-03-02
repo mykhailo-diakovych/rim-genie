@@ -7,13 +7,13 @@ import { type JobGroup } from "./types";
 
 export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
   return (
-    <div className="flex flex-1 flex-col gap-5 p-5">
+    <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <Button variant="outline" className="self-start" onClick={onBack}>
         <ChevronLeft />
         Back to list
       </Button>
 
-      <div className="flex items-center justify-between rounded-xl border border-card-line bg-white px-4 py-3 shadow-card">
+      <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white px-4 py-3 shadow-card sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-baseline gap-3">
           <span className="font-rubik text-[22px] leading-6.5 font-bold text-body">
             {group.customer}
@@ -39,21 +39,25 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
       </div>
 
       <div className="overflow-hidden rounded-xl border border-card-line bg-white shadow-card">
-        <div className="grid grid-cols-[48px_1fr_120px_124px] border-b border-card-line px-3 py-2">
-          <span className="font-rubik text-xs leading-3.5 text-label">#</span>
+        <div className="grid grid-cols-[1fr_auto] border-b border-card-line px-3 py-2 sm:grid-cols-[48px_1fr_120px_124px]">
+          <span className="hidden font-rubik text-xs leading-3.5 text-label sm:block">#</span>
           <span className="font-rubik text-xs leading-3.5 text-label">Description</span>
-          <span className="font-rubik text-xs leading-3.5 text-label">Status</span>
+          <span className="hidden font-rubik text-xs leading-3.5 text-label sm:block">Status</span>
           <span />
         </div>
 
         {group.jobs.map((job, idx) => (
           <div
             key={job.id}
-            className={`grid grid-cols-[48px_1fr_120px_124px] items-start bg-[#fafffa] px-3 py-3${idx < group.jobs.length - 1 ? " border-b border-card-line" : ""}`}
+            className={`grid grid-cols-[1fr_auto] items-start bg-[#fafffa] px-3 py-3 sm:grid-cols-[48px_1fr_120px_124px]${idx < group.jobs.length - 1 ? " border-b border-card-line" : ""}`}
           >
-            <span className="pt-0.5 font-rubik text-sm leading-4.5 text-body">{idx + 1}</span>
+            <span className="hidden pt-0.5 font-rubik text-sm leading-4.5 text-body sm:block">{idx + 1}</span>
 
             <div className="flex flex-col gap-1">
+              <div className="mb-1 flex items-center gap-2 font-rubik text-xs leading-3.5 sm:hidden">
+                <span className="text-label">#{idx + 1}</span>
+                <span className="rounded-[4px] bg-[#55ce63] px-1.5 py-0.5 text-white">Completed</span>
+              </div>
               <p className="font-rubik text-sm leading-4.5 font-medium text-body">
                 {job.invoiceItem.vehicleSize}&quot; Rims
               </p>
@@ -71,7 +75,7 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
               )}
             </div>
 
-            <div className="flex items-start pt-0.5">
+            <div className="hidden items-start pt-0.5 sm:flex">
               <span className="rounded-[4px] bg-[#55ce63] px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white">
                 Completed
               </span>
