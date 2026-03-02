@@ -213,13 +213,12 @@ function InvoiceDetailPage() {
             <Send />
             {hasJobs ? "Sent to Technician" : "To Technician"}
           </Button>
+          <MoreDropdown
+            onPrint={() => window.print()}
+            onDelete={() => setShowDeleteConfirm(true)}
+            isDeleting={deleteInvoice.isPending}
+          />
         </div>
-
-        <MoreDropdown
-          onPrint={() => window.print()}
-          onDelete={() => setShowDeleteConfirm(true)}
-          isDeleting={deleteInvoice.isPending}
-        />
       </div>
 
       {hasJobs && jobStatusCounts && (
