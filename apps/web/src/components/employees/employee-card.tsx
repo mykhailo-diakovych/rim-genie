@@ -56,7 +56,7 @@ export function EmployeeCard({ employee, actions }: EmployeeCardProps) {
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card",
+        "flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center sm:justify-between",
         isDeactivated && "opacity-60",
       )}
     >
@@ -72,7 +72,7 @@ export function EmployeeCard({ employee, actions }: EmployeeCardProps) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 font-rubik text-xs leading-3.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-rubik text-xs leading-3.5">
           <span className="text-label">{m.employees_label_employee_id()}</span>
           <span className="text-body">{employee.username ?? employee.id.slice(0, 8)}</span>
           <span className="size-1 rounded-full bg-label" />
@@ -80,14 +80,14 @@ export function EmployeeCard({ employee, actions }: EmployeeCardProps) {
           <span className="text-body">{employee.email}</span>
         </div>
       </div>
-      <div className="flex gap-2">{actions}</div>
+      <div className="flex flex-wrap gap-2">{actions}</div>
     </div>
   );
 }
 
 export function EmployeeCardSkeleton() {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-card-line bg-white p-3 shadow-card">
+    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-4">
           <Skeleton className="h-4.5 w-32 rounded" />
@@ -98,7 +98,7 @@ export function EmployeeCardSkeleton() {
           <Skeleton className="h-3.5 w-36 rounded" />
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex self-start gap-2 sm:self-auto">
         <Skeleton className="h-9 w-18 rounded-lg" />
         <Skeleton className="h-9 w-26 rounded-lg" />
       </div>

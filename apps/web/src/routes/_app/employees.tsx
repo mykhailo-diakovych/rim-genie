@@ -31,8 +31,8 @@ function EmployeesPage() {
   const { data: employees, isLoading } = useQuery(orpc.employees.list.queryOptions({}));
 
   return (
-    <div className="flex flex-col gap-5 p-5">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-5 p-3 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           {m.employees_title()}
         </h1>
