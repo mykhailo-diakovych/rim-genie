@@ -262,7 +262,7 @@ function CheckoutPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="p-5 pb-0">
+      <div className="p-3 pb-0 sm:p-5 sm:pb-0">
         <Button
           variant="outline"
           nativeButton={false}
@@ -273,7 +273,7 @@ function CheckoutPage() {
         </Button>
       </div>
 
-      <div className="flex flex-1 items-start gap-4 p-5">
+      <div className="flex flex-1 flex-col gap-4 p-3 sm:flex-row sm:items-start sm:p-5">
         <div className="flex flex-1 flex-col gap-4">
           <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
             Payment method
@@ -331,7 +331,7 @@ function CheckoutPage() {
           </div>
         </div>
 
-        <div className="flex w-[284px] shrink-0 flex-col gap-4 rounded-xl bg-white py-3">
+        <div className="flex flex-col gap-4 rounded-xl bg-white py-3 sm:w-[284px] sm:shrink-0">
           <div className="px-3">
             <h2 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
               Order summary:
@@ -399,7 +399,7 @@ function CheckoutPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-2 border-t border-card-line bg-white px-5 py-3">
+      <div className="flex items-center justify-center gap-2 border-t border-card-line bg-white px-3 py-3 sm:px-5">
         <Button
           variant="ghost"
           nativeButton={false}

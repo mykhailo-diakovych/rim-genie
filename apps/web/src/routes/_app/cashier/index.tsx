@@ -100,7 +100,7 @@ function InvoiceCardSkeleton() {
         <div className="h-4 w-24 rounded bg-[#e2e4e5]" />
         <div className="h-4 w-28 rounded bg-[#e2e4e5]" />
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-wrap gap-2">
         <div className="h-9 w-20 rounded-lg bg-[#e2e4e5]" />
         <div className="h-9 w-16 rounded-lg bg-[#e2e4e5]" />
         <div className="h-9 w-20 rounded-lg bg-[#e2e4e5]" />
@@ -157,7 +157,7 @@ function InvoiceCard({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           className="w-18"
           nativeButton={false}
@@ -238,7 +238,7 @@ function CashierPage() {
   });
 
   return (
-    <div className="flex flex-col gap-4 px-5 pt-4 pb-5">
+    <div className="flex flex-col gap-4 px-3 pt-4 pb-5 sm:px-5">
       <div className="flex items-center justify-between">
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           List of Invoices

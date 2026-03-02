@@ -18,13 +18,16 @@ function formatDateTime(date: Date): string {
   });
 }
 
-const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
-
 export function AppHeader() {
   const { data: session, isPending } = authClient.useSession();
   const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isMac, setIsMac] = useState(false);
+
+  useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad/.test(navigator.userAgent));
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30_000);

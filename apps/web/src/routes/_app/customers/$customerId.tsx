@@ -510,7 +510,7 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="min-w-[600px] w-full font-rubik text-xs">
+      <table className="w-full min-w-[600px] font-rubik text-xs">
         <thead>
           <tr className="text-left text-label">
             <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
@@ -623,7 +623,7 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="min-w-[600px] w-full font-rubik text-xs">
+      <table className="w-full min-w-[600px] font-rubik text-xs">
         <thead>
           <tr className="text-left text-label">
             <th className="h-8 w-[144px] border-t border-l border-field-line px-2 py-1.5 font-normal">

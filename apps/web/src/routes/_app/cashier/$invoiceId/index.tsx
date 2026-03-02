@@ -184,7 +184,7 @@ function InvoiceDetailPage() {
   );
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-5">
+    <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <Button
           variant="outline"
@@ -223,7 +223,7 @@ function InvoiceDetailPage() {
       </div>
 
       {hasJobs && jobStatusCounts && (
-        <div className="flex items-center gap-3 rounded-md bg-page px-3 py-2 font-rubik text-xs text-body print:hidden">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-page px-3 py-2 font-rubik text-xs text-body print:hidden">
           <span className="font-medium">Jobs:</span>
           {jobStatusCounts.pending && (
             <span className="text-label">{jobStatusCounts.pending} pending</span>
@@ -250,7 +250,7 @@ function InvoiceDetailPage() {
 
         <div className="h-px bg-field-line" />
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex gap-4">
             <div className="flex flex-col gap-2 pr-4 font-rubik">
               <span className="text-xs text-label">Invoice #:</span>
@@ -273,7 +273,7 @@ function InvoiceDetailPage() {
             </div>
           </div>
 
-          <div className="w-px self-stretch bg-field-line" />
+          <div className="hidden w-px self-stretch bg-field-line sm:block" />
 
           <div className="flex flex-1 items-center justify-end gap-3 font-rubik">
             <span className="shrink-0 text-xs text-label">Invoice to:</span>
@@ -296,7 +296,7 @@ function InvoiceDetailPage() {
 
         <div className="h-px bg-field-line" />
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex flex-1 flex-col gap-2 font-rubik">
             <span className="text-base text-body">Total:</span>
             <span className="text-[22px] leading-6.5 font-medium text-body">
@@ -308,7 +308,7 @@ function InvoiceDetailPage() {
             </span>
           </div>
 
-          <div className="w-px self-stretch bg-field-line" />
+          <div className="hidden w-px self-stretch bg-field-line sm:block" />
 
           <div className="flex items-center justify-end">
             <div className="flex flex-col gap-1 font-rubik text-sm text-body">
@@ -331,7 +331,7 @@ function InvoiceDetailPage() {
         <div className="h-px bg-field-line" />
 
         <div className="flex-1 overflow-x-auto">
-          <table className="w-full font-rubik text-xs">
+          <table className="w-full min-w-[500px] font-rubik text-xs">
             <thead>
               <tr className="border-t border-b border-field-line text-left text-label">
                 <th className="w-18 border-l border-field-line px-2 py-2 font-normal">#</th>
@@ -428,40 +428,42 @@ function InvoiceDetailPage() {
       {(inv?.payments?.length ?? 0) > 0 && (
         <div className="overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card print:border-0 print:shadow-none">
           <h3 className="mb-2 font-rubik text-base font-medium text-body">Payment History</h3>
-          <table className="w-full font-rubik text-xs">
-            <thead>
-              <tr className="border-t border-b border-field-line text-left text-label">
-                <th className="border-l border-field-line px-2 py-1.5 font-normal">Date</th>
-                <th className="border-l border-field-line px-2 py-1.5 font-normal">Method</th>
-                <th className="border-l border-field-line px-2 py-1.5 font-normal">Amount</th>
-                <th className="border-l border-field-line px-2 py-1.5 font-normal">Reference</th>
-                <th className="border-r border-l border-field-line px-2 py-1.5 font-normal">
-                  Received By
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {inv?.payments?.map((p) => (
-                <tr key={p.id} className="border-b border-field-line">
-                  <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                    {formatDate(p.createdAt)}
-                  </td>
-                  <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                    {formatPaymentMode(p.mode)}
-                  </td>
-                  <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                    {formatCents(p.amount)}
-                  </td>
-                  <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                    {p.reference ?? "\u2014"}
-                  </td>
-                  <td className="border-r border-l border-field-line px-2 py-2 text-sm text-body">
-                    {p.receivedBy?.name ?? "\u2014"}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[500px] font-rubik text-xs">
+              <thead>
+                <tr className="border-t border-b border-field-line text-left text-label">
+                  <th className="border-l border-field-line px-2 py-1.5 font-normal">Date</th>
+                  <th className="border-l border-field-line px-2 py-1.5 font-normal">Method</th>
+                  <th className="border-l border-field-line px-2 py-1.5 font-normal">Amount</th>
+                  <th className="border-l border-field-line px-2 py-1.5 font-normal">Reference</th>
+                  <th className="border-r border-l border-field-line px-2 py-1.5 font-normal">
+                    Received By
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {inv?.payments?.map((p) => (
+                  <tr key={p.id} className="border-b border-field-line">
+                    <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                      {formatDate(p.createdAt)}
+                    </td>
+                    <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                      {formatPaymentMode(p.mode)}
+                    </td>
+                    <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                      {formatCents(p.amount)}
+                    </td>
+                    <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                      {p.reference ?? "\u2014"}
+                    </td>
+                    <td className="border-r border-l border-field-line px-2 py-2 text-sm text-body">
+                      {p.receivedBy?.name ?? "\u2014"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

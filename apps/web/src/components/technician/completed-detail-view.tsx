@@ -51,12 +51,16 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
             key={job.id}
             className={`grid grid-cols-[1fr_auto] items-start bg-[#fafffa] px-3 py-3 sm:grid-cols-[48px_1fr_120px_124px]${idx < group.jobs.length - 1 ? " border-b border-card-line" : ""}`}
           >
-            <span className="hidden pt-0.5 font-rubik text-sm leading-4.5 text-body sm:block">{idx + 1}</span>
+            <span className="hidden pt-0.5 font-rubik text-sm leading-4.5 text-body sm:block">
+              {idx + 1}
+            </span>
 
             <div className="flex flex-col gap-1">
               <div className="mb-1 flex items-center gap-2 font-rubik text-xs leading-3.5 sm:hidden">
                 <span className="text-label">#{idx + 1}</span>
-                <span className="rounded-[4px] bg-[#55ce63] px-1.5 py-0.5 text-white">Completed</span>
+                <span className="rounded-[4px] bg-[#55ce63] px-1.5 py-0.5 text-white">
+                  Completed
+                </span>
               </div>
               <p className="font-rubik text-sm leading-4.5 font-medium text-body">
                 {job.invoiceItem.vehicleSize}&quot; Rims

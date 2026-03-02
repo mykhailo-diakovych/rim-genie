@@ -98,7 +98,7 @@ export function EmployeeCardSkeleton() {
           <Skeleton className="h-3.5 w-36 rounded" />
         </div>
       </div>
-      <div className="flex self-start gap-2 sm:self-auto">
+      <div className="flex gap-2 self-start sm:self-auto">
         <Skeleton className="h-9 w-18 rounded-lg" />
         <Skeleton className="h-9 w-26 rounded-lg" />
       </div>
