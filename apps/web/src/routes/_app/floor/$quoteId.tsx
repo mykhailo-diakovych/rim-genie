@@ -172,7 +172,7 @@ function QuoteEditorPage() {
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-5 p-5">
+      <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
         {/* Action bar */}
         <div className="flex flex-wrap items-center justify-between gap-y-2">
           <Button variant="outline" nativeButton={false} render={<Link to="/floor" />}>
@@ -212,7 +212,7 @@ function QuoteEditorPage() {
           <div className="h-px bg-field-line" />
 
           {/* Row 2: Dates + Address */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-1 gap-4 font-rubik">
               <div className="flex w-34 flex-col gap-2">
                 <span className="text-xs leading-3.5 text-label">Quote Date:</span>
@@ -236,7 +236,7 @@ function QuoteEditorPage() {
               </div>
             </div>
 
-            <div className="w-px self-stretch bg-field-line" />
+            <div className="hidden w-px self-stretch bg-field-line sm:block" />
 
             <div className="flex flex-1 justify-end">
               <div className="flex flex-col gap-1 font-rubik text-sm leading-4.5 text-body">
@@ -260,7 +260,7 @@ function QuoteEditorPage() {
 
           {/* Jobs table */}
           <div className="flex-1 overflow-x-auto">
-            <table className="w-full font-rubik text-xs">
+            <table className="min-w-[500px] w-full font-rubik text-xs">
               <thead>
                 <tr className="border-t border-b border-field-line text-left text-label">
                   <th className="w-12 border-l border-field-line px-2 py-1.5 font-normal">#</th>
@@ -343,7 +343,7 @@ function QuoteEditorPage() {
           <div className="h-px bg-field-line" />
 
           {/* Footer: Share Quote + Totals */}
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             {/* Share Quote */}
             <div className="flex flex-col gap-1">
               <span className="font-rubik text-xs leading-3.5 text-label">Share Quote:</span>

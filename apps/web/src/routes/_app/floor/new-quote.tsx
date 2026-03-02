@@ -201,7 +201,7 @@ function NewQuotePage() {
   const noResults = hasSearched && !searchQuery.isLoading && customers.length === 0;
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-5">
+    <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       {/* Action bar */}
       <div className="flex items-center justify-between">
         <Button variant="outline" nativeButton={false} render={<Link to="/floor" />}>

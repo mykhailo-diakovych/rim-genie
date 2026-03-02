@@ -85,7 +85,7 @@ function QuoteCard({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           className="w-18 gap-1.5 px-2"
           nativeButton={false}
@@ -142,7 +142,7 @@ function FloorPage() {
   const quotes = quotesQuery.data ?? [];
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-5">
+    <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       {/* Title row */}
       <div className="flex items-center justify-between">
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Quotes</h1>
