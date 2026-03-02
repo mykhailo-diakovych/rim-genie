@@ -16,7 +16,7 @@ function InventoryPage() {
   const { data: overnightJobs, isLoading } = useOvernightJobs();
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-5">
+    <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
         List of Overnight Jobs
       </h1>
