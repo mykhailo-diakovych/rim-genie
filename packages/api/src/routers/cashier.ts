@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { z } from "zod";
 import { and, eq, gte, ilike, lte, or, sql, sum } from "drizzle-orm";
 
@@ -8,7 +9,11 @@ import { cashierProcedure } from "../index";
 import * as InvoiceService from "../services/invoice.service";
 import * as PaymentService from "../services/payment.service";
 import * as JobService from "../services/job.service";
+import * as EmailService from "../services/email.service";
+import { CustomerHasNoEmail, InvoiceNotFound } from "../services/errors";
 import { runEffect } from "../services/run-effect";
+import { createReceiptEmail } from "../emails/receipt-email";
+import { createPaymentReminderEmail } from "../emails/payment-reminder-email";
 
 export const cashierRouter = {
   invoices: {
@@ -126,6 +131,88 @@ export const cashierRouter = {
     delete: cashierProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       return runEffect(InvoiceService.deleteInvoice(input.id));
     }),
+
+    sendReceipt: cashierProcedure
+      .input(z.object({ invoiceId: z.string() }))
+      .handler(async ({ input }) => {
+        return runEffect(
+          Effect.gen(function* () {
+            const inv = yield* Effect.tryPromise(() =>
+              db.query.invoice.findFirst({
+                where: eq(invoice.id, input.invoiceId),
+                with: {
+                  customer: true,
+                  items: { orderBy: (i, { asc }) => [asc(i.sortOrder)] },
+                  payments: { orderBy: (p, { desc }) => [desc(p.createdAt)] },
+                },
+              }),
+            );
+
+            if (!inv) return yield* Effect.fail(new InvoiceNotFound({ id: input.invoiceId }));
+            if (!inv.customer?.email) {
+              return yield* Effect.fail(new CustomerHasNoEmail({ customerId: inv.customerId }));
+            }
+
+            const totalPaid = inv.payments.reduce((s, p) => s + p.amount, 0);
+            const balance = inv.total - totalPaid;
+
+            yield* EmailService.send({
+              to: inv.customer.email,
+              subject: `Your Rim Genie Receipt — Invoice #${inv.invoiceNumber}`,
+              react: createReceiptEmail({
+                customerName: inv.customer.name,
+                invoiceNumber: inv.invoiceNumber,
+                items: inv.items,
+                payments: inv.payments,
+                subtotal: inv.subtotal,
+                discount: inv.discount,
+                tax: inv.tax,
+                total: inv.total,
+                totalPaid,
+                balance,
+              }),
+            });
+
+            return { success: true as const };
+          }),
+        );
+      }),
+
+    sendReminder: cashierProcedure
+      .input(z.object({ invoiceId: z.string() }))
+      .handler(async ({ input }) => {
+        return runEffect(
+          Effect.gen(function* () {
+            const inv = yield* Effect.tryPromise(() =>
+              db.query.invoice.findFirst({
+                where: eq(invoice.id, input.invoiceId),
+                with: { customer: true, payments: true },
+              }),
+            );
+
+            if (!inv) return yield* Effect.fail(new InvoiceNotFound({ id: input.invoiceId }));
+            if (!inv.customer?.email) {
+              return yield* Effect.fail(new CustomerHasNoEmail({ customerId: inv.customerId }));
+            }
+
+            const totalPaid = inv.payments.reduce((s, p) => s + p.amount, 0);
+            const balance = inv.total - totalPaid;
+
+            yield* EmailService.send({
+              to: inv.customer.email,
+              subject: `Payment Reminder — Invoice #${inv.invoiceNumber}`,
+              react: createPaymentReminderEmail({
+                customerName: inv.customer.name,
+                invoiceNumber: inv.invoiceNumber,
+                total: inv.total,
+                balance,
+              }),
+            });
+
+            return { success: true as const };
+          }),
+        );
+      }),
   },
 
   payments: {

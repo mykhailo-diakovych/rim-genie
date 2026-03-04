@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
 import { verifyPassword } from "@rim-genie/auth/crypto";
@@ -7,7 +8,9 @@ import { account, job, user } from "@rim-genie/db/schema";
 
 import { protectedProcedure, technicianProcedure } from "../index";
 import * as JobService from "../services/job.service";
+import * as EmailService from "../services/email.service";
 import { runEffect } from "../services/run-effect";
+import { createJobCompletedEmail } from "../emails/job-completed-email";
 
 export const technicianRouter = {
   technicians: {
@@ -70,7 +73,37 @@ export const technicianRouter = {
     complete: technicianProcedure
       .input(z.object({ jobId: z.string() }))
       .handler(async ({ input }) => {
-        return runEffect(JobService.completeJob(input.jobId));
+        const result = await runEffect(JobService.completeJob(input.jobId));
+
+        // Fire-and-forget: send job completion email if customer prefers email
+        try {
+          const completedJob = await db.query.job.findFirst({
+            where: eq(job.id, input.jobId),
+            with: {
+              invoiceItem: true,
+              invoice: { with: { customer: true } },
+            },
+          });
+
+          const cust = completedJob?.invoice?.customer;
+          if (completedJob && cust?.email && cust.communicationPreference === "email") {
+            Effect.runPromise(
+              EmailService.send({
+                to: cust.email,
+                subject: "Your Rim Repair is Complete — Rim Genie",
+                react: createJobCompletedEmail({
+                  customerName: cust.name,
+                  jobDescription: completedJob.invoiceItem?.description ?? "Rim Job",
+                  invoiceNumber: completedJob.invoice!.invoiceNumber,
+                }),
+              }),
+            ).catch(() => {});
+          }
+        } catch {
+          // Email failure must not block job completion
+        }
+
+        return result;
       }),
 
     setDueDate: technicianProcedure

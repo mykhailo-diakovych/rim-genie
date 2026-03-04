@@ -65,3 +65,11 @@ export class QuoteHasNoItems extends Data.TaggedError("QuoteHasNoItems")<{
 export class EODNotFound extends Data.TaggedError("EODNotFound")<{
   recordDate: string;
 }> {}
+
+export class EmailSendFailed extends Data.TaggedError("EmailSendFailed")<{
+  reason: string;
+}> {}
+
+export class CustomerHasNoEmail extends Data.TaggedError("CustomerHasNoEmail")<{
+  customerId: string;
+}> {}

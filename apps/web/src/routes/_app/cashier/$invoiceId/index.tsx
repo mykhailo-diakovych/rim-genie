@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
+  Bell,
   Building2,
   ChevronDown,
   ChevronLeft,
   CircleDollarSign,
   Info,
+  Mail,
   MapPin,
   Phone,
   Printer,
@@ -63,16 +65,36 @@ function formatPaymentMode(mode: string) {
 }
 
 function MoreDropdown({
+  invoiceId,
+  customerEmail,
+  invoiceStatus,
   onPrint,
   onDelete,
   isDeleting,
 }: {
+  invoiceId: string;
+  customerEmail?: string | null;
+  invoiceStatus?: string;
   onPrint: () => void;
   onDelete: () => void;
   isDeleting: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const sendReceipt = useMutation({
+    ...orpc.cashier.invoices.sendReceipt.mutationOptions(),
+    onSuccess: () => toast.success("Receipt emailed successfully"),
+    onError: (err: Error) => toast.error(`Failed to send receipt: ${err.message}`),
+  });
+
+  const sendReminder = useMutation({
+    ...orpc.cashier.invoices.sendReminder.mutationOptions(),
+    onSuccess: () => toast.success("Payment reminder sent"),
+    onError: (err: Error) => toast.error(`Failed to send reminder: ${err.message}`),
+  });
+
+  const showReminder = invoiceStatus === "unpaid" || invoiceStatus === "partially_paid";
 
   useEffect(() => {
     if (!open) return;
@@ -97,7 +119,7 @@ function MoreDropdown({
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 z-10 mt-1 w-36 rounded-md border border-card-line bg-white py-1 shadow-md">
+        <div className="absolute top-full right-0 z-10 mt-1 w-44 rounded-md border border-card-line bg-white py-1 shadow-md">
           <button
             type="button"
             onClick={() => {
@@ -109,6 +131,32 @@ function MoreDropdown({
             <Printer className="size-4 text-ghost" />
             Print
           </button>
+          <button
+            type="button"
+            disabled={!customerEmail || sendReceipt.isPending}
+            onClick={() => {
+              setOpen(false);
+              sendReceipt.mutate({ invoiceId });
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
+          >
+            <Mail className="size-4 text-ghost" />
+            Email Receipt
+          </button>
+          {showReminder && (
+            <button
+              type="button"
+              disabled={!customerEmail || sendReminder.isPending}
+              onClick={() => {
+                setOpen(false);
+                sendReminder.mutate({ invoiceId });
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
+            >
+              <Bell className="size-4 text-ghost" />
+              Send Reminder
+            </button>
+          )}
           <button
             type="button"
             disabled={isDeleting}
@@ -214,6 +262,9 @@ function InvoiceDetailPage() {
             {hasJobs ? "Sent to Technician" : "To Technician"}
           </Button>
           <MoreDropdown
+            invoiceId={invoiceId}
+            customerEmail={inv?.customer?.email}
+            invoiceStatus={inv?.status}
             onPrint={() => window.print()}
             onDelete={() => setShowDeleteConfirm(true)}
             isDeleting={deleteInvoice.isPending}

@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { z } from "zod";
 
 import { db } from "@rim-genie/db";
@@ -17,7 +18,11 @@ import { asc, desc, eq, ilike, inArray, or, sql, sum } from "drizzle-orm";
 
 import { floorManagerProcedure, protectedProcedure, requireRole } from "../index";
 import * as InvoiceService from "../services/invoice.service";
+import * as EmailService from "../services/email.service";
+import { CustomerHasNoEmail, QuoteNotFound } from "../services/errors";
 import { runEffect } from "../services/run-effect";
+import { getQuotePdf } from "../pdf/get-quote-pdf";
+import { createQuoteEmail } from "../emails/quote-email";
 
 async function recalcQuoteTotal(quoteId: string): Promise<void> {
   const result = await db
@@ -445,6 +450,50 @@ export const floorRouter = {
         }
 
         return { success: true as const };
+      }),
+
+    sendEmail: floorManagerProcedure
+      .input(z.object({ quoteId: z.string() }))
+      .handler(async ({ input }) => {
+        return runEffect(
+          Effect.gen(function* () {
+            const quoteRow = yield* Effect.tryPromise(() =>
+              db.query.quote.findFirst({
+                where: eq(quote.id, input.quoteId),
+                with: { customer: true },
+              }),
+            );
+
+            if (!quoteRow) return yield* Effect.fail(new QuoteNotFound({ id: input.quoteId }));
+            if (!quoteRow.customer?.email) {
+              return yield* Effect.fail(
+                new CustomerHasNoEmail({ customerId: quoteRow.customerId }),
+              );
+            }
+
+            const pdf = yield* Effect.tryPromise(() => getQuotePdf(input.quoteId));
+            const attachments = pdf
+              ? [{ filename: `quote-${pdf.quoteNumber}.pdf`, content: pdf.buffer }]
+              : undefined;
+
+            yield* EmailService.send({
+              to: quoteRow.customer.email,
+              subject: `Your Rim Genie Quote #${quoteRow.quoteNumber}`,
+              react: createQuoteEmail({
+                customerName: quoteRow.customer.name,
+                quoteNumber: quoteRow.quoteNumber,
+                subtotal: quoteRow.subtotal,
+                discountPercent: quoteRow.discountPercent,
+                discountAmount: quoteRow.discountAmount,
+                total: quoteRow.total,
+                hasAttachment: !!pdf,
+              }),
+              attachments,
+            });
+
+            return { success: true as const };
+          }),
+        );
       }),
   },
 

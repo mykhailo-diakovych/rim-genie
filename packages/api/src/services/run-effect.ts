@@ -39,6 +39,11 @@ const TAG_MAP: Record<
     code: "NOT_FOUND",
     message: "No EOD record found — please submit an EOD before starting the day",
   },
+  EmailSendFailed: { code: "INTERNAL_SERVER_ERROR", message: "Failed to send email" },
+  CustomerHasNoEmail: {
+    code: "BAD_REQUEST",
+    message: "Customer does not have an email address",
+  },
 };
 
 export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): Promise<A> {

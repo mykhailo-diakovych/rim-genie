@@ -189,7 +189,7 @@ function QuoteEditorPage() {
               <Save />
               Save
             </Button>
-            <MoreDropdown quoteId={quoteId} />
+            <MoreDropdown quoteId={quoteId} customerEmail={quote?.customer?.email} />
           </div>
         </div>
 
@@ -260,7 +260,7 @@ function QuoteEditorPage() {
 
           {/* Jobs table */}
           <div className="flex-1 overflow-x-auto">
-            <table className="min-w-[500px] w-full font-rubik text-xs">
+            <table className="w-full min-w-[500px] font-rubik text-xs">
               <thead>
                 <tr className="border-t border-b border-field-line text-left text-label">
                   <th className="w-12 border-l border-field-line px-2 py-1.5 font-normal">#</th>
@@ -462,9 +462,21 @@ function QuoteEditorPage() {
 
 // ─── More Dropdown ────────────────────────────────────────────────────────────
 
-function MoreDropdown({ quoteId }: { quoteId: string }) {
+function MoreDropdown({
+  quoteId,
+  customerEmail,
+}: {
+  quoteId: string;
+  customerEmail?: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const sendEmail = useMutation({
+    ...orpc.floor.quotes.sendEmail.mutationOptions(),
+    onSuccess: () => toast.success("Quote emailed successfully"),
+    onError: (err: Error) => toast.error(`Failed to send email: ${err.message}`),
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -489,7 +501,7 @@ function MoreDropdown({ quoteId }: { quoteId: string }) {
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 z-10 mt-1 w-36 rounded-md border border-card-line bg-white py-1 shadow-md">
+        <div className="absolute top-full right-0 z-10 mt-1 w-40 rounded-md border border-card-line bg-white py-1 shadow-md">
           <button
             type="button"
             onClick={() => {
@@ -500,6 +512,18 @@ function MoreDropdown({ quoteId }: { quoteId: string }) {
           >
             <Printer className="size-4 text-ghost" />
             Print PDF
+          </button>
+          <button
+            type="button"
+            disabled={!customerEmail || sendEmail.isPending}
+            onClick={() => {
+              setOpen(false);
+              sendEmail.mutate({ quoteId });
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
+          >
+            <Mail className="size-4 text-ghost" />
+            Email Quote
           </button>
         </div>
       )}
