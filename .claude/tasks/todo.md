@@ -58,7 +58,7 @@
 - [ ] Explicit "Send to Cashier" button — conversion is implicit on save (no user-visible button/confirmation)
 - [x] Quote editor read-only mode for completed quotes — editing controls (add/edit/remove items, comments, discount, save) disabled when `status === "completed"`
 - [x] Status badges on quote list page — `StatusBadge` component renders colored pill (draft=gray, pending=blue, in_progress=orange, completed=green) next to customer name in `QuoteCard`
-- [ ] Send quote via email (Resend integration — no email infra yet)
+- [x] Send quote via email (Resend integration — `floor.quotes.sendEmail` procedure + "Email Quote" button in More dropdown, PDF attached)
 - [ ] Send quote via SMS (external API — no SMS infra yet)
 - [ ] Electronic quote viewer (public SSR page via link — no public routes)
 - [ ] Print job label tag (rack identifier — `jobRack` field exists in schema but no print template)
@@ -90,9 +90,11 @@
 
 **Not Done:**
 
-- [ ] E-receipt via email/SMS (depends on notification infra — Phase 4)
-- [ ] Job completion notification to cashier (depends on notification infra — Phase 4)
-- [ ] Outstanding payment auto-reminder to customer (depends on notification infra — Phase 4)
+- [x] E-receipt via email (`cashier.invoices.sendReceipt` — "Email Receipt" button in More dropdown)
+- [ ] E-receipt via SMS (depends on SMS infra)
+- [ ] Job completion notification to cashier (in-app — depends on notification UI)
+- [x] Outstanding payment reminder to customer via email (`cashier.invoices.sendReminder` — "Send Reminder" button, shown for unpaid/partially_paid)
+- [ ] Outstanding payment auto-reminder to customer via SMS (depends on SMS infra)
 
 ### Technician Module — §2.3 (Backend Complete, Frontend Mostly Complete)
 
@@ -120,8 +122,9 @@
 
 **Not Done:**
 
-- [ ] Auto-notify customer on completion (SMS + email — depends on Phase 4)
-- [ ] Notify cashier on job completion (in-app — depends on Phase 4)
+- [x] Auto-notify customer on completion via email (fire-and-forget in `technician.jobs.complete`, only when `communicationPreference === "email"`)
+- [ ] Auto-notify customer on completion via SMS (depends on SMS infra)
+- [ ] Notify cashier on job completion (in-app — depends on notification UI)
 
 ### Inventory Module — §2.4 (Backend Complete, Frontend Partially Complete)
 
@@ -196,10 +199,11 @@
 **Not Done:**
 
 - [ ] SMS integration (external API endpoint)
-- [ ] Email integration (Resend — not configured or wired)
+- [x] Email integration (Resend — `email.service.ts` + 4 templates + 4 API procedures + frontend buttons)
 - [ ] Notification bell UI in header with unread count (header has logo, global search command palette, user info, logout — no bell)
 - [ ] Notification dropdown/panel
-- [ ] Remaining notification triggers: quote sent, job completed, payment reminder, discount request/approval
+- [x] Email triggers: quote sent (with PDF), receipt, payment reminder, job completed (fire-and-forget)
+- [ ] Remaining notification triggers: discount request/approval (in-app), SMS variants
 
 ### Cross-Cutting Concerns (Partially Complete)
 
@@ -241,7 +245,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [x] Step 2.4d: Quote → Invoice conversion (automatic via `syncInvoiceFromQuote` on save)
 - [x] Step 2.4e: "Send to Technician" button on invoice detail page (with job-aware disabled state + status summary bar)
 - [x] Step 2.4f-print: Print receipt via `window.print()` with print CSS
-- [ ] Step 2.4f-digital: E-receipt via email/SMS (depends on Phase 4)
+- [x] Step 2.4f-digital: E-receipt via email (`cashier.invoices.sendReceipt` + "Email Receipt" button); SMS still pending
 - [x] Step 2.4g: Date filter wired to API
 - [x] Step 2.4h: Discount + notes checkout wiring, invoice detail display (notes, discount/tax rows, payment history table)
 - [x] Step 2.4i: Storage fee notice print-visible
@@ -264,9 +268,9 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ---
 
-### Phase 4: Notification System (Partially Complete)
+### Phase 4: Notification System (Email ✅, In-App UI & SMS Remaining)
 
-> Priority: **High** — Multiple modules depend on notifications
+> Priority: **High** — Email integration complete, in-app UI + SMS remaining
 
 #### Step 4.1: In-App Notifications
 
@@ -278,10 +282,11 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 #### Step 4.2: Email Integration (Resend)
 
-- [ ] Configure Resend transactional email
-- [ ] Quote email template
-- [ ] Receipt email template
-- [ ] Payment reminder template
+- [x] Configure Resend transactional email (`email.service.ts` wrapping Resend SDK, `RESEND_API_KEY` + `EMAIL_FROM` env vars, `EmailSendFailed` + `CustomerHasNoEmail` errors)
+- [x] Quote email template (`quote-email.tsx` — greeting, quote number, totals, PDF attachment)
+- [x] Receipt email template (`receipt-email.tsx` — items table, payments breakdown, balance due, storage fee notice)
+- [x] Payment reminder template (`payment-reminder-email.tsx` — invoice number, total, balance due)
+- [x] Job completion email template (`job-completed-email.tsx` — job description, pickup instructions)
 
 #### Step 4.3: SMS Integration
 
@@ -293,9 +298,11 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 #### Step 4.4: Notification Triggers
 
 - [x] Inventory discrepancy → admin notification (wired in `createSOD` service)
-- [ ] Quote sent → customer notification
-- [ ] Job completed → customer SMS + cashier in-app
-- [ ] Payment reminder → customer
+- [x] Quote sent → customer email (via `floor.quotes.sendEmail` — PDF attachment, "Email Quote" button in More dropdown)
+- [x] Job completed → customer email (fire-and-forget in `technician.jobs.complete`, only when `communicationPreference === "email"`)
+- [x] Payment reminder → customer email (via `cashier.invoices.sendReminder` — "Send Reminder" button, only for unpaid/partially_paid)
+- [x] Receipt → customer email (via `cashier.invoices.sendReceipt` — "Email Receipt" button in More dropdown)
+- [ ] Job completed → cashier in-app notification
 - [ ] Discount request → admin
 - [ ] Discount approved/rejected → floor manager
 
@@ -359,7 +366,8 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [x] Quote read-only mode for completed quotes (lock editing)
 - [x] Status badges on quote list page
 - [ ] Print job label tag
-- [ ] Send quote via email/SMS with electronic quote link (depends on Phase 4)
+- [x] Send quote via email with PDF attachment (`floor.quotes.sendEmail` + "Email Quote" button)
+- [ ] Send quote via SMS with electronic quote link (depends on SMS infra)
 - [ ] Public electronic quote viewer page (SSR)
 - [x] Staff PIN login implementation (fully wired — `signIn.username()` + Better Auth `username()` plugin)
 

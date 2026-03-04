@@ -21,6 +21,7 @@
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
+    "@react-email/render": "^2.0.4",
     "@react-pdf/renderer": "^4.3.2",
     "@rim-genie/auth": "workspace:*",
     "@rim-genie/db": "workspace:*",
