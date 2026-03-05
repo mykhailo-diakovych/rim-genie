@@ -4,6 +4,7 @@ import { desc, eq } from "drizzle-orm";
 import { verifyPassword } from "@rim-genie/auth/crypto";
 
 import { db } from "@rim-genie/db";
+import { env } from "@rim-genie/env/server";
 import { account, job, user } from "@rim-genie/db/schema";
 
 import { protectedProcedure, technicianProcedure } from "../index";
@@ -92,6 +93,7 @@ export const technicianRouter = {
                 to: cust.email,
                 subject: "Your Rim Repair is Complete — Rim Genie",
                 react: createJobCompletedEmail({
+                  baseUrl: env.BETTER_AUTH_URL,
                   customerName: cust.name,
                   jobDescription: completedJob.invoiceItem?.description ?? "Rim Job",
                   invoiceNumber: completedJob.invoice!.invoiceNumber,

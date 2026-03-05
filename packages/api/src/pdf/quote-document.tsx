@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: "#1ba87c",
+    backgroundColor: "#21b84e",
     borderRadius: 4,
     paddingVertical: 8,
     paddingHorizontal: 8,

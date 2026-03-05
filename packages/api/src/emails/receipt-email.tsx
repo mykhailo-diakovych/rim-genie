@@ -1,52 +1,5 @@
 import type { ReactElement } from "react";
-
-const container = {
-  maxWidth: "600px",
-  margin: "0 auto",
-  fontFamily: "'Rubik', Arial, sans-serif",
-  color: "#1a1a1a",
-} as const;
-
-const header = {
-  backgroundColor: "#16a34a",
-  padding: "24px",
-  textAlign: "center",
-} as const;
-
-const headerText = {
-  color: "#ffffff",
-  fontSize: "22px",
-  fontWeight: 600,
-  margin: 0,
-} as const;
-
-const body = {
-  padding: "24px",
-  backgroundColor: "#ffffff",
-} as const;
-
-const row = {
-  display: "flex",
-  justifyContent: "space-between",
-  padding: "8px 0",
-  borderBottom: "1px solid #e5e7eb",
-} as const;
-
-const totalRow = {
-  display: "flex",
-  justifyContent: "space-between",
-  padding: "12px 0",
-  fontSize: "18px",
-  fontWeight: 600,
-} as const;
-
-const footer = {
-  padding: "16px 24px",
-  backgroundColor: "#f9fafb",
-  fontSize: "12px",
-  color: "#6b7280",
-  textAlign: "center",
-} as const;
+import { EmailLayout, styles } from "./email-layout";
 
 function formatCents(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
@@ -64,6 +17,7 @@ function formatPaymentMode(mode: string) {
 }
 
 export type ReceiptEmailProps = {
+  baseUrl: string;
   customerName: string;
   invoiceNumber: number;
   items: { description: string | null; quantity: number; unitCost: number }[];
@@ -80,7 +34,22 @@ export function createReceiptEmail(props: ReceiptEmailProps): ReactElement {
   return <ReceiptEmail {...props} />;
 }
 
+const thStyle = {
+  padding: "10px 12px",
+  fontSize: "12px",
+  color: "#6b7280",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  fontWeight: 600,
+} as const;
+
+const tdStyle = {
+  padding: "10px 12px",
+  fontSize: "14px",
+} as const;
+
 function ReceiptEmail({
+  baseUrl,
   customerName,
   invoiceNumber,
   items,
@@ -93,45 +62,30 @@ function ReceiptEmail({
   balance,
 }: ReceiptEmailProps): ReactElement {
   return (
-    <div style={container}>
-      <div style={header}>
-        <h1 style={headerText}>Rim Genie</h1>
-      </div>
-      <div style={body}>
-        <p style={{ fontSize: "16px", marginBottom: "16px" }}>Hi {customerName},</p>
-        <p style={{ marginBottom: "24px" }}>
-          Here is your payment receipt for Invoice #{invoiceNumber}.
-        </p>
+    <EmailLayout baseUrl={baseUrl}>
+      <p style={styles.greeting}>Hi {customerName},</p>
+      <p style={styles.subtitle}>Here is your payment receipt for Invoice #{invoiceNumber}.</p>
 
+      <div style={styles.card}>
+        <div style={styles.cardHeader}>Items</div>
         <table
-          style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}
+          style={{ width: "100%", borderCollapse: "collapse" }}
           cellPadding={0}
           cellSpacing={0}
         >
           <thead>
-            <tr style={{ borderBottom: "2px solid #e5e7eb", textAlign: "left" }}>
-              <th style={{ padding: "8px 4px", fontSize: "12px", color: "#6b7280" }}>Item</th>
-              <th style={{ padding: "8px 4px", fontSize: "12px", color: "#6b7280" }}>Qty</th>
-              <th
-                style={{
-                  padding: "8px 4px",
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  textAlign: "right",
-                }}
-              >
-                Amount
-              </th>
+            <tr style={{ borderBottom: "1px solid #e5e7eb", textAlign: "left" }}>
+              <th style={thStyle}>Item</th>
+              <th style={thStyle}>Qty</th>
+              <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item, i) => (
-              <tr key={i} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                <td style={{ padding: "8px 4px", fontSize: "14px" }}>
-                  {item.description ?? "Rim Job"}
-                </td>
-                <td style={{ padding: "8px 4px", fontSize: "14px" }}>{item.quantity}</td>
-                <td style={{ padding: "8px 4px", fontSize: "14px", textAlign: "right" }}>
+              <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                <td style={tdStyle}>{item.description ?? "Rim Job"}</td>
+                <td style={tdStyle}>{item.quantity}</td>
+                <td style={{ ...tdStyle, textAlign: "right" }}>
                   {formatCents(item.quantity * item.unitCost)}
                 </td>
               </tr>
@@ -139,34 +93,36 @@ function ReceiptEmail({
           </tbody>
         </table>
 
-        <div style={{ marginBottom: "24px" }}>
-          <div style={row}>
+        <div style={styles.cardBody}>
+          <div style={styles.row}>
             <span>Subtotal</span>
             <span>{formatCents(subtotal)}</span>
           </div>
           {discount > 0 && (
-            <div style={row}>
+            <div style={styles.row}>
               <span>Discount</span>
               <span>-{formatCents(discount)}</span>
             </div>
           )}
           {tax > 0 && (
-            <div style={row}>
+            <div style={styles.row}>
               <span>Tax</span>
               <span>+{formatCents(tax)}</span>
             </div>
           )}
-          <div style={totalRow}>
-            <span>Total</span>
-            <span>{formatCents(total)}</span>
-          </div>
         </div>
+        <div style={styles.totalRow}>
+          <span>Total</span>
+          <span>{formatCents(total)}</span>
+        </div>
+      </div>
 
-        {payments.length > 0 && (
-          <div style={{ marginBottom: "24px" }}>
-            <h3 style={{ fontSize: "14px", marginBottom: "8px" }}>Payments</h3>
+      {payments.length > 0 && (
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>Payments</div>
+          <div style={styles.cardBody}>
             {payments.map((p, i) => (
-              <div key={i} style={row}>
+              <div key={i} style={styles.row}>
                 <span>
                   {formatPaymentMode(p.mode)} —{" "}
                   {new Date(p.createdAt).toLocaleDateString("en-US", {
@@ -178,26 +134,21 @@ function ReceiptEmail({
                 <span>{formatCents(p.amount)}</span>
               </div>
             ))}
-            <div style={{ ...row, fontWeight: 600 }}>
+            <div style={{ ...styles.row, fontWeight: 600 }}>
               <span>Total Paid</span>
               <span>{formatCents(totalPaid)}</span>
             </div>
-            <div style={{ ...row, fontWeight: 600 }}>
+            <div style={{ ...styles.row, borderBottom: "none", fontWeight: 600 }}>
               <span>Balance Due</span>
               <span>{formatCents(balance)}</span>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "16px" }}>
-          Rims left in Rim Genie beyond 30 days will attract a storage fee of $500 daily.
-        </p>
-      </div>
-      <div style={footer}>
-        <p style={{ margin: 0 }}>
-          Rim Genie — 82c Waltham Park Rd, Kingston, Jamaica — 876-830-9624
-        </p>
-      </div>
-    </div>
+      <p style={styles.muted}>
+        Rims left in Rim Genie beyond 30 days will attract a storage fee of $500 daily.
+      </p>
+    </EmailLayout>
   );
 }
