@@ -156,6 +156,7 @@ export function QuoteGeneratorSheet({
     defaultValues: RIM_DEFAULTS,
     onSubmit: ({ value }) => {
       const hasJob = JOB_TYPES.some((j) => checkedJobs[j.value]);
+
       if (!hasJob) {
         setJobTypeError("Select at least one job type");
         return;
