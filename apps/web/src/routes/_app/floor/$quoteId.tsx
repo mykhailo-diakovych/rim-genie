@@ -12,6 +12,7 @@ import {
   Printer,
   Save,
   Trash2,
+  User,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -211,7 +212,34 @@ function QuoteEditorPage() {
 
           <div className="h-px bg-field-line" />
 
-          {/* Row 2: Dates + Address */}
+          {/* Row 2: Reason for visit + Customer info */}
+          {quote && (
+            <div className="flex items-center gap-4">
+              <div className="flex flex-1 items-center gap-4 font-rubik">
+                <span className="shrink-0 text-xs leading-3.5 text-label">Reason for visit:</span>
+                <span className="text-sm leading-[18px] text-body">
+                  {quote.customerReason || "—"}
+                </span>
+              </div>
+
+              <div className="hidden w-px self-stretch bg-field-line sm:block" />
+
+              <div className="flex w-[200px] shrink-0 flex-col items-end gap-1">
+                <div className="flex items-center gap-1.5 font-rubik text-sm leading-[18px]">
+                  <User className="size-4 shrink-0 text-ghost" />
+                  <span className="font-medium text-body">{quote.customer?.name}</span>
+                </div>
+                <div className="flex items-center gap-1.5 font-rubik text-sm leading-[18px] text-body">
+                  <Phone className="size-4 shrink-0 text-ghost" />
+                  <span>{quote.customer?.phone}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="h-px bg-field-line" />
+
+          {/* Row 3: Dates + Address */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-1 gap-4 font-rubik">
               <div className="flex w-34 flex-col gap-2">
@@ -259,72 +287,128 @@ function QuoteEditorPage() {
           <div className="h-px bg-field-line" />
 
           {/* Jobs table */}
-          <div className="flex-1 overflow-x-auto">
-            <table className="w-full min-w-[500px] font-rubik text-xs">
-              <thead>
-                <tr className="border-t border-b border-field-line text-left text-label">
-                  <th className="w-12 border-l border-field-line px-2 py-1.5 font-normal">#</th>
-                  <th className="border-l border-field-line px-2 py-1.5 font-normal">
-                    Description
-                  </th>
-                  <th className="w-16 border-l border-field-line px-2 py-1.5 font-normal">
-                    Quantity
-                  </th>
-                  <th className="w-24 border-l border-field-line px-2 py-1.5 font-normal">
-                    Unit Cost
-                  </th>
-                  <th className="w-20 border-l border-field-line px-2 py-1.5 font-normal">Total</th>
-                  <th className="w-20 border-r border-l border-field-line px-2 py-1.5 font-normal" />
-                </tr>
-              </thead>
-              <tbody>
-                {quoteQuery.isLoading ? (
-                  <tr className="border-b border-field-line">
-                    <td colSpan={6} className="border-r border-l border-field-line px-2 py-6">
-                      <div className="flex items-center justify-center">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue border-t-transparent" />
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  (quote?.items ?? []).map((item, idx) => (
-                    <ItemRow
-                      key={item.id}
-                      item={item}
-                      index={idx}
-                      onRemove={() => setRemoveConfirm(item.id)}
-                      onEdit={() => {
-                        setEditingItem(item);
-                        setSheetOpen(true);
-                      }}
-                      onUnitCostChange={(cents) =>
-                        updateItem.mutate({ id: item.id, unitCost: cents })
-                      }
-                      isRemoving={removeItem.isPending && removeItem.variables?.id === item.id}
-                      isReadOnly={isReadOnly}
-                    />
-                  ))
-                )}
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <span className="font-rubik text-xs leading-3.5 text-label">
+                Services to be Conducted:
+              </span>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[500px] font-rubik text-xs">
+                  <thead>
+                    <tr className="border-t border-b border-field-line text-left text-label">
+                      <th className="w-12 border-l border-field-line px-2 py-1.5 font-normal">#</th>
+                      <th className="border-l border-field-line px-2 py-1.5 font-normal">
+                        Description
+                      </th>
+                      <th className="w-16 border-l border-field-line px-2 py-1.5 font-normal">
+                        Quantity
+                      </th>
+                      <th className="w-24 border-l border-field-line px-2 py-1.5 font-normal">
+                        Unit Cost
+                      </th>
+                      <th className="w-20 border-l border-field-line px-2 py-1.5 font-normal">
+                        Total
+                      </th>
+                      <th className="w-20 border-r border-l border-field-line px-2 py-1.5 font-normal" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quoteQuery.isLoading ? (
+                      <tr className="border-b border-field-line">
+                        <td colSpan={6} className="border-r border-l border-field-line px-2 py-6">
+                          <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      <>
+                        {/* Full Diagnostic Consent row */}
+                        {quote && (
+                          <tr className="border-t border-field-line align-top">
+                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                              1
+                            </td>
+                            <td className="border-l border-field-line px-2 py-2">
+                              <div className="flex flex-col gap-2">
+                                <span className="text-sm leading-[18px] text-body">
+                                  Full Diagnostic Consent
+                                </span>
+                                <div className="flex gap-1 text-sm leading-[18px]">
+                                  <span className="text-label">Comments:</span>
+                                  <span className="text-body">
+                                    {quote.fullDiagnosticConsent ? "Agree" : "Disagree"}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                              —
+                            </td>
+                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                              $0.00
+                            </td>
+                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                              $0.00
+                            </td>
+                            <td className="border-r border-l border-field-line px-2 py-2">
+                              {!isReadOnly && (
+                                <Button className="w-full" variant="outline" onClick={() => {}}>
+                                  <Pencil className="size-3.5" />
+                                  Edit
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                        {(quote?.items ?? []).map((item, idx) => (
+                          <ItemRow
+                            key={item.id}
+                            item={item}
+                            index={idx + 1}
+                            onRemove={() => setRemoveConfirm(item.id)}
+                            onEdit={() => {
+                              setEditingItem(item);
+                              setSheetOpen(true);
+                            }}
+                            onUnitCostChange={(cents) =>
+                              updateItem.mutate({ id: item.id, unitCost: cents })
+                            }
+                            isRemoving={
+                              removeItem.isPending && removeItem.variables?.id === item.id
+                            }
+                            isReadOnly={isReadOnly}
+                          />
+                        ))}
+                      </>
+                    )}
 
-                {!isReadOnly && (
-                  <tr className="border-b border-field-line">
-                    <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingItem(null);
-                          setSheetOpen(true);
-                        }}
-                        className="flex items-center gap-1.5 rounded-md font-rubik text-sm leading-4.5 text-blue transition-opacity hover:opacity-70"
-                      >
-                        <Plus className="size-4" />
-                        Add Job
-                      </button>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                    {!isReadOnly && (
+                      <tr className="border-b border-field-line">
+                        <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingItem(null);
+                              setSheetOpen(true);
+                            }}
+                            className="flex items-center gap-1.5 rounded-md font-rubik text-sm leading-4.5 text-blue transition-opacity hover:opacity-70"
+                          >
+                            <Plus className="size-4" />
+                            Add Job
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Services Excluded */}
+            {!isReadOnly && (quote?.excludedServices?.length ?? 0) > 0 && (
+              <ServicesExcluded services={quote!.excludedServices} onPromoted={invalidateQuote} />
+            )}
           </div>
 
           {/* Comments */}
@@ -460,6 +544,56 @@ function QuoteEditorPage() {
   );
 }
 
+// ─── Services Excluded ────────────────────────────────────────────────────────
+
+function ServicesExcluded({
+  services,
+  onPromoted,
+}: {
+  services: { id: string; name: string; price: number }[];
+  onPromoted: () => Promise<void>;
+}) {
+  const promote = useMutation({
+    ...orpc.floor.quotes.promoteExcludedService.mutationOptions(),
+    onSuccess: async () => {
+      await onPromoted();
+    },
+    onError: (err) => toast.error(`Failed to add service: ${err.message}`),
+  });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-0.5">
+        <span className="font-rubik text-sm leading-[18px] text-body">Services Excluded:</span>
+        <span className="font-rubik text-xs leading-3.5 text-label">
+          The following services were offered as part of our assessment and were declined by the
+          client
+        </span>
+      </div>
+      <div className="flex flex-col gap-1">
+        {services.map((svc) => (
+          <div key={svc.id} className="flex items-center gap-4 rounded-lg bg-page px-2 py-1">
+            <div className="flex flex-1 items-baseline gap-2 font-rubik">
+              <span className="text-sm leading-[18px] text-body">{svc.name}</span>
+              <span className="text-xs leading-3.5 text-label">
+                (${(svc.price / 100).toFixed(2)})
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => promote.mutate({ id: svc.id })}
+              disabled={promote.isPending}
+            >
+              <Plus className="size-4" />
+              Add
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── More Dropdown ────────────────────────────────────────────────────────────
 
 function MoreDropdown({
@@ -545,6 +679,7 @@ function ItemRow({
   item: {
     id: string;
     description: string | null;
+    comments: string | null;
     quantity: number;
     unitCost: number;
     inches: number | null;
@@ -576,8 +711,12 @@ function ItemRow({
     <tr className="border-b border-field-line align-top">
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">{index + 1}</td>
       <td className="border-l border-field-line px-2 py-2">
-        <div className="flex flex-col gap-1">
-          <span className="text-sm leading-4.5 text-body">{item.description ?? "Rim Job"}</span>
+        <div className="flex flex-col gap-2">
+          <span className="text-sm leading-[18px] text-body">{item.description ?? "Rim Job"}</span>
+          <div className="flex gap-1 text-sm leading-[18px]">
+            <span className="text-label">Comments:</span>
+            <span className="text-body">{item.comments || " "}</span>
+          </div>
         </div>
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">

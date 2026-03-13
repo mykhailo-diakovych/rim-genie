@@ -140,6 +140,22 @@ export const termsSignature = pgTable(
   (table) => [unique("terms_signature_quoteId_unique").on(table.quoteId)],
 );
 
+export const quoteExcludedService = pgTable("quote_excluded_service", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  quoteId: text("quote_id")
+    .notNull()
+    .references(() => quote.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  price: integer("price").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const customerRelations = relations(customer, ({ many }) => ({
@@ -157,6 +173,7 @@ export const quoteRelations = relations(quote, ({ one, many }) => ({
     references: [user.id],
   }),
   items: many(quoteItem),
+  excludedServices: many(quoteExcludedService),
   invoice: one(invoice, {
     fields: [quote.id],
     references: [invoice.quoteId],
@@ -170,6 +187,13 @@ export const quoteRelations = relations(quote, ({ one, many }) => ({
 export const quoteItemRelations = relations(quoteItem, ({ one }) => ({
   quote: one(quote, {
     fields: [quoteItem.quoteId],
+    references: [quote.id],
+  }),
+}));
+
+export const quoteExcludedServiceRelations = relations(quoteExcludedService, ({ one }) => ({
+  quote: one(quote, {
+    fields: [quoteExcludedService.quoteId],
     references: [quote.id],
   }),
 }));

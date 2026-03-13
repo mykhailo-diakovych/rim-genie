@@ -7,6 +7,7 @@ import {
   customer,
   quote,
   quoteItem,
+  quoteExcludedService,
   termsSignature,
   invoice,
   payment,
@@ -257,6 +258,7 @@ export const floorRouter = {
           items: {
             orderBy: (i, { asc }) => [asc(i.sortOrder)],
           },
+          excludedServices: true,
           invoice: true,
         },
       });
@@ -453,6 +455,69 @@ export const floorRouter = {
         if (qId) {
           await recalcQuoteTotal(qId);
         }
+
+        return { success: true as const };
+      }),
+
+    addExcludedService: protectedProcedure
+      .input(
+        z.object({
+          quoteId: z.string(),
+          name: z.string().min(1),
+          price: z.number().int().min(0).default(0),
+        }),
+      )
+      .handler(async ({ input }) => {
+        const rows = await db
+          .insert(quoteExcludedService)
+          .values({
+            quoteId: input.quoteId,
+            name: input.name,
+            price: input.price,
+          })
+          .returning();
+        return rows[0]!;
+      }),
+
+    removeExcludedService: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .handler(async ({ input }) => {
+        await db.delete(quoteExcludedService).where(eq(quoteExcludedService.id, input.id));
+        return { success: true as const };
+      }),
+
+    promoteExcludedService: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .handler(async ({ input }) => {
+        const excluded = await db
+          .select()
+          .from(quoteExcludedService)
+          .where(eq(quoteExcludedService.id, input.id));
+
+        if (!excluded[0]) throw new Error("Excluded service not found");
+
+        const svc = excluded[0];
+
+        const existing = await db
+          .select({ sortOrder: quoteItem.sortOrder })
+          .from(quoteItem)
+          .where(eq(quoteItem.quoteId, svc.quoteId))
+          .orderBy(sql`${quoteItem.sortOrder} desc`)
+          .limit(1);
+
+        const sortOrder = (existing[0]?.sortOrder ?? -1) + 1;
+
+        await db.insert(quoteItem).values({
+          quoteId: svc.quoteId,
+          itemType: "rim",
+          description: svc.name,
+          unitCost: svc.price,
+          quantity: 1,
+          sortOrder,
+        });
+
+        await db.delete(quoteExcludedService).where(eq(quoteExcludedService.id, input.id));
+        await recalcQuoteTotal(svc.quoteId);
 
         return { success: true as const };
       }),
