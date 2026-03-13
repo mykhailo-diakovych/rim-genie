@@ -57,10 +57,21 @@ const jobTypeEntrySchema = z.object({
     "straighten",
     "twist",
     "reconstruct",
+    "sprung",
+    "build-up",
+    "platinum-resurfacing",
+    "hand-polish",
+    "polishing",
     "general",
     "welding",
+    "powder-coating",
   ]),
   input: z.string().optional(),
+  workTypes: z.array(z.string()).optional(),
+  rimAvailable: z.boolean().optional(),
+  needsBuildUp: z.boolean().optional(),
+  comments: z.string().optional(),
+  subType: z.string().optional(),
 });
 
 export const floorRouter = {
@@ -361,7 +372,7 @@ export const floorRouter = {
       .input(
         z.object({
           quoteId: z.string(),
-          itemType: z.enum(["rim", "welding"]).default("rim"),
+          itemType: z.enum(["rim", "welding", "powder-coating", "general"]).default("rim"),
           vehicleSize: z.string().optional(),
           sideOfVehicle: z.string().optional(),
           damageLevel: z.string().optional(),
@@ -407,7 +418,7 @@ export const floorRouter = {
       .input(
         z.object({
           id: z.string(),
-          itemType: z.enum(["rim", "welding"]).optional(),
+          itemType: z.enum(["rim", "welding", "powder-coating", "general"]).optional(),
           vehicleSize: z.string().optional(),
           sideOfVehicle: z.string().optional(),
           damageLevel: z.string().optional(),
