@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Eye, Plus, Printer, Search, Trash2 } from "lucide-react";
+import { NewQuoteSheet } from "@/components/floor/new-quote-sheet";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -123,6 +124,7 @@ function FloorPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showNewQuote, setShowNewQuote] = useState(false);
 
   const quotesQuery = useQuery(
     orpc.floor.quotes.list.queryOptions({
@@ -146,7 +148,7 @@ function FloorPage() {
       {/* Title row */}
       <div className="flex items-center justify-between">
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Quotes</h1>
-        <Button className="w-32" nativeButton={false} render={<Link to="/floor/new-quote" />}>
+        <Button className="w-32" onClick={() => setShowNewQuote(true)}>
           <Plus />
           New Quote
         </Button>
@@ -234,6 +236,8 @@ function FloorPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <NewQuoteSheet open={showNewQuote} onClose={() => setShowNewQuote(false)} />
     </div>
   );
 }

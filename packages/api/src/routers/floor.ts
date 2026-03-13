@@ -267,6 +267,8 @@ export const floorRouter = {
         z.object({
           customerId: z.string(),
           validUntilDays: z.number().int().optional(),
+          customerReason: z.string().optional(),
+          fullDiagnosticConsent: z.boolean().optional(),
         }),
       )
       .handler(async ({ input, context }) => {
@@ -285,6 +287,8 @@ export const floorRouter = {
             status: "draft",
             validUntil,
             discountPercent,
+            customerReason: input.customerReason,
+            fullDiagnosticConsent: input.fullDiagnosticConsent ?? false,
           })
           .returning();
         return rows[0]!;

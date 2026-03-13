@@ -72,6 +72,8 @@ export const quote = pgTable(
     status: quoteStatusEnum("status").default("draft").notNull(),
     jobRack: text("job_rack"),
     comments: text("comments"),
+    customerReason: text("customer_reason"),
+    fullDiagnosticConsent: boolean("full_diagnostic_consent").default(false).notNull(),
     validUntil: timestamp("valid_until"),
     subtotal: integer("subtotal").default(0).notNull(),
     discountPercent: integer("discount_percent").default(0).notNull(),

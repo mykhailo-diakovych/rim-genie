@@ -26,7 +26,6 @@ import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/i
 import { Route as AppCashierIndexRouteImport } from './routes/_app/cashier/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AppFloorNewQuoteRouteImport } from './routes/_app/floor/new-quote'
 import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/customers/$customerId'
 import { Route as AppCashierInvoiceIdRouteImport } from './routes/_app/cashier/$invoiceId'
@@ -117,11 +116,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppFloorNewQuoteRoute = AppFloorNewQuoteRouteImport.update({
-  id: '/new-quote',
-  path: '/new-quote',
-  getParentRoute: () => AppFloorRoute,
-} as any)
 const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
   id: '/$quoteId',
   path: '/$quoteId',
@@ -169,7 +163,6 @@ export interface FileRoutesByFullPath {
   '/cashier/$invoiceId': typeof AppCashierInvoiceIdRouteWithChildren
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
-  '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/cashier/': typeof AppCashierIndexRoute
@@ -190,7 +183,6 @@ export interface FileRoutesByTo {
   '/login': typeof AuthLoginRoute
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
-  '/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/cashier': typeof AppCashierIndexRoute
@@ -217,7 +209,6 @@ export interface FileRoutesById {
   '/_app/cashier/$invoiceId': typeof AppCashierInvoiceIdRouteWithChildren
   '/_app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/_app/floor/$quoteId': typeof AppFloorQuoteIdRoute
-  '/_app/floor/new-quote': typeof AppFloorNewQuoteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/_app/cashier/': typeof AppCashierIndexRoute
@@ -243,7 +234,6 @@ export interface FileRouteTypes {
     | '/cashier/$invoiceId'
     | '/customers/$customerId'
     | '/floor/$quoteId'
-    | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/cashier/'
@@ -264,7 +254,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/customers/$customerId'
     | '/floor/$quoteId'
-    | '/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/cashier'
@@ -290,7 +279,6 @@ export interface FileRouteTypes {
     | '/_app/cashier/$invoiceId'
     | '/_app/customers/$customerId'
     | '/_app/floor/$quoteId'
-    | '/_app/floor/new-quote'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/_app/cashier/'
@@ -430,13 +418,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/floor/new-quote': {
-      id: '/_app/floor/new-quote'
-      path: '/new-quote'
-      fullPath: '/floor/new-quote'
-      preLoaderRoute: typeof AppFloorNewQuoteRouteImport
-      parentRoute: typeof AppFloorRoute
-    }
     '/_app/floor/$quoteId': {
       id: '/_app/floor/$quoteId'
       path: '/$quoteId'
@@ -511,13 +492,11 @@ const AppCashierRouteWithChildren = AppCashierRoute._addFileChildren(
 
 interface AppFloorRouteChildren {
   AppFloorQuoteIdRoute: typeof AppFloorQuoteIdRoute
-  AppFloorNewQuoteRoute: typeof AppFloorNewQuoteRoute
   AppFloorIndexRoute: typeof AppFloorIndexRoute
 }
 
 const AppFloorRouteChildren: AppFloorRouteChildren = {
   AppFloorQuoteIdRoute: AppFloorQuoteIdRoute,
-  AppFloorNewQuoteRoute: AppFloorNewQuoteRoute,
   AppFloorIndexRoute: AppFloorIndexRoute,
 }
 
