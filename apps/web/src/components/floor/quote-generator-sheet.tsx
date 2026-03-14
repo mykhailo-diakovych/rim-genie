@@ -233,9 +233,12 @@ export function QuoteGeneratorSheet({
 
   // Reconstruct-specific state
   const [reconstructWorkTypes, setReconstructWorkTypes] = useState<string[]>([]);
+  const [reconstructWorkTypeError, setReconstructWorkTypeError] = useState<string | null>(null);
+  const [subTypeErrors, setSubTypeErrors] = useState<Partial<Record<JobType, string>>>({});
   const [rimAvailable, setRimAvailable] = useState<string>("yes");
   const [needsBuildUp, setNeedsBuildUp] = useState<string>("no");
   const [reconstructComments, setReconstructComments] = useState("");
+  const [workTypePopupOpen, setWorkTypePopupOpen] = useState(false);
 
   const [rimSelects, setRimSelects] = useState({
     rimSize: "",
@@ -272,6 +275,23 @@ export function QuoteGeneratorSheet({
       }
 
       const selectedJobs = RIM_JOB_TYPES.filter((j) => checkedJobs[j.value]);
+
+      if (checkedJobs["reconstruct"] && reconstructWorkTypes.length === 0) {
+        setReconstructWorkTypeError("Select at least one type of work");
+        return;
+      }
+
+      const newSubTypeErrors: Partial<Record<JobType, string>> = {};
+      for (const j of selectedJobs) {
+        if (j.hasSubType && !jobSubTypes[j.value]) {
+          newSubTypeErrors[j.value] = `${j.subTypeLabel?.replace(":", "") ?? "Option"} is required`;
+        }
+      }
+      if (Object.keys(newSubTypeErrors).length > 0) {
+        setSubTypeErrors(newSubTypeErrors);
+        return;
+      }
+      setSubTypeErrors({});
       const jobTypes: JobTypeEntry[] = selectedJobs.map((j) => {
         const entry: JobTypeEntry = { type: j.value };
 
@@ -515,9 +535,12 @@ export function QuoteGeneratorSheet({
     setJobTypeError(null);
     setInitialized(null);
     setReconstructWorkTypes([]);
+    setReconstructWorkTypeError(null);
+    setSubTypeErrors({});
     setRimAvailable("yes");
     setNeedsBuildUp("no");
     setReconstructComments("");
+    setWorkTypePopupOpen(false);
     setRimSelects({ rimSize: "", rimType: "", damageLevel: "" });
     setWeldingSelects({ materialType: "", damageLevel: "" });
     setPcSelects({ rimSize: "", colorCoat: "" });
@@ -762,14 +785,19 @@ export function QuoteGeneratorSheet({
                               </label>
                               <Select
                                 value={jobSubTypes[job.value] ?? null}
-                                onValueChange={(v) =>
+                                onValueChange={(v) => {
                                   setJobSubTypes((prev) => ({
                                     ...prev,
                                     [job.value]: v as string,
-                                  }))
-                                }
+                                  }));
+                                  setSubTypeErrors((prev) => {
+                                    const next = { ...prev };
+                                    delete next[job.value];
+                                    return next;
+                                  });
+                                }}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger error={!!subTypeErrors[job.value]}>
                                   <SelectValue placeholder="Select" />
                                 </SelectTrigger>
                                 <SelectPopup>
@@ -780,6 +808,11 @@ export function QuoteGeneratorSheet({
                                   ))}
                                 </SelectPopup>
                               </Select>
+                              {subTypeErrors[job.value] && (
+                                <p className="font-rubik text-xs text-red">
+                                  {subTypeErrors[job.value]}
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -787,52 +820,99 @@ export function QuoteGeneratorSheet({
                         {/* Reconstruct expanded options */}
                         {job.hasExpandedOptions && isChecked && (
                           <div className="flex flex-col gap-4 bg-page px-3 py-2">
-                            {/* Type of work multi-tag */}
+                            {/* Type of work multiselect */}
                             <div className="flex flex-col gap-1">
                               <label className="font-rubik text-xs leading-3.5 text-label">
                                 Type of work:
                               </label>
-                              <div className="flex min-h-9 items-center rounded-lg border border-field-line bg-white py-1 pr-2 pl-1">
-                                <div className="flex flex-1 flex-wrap gap-1">
-                                  {reconstructWorkTypes.map((wt) => (
-                                    <span
-                                      key={wt}
-                                      className="flex h-8 items-center gap-2 rounded-md bg-blue py-1 pr-1.5 pl-2 font-rubik text-xs text-white"
-                                    >
-                                      {wt}
-                                      <button
-                                        type="button"
-                                        onClick={() => removeWorkType(wt)}
-                                        className="flex items-center justify-center"
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => setWorkTypePopupOpen((v) => !v)}
+                                  className={cn(
+                                    "flex min-h-9 w-full items-center rounded-lg border bg-white py-1 pr-2 pl-1",
+                                    reconstructWorkTypeError
+                                      ? "border-red/50"
+                                      : "border-field-line",
+                                  )}
+                                >
+                                  <div className="flex flex-1 flex-wrap gap-1">
+                                    {reconstructWorkTypes.length === 0 && (
+                                      <span className="px-1 font-rubik text-xs text-ghost">
+                                        Select work types
+                                      </span>
+                                    )}
+                                    {reconstructWorkTypes.map((wt) => (
+                                      <span
+                                        key={wt}
+                                        className="flex h-7 items-center gap-2 rounded-md bg-blue py-1 pr-1.5 pl-2 font-rubik text-xs text-white"
                                       >
-                                        <X className="size-3" />
-                                      </button>
-                                    </span>
-                                  ))}
-                                </div>
-                                <div className="relative">
-                                  <select
-                                    className="absolute inset-0 cursor-pointer opacity-0"
-                                    value=""
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val && !reconstructWorkTypes.includes(val)) {
-                                        setReconstructWorkTypes((prev) => [...prev, val]);
-                                      }
-                                    }}
-                                  >
-                                    <option value="">Add...</option>
-                                    {RECONSTRUCT_WORK_TYPES.filter(
-                                      (wt) => !reconstructWorkTypes.includes(wt),
-                                    ).map((wt) => (
-                                      <option key={wt} value={wt}>
                                         {wt}
-                                      </option>
+                                        <span
+                                          role="button"
+                                          tabIndex={0}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            removeWorkType(wt);
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                              e.stopPropagation();
+                                              removeWorkType(wt);
+                                            }
+                                          }}
+                                          className="flex cursor-pointer items-center justify-center"
+                                        >
+                                          <X className="size-3" />
+                                        </span>
+                                      </span>
                                     ))}
-                                  </select>
-                                  <ChevronDown className="size-4 text-ghost" />
-                                </div>
+                                  </div>
+                                  <ChevronDown className="size-4 shrink-0 text-ghost" />
+                                </button>
+
+                                {workTypePopupOpen && (
+                                  <>
+                                    <div
+                                      className="fixed inset-0 z-40"
+                                      onClick={() => setWorkTypePopupOpen(false)}
+                                    />
+                                    <div className="absolute top-full left-0 z-50 mt-1 flex w-full flex-col gap-0.5 overflow-clip rounded-lg bg-white py-1 shadow-[0px_0px_32px_0px_rgba(10,13,18,0.1)]">
+                                      {RECONSTRUCT_WORK_TYPES.map((wt) => {
+                                        const isSelected = reconstructWorkTypes.includes(wt);
+                                        return (
+                                          <button
+                                            key={wt}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                removeWorkType(wt);
+                                              } else {
+                                                setReconstructWorkTypes((prev) => [...prev, wt]);
+                                                setReconstructWorkTypeError(null);
+                                              }
+                                            }}
+                                            className={cn(
+                                              "flex items-center gap-4 px-2 py-2 text-left font-rubik text-xs leading-3.5 text-body",
+                                              isSelected && "bg-[#f0f5fa]",
+                                            )}
+                                          >
+                                            <span className="flex-1">{wt}</span>
+                                            {isSelected && (
+                                              <Check className="size-4 shrink-0 text-blue" />
+                                            )}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </>
+                                )}
                               </div>
+                              {reconstructWorkTypeError && (
+                                <p className="font-rubik text-xs text-red">
+                                  {reconstructWorkTypeError}
+                                </p>
+                              )}
                             </div>
 
                             {/* Is there a rim available? */}
@@ -983,6 +1063,11 @@ export function QuoteGeneratorSheet({
                           ))}
                         </SelectPopup>
                       </Select>
+                      {field.state.meta.errors.length > 0 && (
+                        <p className="font-rubik text-xs text-red">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 </weldingForm.Field>
@@ -1013,6 +1098,11 @@ export function QuoteGeneratorSheet({
                           <SelectOption value="high">High</SelectOption>
                         </SelectPopup>
                       </Select>
+                      {field.state.meta.errors.length > 0 && (
+                        <p className="font-rubik text-xs text-red">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
                       {weldingSelects.damageLevel &&
                         DAMAGE_DESCRIPTIONS[weldingSelects.damageLevel] && (
                           <div className="mt-1 flex items-center gap-3 rounded-lg bg-[#ebf5ff] px-3 py-2">
@@ -1059,6 +1149,11 @@ export function QuoteGeneratorSheet({
                               : "border-field-line",
                           )}
                         />
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
                       </div>
                     )}
                   </weldingForm.Field>
@@ -1082,6 +1177,11 @@ export function QuoteGeneratorSheet({
                               : "border-field-line",
                           )}
                         />
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
                       </div>
                     )}
                   </weldingForm.Field>
@@ -1152,6 +1252,11 @@ export function QuoteGeneratorSheet({
                             ))}
                           </SelectPopup>
                         </Select>
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
                       </div>
                     )}
                   </powderCoatingForm.Field>
@@ -1180,6 +1285,11 @@ export function QuoteGeneratorSheet({
                             ))}
                           </SelectPopup>
                         </Select>
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
                       </div>
                     )}
                   </powderCoatingForm.Field>
@@ -1236,6 +1346,11 @@ export function QuoteGeneratorSheet({
                             ))}
                           </SelectPopup>
                         </Select>
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
                       </div>
                     )}
                   </generalForm.Field>
@@ -1264,6 +1379,11 @@ export function QuoteGeneratorSheet({
                             ))}
                           </SelectPopup>
                         </Select>
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="font-rubik text-xs text-red">
+                            {field.state.meta.errors[0]?.message}
+                          </p>
+                        )}
                       </div>
                     )}
                   </generalForm.Field>
@@ -1324,6 +1444,11 @@ export function QuoteGeneratorSheet({
                             : "border-field-line",
                         )}
                       />
+                      {field.state.meta.errors.length > 0 && (
+                        <p className="font-rubik text-xs text-red">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 </generalForm.Field>
