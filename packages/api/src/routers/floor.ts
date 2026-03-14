@@ -16,7 +16,7 @@ import {
   serviceTypeEnum,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { asc, desc, eq, ilike, inArray, or, sql, sum } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, notInArray, or, sql, sum } from "drizzle-orm";
 
 import { floorManagerProcedure, protectedProcedure, requireRole } from "../index";
 import * as InvoiceService from "../services/invoice.service";
@@ -476,6 +476,7 @@ export const floorRouter = {
           quoteId: z.string(),
           name: z.string().min(1),
           price: z.number().int().min(0).default(0),
+          serviceId: z.string().optional(),
         }),
       )
       .handler(async ({ input }) => {
@@ -485,6 +486,7 @@ export const floorRouter = {
             quoteId: input.quoteId,
             name: input.name,
             price: input.price,
+            serviceId: input.serviceId,
           })
           .returning();
         return rows[0]!;
@@ -509,6 +511,18 @@ export const floorRouter = {
 
         const svc = excluded[0];
 
+        let itemType: string = "rim";
+        if (svc.serviceId) {
+          const linkedService = await db
+            .select({ type: service.type })
+            .from(service)
+            .where(eq(service.id, svc.serviceId))
+            .limit(1);
+          if (linkedService[0]) {
+            itemType = linkedService[0].type;
+          }
+        }
+
         const existing = await db
           .select({ sortOrder: quoteItem.sortOrder })
           .from(quoteItem)
@@ -520,7 +534,7 @@ export const floorRouter = {
 
         await db.insert(quoteItem).values({
           quoteId: svc.quoteId,
-          itemType: "rim",
+          itemType,
           description: svc.name,
           unitCost: svc.price,
           quantity: 1,
@@ -531,6 +545,64 @@ export const floorRouter = {
         await recalcQuoteTotal(svc.quoteId);
 
         return { success: true as const };
+      }),
+
+    availableServicesForExclusion: protectedProcedure
+      .input(z.object({ quoteId: z.string() }))
+      .handler(async ({ input }) => {
+        const alreadyExcluded = await db
+          .select({ serviceId: quoteExcludedService.serviceId })
+          .from(quoteExcludedService)
+          .where(
+            and(
+              eq(quoteExcludedService.quoteId, input.quoteId),
+              sql`${quoteExcludedService.serviceId} IS NOT NULL`,
+            ),
+          );
+
+        const excludedIds = alreadyExcluded
+          .map((r) => r.serviceId)
+          .filter((id): id is string => id !== null);
+
+        if (excludedIds.length > 0) {
+          return db
+            .select()
+            .from(service)
+            .where(notInArray(service.id, excludedIds))
+            .orderBy(asc(service.name));
+        }
+
+        return db.select().from(service).orderBy(asc(service.name));
+      }),
+
+    addExcludedServicesFromCatalog: protectedProcedure
+      .input(
+        z.object({
+          quoteId: z.string(),
+          serviceIds: z.array(z.string()).min(1),
+        }),
+      )
+      .handler(async ({ input }) => {
+        const services = await db
+          .select()
+          .from(service)
+          .where(inArray(service.id, input.serviceIds));
+
+        if (services.length === 0) throw new Error("No services found");
+
+        const rows = await db
+          .insert(quoteExcludedService)
+          .values(
+            services.map((s) => ({
+              quoteId: input.quoteId,
+              serviceId: s.id,
+              name: s.name,
+              price: s.unitCost,
+            })),
+          )
+          .returning();
+
+        return rows;
       }),
 
     sendEmail: floorManagerProcedure

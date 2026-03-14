@@ -148,7 +148,9 @@ export function AddNewClientDialog({
                     className={`flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none ${errors.firstName ? "border-red/50" : "border-field-line"}`}
                   />
                   {errors.firstName && (
-                    <span className="font-rubik text-xs leading-3.5 text-red">{errors.firstName}</span>
+                    <span className="font-rubik text-xs leading-3.5 text-red">
+                      {errors.firstName}
+                    </span>
                   )}
                 </div>
                 <div className="flex flex-1 flex-col gap-1">
@@ -181,7 +183,9 @@ export function AddNewClientDialog({
                 </div>
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="font-rubik text-xs leading-3.5 text-label">Mobile Phone:</label>
-                  <div className={`flex h-9 w-full items-center gap-1 overflow-hidden rounded-lg border bg-white px-2 ${errors.phone ? "border-red/50" : "border-field-line"}`}>
+                  <div
+                    className={`flex h-9 w-full items-center gap-1 overflow-hidden rounded-lg border bg-white px-2 ${errors.phone ? "border-red/50" : "border-field-line"}`}
+                  >
                     <span className="shrink-0 border-r border-field-line pr-1.5 font-rubik text-xs leading-3.5 text-body">
                       +1 876
                     </span>
@@ -220,7 +224,9 @@ export function AddNewClientDialog({
                   </Select>
                 </div>
                 <div className="flex flex-1 flex-col gap-1">
-                  <label className="font-rubik text-xs leading-3.5 text-label">Month of birth</label>
+                  <label className="font-rubik text-xs leading-3.5 text-label">
+                    Month of birth
+                  </label>
                   <Select
                     value={birthdayMonth}
                     onValueChange={(v) => setBirthdayMonth(v as number)}

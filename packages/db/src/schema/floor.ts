@@ -14,6 +14,7 @@ import {
 
 import { user } from "./auth";
 import { invoice } from "./invoice";
+import { service } from "./manage";
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
 
@@ -165,6 +166,7 @@ export const quoteExcludedService = pgTable("quote_excluded_service", {
   quoteId: text("quote_id")
     .notNull()
     .references(() => quote.id, { onDelete: "cascade" }),
+  serviceId: text("service_id").references(() => service.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   price: integer("price").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -213,6 +215,10 @@ export const quoteExcludedServiceRelations = relations(quoteExcludedService, ({ 
   quote: one(quote, {
     fields: [quoteExcludedService.quoteId],
     references: [quote.id],
+  }),
+  service: one(service, {
+    fields: [quoteExcludedService.serviceId],
+    references: [service.id],
   }),
 }));
 

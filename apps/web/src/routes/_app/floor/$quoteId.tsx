@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Building2,
+  Check,
   ChevronDown,
   Mail,
   MapPin,
@@ -406,8 +407,12 @@ function QuoteEditorPage() {
             </div>
 
             {/* Services Excluded */}
-            {!isReadOnly && (quote?.excludedServices?.length ?? 0) > 0 && (
-              <ServicesExcluded services={quote!.excludedServices} onPromoted={invalidateQuote} />
+            {!isReadOnly && quote && (
+              <ServicesExcluded
+                quoteId={quoteId}
+                services={quote.excludedServices}
+                onChanged={invalidateQuote}
+              />
             )}
           </div>
 
@@ -547,50 +552,209 @@ function QuoteEditorPage() {
 // ─── Services Excluded ────────────────────────────────────────────────────────
 
 function ServicesExcluded({
+  quoteId,
   services,
-  onPromoted,
+  onChanged,
 }: {
+  quoteId: string;
   services: { id: string; name: string; price: number }[];
-  onPromoted: () => Promise<void>;
+  onChanged: () => Promise<void>;
 }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   const promote = useMutation({
     ...orpc.floor.quotes.promoteExcludedService.mutationOptions(),
     onSuccess: async () => {
-      await onPromoted();
+      await onChanged();
     },
     onError: (err) => toast.error(`Failed to add service: ${err.message}`),
   });
 
+  const removeExcluded = useMutation({
+    ...orpc.floor.quotes.removeExcludedService.mutationOptions(),
+    onSuccess: async () => {
+      await onChanged();
+    },
+    onError: (err) => toast.error(`Failed to remove: ${err.message}`),
+  });
+
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-0.5">
-        <span className="font-rubik text-sm leading-[18px] text-body">Services Excluded:</span>
-        <span className="font-rubik text-xs leading-3.5 text-label">
-          The following services were offered as part of our assessment and were declined by the
-          client
-        </span>
-      </div>
-      <div className="flex flex-col gap-1">
-        {services.map((svc) => (
-          <div key={svc.id} className="flex items-center gap-4 rounded-lg bg-page px-2 py-1">
-            <div className="flex flex-1 items-baseline gap-2 font-rubik">
-              <span className="text-sm leading-[18px] text-body">{svc.name}</span>
-              <span className="text-xs leading-3.5 text-label">
-                (${(svc.price / 100).toFixed(2)})
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => promote.mutate({ id: svc.id })}
-              disabled={promote.isPending}
-            >
-              <Plus className="size-4" />
-              Add
-            </Button>
+    <>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col gap-0.5">
+            <span className="font-rubik text-sm leading-[18px] text-body">Services Excluded:</span>
+            <span className="font-rubik text-xs leading-3.5 text-label">
+              The following services were offered as part of our assessment and were declined by the
+              client
+            </span>
           </div>
-        ))}
+          <Button variant="outline" onClick={() => setPickerOpen(true)}>
+            <Plus />
+            Add Service
+          </Button>
+        </div>
+        {services.length === 0 ? (
+          <p className="font-rubik text-xs text-ghost">No excluded services</p>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {services.map((svc) => (
+              <div key={svc.id} className="flex items-center gap-2 rounded-lg bg-page px-2 py-1">
+                <div className="flex flex-1 items-baseline gap-2 font-rubik">
+                  <span className="text-sm leading-[18px] text-body">{svc.name}</span>
+                  <span className="text-xs leading-3.5 text-label">
+                    (${(svc.price / 100).toFixed(2)})
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => promote.mutate({ id: svc.id })}
+                  disabled={promote.isPending}
+                >
+                  <Plus />
+                  Add
+                </Button>
+                <Button
+                  variant="outline"
+                  color="destructive"
+                  onClick={() => removeExcluded.mutate({ id: svc.id })}
+                  disabled={removeExcluded.isPending}
+                >
+                  <Trash2 />
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+
+      <ServicePickerDialog
+        quoteId={quoteId}
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onAdded={onChanged}
+      />
+    </>
+  );
+}
+
+function ServicePickerDialog({
+  quoteId,
+  open,
+  onOpenChange,
+  onAdded,
+}: {
+  quoteId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdded: () => Promise<void>;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const availableQuery = useQuery({
+    ...orpc.floor.quotes.availableServicesForExclusion.queryOptions({
+      input: { quoteId },
+    }),
+    enabled: open,
+  });
+
+  const addFromCatalog = useMutation({
+    ...orpc.floor.quotes.addExcludedServicesFromCatalog.mutationOptions(),
+    onSuccess: async () => {
+      await onAdded();
+      setSelected(new Set());
+      onOpenChange(false);
+    },
+    onError: (err) => toast.error(`Failed to add services: ${err.message}`),
+  });
+
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) setSelected(new Set());
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent>
+        <div className="flex flex-col gap-4 px-3 pt-4 pb-3">
+          <DialogTitle>Add Excluded Services</DialogTitle>
+          <DialogDescription>
+            Select services from the catalog to mark as excluded on this quote.
+          </DialogDescription>
+
+          <div className="max-h-64 overflow-y-auto">
+            {availableQuery.isLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+              </div>
+            ) : (availableQuery.data?.length ?? 0) === 0 ? (
+              <p className="py-4 text-center font-rubik text-sm text-ghost">
+                All services are already excluded
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {availableQuery.data?.map((svc) => (
+                  <button
+                    key={svc.id}
+                    type="button"
+                    onClick={() => toggle(svc.id)}
+                    className={`flex items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors ${
+                      selected.has(svc.id) ? "bg-blue/10" : "hover:bg-page"
+                    }`}
+                  >
+                    <div
+                      className={`flex size-5 shrink-0 items-center justify-center rounded border ${
+                        selected.has(svc.id)
+                          ? "border-blue bg-blue text-white"
+                          : "border-field-line bg-white"
+                      }`}
+                    >
+                      {selected.has(svc.id) && <Check className="size-3.5" />}
+                    </div>
+                    <div className="flex flex-1 items-baseline gap-2 font-rubik">
+                      <span className="text-sm text-body">{svc.name}</span>
+                      <span className="text-xs text-label">${(svc.unitCost / 100).toFixed(2)}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <DialogClose
+              render={
+                <Button variant="ghost" type="button">
+                  Cancel
+                </Button>
+              }
+            />
+            <Button
+              onClick={() =>
+                addFromCatalog.mutate({
+                  quoteId,
+                  serviceIds: [...selected],
+                })
+              }
+              disabled={selected.size === 0 || addFromCatalog.isPending}
+            >
+              Add {selected.size > 0 ? `(${selected.size})` : ""}
+            </Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
