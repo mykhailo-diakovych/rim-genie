@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check } from "lucide-react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,13 @@ const MONTHS = [
   { value: 12, label: "December" },
 ];
 
+interface ValidationErrors {
+  firstName?: string;
+  phone?: string;
+  email?: string;
+  discount?: string;
+}
+
 export function AddNewClientDialog({
   open,
   onClose,
@@ -62,6 +69,19 @@ export function AddNewClientDialog({
   const [birthdayMonth, setBirthdayMonth] = useState<number | null>(null);
   const [discount, setDiscount] = useState("");
   const [isVip, setIsVip] = useState(false);
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [submitted, setSubmitted] = useState(false);
+
+  function validate(): ValidationErrors {
+    const errs: ValidationErrors = {};
+    if (!firstName.trim()) errs.firstName = "First name is required";
+    if (!phone.trim()) errs.phone = "Phone number is required";
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+      errs.email = "Invalid email address";
+    if (discount && (Number(discount) < 0 || Number(discount) > 100))
+      errs.discount = "Must be 0–100";
+    return errs;
+  }
 
   function handleClose() {
     setFirstName("");
@@ -72,13 +92,19 @@ export function AddNewClientDialog({
     setBirthdayMonth(null);
     setDiscount("");
     setIsVip(false);
+    setErrors({});
+    setSubmitted(false);
     onClose();
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitted(true);
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
     const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
-    if (!fullName) return;
     const fullPhone = phone.startsWith("+") ? phone : `+1 876 ${phone}`;
     onSubmit({
       name: fullName,
@@ -114,11 +140,16 @@ export function AddNewClientDialog({
                   <label className="font-rubik text-xs leading-3.5 text-label">First Name:</label>
                   <input
                     type="text"
-                    required
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none"
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      if (submitted) setErrors((prev) => ({ ...prev, firstName: undefined }));
+                    }}
+                    className={`flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none ${errors.firstName ? "border-red/50" : "border-field-line"}`}
                   />
+                  {errors.firstName && (
+                    <span className="font-rubik text-xs leading-3.5 text-red">{errors.firstName}</span>
+                  )}
                 </div>
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="font-rubik text-xs leading-3.5 text-label">Last Name:</label>
@@ -138,35 +169,46 @@ export function AddNewClientDialog({
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (submitted) setErrors((prev) => ({ ...prev, email: undefined }));
+                    }}
+                    className={`flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none ${errors.email ? "border-red/50" : "border-field-line"}`}
                   />
+                  {errors.email && (
+                    <span className="font-rubik text-xs leading-3.5 text-red">{errors.email}</span>
+                  )}
                 </div>
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="font-rubik text-xs leading-3.5 text-label">Mobile Phone:</label>
-                  <div className="flex h-9 w-full items-center gap-1 overflow-hidden rounded-lg border border-field-line bg-white px-2">
-                    <div className="flex h-full shrink-0 items-center gap-1 border-r border-field-line pr-1.5">
-                      <span className="font-rubik text-xs leading-3.5 text-body">US</span>
-                      <ChevronDown className="size-3 text-ghost" />
-                    </div>
+                  <div className={`flex h-9 w-full items-center gap-1 overflow-hidden rounded-lg border bg-white px-2 ${errors.phone ? "border-red/50" : "border-field-line"}`}>
+                    <span className="shrink-0 border-r border-field-line pr-1.5 font-rubik text-xs leading-3.5 text-body">
+                      +1 876
+                    </span>
                     <input
                       type="tel"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (submitted) setErrors((prev) => ({ ...prev, phone: undefined }));
+                      }}
                       placeholder="000-0000"
                       className="min-w-0 flex-1 bg-transparent font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
                     />
                   </div>
+                  {errors.phone && (
+                    <span className="font-rubik text-xs leading-3.5 text-red">{errors.phone}</span>
+                  )}
                 </div>
               </div>
 
               {/* Row: Day of birth (day + month) */}
-              <div className="flex w-[222px] gap-3">
+              <div className="flex w-1/2 gap-3">
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="font-rubik text-xs leading-3.5 text-label">Day of birth</label>
                   <Select value={birthdayDay} onValueChange={(v) => setBirthdayDay(v as number)}>
                     <SelectTrigger>
-                      <SelectValue placeholder=" " />
+                      <SelectValue placeholder="Day" />
                     </SelectTrigger>
                     <SelectPopup>
                       {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
@@ -178,13 +220,13 @@ export function AddNewClientDialog({
                   </Select>
                 </div>
                 <div className="flex flex-1 flex-col gap-1">
-                  <label className="font-rubik text-xs leading-3.5 text-label">Day of birth</label>
+                  <label className="font-rubik text-xs leading-3.5 text-label">Month of birth</label>
                   <Select
                     value={birthdayMonth}
                     onValueChange={(v) => setBirthdayMonth(v as number)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder=" " />
+                      <SelectValue placeholder="Month" />
                     </SelectTrigger>
                     <SelectPopup>
                       {MONTHS.map((m) => (
@@ -208,9 +250,15 @@ export function AddNewClientDialog({
                   min="0"
                   max="100"
                   value={discount}
-                  onChange={(e) => setDiscount(e.target.value)}
-                  className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none"
+                  onChange={(e) => {
+                    setDiscount(e.target.value);
+                    if (submitted) setErrors((prev) => ({ ...prev, discount: undefined }));
+                  }}
+                  className={`flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none ${errors.discount ? "border-red/50" : "border-field-line"}`}
                 />
+                {errors.discount && (
+                  <span className="font-rubik text-xs leading-3.5 text-red">{errors.discount}</span>
+                )}
               </div>
 
               {/* VIP client checkbox */}

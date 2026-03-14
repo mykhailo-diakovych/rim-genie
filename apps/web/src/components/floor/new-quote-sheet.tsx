@@ -212,7 +212,7 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
                   setShowAddClient(true);
                   setShowDropdown(false);
                 }}
-                className="flex items-center gap-1.5 rounded-lg"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg"
               >
                 <Plus className="size-4 text-blue" />
                 <span className="font-rubik text-xs leading-3.5 text-blue">Add New Client</span>
