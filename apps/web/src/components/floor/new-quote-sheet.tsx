@@ -287,6 +287,7 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
               disabled={!selectedCustomerId || createQuote.isPending}
               onClick={handleSubmit}
             >
+              {!createQuote.isPending && <Plus />}
               {createQuote.isPending ? "Creating..." : "Create Quote"}
             </Button>
           </div>

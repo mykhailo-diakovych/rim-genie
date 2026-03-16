@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 
 import { Button } from "@/components/ui/button";
@@ -290,6 +290,7 @@ export function AddNewClientDialog({
                 Cancel
               </Button>
               <Button color="success" type="submit" disabled={isLoading} className="w-32">
+                {!isLoading && <Plus />}
                 {isLoading ? "Creating..." : "Create Client"}
               </Button>
             </DialogFooter>
