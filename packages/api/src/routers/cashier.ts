@@ -105,6 +105,9 @@ export const cashierRouter = {
             with: { receivedBy: true },
           },
           jobs: true,
+          quote: {
+            with: { excludedServices: true },
+          },
         },
       });
     }),

@@ -439,6 +439,56 @@ function InvoiceDetailPage() {
           </div>
         )}
 
+        {(inv?.quote?.excludedServices?.length ?? 0) > 0 && (
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-0.5 font-rubik">
+              <span className="text-sm text-body">Services Excluded:</span>
+              <span className="text-xs text-label">
+                The following services were offered as part of our assessment and were declined
+                by the client
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[500px] font-rubik text-xs">
+                <thead>
+                  <tr className="border-t border-field-line text-left text-label">
+                    <th className="w-18 border-l border-field-line px-2 py-1 font-normal">#</th>
+                    <th className="border-l border-field-line px-2 py-1 font-normal">
+                      Service name
+                    </th>
+                    <th className="w-30 border-l border-r border-field-line px-2 py-1 font-normal">
+                      Cost
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inv?.quote?.excludedServices?.map((es, idx) => (
+                    <tr
+                      key={es.id}
+                      className={`border-t border-field-line ${idx === (inv.quote?.excludedServices?.length ?? 0) - 1 ? "border-b" : ""}`}
+                    >
+                      <td className="border-l border-field-line px-2 py-1.5 text-xs text-body">
+                        {idx + 1}
+                      </td>
+                      <td className="border-l border-field-line px-2 py-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="shrink-0 rounded-full bg-ghost px-1.5 py-0.5 font-rubik text-[8px] leading-normal text-white">
+                            NOT INCLUDED
+                          </span>
+                          <span className="text-xs text-body">{es.name}</span>
+                        </div>
+                      </td>
+                      <td className="border-l border-r border-field-line px-2 py-1.5 text-xs text-body">
+                        {formatCents(es.price)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="h-px bg-field-line" />
 
         <div className="flex flex-col items-end gap-2">
