@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Building2,
   Check,
   ChevronDown,
+  Images,
   Mail,
   MapPin,
   Pencil,
@@ -12,6 +13,7 @@ import {
   Plus,
   Printer,
   Save,
+  Send,
   Trash2,
   User,
 } from "lucide-react";
@@ -51,11 +53,13 @@ function Skeleton({ className }: { className?: string }) {
 
 function QuoteEditorPage() {
   const { quoteId } = Route.useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<QuoteGeneratorEditItem | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [comments, setComments] = useState("");
   const [commentsSynced, setCommentsSynced] = useState(false);
 
@@ -106,6 +110,17 @@ function QuoteEditorPage() {
       await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
     },
     onError: (err) => toast.error(`Failed to save: ${err.message}`),
+  });
+
+  const deleteQuote = useMutation({
+    ...orpc.floor.quotes.delete.mutationOptions(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
+      toast.success("Quote deleted");
+      setShowDeleteConfirm(false);
+      navigate({ to: "/floor" });
+    },
+    onError: (err) => toast.error(`Failed to delete: ${err.message}`),
   });
 
   function handleAdd(data: QuoteGeneratorSheetData) {
@@ -191,7 +206,12 @@ function QuoteEditorPage() {
               <Save />
               {updateQuote.isPending ? "Saving" : "Save"}
             </Button>
-            <MoreDropdown quoteId={quoteId} customerEmail={quote?.customer?.email} />
+            <MoreDropdown
+              quoteId={quoteId}
+              customerEmail={quote?.customer?.email}
+              onDelete={() => setShowDeleteConfirm(true)}
+              isDeleting={deleteQuote.isPending}
+            />
           </div>
         </div>
 
@@ -545,6 +565,43 @@ function QuoteEditorPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-error-50 bg-error-100">
+                <Trash2 className="size-6 text-destructive" />
+              </div>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <DialogTitle>Delete quote</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete this quote?
+                  <br />
+                  This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose
+                render={
+                  <Button variant="ghost" type="button">
+                    Cancel
+                  </Button>
+                }
+              />
+              <Button
+                color="destructive"
+                className="w-32"
+                onClick={() => deleteQuote.mutate({ id: quoteId })}
+                disabled={deleteQuote.isPending}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -764,17 +821,21 @@ function ServicePickerDialog({
 function MoreDropdown({
   quoteId,
   customerEmail,
+  onDelete,
+  isDeleting,
 }: {
   quoteId: string;
   customerEmail?: string | null;
+  onDelete: () => void;
+  isDeleting: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const sendEmail = useMutation({
     ...orpc.floor.quotes.sendEmail.mutationOptions(),
-    onSuccess: () => toast.success("Quote emailed successfully"),
-    onError: (err: Error) => toast.error(`Failed to send email: ${err.message}`),
+    onSuccess: () => toast.success("Quote sent successfully"),
+    onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
   });
 
   useEffect(() => {
@@ -800,17 +861,28 @@ function MoreDropdown({
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 z-10 mt-1 w-40 rounded-md border border-card-line bg-white py-1 shadow-md">
+        <div className="absolute top-full right-0 z-10 mt-1 w-44 overflow-clip rounded-md bg-white pb-1 shadow-[0px_0px_32px_0px_rgba(10,13,18,0.1)]">
           <button
             type="button"
             onClick={() => {
               setOpen(false);
               window.open(`/api/quotes/${quoteId}/pdf`, "_blank");
             }}
-            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-page"
+            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page"
           >
-            <Printer className="size-4 text-ghost" />
-            Print PDF
+            <Printer className="size-4 text-blue" />
+            Print
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              toast.info("Proofs feature coming soon");
+            }}
+            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page"
+          >
+            <Images className="size-4 text-blue" />
+            Proofs
           </button>
           <button
             type="button"
@@ -819,10 +891,23 @@ function MoreDropdown({
               setOpen(false);
               sendEmail.mutate({ quoteId });
             }}
-            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
+            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
           >
-            <Mail className="size-4 text-ghost" />
-            Email Quote
+            <Send className="size-4 text-blue" />
+            Send (Email/SMS)
+          </button>
+          <div className="h-px bg-field-line" />
+          <button
+            type="button"
+            disabled={isDeleting}
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-destructive transition-colors hover:bg-page disabled:opacity-50"
+          >
+            <Trash2 className="size-4" />
+            Delete
           </button>
         </div>
       )}

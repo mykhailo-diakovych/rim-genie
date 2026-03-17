@@ -1,13 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
-  Bell,
   Building2,
   ChevronDown,
   ChevronLeft,
   CircleDollarSign,
   Info,
-  Mail,
   MapPin,
   Phone,
   Printer,
@@ -67,14 +65,12 @@ function formatPaymentMode(mode: string) {
 function MoreDropdown({
   invoiceId,
   customerEmail,
-  invoiceStatus,
   onPrint,
   onDelete,
   isDeleting,
 }: {
   invoiceId: string;
   customerEmail?: string | null;
-  invoiceStatus?: string;
   onPrint: () => void;
   onDelete: () => void;
   isDeleting: boolean;
@@ -84,17 +80,9 @@ function MoreDropdown({
 
   const sendReceipt = useMutation({
     ...orpc.cashier.invoices.sendReceipt.mutationOptions(),
-    onSuccess: () => toast.success("Receipt emailed successfully"),
-    onError: (err: Error) => toast.error(`Failed to send receipt: ${err.message}`),
+    onSuccess: () => toast.success("Receipt sent successfully"),
+    onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
   });
-
-  const sendReminder = useMutation({
-    ...orpc.cashier.invoices.sendReminder.mutationOptions(),
-    onSuccess: () => toast.success("Payment reminder sent"),
-    onError: (err: Error) => toast.error(`Failed to send reminder: ${err.message}`),
-  });
-
-  const showReminder = invoiceStatus === "unpaid" || invoiceStatus === "partially_paid";
 
   useEffect(() => {
     if (!open) return;
@@ -119,16 +107,16 @@ function MoreDropdown({
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 z-10 mt-1 w-44 rounded-md border border-card-line bg-white py-1 shadow-md">
+        <div className="absolute top-full right-0 z-10 mt-1 w-44 overflow-clip rounded-md bg-white pb-1 shadow-[0px_0px_32px_0px_rgba(10,13,18,0.1)]">
           <button
             type="button"
             onClick={() => {
               setOpen(false);
               onPrint();
             }}
-            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-page"
+            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page"
           >
-            <Printer className="size-4 text-ghost" />
+            <Printer className="size-4 text-blue" />
             Print
           </button>
           <button
@@ -138,25 +126,12 @@ function MoreDropdown({
               setOpen(false);
               sendReceipt.mutate({ invoiceId });
             }}
-            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
+            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
           >
-            <Mail className="size-4 text-ghost" />
-            Email Receipt
+            <Send className="size-4 text-blue" />
+            Send (Email/SMS)
           </button>
-          {showReminder && (
-            <button
-              type="button"
-              disabled={!customerEmail || sendReminder.isPending}
-              onClick={() => {
-                setOpen(false);
-                sendReminder.mutate({ invoiceId });
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
-            >
-              <Bell className="size-4 text-ghost" />
-              Send Reminder
-            </button>
-          )}
+          <div className="h-px bg-field-line" />
           <button
             type="button"
             disabled={isDeleting}
@@ -164,7 +139,7 @@ function MoreDropdown({
               setOpen(false);
               onDelete();
             }}
-            className="flex w-full items-center gap-2 px-3 py-2 font-rubik text-xs text-destructive transition-colors hover:bg-page disabled:opacity-50"
+            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-destructive transition-colors hover:bg-page disabled:opacity-50"
           >
             <Trash2 className="size-4" />
             Delete
@@ -264,7 +239,6 @@ function InvoiceDetailPage() {
           <MoreDropdown
             invoiceId={invoiceId}
             customerEmail={inv?.customer?.email}
-            invoiceStatus={inv?.status}
             onPrint={() => window.print()}
             onDelete={() => setShowDeleteConfirm(true)}
             isDeleting={deleteInvoice.isPending}
