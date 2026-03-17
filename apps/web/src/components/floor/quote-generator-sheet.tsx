@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Check, ChevronDown, Info, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Info, Plus, X } from "lucide-react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Radio } from "@base-ui/react/radio";
@@ -1482,6 +1482,7 @@ export function QuoteGeneratorSheet({
                   disabled={isAdding || !canSubmit}
                   className="w-32"
                 >
+                  {!editItem && !isAdding && <Plus />}
                   {isAdding
                     ? editItem
                       ? "Updating..."
@@ -1502,6 +1503,7 @@ export function QuoteGeneratorSheet({
                   disabled={isAdding || !canSubmit}
                   className="w-32"
                 >
+                  {!editItem && !isAdding && <Plus />}
                   {isAdding
                     ? editItem
                       ? "Updating..."
@@ -1522,6 +1524,7 @@ export function QuoteGeneratorSheet({
                   disabled={isAdding || !canSubmit}
                   className="w-32"
                 >
+                  {!editItem && !isAdding && <Plus />}
                   {isAdding
                     ? editItem
                       ? "Updating..."
@@ -1542,6 +1545,7 @@ export function QuoteGeneratorSheet({
                   disabled={isAdding || !canSubmit}
                   className="w-32"
                 >
+                  {!editItem && !isAdding && <Plus />}
                   {isAdding
                     ? editItem
                       ? "Updating..."

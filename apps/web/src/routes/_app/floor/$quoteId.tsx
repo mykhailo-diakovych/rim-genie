@@ -189,7 +189,7 @@ function QuoteEditorPage() {
               disabled={isReadOnly || updateQuote.isPending}
             >
               <Save />
-              Save
+              {updateQuote.isPending ? "Saving" : "Save"}
             </Button>
             <MoreDropdown quoteId={quoteId} customerEmail={quote?.customer?.email} />
           </div>
@@ -749,6 +749,7 @@ function ServicePickerDialog({
               }
               disabled={selected.size === 0 || addFromCatalog.isPending}
             >
+              <Plus />
               Add {selected.size > 0 ? `(${selected.size})` : ""}
             </Button>
           </DialogFooter>
