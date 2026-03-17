@@ -1,22 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { requireRoles } from "@/lib/route-permissions";
 import { cn } from "@/lib/utils";
-import { AssignDetailView } from "@/components/technician/assign-detail-view";
 import { AssignJobCard } from "@/components/technician/assign-job-card";
-import { CompletedDetailView } from "@/components/technician/completed-detail-view";
 import { CompletedJobCard } from "@/components/technician/completed-job-card";
 import { FilterRow, type DateFilter, type OwnerFilter } from "@/components/technician/filter-row";
 import { JobCard } from "@/components/technician/job-card";
-import { JobDetailView } from "@/components/technician/job-detail-view";
 import { TAB_CONFIG, type TabValue } from "@/components/technician/types";
 import { useJobs } from "@/components/technician/use-jobs";
 
 const TAB_VALUES = TAB_CONFIG.map((t) => t.value);
 
-export const Route = createFileRoute("/_app/technician")({
+export const Route = createFileRoute("/_app/technician/")({
   validateSearch: (search: Record<string, unknown>): { tab: TabValue } => ({
     tab: TAB_VALUES.includes(search.tab as TabValue) ? (search.tab as TabValue) : "new",
   }),
@@ -27,15 +24,12 @@ export const Route = createFileRoute("/_app/technician")({
   component: TechnicianPage,
 });
 
-type DetailView = { invoiceId: string; source: "in-progress" | "assign" | "completed" };
-
 function TechnicianPage() {
   const { tab: activeTab } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("");
   const { assign, inProgress, completed, isLoading } = useJobs({ ownerFilter, dateFilter });
-  const [detailView, setDetailView] = useState<DetailView | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<TabValue, HTMLButtonElement | null>>(new Map());
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
@@ -64,27 +58,6 @@ function TechnicianPage() {
   function handleTabChange(tab: TabValue) {
     void navigate({ search: { tab } });
     measureIndicator(tab);
-  }
-
-  const detailGroup = useMemo(() => {
-    if (!detailView) return null;
-    const sourceMap = { assign, "in-progress": inProgress, completed };
-    return sourceMap[detailView.source].find((g) => g.invoiceId === detailView.invoiceId) ?? null;
-  }, [detailView, assign, inProgress, completed]);
-
-  useEffect(() => {
-    if (detailView && !detailGroup && !isLoading) setDetailView(null);
-  }, [detailView, detailGroup, isLoading]);
-
-  if (detailView && detailGroup) {
-    const onBack = () => setDetailView(null);
-    if (detailView.source === "assign") {
-      return <AssignDetailView group={detailGroup} onBack={onBack} />;
-    }
-    if (detailView.source === "completed") {
-      return <CompletedDetailView group={detailGroup} onBack={onBack} />;
-    }
-    return <JobDetailView group={detailGroup} onBack={onBack} />;
   }
 
   return (
@@ -149,7 +122,11 @@ function TechnicianPage() {
                   key={group.invoiceId}
                   group={group}
                   onView={() =>
-                    setDetailView({ invoiceId: group.invoiceId, source: "in-progress" })
+                    void navigate({
+                      to: "/technician/$invoiceId",
+                      params: { invoiceId: group.invoiceId },
+                      search: { source: "in-progress" },
+                    })
                   }
                 />
               ))}
@@ -173,7 +150,13 @@ function TechnicianPage() {
                 <AssignJobCard
                   key={group.invoiceId}
                   group={group}
-                  onView={() => setDetailView({ invoiceId: group.invoiceId, source: "assign" })}
+                  onView={() =>
+                    void navigate({
+                      to: "/technician/$invoiceId",
+                      params: { invoiceId: group.invoiceId },
+                      search: { source: "assign" },
+                    })
+                  }
                 />
               ))}
               {assign.length === 0 && (
@@ -200,7 +183,13 @@ function TechnicianPage() {
                 <CompletedJobCard
                   key={group.invoiceId}
                   group={group}
-                  onView={() => setDetailView({ invoiceId: group.invoiceId, source: "completed" })}
+                  onView={() =>
+                    void navigate({
+                      to: "/technician/$invoiceId",
+                      params: { invoiceId: group.invoiceId },
+                      search: { source: "completed" },
+                    })
+                  }
                 />
               ))}
               {completed.length === 0 && (

@@ -14,18 +14,19 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
-import { Route as AppTechnicianRouteImport } from './routes/_app/technician'
 import { Route as AppManageRouteImport } from './routes/_app/manage'
 import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
 import { Route as AppFloorRouteImport } from './routes/_app/floor'
 import { Route as AppEmployeesRouteImport } from './routes/_app/employees'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCashierRouteImport } from './routes/_app/cashier'
+import { Route as AppTechnicianIndexRouteImport } from './routes/_app/technician/index'
 import { Route as AppFloorIndexRouteImport } from './routes/_app/floor/index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/index'
 import { Route as AppCashierIndexRouteImport } from './routes/_app/cashier/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AppTechnicianInvoiceIdRouteImport } from './routes/_app/technician/$invoiceId'
 import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/customers/$customerId'
 import { Route as AppCashierInvoiceIdRouteImport } from './routes/_app/cashier/$invoiceId'
@@ -54,11 +55,6 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
 const AppTermsRoute = AppTermsRouteImport.update({
   id: '/terms',
   path: '/terms',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTechnicianRoute = AppTechnicianRouteImport.update({
-  id: '/technician',
-  path: '/technician',
   getParentRoute: () => AppRoute,
 } as any)
 const AppManageRoute = AppManageRouteImport.update({
@@ -91,6 +87,11 @@ const AppCashierRoute = AppCashierRouteImport.update({
   path: '/cashier',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTechnicianIndexRoute = AppTechnicianIndexRouteImport.update({
+  id: '/technician/',
+  path: '/technician/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppFloorIndexRoute = AppFloorIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -115,6 +116,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppTechnicianInvoiceIdRoute = AppTechnicianInvoiceIdRouteImport.update({
+  id: '/technician/$invoiceId',
+  path: '/technician/$invoiceId',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
   id: '/$quoteId',
@@ -157,17 +163,18 @@ export interface FileRoutesByFullPath {
   '/floor': typeof AppFloorRouteWithChildren
   '/inventory': typeof AppInventoryRoute
   '/manage': typeof AppManageRoute
-  '/technician': typeof AppTechnicianRoute
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
   '/cashier/$invoiceId': typeof AppCashierInvoiceIdRouteWithChildren
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/cashier/': typeof AppCashierIndexRoute
   '/customers/': typeof AppCustomersIndexRoute
   '/floor/': typeof AppFloorIndexRoute
+  '/technician/': typeof AppTechnicianIndexRoute
   '/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
@@ -178,16 +185,17 @@ export interface FileRoutesByTo {
   '/employees': typeof AppEmployeesRoute
   '/inventory': typeof AppInventoryRoute
   '/manage': typeof AppManageRoute
-  '/technician': typeof AppTechnicianRoute
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/cashier': typeof AppCashierIndexRoute
   '/customers': typeof AppCustomersIndexRoute
   '/floor': typeof AppFloorIndexRoute
+  '/technician': typeof AppTechnicianIndexRoute
   '/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/cashier/$invoiceId': typeof AppCashierInvoiceIdIndexRoute
@@ -202,18 +210,19 @@ export interface FileRoutesById {
   '/_app/floor': typeof AppFloorRouteWithChildren
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/manage': typeof AppManageRoute
-  '/_app/technician': typeof AppTechnicianRoute
   '/_app/terms': typeof AppTermsRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_app/': typeof AppIndexRoute
   '/_app/cashier/$invoiceId': typeof AppCashierInvoiceIdRouteWithChildren
   '/_app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/_app/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/_app/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/_app/cashier/': typeof AppCashierIndexRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/floor/': typeof AppFloorIndexRoute
+  '/_app/technician/': typeof AppTechnicianIndexRoute
   '/_app/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/_app/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
@@ -228,17 +237,18 @@ export interface FileRouteTypes {
     | '/floor'
     | '/inventory'
     | '/manage'
-    | '/technician'
     | '/terms'
     | '/login'
     | '/cashier/$invoiceId'
     | '/customers/$customerId'
     | '/floor/$quoteId'
+    | '/technician/$invoiceId'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/cashier/'
     | '/customers/'
     | '/floor/'
+    | '/technician/'
     | '/cashier/$invoiceId/checkout'
     | '/api/quotes/$quoteId/pdf'
     | '/cashier/$invoiceId/'
@@ -249,16 +259,17 @@ export interface FileRouteTypes {
     | '/employees'
     | '/inventory'
     | '/manage'
-    | '/technician'
     | '/terms'
     | '/login'
     | '/customers/$customerId'
     | '/floor/$quoteId'
+    | '/technician/$invoiceId'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/cashier'
     | '/customers'
     | '/floor'
+    | '/technician'
     | '/cashier/$invoiceId/checkout'
     | '/api/quotes/$quoteId/pdf'
     | '/cashier/$invoiceId'
@@ -272,18 +283,19 @@ export interface FileRouteTypes {
     | '/_app/floor'
     | '/_app/inventory'
     | '/_app/manage'
-    | '/_app/technician'
     | '/_app/terms'
     | '/_auth/login'
     | '/_app/'
     | '/_app/cashier/$invoiceId'
     | '/_app/customers/$customerId'
     | '/_app/floor/$quoteId'
+    | '/_app/technician/$invoiceId'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/_app/cashier/'
     | '/_app/customers/'
     | '/_app/floor/'
+    | '/_app/technician/'
     | '/_app/cashier/$invoiceId/checkout'
     | '/api/quotes/$quoteId/pdf'
     | '/_app/cashier/$invoiceId/'
@@ -334,13 +346,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTermsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/technician': {
-      id: '/_app/technician'
-      path: '/technician'
-      fullPath: '/technician'
-      preLoaderRoute: typeof AppTechnicianRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/manage': {
       id: '/_app/manage'
       path: '/manage'
@@ -383,6 +388,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCashierRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/technician/': {
+      id: '/_app/technician/'
+      path: '/technician'
+      fullPath: '/technician/'
+      preLoaderRoute: typeof AppTechnicianIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/floor/': {
       id: '/_app/floor/'
       path: '/'
@@ -417,6 +429,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/technician/$invoiceId': {
+      id: '/_app/technician/$invoiceId'
+      path: '/technician/$invoiceId'
+      fullPath: '/technician/$invoiceId'
+      preLoaderRoute: typeof AppTechnicianInvoiceIdRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/floor/$quoteId': {
       id: '/_app/floor/$quoteId'
@@ -511,11 +530,12 @@ interface AppRouteChildren {
   AppFloorRoute: typeof AppFloorRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRoute
   AppManageRoute: typeof AppManageRoute
-  AppTechnicianRoute: typeof AppTechnicianRoute
   AppTermsRoute: typeof AppTermsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCustomersCustomerIdRoute: typeof AppCustomersCustomerIdRoute
+  AppTechnicianInvoiceIdRoute: typeof AppTechnicianInvoiceIdRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
+  AppTechnicianIndexRoute: typeof AppTechnicianIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -525,11 +545,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppFloorRoute: AppFloorRouteWithChildren,
   AppInventoryRoute: AppInventoryRoute,
   AppManageRoute: AppManageRoute,
-  AppTechnicianRoute: AppTechnicianRoute,
   AppTermsRoute: AppTermsRoute,
   AppIndexRoute: AppIndexRoute,
   AppCustomersCustomerIdRoute: AppCustomersCustomerIdRoute,
+  AppTechnicianInvoiceIdRoute: AppTechnicianInvoiceIdRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
+  AppTechnicianIndexRoute: AppTechnicianIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

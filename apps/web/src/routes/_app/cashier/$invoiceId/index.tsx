@@ -444,8 +444,8 @@ function InvoiceDetailPage() {
             <div className="flex flex-col gap-0.5 font-rubik">
               <span className="text-sm text-body">Services Excluded:</span>
               <span className="text-xs text-label">
-                The following services were offered as part of our assessment and were declined
-                by the client
+                The following services were offered as part of our assessment and were declined by
+                the client
               </span>
             </div>
             <div className="overflow-x-auto">
@@ -456,7 +456,7 @@ function InvoiceDetailPage() {
                     <th className="border-l border-field-line px-2 py-1 font-normal">
                       Service name
                     </th>
-                    <th className="w-30 border-l border-r border-field-line px-2 py-1 font-normal">
+                    <th className="w-30 border-r border-l border-field-line px-2 py-1 font-normal">
                       Cost
                     </th>
                   </tr>
@@ -478,7 +478,7 @@ function InvoiceDetailPage() {
                           <span className="text-xs text-body">{es.name}</span>
                         </div>
                       </td>
-                      <td className="border-l border-r border-field-line px-2 py-1.5 text-xs text-body">
+                      <td className="border-r border-l border-field-line px-2 py-1.5 text-xs text-body">
                         {formatCents(es.price)}
                       </td>
                     </tr>
