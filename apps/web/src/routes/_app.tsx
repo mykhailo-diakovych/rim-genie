@@ -17,8 +17,8 @@ export const Route = createFileRoute("/_app")({
 });
 
 function AppLayout() {
-  const { invoiceId } = useParams({ strict: false }) as { invoiceId?: string };
-  const hideSidebar = !!invoiceId;
+  const params = useParams({ strict: false }) as Record<string, string>;
+  const hideSidebar = Object.keys(params).length > 0;
 
   return (
     <div className="flex h-svh flex-col font-rubik">
