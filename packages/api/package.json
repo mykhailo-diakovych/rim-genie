@@ -11,6 +11,12 @@
     "./pdf/get-quote-pdf": {
       "default": "./src/pdf/get-quote-pdf.ts"
     },
+    "./pdf/render-invoice-pdf": {
+      "default": "./src/pdf/render-invoice-pdf.tsx"
+    },
+    "./pdf/get-invoice-pdf": {
+      "default": "./src/pdf/get-invoice-pdf.ts"
+    },
     "./*": {
       "default": "./src/*.ts"
     }

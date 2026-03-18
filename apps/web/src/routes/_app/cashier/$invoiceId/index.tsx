@@ -239,7 +239,7 @@ function InvoiceDetailPage() {
           <MoreDropdown
             invoiceId={invoiceId}
             customerEmail={inv?.customer?.email}
-            onPrint={() => window.print()}
+            onPrint={() => window.open(`/api/invoices/${invoiceId}/pdf`, "_blank")}
             onDelete={() => setShowDeleteConfirm(true)}
             isDeleting={deleteInvoice.isPending}
           />

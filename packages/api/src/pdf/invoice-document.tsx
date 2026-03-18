@@ -1,8 +1,6 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import path from "path";
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
@@ -24,7 +22,7 @@ const styles = StyleSheet.create({
     height: 32,
     objectFit: "contain",
   },
-  quoteTitle: {
+  title: {
     fontSize: 18,
     fontFamily: "Helvetica-Bold",
     color: "#1a1a1a",
@@ -52,6 +50,26 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#1a1a1a",
   },
+  customerName: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    color: "#1a1a1a",
+  },
+  customerDetail: {
+    fontSize: 10,
+    color: "#1a1a1a",
+  },
+  totalDisplay: {
+    fontSize: 18,
+    fontFamily: "Helvetica-Bold",
+    color: "#1a1a1a",
+    marginBottom: 2,
+  },
+  totalDisplayLabel: {
+    fontSize: 10,
+    color: "#1a1a1a",
+    marginBottom: 2,
+  },
   addressBlock: {
     alignItems: "flex-end",
     flexDirection: "column",
@@ -62,26 +80,7 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
     textAlign: "right",
   },
-  customerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  customerLabel: {
-    fontSize: 9,
-    color: "#888",
-    marginBottom: 2,
-  },
-  customerName: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
-    color: "#1a1a1a",
-  },
-  customerDetail: {
-    fontSize: 10,
-    color: "#1a1a1a",
-  },
+  // Table
   table: {
     marginBottom: 12,
   },
@@ -120,12 +119,13 @@ const styles = StyleSheet.create({
     color: "#888",
     marginTop: 2,
   },
-  commentsLabel: {
+  // Notes
+  notesLabel: {
     fontSize: 9,
     color: "#888",
     marginBottom: 3,
   },
-  commentsText: {
+  notesText: {
     fontSize: 10,
     color: "#1a1a1a",
     marginBottom: 12,
@@ -154,34 +154,18 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginRight: 4,
   },
-  // Share quote
-  shareLabel: {
-    fontSize: 9,
-    color: "#888",
-    marginBottom: 3,
-  },
-  shareValue: {
-    fontSize: 10,
-    color: "#1a1a1a",
-    marginBottom: 2,
-  },
   // Totals
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginTop: 4,
-  },
   totalsBlock: {
     alignSelf: "flex-end",
-    width: 200,
+    width: 220,
+    marginBottom: 12,
   },
   subtotalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 4,
     paddingHorizontal: 8,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   subtotalLabel: {
     fontSize: 10,
@@ -198,6 +182,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingVertical: 8,
     paddingHorizontal: 8,
+    marginBottom: 2,
   },
   totalLabel: {
     fontSize: 13,
@@ -209,38 +194,69 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: "#fff",
   },
+  // Payment history
+  paymentTitle: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    color: "#1a1a1a",
+    marginBottom: 6,
+  },
+  payColDate: { width: 80 },
+  payColMethod: { width: 80 },
+  payColAmount: { width: 64, textAlign: "right" },
+  payColRef: { flex: 1 },
+  payColReceived: { width: 80, textAlign: "right" },
+  // Storage fee notice
+  noticeBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ebf5ff",
+    borderRadius: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 8,
+    marginTop: 12,
+  },
+  noticeText: {
+    fontSize: 9,
+    color: "#1a1a1a",
+    flex: 1,
+  },
+  noticeBold: {
+    fontFamily: "Helvetica-Bold",
+  },
 });
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export type QuoteData = {
-  quoteNumber: number;
+export type InvoiceData = {
+  invoiceNumber: number;
   createdAt: Date | string | null;
-  validUntil: Date | string | null;
-  customerReason: string | null;
-  fullDiagnosticConsent: boolean;
-  customer: { name: string; phone: string | null; email: string | null } | null;
-  comments: string | null;
+  customer: { name: string; phone: string | null } | null;
   subtotal: number;
-  discountPercent: number;
-  discountAmount: number;
+  discount: number;
+  tax: number;
   total: number;
+  notes: string | null;
   items: Array<{
     id: string;
     description: string | null;
     comments: string | null;
     quantity: number;
     unitCost: number;
-    inches: number | null;
   }>;
   excludedServices: Array<{
     id: string;
     name: string;
     price: number;
   }>;
+  payments: Array<{
+    id: string;
+    createdAt: Date | string | null;
+    mode: string;
+    amount: number;
+    reference: string | null;
+    receivedByName: string | null;
+  }>;
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtDate(d: Date | string | null | undefined): string {
   if (!d) return "—";
@@ -255,7 +271,13 @@ function fmtMoney(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-// ─── Logo path (resolved relative to CWD at render time) ─────────────────────
+const paymentModeLabels: Record<string, string> = {
+  cash: "Cash",
+  credit_card: "Credit Card",
+  debit_card: "Debit Card",
+  bank_transfer: "Bank Transfer",
+  cheque: "Cheque",
+};
 
 function resolveLogoPath(): string {
   const candidates = [
@@ -273,51 +295,52 @@ function resolveLogoPath(): string {
   return candidates[0] ?? "";
 }
 
-// ─── Document ─────────────────────────────────────────────────────────────────
-
-export function QuoteDocument({ data }: { data: QuoteData }) {
+export function InvoiceDocument({ data }: { data: InvoiceData }) {
   const logoPath = resolveLogoPath();
+  const totalPaid = data.payments.reduce((sum, p) => sum + p.amount, 0);
+  const balance = data.total - totalPaid;
 
   return (
-    <Document title={`Quote #${data.quoteNumber}`}>
+    <Document title={`Invoice #${data.invoiceNumber}`}>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <Image src={logoPath} style={styles.logo} />
-          <Text style={styles.quoteTitle}>Quote #{data.quoteNumber}</Text>
+          <Text style={styles.title}>Invoice</Text>
         </View>
 
         <View style={styles.divider} />
 
-        {/* Reason for visit + Customer info */}
-        {data.customer && (
-          <View style={styles.customerRow}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
-              <Text style={styles.metaLabel}>Reason for visit:</Text>
-              <Text style={styles.metaValue}>{data.customerReason || "—"}</Text>
+        {/* Meta: Invoice # + Date | Invoice to: customer */}
+        <View style={styles.metaRow}>
+          <View style={{ flexDirection: "row", gap: 24 }}>
+            <View style={styles.metaBlock}>
+              <Text style={styles.metaLabel}>Invoice #:</Text>
+              <Text style={styles.metaValue}>{data.invoiceNumber}</Text>
             </View>
+            <View style={styles.metaBlock}>
+              <Text style={styles.metaLabel}>Date:</Text>
+              <Text style={styles.metaValue}>{fmtDate(data.createdAt)}</Text>
+            </View>
+          </View>
+          {data.customer && (
             <View style={{ alignItems: "flex-end" }}>
+              <Text style={styles.metaLabel}>Invoice to:</Text>
               <Text style={styles.customerName}>{data.customer.name}</Text>
               {data.customer.phone && (
                 <Text style={styles.customerDetail}>{data.customer.phone}</Text>
               )}
             </View>
-          </View>
-        )}
+          )}
+        </View>
 
         <View style={styles.divider} />
 
-        {/* Meta: Dates + Address */}
+        {/* Total display + Business address */}
         <View style={styles.metaRow}>
-          <View style={{ flexDirection: "row", gap: 24 }}>
-            <View style={styles.metaBlock}>
-              <Text style={styles.metaLabel}>Quote Date</Text>
-              <Text style={styles.metaValue}>{fmtDate(data.createdAt)}</Text>
-            </View>
-            <View style={styles.metaBlock}>
-              <Text style={styles.metaLabel}>Valid Until</Text>
-              <Text style={styles.metaValue}>{fmtDate(data.validUntil)}</Text>
-            </View>
+          <View style={styles.metaBlock}>
+            <Text style={styles.totalDisplayLabel}>Total:</Text>
+            <Text style={styles.totalDisplay}>{fmtMoney(data.total)}</Text>
           </View>
           <View style={styles.addressBlock}>
             <Text style={styles.addressLine}>82c Waltham Park Rd,</Text>
@@ -338,43 +361,31 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
             <Text style={[styles.headerCell, styles.colTotal]}>Total</Text>
           </View>
 
-          {/* Full Diagnostic Consent row */}
-          <View style={styles.tableRow}>
-            <Text style={[styles.cell, styles.colNum]}>1</Text>
-            <View style={styles.colDesc}>
-              <Text style={styles.cell}>Full Diagnostic Consent</Text>
-              <Text style={styles.itemComments}>
-                Comments: {data.fullDiagnosticConsent ? "Agree" : "Disagree"}
+          {data.items.map((item, idx) => (
+            <View style={styles.tableRow} key={item.id}>
+              <Text style={[styles.cell, styles.colNum]}>{idx + 1}</Text>
+              <View style={styles.colDesc}>
+                <Text style={styles.cell}>{item.description ?? "Rim Job"}</Text>
+                {item.comments && (
+                  <Text style={styles.itemComments}>Comments: {item.comments}</Text>
+                )}
+              </View>
+              <Text style={[styles.cell, styles.colQty]}>{item.quantity}</Text>
+              <Text style={[styles.cell, styles.colUnit]}>{fmtMoney(item.unitCost)}</Text>
+              <Text style={[styles.cell, styles.colTotal]}>
+                {fmtMoney(item.quantity * item.unitCost)}
               </Text>
             </View>
-            <Text style={[styles.cell, styles.colQty]}>—</Text>
-            <Text style={[styles.cell, styles.colUnit]}>$0.00</Text>
-            <Text style={[styles.cell, styles.colTotal]}>$0.00</Text>
-          </View>
-
-          {/* Item rows */}
-          {data.items.map((item, idx) => {
-            const rowTotal = item.inches
-              ? item.inches * item.unitCost
-              : item.quantity * item.unitCost;
-            return (
-              <View style={styles.tableRow} key={item.id}>
-                <Text style={[styles.cell, styles.colNum]}>{idx + 2}</Text>
-                <View style={styles.colDesc}>
-                  <Text style={styles.cell}>{item.description ?? "Rim Job"}</Text>
-                  {item.comments && (
-                    <Text style={styles.itemComments}>Comments: {item.comments}</Text>
-                  )}
-                </View>
-                <Text style={[styles.cell, styles.colQty]}>
-                  {item.inches ? `${item.inches}"` : item.quantity}
-                </Text>
-                <Text style={[styles.cell, styles.colUnit]}>{fmtMoney(item.unitCost)}</Text>
-                <Text style={[styles.cell, styles.colTotal]}>{fmtMoney(rowTotal)}</Text>
-              </View>
-            );
-          })}
+          ))}
         </View>
+
+        {/* Notes */}
+        {data.notes && (
+          <View>
+            <Text style={styles.notesLabel}>Comments:</Text>
+            <Text style={styles.notesText}>{data.notes}</Text>
+          </View>
+        )}
 
         {/* Excluded Services */}
         {data.excludedServices.length > 0 && (
@@ -406,40 +417,79 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
           </View>
         )}
 
-        {/* Comments */}
-        {data.comments && (
-          <View>
-            <Text style={styles.commentsLabel}>Comments</Text>
-            <Text style={styles.commentsText}>{data.comments}</Text>
+        <View style={styles.divider} />
+
+        {/* Totals */}
+        <View style={styles.totalsBlock}>
+          <View style={styles.subtotalRow}>
+            <Text style={styles.subtotalLabel}>Subtotal:</Text>
+            <Text style={styles.subtotalValue}>{fmtMoney(data.subtotal)}</Text>
+          </View>
+          {data.discount > 0 && (
+            <View style={styles.subtotalRow}>
+              <Text style={styles.subtotalLabel}>Discount:</Text>
+              <Text style={styles.subtotalValue}>-{fmtMoney(data.discount)}</Text>
+            </View>
+          )}
+          {data.tax > 0 && (
+            <View style={styles.subtotalRow}>
+              <Text style={styles.subtotalLabel}>Tax:</Text>
+              <Text style={styles.subtotalValue}>+{fmtMoney(data.tax)}</Text>
+            </View>
+          )}
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total:</Text>
+            <Text style={styles.totalValue}>{fmtMoney(data.total)}</Text>
+          </View>
+          {totalPaid > 0 && (
+            <View style={styles.subtotalRow}>
+              <Text style={styles.subtotalLabel}>Paid:</Text>
+              <Text style={styles.subtotalValue}>{fmtMoney(totalPaid)}</Text>
+            </View>
+          )}
+          <View style={styles.subtotalRow}>
+            <Text style={styles.subtotalLabel}>Balance Due:</Text>
+            <Text style={[styles.subtotalValue, { fontFamily: "Helvetica-Bold" }]}>
+              {fmtMoney(balance)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Payment History */}
+        {data.payments.length > 0 && (
+          <View style={{ marginBottom: 12 }}>
+            <Text style={styles.paymentTitle}>Payment History</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.headerCell, styles.payColDate]}>Date</Text>
+                <Text style={[styles.headerCell, styles.payColMethod]}>Method</Text>
+                <Text style={[styles.headerCell, styles.payColAmount]}>Amount</Text>
+                <Text style={[styles.headerCell, styles.payColRef]}>Reference</Text>
+                <Text style={[styles.headerCell, styles.payColReceived]}>Received By</Text>
+              </View>
+              {data.payments.map((p) => (
+                <View style={styles.tableRow} key={p.id}>
+                  <Text style={[styles.cell, styles.payColDate]}>{fmtDate(p.createdAt)}</Text>
+                  <Text style={[styles.cell, styles.payColMethod]}>
+                    {paymentModeLabels[p.mode] ?? p.mode}
+                  </Text>
+                  <Text style={[styles.cell, styles.payColAmount]}>{fmtMoney(p.amount)}</Text>
+                  <Text style={[styles.cell, styles.payColRef]}>{p.reference ?? "—"}</Text>
+                  <Text style={[styles.cell, styles.payColReceived]}>
+                    {p.receivedByName ?? "—"}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
-        {/* Footer: Share Quote + Totals */}
-        <View style={styles.footerRow}>
-          {/* Share Quote */}
-          <View>
-            <Text style={styles.shareLabel}>Share Quote:</Text>
-            {data.customer?.email && <Text style={styles.shareValue}>{data.customer.email}</Text>}
-            {data.customer?.phone && <Text style={styles.shareValue}>{data.customer.phone}</Text>}
-          </View>
-
-          {/* Totals */}
-          <View style={styles.totalsBlock}>
-            <View style={styles.subtotalRow}>
-              <Text style={styles.subtotalLabel}>Subtotal:</Text>
-              <Text style={styles.subtotalValue}>{fmtMoney(data.subtotal)}</Text>
-            </View>
-            {data.discountPercent > 0 && (
-              <View style={styles.subtotalRow}>
-                <Text style={styles.subtotalLabel}>Discount ({data.discountPercent}%):</Text>
-                <Text style={styles.subtotalValue}>-{fmtMoney(data.discountAmount)}</Text>
-              </View>
-            )}
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total:</Text>
-              <Text style={styles.totalValue}>{fmtMoney(data.total)}</Text>
-            </View>
-          </View>
+        {/* Storage fee notice */}
+        <View style={styles.noticeBox}>
+          <Text style={styles.noticeText}>
+            Rims left in Rim Genie beyond 30 days will attract a storage fee of{" "}
+            <Text style={styles.noticeBold}>$500 daily</Text>
+          </Text>
         </View>
       </Page>
     </Document>

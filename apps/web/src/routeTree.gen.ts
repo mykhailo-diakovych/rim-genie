@@ -32,6 +32,7 @@ import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/custom
 import { Route as AppCashierInvoiceIdRouteImport } from './routes/_app/cashier/$invoiceId'
 import { Route as AppCashierInvoiceIdIndexRouteImport } from './routes/_app/cashier/$invoiceId/index'
 import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$quoteId/pdf'
+import { Route as ApiInvoicesInvoiceIdPdfRouteImport } from './routes/api/invoices/$invoiceId/pdf'
 import { Route as AppCashierInvoiceIdCheckoutRouteImport } from './routes/_app/cashier/$invoiceId/checkout'
 
 const AuthRoute = AuthRouteImport.update({
@@ -148,6 +149,11 @@ const ApiQuotesQuoteIdPdfRoute = ApiQuotesQuoteIdPdfRouteImport.update({
   path: '/api/quotes/$quoteId/pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInvoicesInvoiceIdPdfRoute = ApiInvoicesInvoiceIdPdfRouteImport.update({
+  id: '/api/invoices/$invoiceId/pdf',
+  path: '/api/invoices/$invoiceId/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppCashierInvoiceIdCheckoutRoute =
   AppCashierInvoiceIdCheckoutRouteImport.update({
     id: '/checkout',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/floor/': typeof AppFloorIndexRoute
   '/technician/': typeof AppTechnicianIndexRoute
   '/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
+  '/api/invoices/$invoiceId/pdf': typeof ApiInvoicesInvoiceIdPdfRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
 }
@@ -197,6 +204,7 @@ export interface FileRoutesByTo {
   '/floor': typeof AppFloorIndexRoute
   '/technician': typeof AppTechnicianIndexRoute
   '/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
+  '/api/invoices/$invoiceId/pdf': typeof ApiInvoicesInvoiceIdPdfRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/cashier/$invoiceId': typeof AppCashierInvoiceIdIndexRoute
 }
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/_app/floor/': typeof AppFloorIndexRoute
   '/_app/technician/': typeof AppTechnicianIndexRoute
   '/_app/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
+  '/api/invoices/$invoiceId/pdf': typeof ApiInvoicesInvoiceIdPdfRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/_app/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
 }
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/floor/'
     | '/technician/'
     | '/cashier/$invoiceId/checkout'
+    | '/api/invoices/$invoiceId/pdf'
     | '/api/quotes/$quoteId/pdf'
     | '/cashier/$invoiceId/'
   fileRoutesByTo: FileRoutesByTo
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/floor'
     | '/technician'
     | '/cashier/$invoiceId/checkout'
+    | '/api/invoices/$invoiceId/pdf'
     | '/api/quotes/$quoteId/pdf'
     | '/cashier/$invoiceId'
   id:
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/_app/floor/'
     | '/_app/technician/'
     | '/_app/cashier/$invoiceId/checkout'
+    | '/api/invoices/$invoiceId/pdf'
     | '/api/quotes/$quoteId/pdf'
     | '/_app/cashier/$invoiceId/'
   fileRoutesById: FileRoutesById
@@ -306,6 +318,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
+  ApiInvoicesInvoiceIdPdfRoute: typeof ApiInvoicesInvoiceIdPdfRoute
   ApiQuotesQuoteIdPdfRoute: typeof ApiQuotesQuoteIdPdfRoute
 }
 
@@ -472,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiQuotesQuoteIdPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/invoices/$invoiceId/pdf': {
+      id: '/api/invoices/$invoiceId/pdf'
+      path: '/api/invoices/$invoiceId/pdf'
+      fullPath: '/api/invoices/$invoiceId/pdf'
+      preLoaderRoute: typeof ApiInvoicesInvoiceIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/cashier/$invoiceId/checkout': {
       id: '/_app/cashier/$invoiceId/checkout'
       path: '/checkout'
@@ -570,6 +590,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
+  ApiInvoicesInvoiceIdPdfRoute: ApiInvoicesInvoiceIdPdfRoute,
   ApiQuotesQuoteIdPdfRoute: ApiQuotesQuoteIdPdfRoute,
 }
 export const routeTree = rootRouteImport

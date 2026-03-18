@@ -4,10 +4,6 @@ import { eq } from "drizzle-orm";
 
 import { renderQuotePdf } from "./render-quote-pdf";
 
-/**
- * Fetches the quote from the DB and renders it as a PDF buffer.
- * Returns null if the quote does not exist.
- */
 export async function getQuotePdf(
   quoteId: string,
 ): Promise<{ buffer: Buffer; quoteNumber: number } | null> {
@@ -18,6 +14,7 @@ export async function getQuotePdf(
       items: {
         orderBy: (i, { asc }) => [asc(i.sortOrder)],
       },
+      excludedServices: true,
     },
   });
 
@@ -27,7 +24,15 @@ export async function getQuotePdf(
     quoteNumber: quoteRow.quoteNumber,
     createdAt: quoteRow.createdAt,
     validUntil: quoteRow.validUntil,
-    customer: quoteRow.customer,
+    customerReason: quoteRow.customerReason,
+    fullDiagnosticConsent: quoteRow.fullDiagnosticConsent,
+    customer: quoteRow.customer
+      ? {
+          name: quoteRow.customer.name,
+          phone: quoteRow.customer.phone,
+          email: quoteRow.customer.email,
+        }
+      : null,
     comments: quoteRow.comments,
     subtotal: quoteRow.subtotal,
     discountPercent: quoteRow.discountPercent,
@@ -36,9 +41,15 @@ export async function getQuotePdf(
     items: quoteRow.items.map((item) => ({
       id: item.id,
       description: item.description,
+      comments: item.comments,
       quantity: item.quantity,
       unitCost: item.unitCost,
       inches: item.inches,
+    })),
+    excludedServices: quoteRow.excludedServices.map((es) => ({
+      id: es.id,
+      name: es.name,
+      price: es.price,
     })),
   });
 
