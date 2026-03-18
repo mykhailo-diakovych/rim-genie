@@ -92,7 +92,7 @@
 
 - [x] E-receipt via email (`cashier.invoices.sendReceipt` — "Email Receipt" button in More dropdown)
 - [ ] E-receipt via SMS (depends on SMS infra)
-- [ ] Job completion notification to cashier (in-app — depends on notification UI)
+- [x] Job completion notification to admins (in-app — `notifyAdmins` in `technician.ts`)
 - [x] Outstanding payment reminder to customer via email (`cashier.invoices.sendReminder` — "Send Reminder" button, shown for unpaid/partially_paid)
 - [ ] Outstanding payment auto-reminder to customer via SMS (depends on SMS infra)
 
@@ -124,7 +124,7 @@
 
 - [x] Auto-notify customer on completion via email (fire-and-forget in `technician.jobs.complete`, only when `communicationPreference === "email"`)
 - [ ] Auto-notify customer on completion via SMS (depends on SMS infra)
-- [ ] Notify cashier on job completion (in-app — depends on notification UI)
+- [x] Notify admins on job completion (in-app — `notifyAdmins` in `technician.ts`)
 
 ### Inventory Module — §2.4 (Backend Complete, Frontend Partially Complete)
 
@@ -187,7 +187,7 @@
 - [ ] Save disclaimer under customer profile (currently linked to quote, not customer)
 - [ ] Interactive tablet disclaimer with section-based signing (individual section signatures — current flow is single signature after accepting all)
 
-### Notifications & Communication (Partially Complete)
+### Notifications & Communication (Mostly Complete)
 
 **Done:**
 
@@ -200,9 +200,10 @@
 
 - [ ] SMS integration (external API endpoint)
 - [x] Email integration (Resend — `email.service.ts` + 4 templates + 4 API procedures + frontend buttons)
-- [ ] Notification bell UI in header with unread count (header has logo, global search command palette, user info, logout — no bell)
-- [ ] Notification dropdown/panel
+- [x] Notification bell UI in header with unread count (`notification-bell.tsx` — polls every 30s, red badge with count)
+- [x] Notification dropdown/panel (`notification-panel.tsx` — type-specific icons, relative timestamps, mark read/all read, click-to-navigate, empty/loading states)
 - [x] Email triggers: quote sent (with PDF), receipt, payment reminder, job completed (fire-and-forget)
+- [x] Job completed → admin in-app notification (wired in `technician.ts` `jobs.complete` handler via `notifyAdmins`)
 - [ ] Remaining notification triggers: discount request/approval (in-app), SMS variants
 
 ### Cross-Cutting Concerns (Partially Complete)
@@ -268,7 +269,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ---
 
-### Phase 4: Notification System (Email ✅, In-App UI & SMS Remaining)
+### Phase 4: Notification System (Email ✅, In-App UI ✅, SMS Remaining)
 
 > Priority: **High** — Email integration complete, in-app UI + SMS remaining
 
@@ -277,8 +278,8 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [x] Notification schema (DB table — `notification` with type enum, recipient FK, read status, reference linking)
 - [x] Notification API (list, unreadCount, markRead, markAllRead — `protectedProcedure`)
 - [x] Notification service (create, notifyAdmins, listForUser, unreadCount, markRead, markAllRead)
-- [ ] Notification bell in header with unread count
-- [ ] Notification dropdown/panel
+- [x] Notification bell in header with unread count (`notification-bell.tsx` — 30s polling, red badge)
+- [x] Notification dropdown/panel (`notification-panel.tsx` — list, mark read, navigate, empty/loading states)
 
 #### Step 4.2: Email Integration (Resend)
 
@@ -302,7 +303,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [x] Job completed → customer email (fire-and-forget in `technician.jobs.complete`, only when `communicationPreference === "email"`)
 - [x] Payment reminder → customer email (via `cashier.invoices.sendReminder` — "Send Reminder" button, only for unpaid/partially_paid)
 - [x] Receipt → customer email (via `cashier.invoices.sendReceipt` — "Email Receipt" button in More dropdown)
-- [ ] Job completed → cashier in-app notification
+- [x] Job completed → admin in-app notification (wired in `technician.ts` via `notifyAdmins`)
 - [ ] Discount request → admin
 - [ ] Discount approved/rejected → floor manager
 
@@ -448,6 +449,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - ~~Customer profile "Add Quote" navigated to /floor/new-quote with ignored search param~~ → ✅ Fixed: directly creates quote via API and navigates to editor
 - ~~Customer profile "Latest Jobs" showed filtered quotes instead of real jobs~~ → ✅ Fixed: `getById` includes invoices→jobs, UI shows actual job data with proper statuses
 - ~~Customer profile job numbers were non-clickable styled spans~~ → ✅ Fixed: clickable buttons that navigate to quote detail page
+- Notification bell uses 30s polling via TanStack Query `refetchInterval` (interim until WebSocket/SSE)
 - No real-time updates yet (polling could be interim via TanStack Query refetchInterval)
 - No file upload infrastructure (Azure Blob Storage needed for proof-of-work videos)
 - `acceptedById`/`completedById` audit columns missing from job table

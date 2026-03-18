@@ -9,6 +9,7 @@ import { account, job, user } from "@rim-genie/db/schema";
 
 import { protectedProcedure, technicianProcedure } from "../index";
 import * as JobService from "../services/job.service";
+import * as NotificationService from "../services/notification.service";
 import * as EmailService from "../services/email.service";
 import { runEffect } from "../services/run-effect";
 import { createJobCompletedEmail } from "../emails/job-completed-email";
@@ -76,7 +77,7 @@ export const technicianRouter = {
       .handler(async ({ input }) => {
         const result = await runEffect(JobService.completeJob(input.jobId));
 
-        // Fire-and-forget: send job completion email if customer prefers email
+        // Fire-and-forget: notify admins about job completion
         try {
           const completedJob = await db.query.job.findFirst({
             where: eq(job.id, input.jobId),
@@ -85,6 +86,20 @@ export const technicianRouter = {
               invoice: { with: { customer: true } },
             },
           });
+
+          if (completedJob) {
+            const jobDesc = completedJob.invoiceItem?.description ?? "Rim Job";
+            const customerName = completedJob.invoice?.customer?.name ?? "Unknown";
+            Effect.runPromise(
+              NotificationService.notifyAdmins({
+                type: "job_completed",
+                title: "Job Completed",
+                message: `${jobDesc} for ${customerName} has been completed.`,
+                referenceId: completedJob.invoice?.id,
+                referenceType: "invoice",
+              }),
+            ).catch(() => {});
+          }
 
           const cust = completedJob?.invoice?.customer;
           if (completedJob && cust?.email && cust.communicationPreference === "email") {

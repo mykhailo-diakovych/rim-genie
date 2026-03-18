@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { LogOut, Search } from "lucide-react";
 
 import { CommandPalette } from "@/components/search/command-palette";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { authClient } from "@/lib/auth-client";
 import { m } from "@/paraglide/messages";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -86,6 +87,8 @@ export function AppHeader() {
           >
             <Search className="size-4 text-ghost" />
           </button>
+
+          <NotificationBell />
 
           {/* User name + datetime stacked */}
           {isPending ? (
