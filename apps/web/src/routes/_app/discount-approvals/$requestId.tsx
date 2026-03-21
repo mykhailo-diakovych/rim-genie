@@ -83,194 +83,226 @@ function DiscountApprovalPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 rounded bg-page" />
-          <div className="h-64 rounded-lg bg-page" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!request) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-6 text-center">
-        <p className="text-label">Discount request not found.</p>
-        <Button
-          nativeButton={false}
-          render={<Link to="/dashboard" />}
-          variant="outline"
-          className="mt-4"
-        >
-          Back to Dashboard
-        </Button>
-      </div>
-    );
-  }
-
-  const isPending = request.status === "pending";
-  const isQuote = request.type === "quote";
+  const isPending = request?.status === "pending";
+  const isQuote = request?.type === "quote";
   const targetName = isQuote
-    ? `Quote #${request.quote?.quoteNumber}`
-    : (request.customer?.name ?? "Customer");
+    ? `Quote #${request?.quote?.quoteNumber}`
+    : (request?.customer?.name ?? "Customer");
 
   const previewAmount =
-    isQuote && request.quote
+    isQuote && request?.quote
       ? Math.round((request.quote.subtotal * request.requestedPercent) / 100)
       : null;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
-      <div className="mb-6 flex items-center gap-3">
-        <Button
-          nativeButton={false}
-          render={<Link to="/dashboard" />}
-          variant="ghost"
-          className="size-9 p-0"
-        >
-          <ArrowLeft />
-        </Button>
-        <h1 className="font-rubik text-lg font-semibold text-body">Discount Approval</h1>
-        <StatusBadge status={request.status} />
-      </div>
+    <div className="flex flex-1 items-start justify-center p-3 sm:p-5">
+      <div className="w-full max-w-lg">
+        {/* Header */}
+        <div className="mb-4 flex items-center gap-3">
+          <Button
+            nativeButton={false}
+            render={<Link to="/dashboard" />}
+            variant="ghost"
+            className="size-9 p-0"
+          >
+            <ArrowLeft />
+          </Button>
+          <h1 className="font-rubik text-lg font-semibold text-body">Discount Approval</h1>
+          {request && <StatusBadge status={request.status} />}
+        </div>
 
-      <div className="space-y-4">
-        <div className="rounded-lg border border-field-line bg-card p-5">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-blue/10">
-              <Percent className="size-5 text-blue" />
+        {/* Content card — fixed min-height so loading/empty/loaded don't jump */}
+        <div className="min-h-96 rounded-xl border border-card-line bg-white shadow-card">
+          {isLoading ? (
+            <div className="flex flex-col gap-4 p-5">
+              <div className="flex items-center gap-3">
+                <div className="size-10 animate-pulse rounded-full bg-page" />
+                <div className="flex flex-col gap-1.5">
+                  <div className="h-4 w-32 animate-pulse rounded bg-page" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-page" />
+                </div>
+              </div>
+              <div className="h-px bg-field-line" />
+              <div className="grid grid-cols-2 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex flex-col gap-1">
+                    <div className="h-3 w-20 animate-pulse rounded bg-page" />
+                    <div className="h-4 w-28 animate-pulse rounded bg-page" />
+                  </div>
+                ))}
+              </div>
+              <div className="h-px bg-field-line" />
+              <div className="h-16 animate-pulse rounded-md bg-page" />
+              <div className="flex gap-2">
+                <div className="h-9 flex-1 animate-pulse rounded-lg bg-page" />
+                <div className="h-9 flex-1 animate-pulse rounded-lg bg-page" />
+              </div>
             </div>
-            <div>
-              <p className="font-rubik text-sm font-medium text-body">{targetName}</p>
-              <p className="font-rubik text-xs text-label">
-                {isQuote ? "Quote Discount" : "Customer Default Discount"}
-              </p>
+          ) : !request ? (
+            <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-5">
+              <Percent className="size-10 text-ghost" />
+              <p className="font-rubik text-sm text-label">Discount request not found.</p>
+              <Button nativeButton={false} render={<Link to="/dashboard" />} variant="outline">
+                Back to Dashboard
+              </Button>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col p-5">
+              {/* Target info */}
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue/10">
+                  <Percent className="size-5 text-blue" />
+                </div>
+                <div>
+                  <p className="font-rubik text-sm font-medium text-body">{targetName}</p>
+                  <p className="font-rubik text-xs text-label">
+                    {isQuote ? "Quote Discount" : "Customer Default Discount"}
+                  </p>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <InfoField label="Requested By" value={request.requestedBy?.name ?? "Unknown"} />
-            <InfoField label="Requested On" value={formatDate(request.createdAt)} />
-            <InfoField label="Requested Discount" value={`${request.requestedPercent}%`} />
-            {isQuote && request.quote && (
-              <InfoField label="Quote Subtotal" value={formatCents(request.quote.subtotal)} />
-            )}
-            {previewAmount !== null && (
-              <InfoField label="Discount Amount" value={formatCents(previewAmount)} />
-            )}
-            {isQuote && request.quote && previewAmount !== null && (
-              <InfoField
-                label="New Total"
-                value={formatCents(request.quote.subtotal - previewAmount)}
-              />
-            )}
-            {isQuote && request.quote?.customer && (
-              <InfoField label="Customer" value={request.quote.customer.name} />
-            )}
-          </div>
+              <div className="my-4 h-px bg-field-line" />
 
-          {request.reason && (
-            <div className="mt-4 rounded-md bg-page p-3">
-              <p className="font-rubik text-xs text-label">Reason</p>
-              <p className="mt-1 font-rubik text-sm text-body">{request.reason}</p>
+              {/* Details grid — always 2 cols, consistent rows */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <InfoField label="Requested By" value={request.requestedBy?.name ?? "Unknown"} />
+                <InfoField label="Requested On" value={formatDate(request.createdAt)} />
+                <InfoField label="Requested Discount" value={`${request.requestedPercent}%`} />
+                {isQuote && request.quote ? (
+                  <InfoField label="Quote Subtotal" value={formatCents(request.quote.subtotal)} />
+                ) : (
+                  <InfoField
+                    label="Current Discount"
+                    value={request.customer?.discount ? `${request.customer.discount}%` : "None"}
+                  />
+                )}
+                {previewAmount !== null && (
+                  <>
+                    <InfoField label="Discount Amount" value={formatCents(previewAmount)} />
+                    <InfoField
+                      label="New Total"
+                      value={formatCents(request.quote!.subtotal - previewAmount)}
+                    />
+                  </>
+                )}
+                {isQuote && request.quote?.customer && (
+                  <InfoField label="Customer" value={request.quote.customer.name} />
+                )}
+              </div>
+
+              {request.reason && (
+                <>
+                  <div className="my-4 h-px bg-field-line" />
+                  <div className="rounded-md bg-page p-3">
+                    <p className="font-rubik text-xs text-label">Reason</p>
+                    <p className="mt-1 font-rubik text-sm text-body">{request.reason}</p>
+                  </div>
+                </>
+              )}
+
+              <div className="my-4 h-px bg-field-line" />
+
+              {/* Action / Resolution section — always present, fixed layout */}
+              {isPending ? (
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="mb-1 block font-rubik text-xs text-label">
+                      Admin Note (optional)
+                    </label>
+                    <textarea
+                      value={adminNote}
+                      onChange={(e) => setAdminNote(e.target.value)}
+                      placeholder="Add a note..."
+                      className="w-full resize-none rounded-md border border-field-line bg-input px-3 py-2 font-rubik text-sm text-body placeholder:text-ghost focus:border-blue focus:outline-none"
+                      rows={2}
+                    />
+                  </div>
+
+                  {overrideMode && (
+                    <div>
+                      <label className="mb-1 block font-rubik text-xs text-label">
+                        Override Discount %
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={overridePercent}
+                        onChange={(e) => setOverridePercent(e.target.value)}
+                        className="w-full rounded-md border border-field-line bg-input px-3 py-2 font-rubik text-sm text-body focus:border-blue focus:outline-none"
+                        placeholder="0-100"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      color="success"
+                      className="flex-1"
+                      onClick={() => {
+                        if (overrideMode) {
+                          const parsed = Number(overridePercent);
+                          if (Number.isNaN(parsed) || parsed < 0 || parsed > 100) {
+                            toast.error("Please enter a valid discount percentage (0-100)");
+                            return;
+                          }
+                          approveMutation.mutate(parsed);
+                        } else {
+                          approveMutation.mutate(undefined);
+                        }
+                      }}
+                      disabled={approveMutation.isPending || rejectMutation.isPending}
+                    >
+                      <ThumbsUp />
+                      {overrideMode ? "Approve Override" : `Approve ${request.requestedPercent}%`}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setOverrideMode(!overrideMode)}
+                      disabled={approveMutation.isPending || rejectMutation.isPending}
+                    >
+                      <Percent />
+                      {overrideMode ? "Cancel" : "Override"}
+                    </Button>
+
+                    <Button
+                      color="destructive"
+                      className="flex-1"
+                      onClick={() => rejectMutation.mutate()}
+                      disabled={approveMutation.isPending || rejectMutation.isPending}
+                    >
+                      <ThumbsDown />
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <p className="font-rubik text-sm font-medium text-body">Resolution</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                    <InfoField
+                      label="Status"
+                      value={request.status === "approved" ? "Approved" : "Rejected"}
+                    />
+                    <InfoField label="Resolved By" value={request.resolvedBy?.name ?? "Unknown"} />
+                    <InfoField label="Resolved On" value={formatDate(request.resolvedAt)} />
+                    {request.approvedPercent !== null && (
+                      <InfoField label="Approved Discount" value={`${request.approvedPercent}%`} />
+                    )}
+                  </div>
+                  {request.adminNote && (
+                    <div className="rounded-md bg-page p-3">
+                      <p className="font-rubik text-xs text-label">Admin Note</p>
+                      <p className="mt-1 font-rubik text-sm text-body">{request.adminNote}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        {!isPending && (
-          <div className="rounded-lg border border-field-line bg-card p-5">
-            <p className="mb-2 font-rubik text-sm font-medium text-body">Resolution</p>
-            <div className="grid grid-cols-2 gap-4">
-              <InfoField
-                label="Status"
-                value={request.status === "approved" ? "Approved" : "Rejected"}
-              />
-              <InfoField label="Resolved By" value={request.resolvedBy?.name ?? "Unknown"} />
-              <InfoField label="Resolved On" value={formatDate(request.resolvedAt)} />
-              {request.approvedPercent !== null && (
-                <InfoField label="Approved Discount" value={`${request.approvedPercent}%`} />
-              )}
-            </div>
-            {request.adminNote && (
-              <div className="mt-4 rounded-md bg-page p-3">
-                <p className="font-rubik text-xs text-label">Admin Note</p>
-                <p className="mt-1 font-rubik text-sm text-body">{request.adminNote}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {isPending && (
-          <div className="rounded-lg border border-field-line bg-card p-5">
-            <p className="mb-3 font-rubik text-sm font-medium text-body">Admin Note (optional)</p>
-            <textarea
-              value={adminNote}
-              onChange={(e) => setAdminNote(e.target.value)}
-              placeholder="Add a note..."
-              className="w-full rounded-md border border-field-line bg-input px-3 py-2 font-rubik text-sm text-body placeholder:text-ghost focus:border-blue focus:outline-none"
-              rows={2}
-            />
-
-            {overrideMode && (
-              <div className="mt-3">
-                <label className="mb-1 block font-rubik text-xs text-label">
-                  Override Discount %
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={overridePercent}
-                  onChange={(e) => setOverridePercent(e.target.value)}
-                  className="w-32 rounded-md border border-field-line bg-input px-3 py-2 font-rubik text-sm text-body focus:border-blue focus:outline-none"
-                  placeholder="0-100"
-                />
-              </div>
-            )}
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                color="success"
-                onClick={() => {
-                  if (overrideMode) {
-                    const parsed = Number(overridePercent);
-                    if (Number.isNaN(parsed) || parsed < 0 || parsed > 100) {
-                      toast.error("Please enter a valid discount percentage (0-100)");
-                      return;
-                    }
-                    approveMutation.mutate(parsed);
-                  } else {
-                    approveMutation.mutate(undefined);
-                  }
-                }}
-                disabled={approveMutation.isPending || rejectMutation.isPending}
-              >
-                <ThumbsUp />
-                {overrideMode ? "Approve with Override" : `Approve ${request.requestedPercent}%`}
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => setOverrideMode(!overrideMode)}
-                disabled={approveMutation.isPending || rejectMutation.isPending}
-              >
-                <Percent />
-                {overrideMode ? "Cancel Override" : "Override Amount"}
-              </Button>
-
-              <Button
-                color="destructive"
-                onClick={() => rejectMutation.mutate()}
-                disabled={approveMutation.isPending || rejectMutation.isPending}
-              >
-                <ThumbsDown />
-                Reject
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

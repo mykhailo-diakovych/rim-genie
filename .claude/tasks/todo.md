@@ -163,8 +163,8 @@
 **Not Done:**
 
 - [ ] VIP client management UI (dedicated upgrade/downgrade actions — currently only editable via customer edit modal)
-- [ ] Discount approval workflow (Floor Manager requests → Admin approves — notification types exist in schema but no workflow)
-- [ ] Clock in/out attendance tracking (no `attendance` table)
+- [x] Discount approval workflow — `discountRequest` table + `discount` API router (request/approve/reject/override), admin approval page (`/discount-approvals/$requestId`), pending badges on quote + customer pages, non-admin discount changes routed through approval, admin bypasses directly
+- [x] ~~Clock in/out attendance tracking~~ — removed from scope per client (2026-03-21)
 - [ ] Expense recording (no `expense` table)
 - [ ] Admin-specific invoice/payment views (admins can access cashier module but no dedicated admin financial view)
 - [ ] Daily reports (expenses, revenue, quotes, invoices — dashboard shows live metrics but no formal report generation)
@@ -204,7 +204,8 @@
 - [x] Notification dropdown/panel (`notification-panel.tsx` — type-specific icons, relative timestamps, mark read/all read, click-to-navigate, empty/loading states)
 - [x] Email triggers: quote sent (with PDF), receipt, payment reminder, job completed (fire-and-forget)
 - [x] Job completed → admin in-app notification (wired in `technician.ts` `jobs.complete` handler via `notifyAdmins`)
-- [ ] Remaining notification triggers: discount request/approval (in-app), SMS variants
+- [x] Discount request/approval/rejection notifications (in-app — wired in `discount.service.ts`)
+- [ ] Remaining notification triggers: SMS variants (depends on SMS infra)
 
 ### Cross-Cutting Concerns (Partially Complete)
 
@@ -304,8 +305,8 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - [x] Payment reminder → customer email (via `cashier.invoices.sendReminder` — "Send Reminder" button, only for unpaid/partially_paid)
 - [x] Receipt → customer email (via `cashier.invoices.sendReceipt` — "Email Receipt" button in More dropdown)
 - [x] Job completed → admin in-app notification (wired in `technician.ts` via `notifyAdmins`)
-- [ ] Discount request → admin
-- [ ] Discount approved/rejected → floor manager
+- [x] Discount request → admin (in-app notification via `notifyAdmins`, links to approval page)
+- [x] Discount approved/rejected → requester (in-app notification with link to quote/customer)
 
 ---
 
@@ -337,13 +338,13 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 #### Step 6.2: Workforce
 
-- [ ] Clock in/out attendance tracking (new `attendance` table)
-- [ ] Attendance reports
+- [x] ~~Clock in/out attendance tracking~~ — removed from scope per client (2026-03-21)
+- [x] ~~Attendance reports~~ — removed from scope per client (2026-03-21)
 
 #### Step 6.3: VIP & Discounts
 
 - [ ] VIP management UI (dedicated upgrade/downgrade actions beyond edit modal)
-- [ ] Discount approval workflow (request → admin approval → apply)
+- [x] Discount approval workflow — `discountRequest` table, `discount` router (7 endpoints), approval page, quote/customer pending badges, role-aware discount input
 
 #### Step 6.4: Job Monitoring Dashboard
 
@@ -430,7 +431,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 ### Remaining Design Decisions
 
 1. **Multi-site**: Add `siteId` to all tables or use a junction? → Recommend FK on quote/invoice/job (Phase 6.4)
-2. **Discount workflow**: Inline on invoice or separate approval entity? → Recommend separate `discountRequest` table for audit trail (Phase 6.3)
+2. **Discount workflow**: ✅ Decided — Separate `discountRequest` table with pending/approved/rejected status. Non-admin discount changes create approval requests; admins bypass directly. Admin can override with different %.
 3. **PIN login**: ✅ Decided — Reuses Better Auth password flow via `username()` plugin. PIN stored as hashed password in `account` table during `employees.create`; `signIn.username()` authenticates with employee ID + PIN
 
 ### Technical Debt / Improvements
