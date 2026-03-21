@@ -3,6 +3,7 @@ import type { RouterClient } from "@orpc/server";
 import { protectedProcedure, publicProcedure } from "../index";
 import { cashierRouter } from "./cashier";
 import { dashboardRouter } from "./dashboard";
+import { discountRouter } from "./discount";
 import { employeesRouter } from "./employees";
 import { floorRouter } from "./floor";
 import { inventoryRouter } from "./inventory";
@@ -21,6 +22,7 @@ export const appRouter = {
     user: context.session.user,
   })),
   cashier: cashierRouter,
+  discount: discountRouter,
   employees: employeesRouter,
   floor: floorRouter,
   inventory: inventoryRouter,

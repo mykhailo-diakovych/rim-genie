@@ -16,39 +16,17 @@ import {
   serviceTypeEnum,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { and, asc, desc, eq, ilike, inArray, notInArray, or, sql, sum } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 
 import { floorManagerProcedure, protectedProcedure, requireRole } from "../index";
+import * as DiscountService from "../services/discount.service";
 import * as InvoiceService from "../services/invoice.service";
 import * as EmailService from "../services/email.service";
 import { CustomerHasNoEmail, QuoteNotFound } from "../services/errors";
 import { runEffect } from "../services/run-effect";
+import { recalcQuoteTotal } from "../services/quote.service";
 import { getQuotePdf } from "../pdf/get-quote-pdf";
 import { createQuoteEmail } from "../emails/quote-email";
-
-async function recalcQuoteTotal(quoteId: string): Promise<void> {
-  const result = await db
-    .select({
-      total: sum(
-        sql`CASE WHEN ${quoteItem.inches} IS NOT NULL THEN ${quoteItem.inches} * ${quoteItem.unitCost} ELSE ${quoteItem.quantity} * ${quoteItem.unitCost} END`,
-      ),
-    })
-    .from(quoteItem)
-    .where(eq(quoteItem.quoteId, quoteId));
-
-  const subtotal = Number(result[0]?.total ?? 0);
-
-  const quoteRow = await db
-    .select({ discountPercent: quote.discountPercent })
-    .from(quote)
-    .where(eq(quote.id, quoteId));
-
-  const discountPercent = quoteRow[0]?.discountPercent ?? 0;
-  const discountAmount = Math.round((subtotal * discountPercent) / 100);
-  const total = subtotal - discountAmount;
-
-  await db.update(quote).set({ subtotal, discountAmount, total }).where(eq(quote.id, quoteId));
-}
 
 const jobTypeEntrySchema = z.object({
   type: z.enum([
@@ -318,9 +296,10 @@ export const floorRouter = {
       )
       .handler(async ({ input, context }) => {
         const { id, discountPercent, ...fields } = input;
+        const isAdmin = context.session.user.role === "admin";
 
         const updateFields: Record<string, unknown> = { ...fields };
-        if (discountPercent !== undefined) {
+        if (discountPercent !== undefined && isAdmin) {
           updateFields.discountPercent = discountPercent;
         }
 
@@ -330,8 +309,18 @@ export const floorRouter = {
           .where(eq(quote.id, id))
           .returning();
 
-        if (discountPercent !== undefined) {
+        if (discountPercent !== undefined && isAdmin) {
           await recalcQuoteTotal(id);
+        }
+
+        if (discountPercent !== undefined && !isAdmin) {
+          await runEffect(
+            DiscountService.requestQuoteDiscount({
+              quoteId: id,
+              requestedPercent: discountPercent,
+              requestedById: context.session.user.id,
+            }),
+          );
         }
 
         const itemCount = await db

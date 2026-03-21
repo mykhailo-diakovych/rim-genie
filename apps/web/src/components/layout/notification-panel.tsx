@@ -37,6 +37,12 @@ function getNavigationTarget(
       return { to: "/manage" };
     case "invoice":
       return { to: "/cashier/$invoiceId", params: { invoiceId: referenceId } };
+    case "discount_request":
+      return { to: "/discount-approvals/$requestId", params: { requestId: referenceId } };
+    case "quote":
+      return { to: "/floor/$quoteId", params: { quoteId: referenceId } };
+    case "customer":
+      return { to: "/customers/$customerId", params: { customerId: referenceId } };
     case "job":
       return { to: "/technician" };
     default:

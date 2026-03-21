@@ -44,6 +44,15 @@ const TAG_MAP: Record<
     code: "BAD_REQUEST",
     message: "Customer does not have an email address",
   },
+  DiscountRequestNotFound: { code: "NOT_FOUND", message: "Discount request not found" },
+  DiscountRequestAlreadyResolved: {
+    code: "CONFLICT",
+    message: "This discount request has already been resolved",
+  },
+  DiscountRequestAlreadyPending: {
+    code: "CONFLICT",
+    message: "A discount request is already pending for this item",
+  },
 };
 
 export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): Promise<A> {

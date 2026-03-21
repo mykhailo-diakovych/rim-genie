@@ -73,3 +73,19 @@ export class EmailSendFailed extends Data.TaggedError("EmailSendFailed")<{
 export class CustomerHasNoEmail extends Data.TaggedError("CustomerHasNoEmail")<{
   customerId: string;
 }> {}
+
+export class DiscountRequestNotFound extends Data.TaggedError("DiscountRequestNotFound")<{
+  id: string;
+}> {}
+
+export class DiscountRequestAlreadyResolved extends Data.TaggedError(
+  "DiscountRequestAlreadyResolved",
+)<{
+  id: string;
+}> {}
+
+export class DiscountRequestAlreadyPending extends Data.TaggedError(
+  "DiscountRequestAlreadyPending",
+)<{
+  targetId: string;
+}> {}

@@ -1,4 +1,5 @@
 export * from "./auth";
+export * from "./discount";
 export * from "./floor";
 export * from "./inventory";
 export * from "./invoice";

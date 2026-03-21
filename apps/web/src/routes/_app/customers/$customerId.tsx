@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Award, ChevronLeft, Mail, Pencil, Phone, Plus, Trash2 } from "lucide-react";
+import { Award, ChevronLeft, Mail, Pencil, Percent, Phone, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { CustomerModal } from "@/components/customers/customer-modal";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import type { AppRouterClient } from "@rim-genie/api/routers/index";
 
+import { authClient } from "@/lib/auth-client";
 import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
@@ -327,13 +328,106 @@ function LoyaltyStatsCard({ customerId }: { customerId: string }) {
   );
 }
 
+function RequestDiscountDialog({
+  customerId,
+  customerName,
+}: {
+  customerId: string;
+  customerName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [percent, setPercent] = useState("");
+  const [reason, setReason] = useState("");
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      client.discount.requestCustomerDiscount({
+        customerId,
+        requestedPercent: Number(percent),
+        reason: reason || undefined,
+      }),
+    onSuccess: () => {
+      toast.success("Discount request sent for admin approval");
+      void queryClient.invalidateQueries({
+        queryKey: orpc.discount.pendingForCustomer.key({ input: { customerId } }),
+      });
+      setOpen(false);
+      setPercent("");
+      setReason("");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <Percent />
+        Set Discount
+      </Button>
+
+      <DialogContent className="max-w-[340px]">
+        <DialogHeader>
+          <DialogTitle>Request Default Discount</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 px-3 pt-3 pb-3">
+          <p className="font-rubik text-sm leading-4.5 text-label">
+            Request a default discount for <strong className="text-body">{customerName}</strong>.
+            This requires admin approval.
+          </p>
+          <div>
+            <label className="mb-1 block font-rubik text-xs text-label">Discount %</label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={percent}
+              onChange={(e) => setPercent(e.target.value)}
+              className="w-full rounded-md border border-field-line bg-input px-3 py-2 font-rubik text-sm text-body focus:border-blue focus:outline-none"
+              placeholder="1-100"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block font-rubik text-xs text-label">Reason (optional)</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full rounded-md border border-field-line bg-input px-3 py-2 font-rubik text-sm text-body placeholder:text-ghost focus:border-blue focus:outline-none"
+              rows={2}
+              placeholder="Why should this customer get a discount?"
+            />
+          </div>
+          <DialogFooter className="p-0">
+            <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+            <Button
+              disabled={
+                mutation.isPending || !percent || Number(percent) < 1 || Number(percent) > 100
+              }
+              onClick={() => mutation.mutate()}
+            >
+              {mutation.isPending ? "Requesting..." : "Request Approval"}
+            </Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function CustomerProfilePage() {
   const { customerId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const { data: session } = authClient.useSession();
+  const isAdmin = session?.user?.role === "admin";
+
   const { data: customer, isLoading } = useQuery(
     orpc.floor.customers.getById.queryOptions({ input: { id: customerId } }),
+  );
+
+  const { data: pendingDiscount } = useQuery(
+    orpc.discount.pendingForCustomer.queryOptions({ input: { customerId } }),
   );
 
   const createQuoteMutation = useMutation({
@@ -435,14 +529,31 @@ function CustomerProfilePage() {
 
               <div className="flex flex-col gap-2 sm:w-[144px]">
                 <span className="font-rubik text-xs leading-3.5 text-label">VIP Status:</span>
-                {customer.isVip ? (
-                  <span className="inline-flex w-fit items-center rounded bg-badge-orange px-1.5 py-0.5 font-rubik text-xs text-white">
-                    VIP{customer.discount ? ` (${customer.discount}% off)` : ""}
-                  </span>
-                ) : (
-                  <span className="font-rubik text-sm leading-4.5 text-label">Standard</span>
-                )}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {customer.isVip ? (
+                    <span className="inline-flex w-fit items-center rounded bg-badge-orange px-1.5 py-0.5 font-rubik text-xs text-white">
+                      VIP{customer.discount ? ` (${customer.discount}% off)` : ""}
+                    </span>
+                  ) : (
+                    <span className="font-rubik text-sm leading-4.5 text-label">Standard</span>
+                  )}
+                  {pendingDiscount && (
+                    <span className="inline-flex w-fit items-center rounded bg-amber-100 px-1.5 py-0.5 font-rubik text-xs text-amber-700">
+                      Pending {pendingDiscount.requestedPercent}%
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {!isAdmin && !pendingDiscount && (
+                <>
+                  <div className="hidden w-px self-stretch bg-field-line sm:block" />
+                  <div className="flex flex-col gap-2 sm:w-auto">
+                    <span className="font-rubik text-xs leading-3.5 text-label">Discount:</span>
+                    <RequestDiscountDialog customerId={customer.id} customerName={customer.name} />
+                  </div>
+                </>
+              )}
             </div>
           </>
         ) : (

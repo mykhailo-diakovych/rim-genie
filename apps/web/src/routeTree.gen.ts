@@ -28,6 +28,7 @@ import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppTechnicianInvoiceIdRouteImport } from './routes/_app/technician/$invoiceId'
 import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
+import { Route as AppDiscountApprovalsRequestIdRouteImport } from './routes/_app/discount-approvals/$requestId'
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/customers/$customerId'
 import { Route as AppCashierInvoiceIdRouteImport } from './routes/_app/cashier/$invoiceId'
 import { Route as AppCashierInvoiceIdIndexRouteImport } from './routes/_app/cashier/$invoiceId/index'
@@ -128,6 +129,12 @@ const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
   path: '/$quoteId',
   getParentRoute: () => AppFloorRoute,
 } as any)
+const AppDiscountApprovalsRequestIdRoute =
+  AppDiscountApprovalsRequestIdRouteImport.update({
+    id: '/discount-approvals/$requestId',
+    path: '/discount-approvals/$requestId',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppCustomersCustomerIdRoute = AppCustomersCustomerIdRouteImport.update({
   id: '/customers/$customerId',
   path: '/customers/$customerId',
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof AuthLoginRoute
   '/cashier/$invoiceId': typeof AppCashierInvoiceIdRouteWithChildren
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
+  '/discount-approvals/$requestId': typeof AppDiscountApprovalsRequestIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -195,6 +203,7 @@ export interface FileRoutesByTo {
   '/terms': typeof AppTermsRoute
   '/login': typeof AuthLoginRoute
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
+  '/discount-approvals/$requestId': typeof AppDiscountApprovalsRequestIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -223,6 +232,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/cashier/$invoiceId': typeof AppCashierInvoiceIdRouteWithChildren
   '/_app/customers/$customerId': typeof AppCustomersCustomerIdRoute
+  '/_app/discount-approvals/$requestId': typeof AppDiscountApprovalsRequestIdRoute
   '/_app/floor/$quoteId': typeof AppFloorQuoteIdRoute
   '/_app/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/cashier/$invoiceId'
     | '/customers/$customerId'
+    | '/discount-approvals/$requestId'
     | '/floor/$quoteId'
     | '/technician/$invoiceId'
     | '/api/auth/$'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/login'
     | '/customers/$customerId'
+    | '/discount-approvals/$requestId'
     | '/floor/$quoteId'
     | '/technician/$invoiceId'
     | '/api/auth/$'
@@ -299,6 +311,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/cashier/$invoiceId'
     | '/_app/customers/$customerId'
+    | '/_app/discount-approvals/$requestId'
     | '/_app/floor/$quoteId'
     | '/_app/technician/$invoiceId'
     | '/api/auth/$'
@@ -457,6 +470,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFloorQuoteIdRouteImport
       parentRoute: typeof AppFloorRoute
     }
+    '/_app/discount-approvals/$requestId': {
+      id: '/_app/discount-approvals/$requestId'
+      path: '/discount-approvals/$requestId'
+      fullPath: '/discount-approvals/$requestId'
+      preLoaderRoute: typeof AppDiscountApprovalsRequestIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/customers/$customerId': {
       id: '/_app/customers/$customerId'
       path: '/customers/$customerId'
@@ -553,6 +573,7 @@ interface AppRouteChildren {
   AppTermsRoute: typeof AppTermsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCustomersCustomerIdRoute: typeof AppCustomersCustomerIdRoute
+  AppDiscountApprovalsRequestIdRoute: typeof AppDiscountApprovalsRequestIdRoute
   AppTechnicianInvoiceIdRoute: typeof AppTechnicianInvoiceIdRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppTechnicianIndexRoute: typeof AppTechnicianIndexRoute
@@ -568,6 +589,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTermsRoute: AppTermsRoute,
   AppIndexRoute: AppIndexRoute,
   AppCustomersCustomerIdRoute: AppCustomersCustomerIdRoute,
+  AppDiscountApprovalsRequestIdRoute: AppDiscountApprovalsRequestIdRoute,
   AppTechnicianInvoiceIdRoute: AppTechnicianInvoiceIdRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppTechnicianIndexRoute: AppTechnicianIndexRoute,

@@ -29,7 +29,8 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { orpc } from "@/utils/orpc";
+import { authClient } from "@/lib/auth-client";
+import { client, orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
 import type {
   QuoteGeneratorSheetData,
@@ -63,9 +64,16 @@ function QuoteEditorPage() {
   const [comments, setComments] = useState("");
   const [commentsSynced, setCommentsSynced] = useState(false);
 
+  const { data: session } = authClient.useSession();
+  const isAdmin = session?.user?.role === "admin";
+
   const quoteQuery = useQuery(orpc.floor.quotes.get.queryOptions({ input: { id: quoteId } }));
   const quote = quoteQuery.data;
   const isReadOnly = quote?.status === "completed";
+
+  const { data: pendingDiscount } = useQuery(
+    orpc.discount.pendingForQuote.queryOptions({ input: { quoteId } }),
+  );
 
   // Sync comments from server on first load
   if (quote && !commentsSynced) {
@@ -489,17 +497,37 @@ function QuoteEditorPage() {
                     onBlur={() => {
                       const val = parseInt(discountStr, 10);
                       if (!isNaN(val) && val >= 0 && val <= 100 && val !== discountPercent) {
-                        updateQuote.mutate({ id: quoteId, discountPercent: val });
+                        if (isAdmin) {
+                          updateQuote.mutate({ id: quoteId, discountPercent: val });
+                        } else {
+                          client.discount
+                            .requestQuoteDiscount({ quoteId, requestedPercent: val })
+                            .then(() => {
+                              toast.success("Discount request sent for admin approval");
+                              void queryClient.invalidateQueries({
+                                queryKey: orpc.discount.pendingForQuote.key({
+                                  input: { quoteId },
+                                }),
+                              });
+                            })
+                            .catch((err: Error) => toast.error(err.message));
+                          setDiscountStr(String(discountPercent));
+                        }
                       } else {
                         setDiscountStr(String(discountPercent));
                       }
                     }}
-                    disabled={isReadOnly}
+                    disabled={isReadOnly || !!pendingDiscount}
                     className="w-10 rounded border border-transparent bg-transparent px-1 py-0.5 text-right font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <span className="text-label">%</span>
                   {discountAmount > 0 && (
                     <span className="text-body">(-${discountAmount.toFixed(2)})</span>
+                  )}
+                  {pendingDiscount && (
+                    <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 font-rubik text-xs text-amber-700">
+                      Pending {pendingDiscount.requestedPercent}%
+                    </span>
                   )}
                 </div>
               </div>
