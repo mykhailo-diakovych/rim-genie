@@ -16,13 +16,18 @@ import {
   serviceTypeEnum,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { and, asc, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 
-import { floorManagerProcedure, protectedProcedure, requireRole } from "../index";
+import { adminProcedure, floorManagerProcedure, protectedProcedure, requireRole } from "../index";
 import * as DiscountService from "../services/discount.service";
 import * as InvoiceService from "../services/invoice.service";
 import * as EmailService from "../services/email.service";
-import { CustomerHasNoEmail, QuoteNotFound } from "../services/errors";
+import {
+  CustomerHasNoEmail,
+  CustomerHasInvoices,
+  CustomerHasJobs,
+  QuoteNotFound,
+} from "../services/errors";
 import { runEffect } from "../services/run-effect";
 import { recalcQuoteTotal } from "../services/quote.service";
 import { getQuotePdf } from "../pdf/get-quote-pdf";
@@ -73,7 +78,13 @@ export const floorRouter = {
           .select()
           .from(customer)
           .where(
-            or(ilike(customer.phone, `%${input.query}%`), ilike(customer.name, `%${input.query}%`)),
+            and(
+              isNull(customer.deletedAt),
+              or(
+                ilike(customer.phone, `%${input.query}%`),
+                ilike(customer.name, `%${input.query}%`),
+              ),
+            ),
           )
           .orderBy(desc(customer.createdAt))
           .limit(20);
@@ -117,13 +128,14 @@ export const floorRouter = {
         .leftJoin(quote, eq(quote.customerId, customer.id))
         .leftJoin(quoteItem, eq(quoteItem.quoteId, quote.id))
         .leftJoin(invoice, eq(invoice.customerId, customer.id))
+        .where(isNull(customer.deletedAt))
         .groupBy(customer.id)
         .orderBy(desc(customer.createdAt));
     }),
 
     getById: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       return db.query.customer.findFirst({
-        where: eq(customer.id, input.id),
+        where: and(eq(customer.id, input.id), isNull(customer.deletedAt)),
         with: {
           quotes: {
             orderBy: (q, { desc }) => [desc(q.createdAt)],
@@ -167,26 +179,48 @@ export const floorRouter = {
     delete: floorManagerProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       const existing = await db.query.customer.findFirst({
         where: eq(customer.id, input.id),
-        with: { quotes: { with: { invoice: true } } },
       });
 
       if (!existing) throw new Error("Customer not found");
 
-      await db.transaction(async (tx) => {
-        for (const q of existing.quotes) {
-          if (q.invoice) {
-            const invoiceId = q.invoice.id;
-            await tx.delete(job).where(eq(job.invoiceId, invoiceId));
-            await tx.delete(payment).where(eq(payment.invoiceId, invoiceId));
-            await tx.delete(invoice).where(eq(invoice.id, invoiceId));
-          }
-          await tx.delete(quoteItem).where(eq(quoteItem.quoteId, q.id));
-          await tx.delete(quote).where(eq(quote.id, q.id));
-        }
-        await tx.delete(customer).where(eq(customer.id, input.id));
-      });
+      const [invoiceRow] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(invoice)
+        .where(eq(invoice.customerId, input.id));
+
+      if (invoiceRow && invoiceRow.count > 0) {
+        return runEffect(Effect.fail(new CustomerHasInvoices({ customerId: input.id })));
+      }
+
+      const [jobRow] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(job)
+        .innerJoin(invoice, eq(job.invoiceId, invoice.id))
+        .where(eq(invoice.customerId, input.id));
+
+      if (jobRow && jobRow.count > 0) {
+        return runEffect(Effect.fail(new CustomerHasJobs({ customerId: input.id })));
+      }
+
+      await db.update(customer).set({ deletedAt: new Date() }).where(eq(customer.id, input.id));
 
       return { success: true as const };
+    }),
+
+    restore: adminProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+      const rows = await db
+        .update(customer)
+        .set({ deletedAt: null })
+        .where(eq(customer.id, input.id))
+        .returning();
+      return rows[0]!;
+    }),
+
+    deleted: adminProcedure.handler(async () => {
+      return db.query.customer.findMany({
+        where: and(sql`${customer.deletedAt} IS NOT NULL`),
+        orderBy: [desc(customer.deletedAt)],
+      });
     }),
   },
 

@@ -142,7 +142,7 @@ function DeleteProfileDialog({
     mutationFn: () => client.floor.customers.delete({ id: customerId }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: orpc.floor.customers.list.key() });
-      toast.success("Customer deleted");
+      toast.success("Customer archived");
       void navigate({ to: "/customers" });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -152,17 +152,17 @@ function DeleteProfileDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <Button variant="outline" color="destructive" onClick={() => setOpen(true)}>
         <Trash2 />
-        Delete Profile
+        Archive
       </Button>
 
       <DialogContent className="max-w-[340px]">
         <DialogHeader>
-          <DialogTitle>Delete Customer</DialogTitle>
+          <DialogTitle>Archive Customer</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-3 pt-3 pb-3">
           <p className="font-rubik text-sm leading-4.5 text-label">
-            Are you sure you want to delete <strong className="text-body">{customerName}</strong>?
-            This will permanently remove all their quotes and job history.
+            Are you sure you want to archive <strong className="text-body">{customerName}</strong>?
+            The customer will be hidden from lists but can be restored by an admin.
           </p>
           <DialogFooter className="p-0">
             <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
@@ -171,7 +171,7 @@ function DeleteProfileDialog({
               disabled={mutation.isPending}
               onClick={() => mutation.mutate()}
             >
-              {mutation.isPending ? "Deleting..." : "Delete"}
+              {mutation.isPending ? "Archiving..." : "Archive"}
             </Button>
           </DialogFooter>
         </div>

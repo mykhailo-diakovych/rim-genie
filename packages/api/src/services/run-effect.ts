@@ -44,6 +44,14 @@ const TAG_MAP: Record<
     code: "BAD_REQUEST",
     message: "Customer does not have an email address",
   },
+  CustomerHasInvoices: {
+    code: "CONFLICT",
+    message: "Cannot delete a customer that has invoices",
+  },
+  CustomerHasJobs: {
+    code: "CONFLICT",
+    message: "Cannot delete a customer that has jobs",
+  },
   DiscountRequestNotFound: { code: "NOT_FOUND", message: "Discount request not found" },
   DiscountRequestAlreadyResolved: {
     code: "CONFLICT",

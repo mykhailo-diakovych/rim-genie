@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { db } from "@rim-genie/db";
 import { customer, quote, invoice, user } from "@rim-genie/db/schema";
-import { desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 
 import { protectedProcedure } from "../index";
 
@@ -22,10 +22,13 @@ export const searchRouter = {
           })
           .from(customer)
           .where(
-            or(
-              ilike(customer.name, pattern),
-              ilike(customer.phone, pattern),
-              ilike(customer.email, pattern),
+            and(
+              isNull(customer.deletedAt),
+              or(
+                ilike(customer.name, pattern),
+                ilike(customer.phone, pattern),
+                ilike(customer.email, pattern),
+              ),
             ),
           )
           .orderBy(desc(customer.createdAt))

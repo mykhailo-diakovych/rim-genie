@@ -66,13 +66,17 @@ export const customer = pgTable(
     isVip: boolean("is_vip").default(false).notNull(),
     discount: integer("discount"),
     communicationPreference: text("communication_preference").default("sms").notNull(),
+    deletedAt: timestamp("deleted_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("customer_phone_idx").on(table.phone)],
+  (table) => [
+    index("customer_phone_idx").on(table.phone),
+    index("customer_deletedAt_idx").on(table.deletedAt),
+  ],
 );
 
 export const quote = pgTable(

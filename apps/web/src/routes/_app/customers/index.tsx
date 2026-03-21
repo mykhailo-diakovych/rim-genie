@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Eye, Plus } from "lucide-react";
+import { Eye, Plus, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 
 import type { UserRole } from "@rim-genie/db/schema";
 
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
-import { orpc } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
 
 const CAN_EDIT_ROLES: UserRole[] = ["admin", "floorManager"];
 
@@ -40,6 +41,7 @@ function CustomersPage() {
   const { data: session } = authClient.useSession();
   const userRole = session?.user.role as UserRole | undefined;
   const canEdit = !!userRole && CAN_EDIT_ROLES.includes(userRole);
+  const isAdmin = userRole === "admin";
 
   const { data: customers, isLoading } = useQuery(orpc.floor.customers.list.queryOptions({}));
   const { data: loyaltyConfig } = useQuery(orpc.loyalty.config.get.queryOptions());
@@ -106,6 +108,73 @@ function CustomersPage() {
             />
           );
         })}
+      </div>
+
+      {isAdmin && <ArchivedCustomersSection />}
+    </div>
+  );
+}
+
+function ArchivedCustomersSection() {
+  const queryClient = useQueryClient();
+  const { data: deleted, isLoading } = useQuery(orpc.floor.customers.deleted.queryOptions({}));
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => client.floor.customers.restore({ id }),
+    onSuccess: async () => {
+      toast.success("Customer restored");
+      await queryClient.invalidateQueries({ queryKey: orpc.floor.customers.list.key() });
+      await queryClient.invalidateQueries({ queryKey: orpc.floor.customers.deleted.key() });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  if (isLoading || !deleted?.length) return null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="font-rubik text-base leading-5 font-medium text-label">
+        Archived Customers ({deleted.length})
+      </h2>
+      <div className="overflow-hidden rounded-xl border border-card-line bg-white shadow-card">
+        <table className="w-full font-rubik text-sm">
+          <thead>
+            <tr className="border-b border-field-line text-left text-xs text-label">
+              <th className="px-3 py-2 font-normal">Name</th>
+              <th className="px-3 py-2 font-normal">Phone</th>
+              <th className="px-3 py-2 font-normal">Archived On</th>
+              <th className="w-28 px-3 py-2 font-normal" />
+            </tr>
+          </thead>
+          <tbody>
+            {deleted.map((c) => (
+              <tr key={c.id} className="border-b border-field-line last:border-b-0">
+                <td className="px-3 py-2.5 text-body">{c.name}</td>
+                <td className="px-3 py-2.5 text-label">{c.phone}</td>
+                <td className="px-3 py-2.5 text-label">
+                  {c.deletedAt
+                    ? new Date(c.deletedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "2-digit",
+                        year: "numeric",
+                      })
+                    : "\u2014"}
+                </td>
+                <td className="px-3 py-2.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={restoreMutation.isPending}
+                    onClick={() => restoreMutation.mutate(c.id)}
+                  >
+                    <RotateCcw />
+                    Restore
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

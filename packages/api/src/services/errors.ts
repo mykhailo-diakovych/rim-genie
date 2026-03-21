@@ -74,6 +74,14 @@ export class CustomerHasNoEmail extends Data.TaggedError("CustomerHasNoEmail")<{
   customerId: string;
 }> {}
 
+export class CustomerHasInvoices extends Data.TaggedError("CustomerHasInvoices")<{
+  customerId: string;
+}> {}
+
+export class CustomerHasJobs extends Data.TaggedError("CustomerHasJobs")<{
+  customerId: string;
+}> {}
+
 export class DiscountRequestNotFound extends Data.TaggedError("DiscountRequestNotFound")<{
   id: string;
 }> {}

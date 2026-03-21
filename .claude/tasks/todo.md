@@ -455,7 +455,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - No file upload infrastructure (Azure Blob Storage needed for proof-of-work videos)
 - `acceptedById`/`completedById` audit columns missing from job table
 - No audit log system (all mutations are fire-and-forget)
-- No soft deletes anywhere (hard deletes with cascading throughout)
+- ~~No soft deletes anywhere~~ → ✅ Customer soft-delete implemented (`deletedAt` column, deletion blocked if invoices/jobs exist, admin restore UI)
 - ~~Staff PIN login form exists but submits "coming soon" toast~~ → ✅ Fully functional: calls `authClient.signIn.username()` with employee ID + PIN
 - Inventory EOD form has no frontend (only SOD form exists)
 - Upload proofs dialog has full UI but no backend integration
@@ -465,5 +465,5 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 - "Send to Technician" is backend-enforced ✅ (via `cashierProcedure`)
 - ~~Frontend routes wide open — no `beforeLoad` guards on floor/cashier/technician/inventory~~ → ✅ All role-restricted routes now have `beforeLoad` guards via centralized `requireRoles()`; sidebar uses `hasRouteAccess()` to hide unauthorized nav items
 - Authorization before changes/deletions (audit log system) — not implemented
-- No soft deletes — accidental deletions are unrecoverable
+- ~~No soft deletes — accidental deletions are unrecoverable~~ → ✅ Customer soft-delete with deletion blocking + admin restore
 - [x] Ban enforcement — admin can deactivate (ban) employees via `employees.deactivate`, reactivate via `employees.activate`, and delete (only if banned) via `employees.delete`; UI shows conditional actions based on `banned` state
