@@ -317,6 +317,20 @@ export function IconPay(props: IconProps) {
   );
 }
 
+export function IconReports(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path
+        d="M3 21V17M9 21V13M15 21V15M21 21V11M3 13L7.586 8.414C7.961 8.039 8.148 7.852 8.368 7.786C8.562 7.728 8.77 7.728 8.964 7.786C9.184 7.852 9.371 8.039 9.746 8.414L10.254 8.922C10.629 9.297 10.816 9.484 11.036 9.55C11.23 9.608 11.438 9.608 11.632 9.55C11.852 9.484 12.039 9.297 12.414 8.922L21 3M21 3H15M21 3V9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function IconDiscount(props: IconProps) {
   return (
     <svg {...base12} fill="currentColor" {...props}>

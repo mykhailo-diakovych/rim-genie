@@ -11,6 +11,7 @@ const ROUTE_PERMISSIONS: Record<string, UserRole[] | null> = {
   "/employees": ["admin"],
   "/customers": ["admin", "floorManager", "cashier"],
   "/manage": ["admin"],
+  "/reports": ["admin"],
   "/terms": null,
 };
 

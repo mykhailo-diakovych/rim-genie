@@ -10,6 +10,7 @@ import { inventoryRouter } from "./inventory";
 import { loyaltyRouter } from "./loyalty";
 import { manageRouter } from "./manage";
 import { notificationRouter } from "./notification";
+import { reportRouter } from "./report";
 import { searchRouter } from "./search";
 import { technicianRouter } from "./technician";
 
@@ -29,6 +30,7 @@ export const appRouter = {
   loyalty: loyaltyRouter,
   manage: manageRouter,
   notifications: notificationRouter,
+  report: reportRouter,
   search: searchRouter,
   technician: technicianRouter,
   dashboard: dashboardRouter,

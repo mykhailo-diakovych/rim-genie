@@ -167,7 +167,7 @@
 - [x] ~~Clock in/out attendance tracking~~ — removed from scope per client (2026-03-21)
 - [ ] Expense recording (no `expense` table)
 - [ ] Admin-specific invoice/payment views (admins can access cashier module but no dedicated admin financial view)
-- [ ] Daily reports (expenses, revenue, quotes, invoices — dashboard shows live metrics but no formal report generation)
+- [x] Daily reports — on-demand HTML report page at `/reports/daily` (admin only) with date picker, revenue + payment breakdown by mode, job stats, invoice summary, team activity, attention items. Printable layout.
 - [ ] Multi-site support (no `site` table, no location scoping)
 - [ ] Admin job monitoring dashboard (technician module exists but no admin-only job reassignment/monitoring view)
 
@@ -333,7 +333,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 - [ ] Admin-specific invoice and payment views
 - [ ] Expense recording (new `expense` table + CRUD)
-- [ ] Daily reports: revenue, expenses, quotes, invoices
+- [x] Daily reports — `/reports/daily` page with full daily snapshot (revenue, jobs, invoices, team, attention items)
 - [x] Dashboard metrics from real DB aggregation queries
 
 #### Step 6.2: Workforce
