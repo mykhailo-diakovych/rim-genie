@@ -1,8 +1,9 @@
+import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 
 import { db } from "@rim-genie/db";
-import { service, serviceTypeEnum, vehicleTypeEnum } from "@rim-genie/db/schema";
-import { and, asc, count, eq, ilike } from "drizzle-orm";
+import { location, service, serviceTypeEnum, user, vehicleTypeEnum } from "@rim-genie/db/schema";
+import { and, asc, count, eq, ilike, sql } from "drizzle-orm";
 
 import { adminProcedure } from "../index";
 
@@ -71,6 +72,54 @@ export const manageRouter = {
 
     delete: adminProcedure.input(z.object({ id: z.string().min(1) })).handler(async ({ input }) => {
       await db.delete(service).where(eq(service.id, input.id));
+      return { success: true as const };
+    }),
+  },
+
+  locations: {
+    list: adminProcedure.handler(async () => {
+      return db
+        .select({
+          id: location.id,
+          name: location.name,
+          address: location.address,
+          createdAt: location.createdAt,
+          userCount: sql<number>`count(${user.id})::int`,
+        })
+        .from(location)
+        .leftJoin(user, eq(user.locationId, location.id))
+        .groupBy(location.id)
+        .orderBy(asc(location.name));
+    }),
+
+    create: adminProcedure
+      .input(z.object({ name: z.string().min(1), address: z.string().min(1) }))
+      .handler(async ({ input }) => {
+        const [row] = await db.insert(location).values(input).returning();
+        return row!;
+      }),
+
+    update: adminProcedure
+      .input(z.object({ id: z.string(), name: z.string().min(1), address: z.string().min(1) }))
+      .handler(async ({ input }) => {
+        const { id, ...fields } = input;
+        const [row] = await db.update(location).set(fields).where(eq(location.id, id)).returning();
+        return row!;
+      }),
+
+    delete: adminProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+      const [assigned] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(user)
+        .where(eq(user.locationId, input.id));
+
+      if (assigned && assigned.count > 0) {
+        throw new ORPCError("CONFLICT", {
+          message: "Cannot delete a location that has assigned employees",
+        });
+      }
+
+      await db.delete(location).where(eq(location.id, input.id));
       return { success: true as const };
     }),
   },

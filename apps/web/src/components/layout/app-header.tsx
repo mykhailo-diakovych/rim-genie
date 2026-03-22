@@ -1,13 +1,28 @@
 import { useEffect, useState } from "react";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Search } from "lucide-react";
+import { LogOut, MapPin, Search } from "lucide-react";
 
 import { CommandPalette } from "@/components/search/command-palette";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { authClient } from "@/lib/auth-client";
 import { m } from "@/paraglide/messages";
+import { orpc } from "@/utils/orpc";
 import { Skeleton } from "@/components/ui/skeleton";
+
+function getLocationCookie(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)rim-genie-location=([^;]*)/);
+  return match ? decodeURIComponent(match[1]!) : null;
+}
+
+function setLocationCookie(locationId: string | null) {
+  if (locationId) {
+    document.cookie = `rim-genie-location=${encodeURIComponent(locationId)}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+  } else {
+    document.cookie = "rim-genie-location=; path=/; max-age=0";
+  }
+}
 
 function formatDateTime(date: Date): string {
   return date.toLocaleString(undefined, {
@@ -22,9 +37,18 @@ function formatDateTime(date: Date): string {
 export function AppHeader() {
   const { data: session, isPending } = authClient.useSession();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [now, setNow] = useState(() => new Date());
   const [searchOpen, setSearchOpen] = useState(false);
   const [isMac, setIsMac] = useState(false);
+
+  const isAdmin = session?.user?.role === "admin";
+  const { data: locations } = useQuery(orpc.locations.queryOptions({}));
+  const [activeLocId, setActiveLocId] = useState<string | null>(() =>
+    typeof document !== "undefined" ? getLocationCookie() : null,
+  );
+
+  const activeLocationName = locations?.find((l) => l.id === activeLocId)?.name;
 
   useEffect(() => {
     setIsMac(/Mac|iPhone|iPad/.test(navigator.userAgent));
@@ -89,6 +113,36 @@ export function AppHeader() {
           </button>
 
           <NotificationBell />
+
+          {/* Location badge / picker */}
+          {locations &&
+            locations.length > 0 &&
+            (isAdmin ? (
+              <select
+                value={activeLocId ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value || null;
+                  setActiveLocId(val);
+                  setLocationCookie(val);
+                  void queryClient.invalidateQueries();
+                }}
+                className="hidden rounded-md border border-field-line bg-page px-2 py-1.5 font-rubik text-xs text-body focus:border-blue focus:outline-none md:block"
+              >
+                <option value="">All Locations</option>
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </option>
+                ))}
+              </select>
+            ) : activeLocationName ? (
+              <div className="hidden items-center gap-1.5 rounded-md bg-blue/10 px-2.5 py-1.5 md:flex">
+                <MapPin className="size-3.5 text-blue" />
+                <span className="font-rubik text-xs font-medium text-blue">
+                  {activeLocationName}
+                </span>
+              </div>
+            ) : null)}
 
           {/* User name + datetime stacked */}
           {isPending ? (

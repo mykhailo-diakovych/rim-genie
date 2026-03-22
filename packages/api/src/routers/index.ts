@@ -1,4 +1,8 @@
 import type { RouterClient } from "@orpc/server";
+import { asc } from "drizzle-orm";
+
+import { db } from "@rim-genie/db";
+import { location } from "@rim-genie/db/schema";
 
 import { protectedProcedure, publicProcedure } from "../index";
 import { cashierRouter } from "./cashier";
@@ -22,6 +26,12 @@ export const appRouter = {
     message: "This is private",
     user: context.session.user,
   })),
+  locations: publicProcedure.handler(() => {
+    return db
+      .select({ id: location.id, name: location.name })
+      .from(location)
+      .orderBy(asc(location.name));
+  }),
   cashier: cashierRouter,
   discount: discountRouter,
   employees: employeesRouter,

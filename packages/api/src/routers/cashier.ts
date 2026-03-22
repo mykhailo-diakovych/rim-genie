@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { z } from "zod";
-import { and, eq, gte, ilike, lte, or, sql, sum } from "drizzle-orm";
+import { and, eq, gte, ilike, inArray, lte, or, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { env } from "@rim-genie/env/server";
-import { customer, invoice, payment } from "@rim-genie/db/schema";
+import { customer, invoice, payment, user } from "@rim-genie/db/schema";
 
 import { cashierProcedure } from "../index";
 import * as InvoiceService from "../services/invoice.service";
@@ -29,8 +29,19 @@ export const cashierRouter = {
           pageSize: z.number().int().min(1).max(100).default(20),
         }),
       )
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
         const conditions = [];
+        const isAdmin = context.session.user.role === "admin";
+        const locId = context.locationId;
+
+        if (!isAdmin && locId) {
+          conditions.push(
+            inArray(
+              invoice.createdById,
+              db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
+            ),
+          );
+        }
 
         if (input.status) {
           conditions.push(eq(invoice.status, input.status));

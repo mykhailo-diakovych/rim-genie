@@ -197,8 +197,11 @@ export const dashboardRouter = {
     ];
   }),
 
-  teamActivity: protectedProcedure.input(periodSchema).handler(async ({ input }) => {
+  teamActivity: protectedProcedure.input(periodSchema).handler(async ({ input, context }) => {
     const { start } = periodDates(input.period);
+    const isAdmin = context.session?.user?.role === "admin";
+    const locId = context.locationId;
+    const locationCondition = !isAdmin && locId ? sql`AND u.location_id = ${locId}` : sql``;
 
     const result = await db.execute<{
       name: string;
@@ -211,7 +214,7 @@ export const dashboardRouter = {
         COUNT(*) FILTER (WHERE j.status = 'completed' AND j.completed_at >= ${start.toISOString()}::timestamptz)::text AS "completedToday"
       FROM ${user} u
       LEFT JOIN ${job} j ON j.technician_id = u.id
-      WHERE u.role = 'technician'
+      WHERE u.role = 'technician' ${locationCondition}
       GROUP BY u.id, u.name
       ORDER BY COUNT(*) FILTER (WHERE j.status IN ('accepted', 'in_progress')) DESC
       LIMIT 10

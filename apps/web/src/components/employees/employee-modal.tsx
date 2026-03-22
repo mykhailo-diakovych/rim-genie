@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -22,6 +22,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectOption, SelectPopup, SelectTrigger } from "@/components/ui/select";
+import { MapPin } from "lucide-react";
+
 import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
 
@@ -46,6 +48,7 @@ const baseFieldsSchema = z.object({
     .max(30)
     .regex(/^[a-zA-Z0-9_.]+$/, m.validation_employee_id_required()),
   role: z.enum(userRoleEnum.enumValues, { message: m.employees_validation_role_required() }),
+  locationId: z.string(),
 });
 
 const createEmployeeSchema = baseFieldsSchema.extend({
@@ -97,6 +100,8 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
     },
   });
 
+  const { data: locations } = useQuery(orpc.locations.queryOptions({}));
+
   const initial = employee
     ? {
         ...splitName(employee.name),
@@ -104,8 +109,18 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
         employeeId: employee.username ?? "",
         role: employee.role ?? ("" as string),
         pin: "",
+        locationId:
+          (employee as EmployeeCardData & { locationId?: string | null }).locationId ?? "",
       }
-    : { firstName: "", lastName: "", email: "", employeeId: "", role: "" as string, pin: "" };
+    : {
+        firstName: "",
+        lastName: "",
+        email: "",
+        employeeId: "",
+        role: "" as string,
+        pin: "",
+        locationId: "",
+      };
 
   const form = useForm({
     defaultValues: initial,
@@ -118,9 +133,14 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
           email: value.email,
           employeeId: value.employeeId,
           role: value.role as UserRole,
+          locationId: value.locationId || null,
         });
       } else {
-        createEmployee.mutate(value as z.infer<typeof createEmployeeSchema>);
+        createEmployee.mutate({
+          ...value,
+          role: value.role as UserRole,
+          locationId: value.locationId || undefined,
+        });
       }
     },
     validators: {
@@ -343,6 +363,42 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
                         {field.state.meta.errors[0]?.message}
                       </p>
                     )}
+                  </div>
+                )}
+              </form.Field>
+            )}
+
+            {locations && locations.length > 0 && (
+              <form.Field name="locationId">
+                {(field) => (
+                  <div className="flex flex-col gap-1">
+                    <Label>Location</Label>
+                    <Select
+                      value={field.state.value || null}
+                      onValueChange={(val) => field.handleChange(val ?? "")}
+                    >
+                      <SelectTrigger>
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <MapPin className="size-4 shrink-0 text-ghost" />
+                          <span className="min-w-0 truncate text-left">
+                            {field.state.value ? (
+                              <span className="text-body">
+                                {locations.find((l) => l.id === field.state.value)?.name ?? "—"}
+                              </span>
+                            ) : (
+                              <span className="text-ghost">Select location</span>
+                            )}
+                          </span>
+                        </div>
+                      </SelectTrigger>
+                      <SelectPopup>
+                        {locations.map((loc) => (
+                          <SelectOption key={loc.id} value={loc.id}>
+                            {loc.name}
+                          </SelectOption>
+                        ))}
+                      </SelectPopup>
+                    </Select>
                   </div>
                 )}
               </form.Field>

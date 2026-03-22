@@ -168,7 +168,7 @@
 - [ ] Expense recording (no `expense` table)
 - [ ] Admin-specific invoice/payment views (admins can access cashier module but no dedicated admin financial view)
 - [x] Daily reports — on-demand HTML report page at `/reports/daily` (admin only) with date picker, revenue + payment breakdown by mode, job stats, invoice summary, team activity, attention items. Printable layout.
-- [ ] Multi-site support (no `site` table, no location scoping)
+- [x] Multi-location support — `location` table, `locationId` on user, location CRUD in manage page, location picker on staff login, header location badge/admin filter, data scoping (quotes/invoices/team activity) by location via cookie
 - [ ] Admin job monitoring dashboard (technician module exists but no admin-only job reassignment/monitoring view)
 
 ### Loyalty / Birthday Module — §2.7 (Complete)
@@ -228,7 +228,7 @@
 - [x] Step 1.2: Job table — `packages/db/src/schema/job.ts`
 - [x] Step 1.3: Notification schema — `packages/db/src/schema/notification.ts`
 - [x] Seed data with users, quotes, invoices, jobs
-- [ ] Step 1.4: Site schema (multi-site) — **deferred to Phase 6**
+- [x] Step 1.4: Site/location schema — `location` table + `user.locationId` FK, location CRUD, login picker, header filter, data scoping
 
 Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). Job table lacks `acceptedById`/`completedById` separate columns (uses `technicianId` only).
 
@@ -349,7 +349,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 #### Step 6.4: Job Monitoring Dashboard
 
 - [ ] Admin job monitoring/reassignment dashboard
-- [ ] Multi-site dashboard switching
+- [x] Multi-site dashboard switching — admin location dropdown in header, team activity scoped by location
 - [ ] Site schema (deferred from Phase 1.4)
 
 ---
@@ -430,7 +430,7 @@ Note: Invoice status uses `unpaid/partially_paid/paid` (no `draft`/`overdue`). J
 
 ### Remaining Design Decisions
 
-1. **Multi-site**: Add `siteId` to all tables or use a junction? → Recommend FK on quote/invoice/job (Phase 6.4)
+1. **Multi-site**: ✅ Decided — user-based scoping via `user.locationId`. Customers are global; quotes/invoices/jobs inherit location from creator. Admin sees all with optional filter.
 2. **Discount workflow**: ✅ Decided — Separate `discountRequest` table with pending/approved/rejected status. Non-admin discount changes create approval requests; admins bypass directly. Admin can override with different %.
 3. **PIN login**: ✅ Decided — Reuses Better Auth password flow via `username()` plugin. PIN stored as hashed password in `account` table during `employees.create`; `signIn.username()` authenticates with employee ID + PIN
 

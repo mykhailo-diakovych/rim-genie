@@ -14,6 +14,7 @@ import {
   job,
   service,
   serviceTypeEnum,
+  user,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
 import { and, asc, desc, eq, ilike, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
@@ -227,8 +228,18 @@ export const floorRouter = {
   quotes: {
     list: protectedProcedure
       .input(z.object({ search: z.string().optional() }).optional())
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
         const search = input?.search?.trim();
+        const isAdmin = context.session.user.role === "admin";
+        const locId = context.locationId;
+
+        const locationFilter =
+          !isAdmin && locId
+            ? inArray(
+                quote.createdById,
+                db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
+              )
+            : undefined;
 
         if (search && search.length > 0) {
           const pattern = `%${search}%`;
@@ -238,11 +249,14 @@ export const floorRouter = {
             .leftJoin(invoice, eq(invoice.quoteId, quote.id))
             .innerJoin(customer, eq(customer.id, quote.customerId))
             .where(
-              or(
-                sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
-                sql`${quote.quoteNumber}::text ILIKE ${pattern}`,
-                ilike(customer.name, pattern),
-                ilike(customer.phone, pattern),
+              and(
+                locationFilter,
+                or(
+                  sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
+                  sql`${quote.quoteNumber}::text ILIKE ${pattern}`,
+                  ilike(customer.name, pattern),
+                  ilike(customer.phone, pattern),
+                ),
               ),
             );
 
@@ -263,6 +277,7 @@ export const floorRouter = {
         }
 
         return db.query.quote.findMany({
+          where: locationFilter,
           orderBy: (q, { desc }) => [desc(q.createdAt)],
           with: {
             customer: true,

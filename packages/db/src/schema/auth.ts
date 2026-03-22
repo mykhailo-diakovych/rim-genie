@@ -2,6 +2,8 @@ import { relations } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import { pgEnum, pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
+import { location } from "./location";
+
 export const userRoleEnum = pgEnum("user_role", [
   "admin",
   "floorManager",
@@ -29,6 +31,7 @@ export const user = pgTable("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
+  locationId: text("location_id"),
 });
 
 export type User = InferSelectModel<typeof user>;
@@ -93,9 +96,13 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ one, many }) => ({
   sessions: many(session),
   accounts: many(account),
+  location: one(location, {
+    fields: [user.locationId],
+    references: [location.id],
+  }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

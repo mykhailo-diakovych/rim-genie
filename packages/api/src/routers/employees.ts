@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "@rim-genie/auth";
 import { verifyPassword } from "@rim-genie/auth/crypto";
 import { db } from "@rim-genie/db";
-import { userRoleEnum, user, account } from "@rim-genie/db/schema";
+import { location, userRoleEnum, user, account } from "@rim-genie/db/schema";
 import { desc, eq, and, ne, like } from "drizzle-orm";
 
 import { adminProcedure } from "../index";
@@ -24,6 +24,7 @@ const createEmployeeSchema = z.object({
   employeeId: employeeIdField,
   pin: pinField,
   role: z.enum(userRoleEnum.enumValues),
+  locationId: z.string().optional(),
 });
 
 const updateEmployeeSchema = z.object({
@@ -33,11 +34,26 @@ const updateEmployeeSchema = z.object({
   email: z.email(),
   employeeId: employeeIdField,
   role: z.enum(userRoleEnum.enumValues),
+  locationId: z.string().nullable().optional(),
 });
 
 export const employeesRouter = {
   list: adminProcedure.handler(() => {
-    return db.select().from(user).orderBy(desc(user.createdAt));
+    return db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        banned: user.banned,
+        locationId: user.locationId,
+        locationName: location.name,
+        createdAt: user.createdAt,
+      })
+      .from(user)
+      .leftJoin(location, eq(user.locationId, location.id))
+      .orderBy(desc(user.createdAt));
   }),
 
   create: adminProcedure.input(createEmployeeSchema).handler(async ({ input }) => {
@@ -59,9 +75,15 @@ export const employeesRouter = {
         },
       });
 
-      await db.update(user).set({ username: input.employeeId }).where(eq(user.id, created.user.id));
+      await db
+        .update(user)
+        .set({ username: input.employeeId, locationId: input.locationId ?? null })
+        .where(eq(user.id, created.user.id));
 
-      return { ...created, user: { ...created.user, username: input.employeeId } };
+      return {
+        ...created,
+        user: { ...created.user, username: input.employeeId, locationId: input.locationId ?? null },
+      };
     } catch (error) {
       if (error instanceof ORPCError) throw error;
       const msg = error instanceof Error ? error.message : String(error);
@@ -89,16 +111,17 @@ export const employeesRouter = {
       throw new ORPCError("CONFLICT", { message: "A user with this Employee ID already exists" });
     }
 
-    const [updated] = await db
-      .update(user)
-      .set({
-        name: `${input.firstName} ${input.lastName}`,
-        email: input.email,
-        username: input.employeeId,
-        role: input.role,
-      })
-      .where(eq(user.id, input.id))
-      .returning();
+    const setFields: Record<string, unknown> = {
+      name: `${input.firstName} ${input.lastName}`,
+      email: input.email,
+      username: input.employeeId,
+      role: input.role,
+    };
+    if (input.locationId !== undefined) {
+      setFields.locationId = input.locationId;
+    }
+
+    const [updated] = await db.update(user).set(setFields).where(eq(user.id, input.id)).returning();
 
     if (!updated) {
       throw new ORPCError("NOT_FOUND", { message: "Employee not found" });

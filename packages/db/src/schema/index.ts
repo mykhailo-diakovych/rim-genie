@@ -1,6 +1,7 @@
 export * from "./auth";
 export * from "./discount";
 export * from "./floor";
+export * from "./location";
 export * from "./inventory";
 export * from "./invoice";
 export * from "./job";

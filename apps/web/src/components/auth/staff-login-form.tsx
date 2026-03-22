@@ -1,8 +1,9 @@
 import { useState } from "react";
 
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { UserRound } from "lucide-react";
+import { MapPin, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -11,11 +12,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PinInput } from "@/components/ui/pin-input";
+import {
+  Select,
+  SelectOption,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { m } from "@/paraglide/messages";
+import { orpc } from "@/utils/orpc";
+
+function setLocationCookie(locationId: string) {
+  document.cookie = `rim-genie-location=${encodeURIComponent(locationId)}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+}
 
 export function StaffLoginForm() {
   const navigate = useNavigate();
   const [pin, setPin] = useState("");
+  const [locationId, setLocationId] = useState("");
+
+  const { data: locations } = useQuery(orpc.locations.queryOptions({}));
 
   const form = useForm({
     defaultValues: { employeeId: "" },
@@ -24,6 +40,9 @@ export function StaffLoginForm() {
         { username: value.employeeId, password: pin },
         {
           onSuccess: () => {
+            if (locationId) {
+              setLocationCookie(locationId);
+            }
             navigate({ to: "/dashboard" });
             toast.success(m.toast_signed_in());
           },
@@ -75,6 +94,27 @@ export function StaffLoginForm() {
           <Label>{m.label_enter_pin()}</Label>
           <PinInput value={pin} onChange={setPin} />
         </div>
+
+        {locations && locations.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <Label>Location</Label>
+            <Select value={locationId} onValueChange={(v) => setLocationId(v ?? "")}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <MapPin className="size-4 text-ghost" />
+                  <SelectValue placeholder="Select location" />
+                </div>
+              </SelectTrigger>
+              <SelectPopup>
+                {locations.map((loc) => (
+                  <SelectOption key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </SelectOption>
+                ))}
+              </SelectPopup>
+            </Select>
+          </div>
+        )}
       </div>
 
       <form.Subscribe>
