@@ -230,16 +230,14 @@ export const floorRouter = {
       .input(z.object({ search: z.string().optional() }).optional())
       .handler(async ({ input, context }) => {
         const search = input?.search?.trim();
-        const isAdmin = context.session.user.role === "admin";
         const locId = context.locationId;
 
-        const locationFilter =
-          !isAdmin && locId
-            ? inArray(
-                quote.createdById,
-                db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
-              )
-            : undefined;
+        const locationFilter = locId
+          ? inArray(
+              quote.createdById,
+              db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
+            )
+          : undefined;
 
         if (search && search.length > 0) {
           const pattern = `%${search}%`;

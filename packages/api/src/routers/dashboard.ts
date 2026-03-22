@@ -199,9 +199,8 @@ export const dashboardRouter = {
 
   teamActivity: protectedProcedure.input(periodSchema).handler(async ({ input, context }) => {
     const { start } = periodDates(input.period);
-    const isAdmin = context.session?.user?.role === "admin";
     const locId = context.locationId;
-    const locationCondition = !isAdmin && locId ? sql`AND u.location_id = ${locId}` : sql``;
+    const locationCondition = locId ? sql`AND u.location_id = ${locId}` : sql``;
 
     const result = await db.execute<{
       name: string;

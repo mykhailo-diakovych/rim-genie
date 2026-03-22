@@ -31,10 +31,9 @@ export const cashierRouter = {
       )
       .handler(async ({ input, context }) => {
         const conditions = [];
-        const isAdmin = context.session.user.role === "admin";
         const locId = context.locationId;
 
-        if (!isAdmin && locId) {
+        if (locId) {
           conditions.push(
             inArray(
               invoice.createdById,

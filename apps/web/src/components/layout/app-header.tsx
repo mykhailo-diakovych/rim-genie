@@ -6,6 +6,7 @@ import { LogOut, MapPin, Search } from "lucide-react";
 
 import { CommandPalette } from "@/components/search/command-palette";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { Select, SelectOption, SelectPopup, SelectTrigger } from "@/components/ui/select";
 import { authClient } from "@/lib/auth-client";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
@@ -118,23 +119,31 @@ export function AppHeader() {
           {locations &&
             locations.length > 0 &&
             (isAdmin ? (
-              <select
-                value={activeLocId ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value || null;
-                  setActiveLocId(val);
-                  setLocationCookie(val);
-                  void queryClient.invalidateQueries();
-                }}
-                className="hidden rounded-md border border-field-line bg-page px-2 py-1.5 font-rubik text-xs text-body focus:border-blue focus:outline-none md:block"
-              >
-                <option value="">All Locations</option>
-                {locations.map((loc) => (
-                  <option key={loc.id} value={loc.id}>
-                    {loc.name}
-                  </option>
-                ))}
-              </select>
+              <div className="hidden md:block">
+                <Select
+                  value={activeLocId}
+                  onValueChange={(val) => {
+                    setActiveLocId(val);
+                    setLocationCookie(val);
+                    void queryClient.invalidateQueries();
+                  }}
+                >
+                  <SelectTrigger className="h-8 gap-1.5 px-2.5 text-xs">
+                    <MapPin className="size-3.5 text-ghost" />
+                    <span className="min-w-0 truncate">
+                      {activeLocationName ?? "All Locations"}
+                    </span>
+                  </SelectTrigger>
+                  <SelectPopup>
+                    <SelectOption value={null}>All Locations</SelectOption>
+                    {locations.map((loc) => (
+                      <SelectOption key={loc.id} value={loc.id}>
+                        {loc.name}
+                      </SelectOption>
+                    ))}
+                  </SelectPopup>
+                </Select>
+              </div>
             ) : activeLocationName ? (
               <div className="hidden items-center gap-1.5 rounded-md bg-blue/10 px-2.5 py-1.5 md:flex">
                 <MapPin className="size-3.5 text-blue" />
