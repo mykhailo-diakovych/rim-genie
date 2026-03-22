@@ -33,6 +33,7 @@ import { Route as AppDiscountApprovalsRequestIdRouteImport } from './routes/_app
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/customers/$customerId'
 import { Route as AppCashierInvoiceIdRouteImport } from './routes/_app/cashier/$invoiceId'
 import { Route as AppCashierInvoiceIdIndexRouteImport } from './routes/_app/cashier/$invoiceId/index'
+import { Route as ApiReportsDailyDateRouteImport } from './routes/api/reports/daily.$date'
 import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$quoteId/pdf'
 import { Route as ApiInvoicesInvoiceIdPdfRouteImport } from './routes/api/invoices/$invoiceId/pdf'
 import { Route as AppCashierInvoiceIdCheckoutRouteImport } from './routes/_app/cashier/$invoiceId/checkout'
@@ -157,6 +158,11 @@ const AppCashierInvoiceIdIndexRoute =
     path: '/',
     getParentRoute: () => AppCashierInvoiceIdRoute,
   } as any)
+const ApiReportsDailyDateRoute = ApiReportsDailyDateRouteImport.update({
+  id: '/api/reports/daily/$date',
+  path: '/api/reports/daily/$date',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiQuotesQuoteIdPdfRoute = ApiQuotesQuoteIdPdfRouteImport.update({
   id: '/api/quotes/$quoteId/pdf',
   path: '/api/quotes/$quoteId/pdf',
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
   '/api/invoices/$invoiceId/pdf': typeof ApiInvoicesInvoiceIdPdfRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
+  '/api/reports/daily/$date': typeof ApiReportsDailyDateRoute
   '/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
   '/api/invoices/$invoiceId/pdf': typeof ApiInvoicesInvoiceIdPdfRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
+  '/api/reports/daily/$date': typeof ApiReportsDailyDateRoute
   '/cashier/$invoiceId': typeof AppCashierInvoiceIdIndexRoute
 }
 export interface FileRoutesById {
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/_app/cashier/$invoiceId/checkout': typeof AppCashierInvoiceIdCheckoutRoute
   '/api/invoices/$invoiceId/pdf': typeof ApiInvoicesInvoiceIdPdfRoute
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
+  '/api/reports/daily/$date': typeof ApiReportsDailyDateRoute
   '/_app/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
     | '/cashier/$invoiceId/checkout'
     | '/api/invoices/$invoiceId/pdf'
     | '/api/quotes/$quoteId/pdf'
+    | '/api/reports/daily/$date'
     | '/cashier/$invoiceId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/cashier/$invoiceId/checkout'
     | '/api/invoices/$invoiceId/pdf'
     | '/api/quotes/$quoteId/pdf'
+    | '/api/reports/daily/$date'
     | '/cashier/$invoiceId'
   id:
     | '__root__'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/_app/cashier/$invoiceId/checkout'
     | '/api/invoices/$invoiceId/pdf'
     | '/api/quotes/$quoteId/pdf'
+    | '/api/reports/daily/$date'
     | '/_app/cashier/$invoiceId/'
   fileRoutesById: FileRoutesById
 }
@@ -345,6 +357,7 @@ export interface RootRouteChildren {
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiInvoicesInvoiceIdPdfRoute: typeof ApiInvoicesInvoiceIdPdfRoute
   ApiQuotesQuoteIdPdfRoute: typeof ApiQuotesQuoteIdPdfRoute
+  ApiReportsDailyDateRoute: typeof ApiReportsDailyDateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -517,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCashierInvoiceIdIndexRouteImport
       parentRoute: typeof AppCashierInvoiceIdRoute
     }
+    '/api/reports/daily/$date': {
+      id: '/api/reports/daily/$date'
+      path: '/api/reports/daily/$date'
+      fullPath: '/api/reports/daily/$date'
+      preLoaderRoute: typeof ApiReportsDailyDateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/quotes/$quoteId/pdf': {
       id: '/api/quotes/$quoteId/pdf'
       path: '/api/quotes/$quoteId/pdf'
@@ -635,6 +655,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiInvoicesInvoiceIdPdfRoute: ApiInvoicesInvoiceIdPdfRoute,
   ApiQuotesQuoteIdPdfRoute: ApiQuotesQuoteIdPdfRoute,
+  ApiReportsDailyDateRoute: ApiReportsDailyDateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

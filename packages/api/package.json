@@ -17,6 +17,9 @@
     "./pdf/get-invoice-pdf": {
       "default": "./src/pdf/get-invoice-pdf.ts"
     },
+    "./pdf/get-daily-report-pdf": {
+      "default": "./src/pdf/get-daily-report-pdf.tsx"
+    },
     "./*": {
       "default": "./src/*.ts"
     }

@@ -47,9 +47,9 @@ function DailyReportPage() {
   const { data: report, isLoading } = useQuery(orpc.report.daily.queryOptions({ input: { date } }));
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-3 sm:p-5 print:p-0">
+    <div className="flex flex-1 flex-col gap-4 p-3 sm:p-5">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:flex-row print:items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-rubik text-xl font-semibold text-body">Daily Report</h1>
           {report && <p className="font-rubik text-sm text-label">{formatDate(report.date)}</p>}
@@ -62,9 +62,12 @@ function DailyReportPage() {
             onChange={(e) => setDate(e.target.value)}
             className="rounded-md border border-field-line bg-input px-3 py-2 font-rubik text-sm text-body focus:border-blue focus:outline-none print:hidden"
           />
-          <Button variant="outline" onClick={() => window.print()} className="print:hidden">
+          <Button
+            variant="outline"
+            onClick={() => window.open(`/api/reports/daily/${date}`, "_blank")}
+          >
             <Printer />
-            Print
+            Print Report
           </Button>
         </div>
       </div>
