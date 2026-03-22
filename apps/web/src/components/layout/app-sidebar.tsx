@@ -95,7 +95,7 @@ const NAV_ITEMS = [
   { to: "/employees", labelKey: "nav_employees" as const, icon: IconEmployees },
   { to: "/customers", labelKey: "nav_customers" as const, icon: IconCustomers },
   { to: "/manage", labelKey: "nav_manage" as const, icon: IconManage },
-  { to: "/reports", labelKey: "nav_reports" as const, icon: IconReports },
+  { to: "/reports/daily", labelKey: "nav_reports" as const, icon: IconReports },
   { to: "/terms", labelKey: "nav_terms" as const, icon: IconTerms },
 ];
 
