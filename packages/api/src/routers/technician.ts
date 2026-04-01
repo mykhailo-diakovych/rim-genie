@@ -11,6 +11,7 @@ import { protectedProcedure, technicianProcedure } from "../index";
 import * as JobService from "../services/job.service";
 import * as NotificationService from "../services/notification.service";
 import * as EmailService from "../services/email.service";
+import * as SmsService from "../services/sms.service";
 import { runEffect } from "../services/run-effect";
 import { createJobCompletedEmail } from "../emails/job-completed-email";
 
@@ -102,19 +103,31 @@ export const technicianRouter = {
           }
 
           const cust = completedJob?.invoice?.customer;
-          if (completedJob && cust?.email && cust.communicationPreference === "email") {
-            Effect.runPromise(
-              EmailService.send({
-                to: cust.email,
-                subject: "Your Rim Repair is Complete — Rim Genie",
-                react: createJobCompletedEmail({
-                  baseUrl: env.BETTER_AUTH_URL,
-                  customerName: cust.name,
-                  jobDescription: completedJob.invoiceItem?.description ?? "Rim Job",
-                  invoiceNumber: completedJob.invoice!.invoiceNumber,
+          if (completedJob && cust) {
+            const pref = cust.communicationPreference ?? "sms";
+            const jobDesc = completedJob.invoiceItem?.description ?? "Rim Job";
+
+            if (pref === "email" && cust.email) {
+              Effect.runPromise(
+                EmailService.send({
+                  to: cust.email,
+                  subject: "Your Rim Repair is Complete — Rim Genie",
+                  react: createJobCompletedEmail({
+                    baseUrl: env.BETTER_AUTH_URL,
+                    customerName: cust.name,
+                    jobDescription: jobDesc,
+                    invoiceNumber: completedJob.invoice!.invoiceNumber,
+                  }),
                 }),
-              }),
-            ).catch(() => {});
+              ).catch(() => {});
+            } else if (pref === "sms" && cust.phone) {
+              Effect.runPromise(
+                SmsService.send({
+                  to: cust.phone,
+                  text: `Hi ${cust.name}, your rim repair (${jobDesc}) is complete and ready for pickup! — Rim Genie`,
+                }),
+              ).catch(() => {});
+            }
           }
         } catch {
           // Email failure must not block job completion

@@ -23,8 +23,10 @@ import { adminProcedure, floorManagerProcedure, protectedProcedure, requireRole 
 import * as DiscountService from "../services/discount.service";
 import * as InvoiceService from "../services/invoice.service";
 import * as EmailService from "../services/email.service";
+import * as SmsService from "../services/sms.service";
 import {
   CustomerHasNoEmail,
+  CustomerHasNoPhone,
   CustomerHasInvoices,
   CustomerHasJobs,
   QuoteNotFound,
@@ -641,7 +643,7 @@ export const floorRouter = {
         return rows;
       }),
 
-    sendEmail: floorManagerProcedure
+    send: floorManagerProcedure
       .input(z.object({ quoteId: z.string() }))
       .handler(async ({ input }) => {
         return runEffect(
@@ -654,32 +656,49 @@ export const floorRouter = {
             );
 
             if (!quoteRow) return yield* Effect.fail(new QuoteNotFound({ id: input.quoteId }));
-            if (!quoteRow.customer?.email) {
-              return yield* Effect.fail(
-                new CustomerHasNoEmail({ customerId: quoteRow.customerId }),
-              );
+
+            const cust = quoteRow.customer;
+            const pref = cust?.communicationPreference ?? "sms";
+
+            if (pref === "email") {
+              if (!cust?.email) {
+                return yield* Effect.fail(
+                  new CustomerHasNoEmail({ customerId: quoteRow.customerId }),
+                );
+              }
+
+              const pdf = yield* Effect.tryPromise(() => getQuotePdf(input.quoteId));
+              const attachments = pdf
+                ? [{ filename: `quote-${pdf.quoteNumber}.pdf`, content: pdf.buffer }]
+                : undefined;
+
+              yield* EmailService.send({
+                to: cust.email,
+                subject: `Your Rim Genie Quote #${quoteRow.quoteNumber}`,
+                react: createQuoteEmail({
+                  baseUrl: env.BETTER_AUTH_URL,
+                  customerName: cust.name,
+                  quoteNumber: quoteRow.quoteNumber,
+                  subtotal: quoteRow.subtotal,
+                  discountPercent: quoteRow.discountPercent,
+                  discountAmount: quoteRow.discountAmount,
+                  total: quoteRow.total,
+                  hasAttachment: !!pdf,
+                }),
+                attachments,
+              });
+            } else {
+              if (!cust?.phone) {
+                return yield* Effect.fail(
+                  new CustomerHasNoPhone({ customerId: quoteRow.customerId }),
+                );
+              }
+
+              yield* SmsService.send({
+                to: cust.phone,
+                text: `Hi ${cust.name}, your Rim Genie quote #${quoteRow.quoteNumber} is ready. Total: JMD ${(quoteRow.total / 100).toFixed(2)}.`,
+              });
             }
-
-            const pdf = yield* Effect.tryPromise(() => getQuotePdf(input.quoteId));
-            const attachments = pdf
-              ? [{ filename: `quote-${pdf.quoteNumber}.pdf`, content: pdf.buffer }]
-              : undefined;
-
-            yield* EmailService.send({
-              to: quoteRow.customer.email,
-              subject: `Your Rim Genie Quote #${quoteRow.quoteNumber}`,
-              react: createQuoteEmail({
-                baseUrl: env.BETTER_AUTH_URL,
-                customerName: quoteRow.customer.name,
-                quoteNumber: quoteRow.quoteNumber,
-                subtotal: quoteRow.subtotal,
-                discountPercent: quoteRow.discountPercent,
-                discountAmount: quoteRow.discountAmount,
-                total: quoteRow.total,
-                hasAttachment: !!pdf,
-              }),
-              attachments,
-            });
 
             return { success: true as const };
           }),

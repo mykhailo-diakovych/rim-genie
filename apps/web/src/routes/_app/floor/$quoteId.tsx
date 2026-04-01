@@ -217,6 +217,7 @@ function QuoteEditorPage() {
             <MoreDropdown
               quoteId={quoteId}
               customerEmail={quote?.customer?.email}
+              customerPhone={quote?.customer?.phone}
               onDelete={() => setShowDeleteConfirm(true)}
               isDeleting={deleteQuote.isPending}
             />
@@ -849,19 +850,21 @@ function ServicePickerDialog({
 function MoreDropdown({
   quoteId,
   customerEmail,
+  customerPhone,
   onDelete,
   isDeleting,
 }: {
   quoteId: string;
   customerEmail?: string | null;
+  customerPhone?: string | null;
   onDelete: () => void;
   isDeleting: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const sendEmail = useMutation({
-    ...orpc.floor.quotes.sendEmail.mutationOptions(),
+  const send = useMutation({
+    ...orpc.floor.quotes.send.mutationOptions(),
     onSuccess: () => toast.success("Quote sent successfully"),
     onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
   });
@@ -914,10 +917,10 @@ function MoreDropdown({
           </button>
           <button
             type="button"
-            disabled={!customerEmail || sendEmail.isPending}
+            disabled={(!customerEmail && !customerPhone) || send.isPending}
             onClick={() => {
               setOpen(false);
-              sendEmail.mutate({ quoteId });
+              send.mutate({ quoteId });
             }}
             className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
           >

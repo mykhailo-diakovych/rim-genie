@@ -11,6 +11,10 @@ interface EasySendSmsResponse {
   description?: string;
 }
 
+function normalizePhone(phone: string): string {
+  return phone.replace(/[^0-9]/g, "");
+}
+
 export function send(input: { to: string; text: string }) {
   return Effect.tryPromise({
     try: () =>
@@ -23,7 +27,7 @@ export function send(input: { to: string; text: string }) {
         },
         body: JSON.stringify({
           from: env.EASYSENDSMS_SENDER,
-          to: input.to,
+          to: normalizePhone(input.to),
           text: input.text,
           type: "0",
         }),

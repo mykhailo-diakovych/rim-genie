@@ -65,12 +65,14 @@ function formatPaymentMode(mode: string) {
 function MoreDropdown({
   invoiceId,
   customerEmail,
+  customerPhone,
   onPrint,
   onDelete,
   isDeleting,
 }: {
   invoiceId: string;
   customerEmail?: string | null;
+  customerPhone?: string | null;
   onPrint: () => void;
   onDelete: () => void;
   isDeleting: boolean;
@@ -121,7 +123,7 @@ function MoreDropdown({
           </button>
           <button
             type="button"
-            disabled={!customerEmail || sendReceipt.isPending}
+            disabled={(!customerEmail && !customerPhone) || sendReceipt.isPending}
             onClick={() => {
               setOpen(false);
               sendReceipt.mutate({ invoiceId });
@@ -239,6 +241,7 @@ function InvoiceDetailPage() {
           <MoreDropdown
             invoiceId={invoiceId}
             customerEmail={inv?.customer?.email}
+            customerPhone={inv?.customer?.phone}
             onPrint={() => window.open(`/api/invoices/${invoiceId}/pdf`, "_blank")}
             onDelete={() => setShowDeleteConfirm(true)}
             isDeleting={deleteInvoice.isPending}
