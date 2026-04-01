@@ -15,6 +15,10 @@ function normalizePhone(phone: string): string {
   return phone.replace(/[^0-9]/g, "");
 }
 
+function sanitizeText(text: string): string {
+  return text.replace(/[$#]/g, "");
+}
+
 export function send(input: { to: string; text: string }) {
   return Effect.tryPromise({
     try: () =>
@@ -28,7 +32,7 @@ export function send(input: { to: string; text: string }) {
         body: JSON.stringify({
           from: env.EASYSENDSMS_SENDER,
           to: normalizePhone(input.to),
-          text: input.text,
+          text: sanitizeText(input.text),
           type: "0",
         }),
       }).then((res) => res.json() as Promise<EasySendSmsResponse>),

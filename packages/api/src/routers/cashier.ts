@@ -199,7 +199,7 @@ export const cashierRouter = {
 
               yield* SmsService.send({
                 to: cust.phone,
-                text: `Hi ${cust.name}, your Rim Genie receipt for invoice #${inv.invoiceNumber}. Total: JMD ${(inv.total / 100).toFixed(2)}, Paid: JMD ${(totalPaid / 100).toFixed(2)}, Balance: JMD ${(balance / 100).toFixed(2)}.`,
+                text: `Hi ${cust.name}, your Rim Genie receipt for invoice ${inv.invoiceNumber}. Total: JMD ${(inv.total / 100).toFixed(2)}, Paid: JMD ${(totalPaid / 100).toFixed(2)}, Balance: JMD ${(balance / 100).toFixed(2)}.`,
               });
             }
 
@@ -250,7 +250,7 @@ export const cashierRouter = {
 
               yield* SmsService.send({
                 to: cust.phone,
-                text: `Hi ${cust.name}, reminder: invoice #${inv.invoiceNumber} has an outstanding balance of JMD ${(balance / 100).toFixed(2)}. Please settle before pickup. — Rim Genie`,
+                text: `Hi ${cust.name}, reminder: invoice ${inv.invoiceNumber} has an outstanding balance of JMD ${(balance / 100).toFixed(2)}. Please settle before pickup. - Rim Genie`,
               });
             }
 

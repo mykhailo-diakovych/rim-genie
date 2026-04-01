@@ -124,7 +124,7 @@ export const technicianRouter = {
               Effect.runPromise(
                 SmsService.send({
                   to: cust.phone,
-                  text: `Hi ${cust.name}, your rim repair (${jobDesc}) is complete and ready for pickup! — Rim Genie`,
+                  text: `Hi ${cust.name}, your rim repair (${jobDesc}) is complete and ready for pickup! - Rim Genie`,
                 }),
               ).catch(() => {});
             }
