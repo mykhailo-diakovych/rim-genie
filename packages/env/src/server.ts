@@ -11,6 +11,8 @@ export const env = createEnv({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     RESEND_API_KEY: z.string().min(1),
     EMAIL_FROM: z.string().default("Rim Genie <noreply@rimgenie.com>"),
+    EASYSENDSMS_API_KEY: z.string().min(1),
+    EASYSENDSMS_SENDER: z.string().max(11).default("RimGenie"),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

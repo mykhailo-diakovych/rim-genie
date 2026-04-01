@@ -70,6 +70,14 @@ export class EmailSendFailed extends Data.TaggedError("EmailSendFailed")<{
   reason: string;
 }> {}
 
+export class SmsSendFailed extends Data.TaggedError("SmsSendFailed")<{
+  reason: string;
+}> {}
+
+export class CustomerHasNoPhone extends Data.TaggedError("CustomerHasNoPhone")<{
+  customerId: string;
+}> {}
+
 export class CustomerHasNoEmail extends Data.TaggedError("CustomerHasNoEmail")<{
   customerId: string;
 }> {}

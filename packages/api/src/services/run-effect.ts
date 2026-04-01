@@ -40,6 +40,11 @@ const TAG_MAP: Record<
     message: "No EOD record found — please submit an EOD before starting the day",
   },
   EmailSendFailed: { code: "INTERNAL_SERVER_ERROR", message: "Failed to send email" },
+  SmsSendFailed: { code: "INTERNAL_SERVER_ERROR", message: "Failed to send SMS" },
+  CustomerHasNoPhone: {
+    code: "BAD_REQUEST",
+    message: "Customer does not have a phone number",
+  },
   CustomerHasNoEmail: {
     code: "BAD_REQUEST",
     message: "Customer does not have an email address",
