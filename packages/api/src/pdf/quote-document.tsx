@@ -382,7 +382,7 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
             <Text style={styles.excludedTitle}>Services Excluded:</Text>
             <Text style={styles.excludedSubtitle}>
               The following services were offered as part of our assessment and were declined by the
-              client
+              customer
             </Text>
             <View style={styles.table}>
               <View style={styles.tableHeader}>

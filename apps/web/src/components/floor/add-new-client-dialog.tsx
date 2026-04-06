@@ -128,7 +128,7 @@ export function AddNewClientDialog({
         <form onSubmit={(e) => void handleSubmit(e)}>
           {/* Header */}
           <DialogHeader>
-            <DialogTitle>Add New Client</DialogTitle>
+            <DialogTitle>Add New Customer</DialogTitle>
           </DialogHeader>
 
           {/* Body */}
@@ -267,7 +267,7 @@ export function AddNewClientDialog({
                 )}
               </div>
 
-              {/* VIP client checkbox */}
+              {/* VIP customer checkbox */}
               <div className="flex h-9 items-center">
                 <label className="flex cursor-pointer items-center gap-1.5">
                   <CheckboxPrimitive.Root
@@ -279,7 +279,7 @@ export function AddNewClientDialog({
                       <Check className="size-3" />
                     </CheckboxPrimitive.Indicator>
                   </CheckboxPrimitive.Root>
-                  <span className="font-rubik text-sm leading-[18px] text-body">VIP client</span>
+                  <span className="font-rubik text-sm leading-[18px] text-body">VIP customer</span>
                 </label>
               </div>
             </div>
@@ -291,7 +291,7 @@ export function AddNewClientDialog({
               </Button>
               <Button color="success" type="submit" disabled={isLoading} className="w-32">
                 {!isLoading && <Plus />}
-                {isLoading ? "Creating..." : "Create Client"}
+                {isLoading ? "Creating..." : "Create Customer"}
               </Button>
             </DialogFooter>
           </div>

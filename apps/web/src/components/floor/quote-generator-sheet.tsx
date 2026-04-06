@@ -30,6 +30,7 @@ export type JobType =
   | "sprung"
   | "build-up"
   | "platinum-resurfacing"
+  | "hand-polish"
   | "polishing"
   | "general"
   | "welding"

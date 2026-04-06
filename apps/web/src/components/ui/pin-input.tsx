@@ -9,8 +9,7 @@ const pinInputVariants = tv({
     cell: "relative min-w-0 flex-1",
     digit:
       "h-9 w-full rounded-md border bg-white text-center text-transparent caret-transparent outline-none transition-colors focus:border-blue",
-    overlay:
-      "pointer-events-none absolute inset-0 flex items-center justify-center text-ghost",
+    overlay: "pointer-events-none absolute inset-0 flex items-center justify-center text-ghost",
   },
   variants: {
     error: {

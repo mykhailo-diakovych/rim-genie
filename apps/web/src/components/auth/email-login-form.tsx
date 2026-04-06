@@ -11,12 +11,7 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectOption,
-  SelectPopup,
-  SelectTrigger,
-} from "@/components/ui/select";
+import { Select, SelectOption, SelectPopup, SelectTrigger } from "@/components/ui/select";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 

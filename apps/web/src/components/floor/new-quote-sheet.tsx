@@ -129,7 +129,7 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
         <div className="flex flex-col gap-0.5 border-b border-field-line p-3">
           <p className="font-rubik text-base leading-5 font-medium text-body">New Quote</p>
           <p className="font-rubik text-xs leading-4 text-label">
-            Fill in the client information to create
+            Fill in the customer information to create
           </p>
         </div>
 
@@ -139,7 +139,7 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
           <div className="flex flex-col gap-2">
             {/* Select input */}
             <div className="relative flex flex-col gap-1">
-              <label className="font-rubik text-xs leading-3.5 text-label">Client Lookup:</label>
+              <label className="font-rubik text-xs leading-3.5 text-label">Customer Lookup:</label>
               <div className="relative">
                 <input
                   ref={inputRef}
@@ -201,10 +201,10 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
               )}
             </div>
 
-            {/* "Didn't find the client?" row */}
+            {/* "Didn't find the customer?" row */}
             <div className="flex items-center gap-2">
               <span className="font-rubik text-xs leading-3.5 text-black">
-                Didn't find the client?
+                Didn't find the customer?
               </span>
               <button
                 type="button"
@@ -215,7 +215,7 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
                 className="flex cursor-pointer items-center gap-1.5 rounded-lg"
               >
                 <Plus className="size-4 text-blue" />
-                <span className="font-rubik text-xs leading-3.5 text-blue">Add New Client</span>
+                <span className="font-rubik text-xs leading-3.5 text-blue">Add New Customer</span>
               </button>
             </div>
           </div>
@@ -294,7 +294,7 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
         </div>
       </div>
 
-      {/* Add New Client Dialog */}
+      {/* Add New Customer Dialog */}
       <AddNewClientDialog
         open={showAddClient}
         onClose={() => setShowAddClient(false)}
