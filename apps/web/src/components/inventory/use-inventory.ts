@@ -2,16 +2,18 @@ import { useQuery } from "@tanstack/react-query";
 
 import { orpc } from "@/utils/orpc";
 
-export function useOvernightJobs() {
+import type { TabValue } from "./types";
+
+export function useInventoryJobs(tab: TabValue, dateFrom?: string) {
   return useQuery(
     orpc.inventory.jobs.list.queryOptions({
-      input: { isOvernight: true },
+      input: { tab, dateFrom },
     }),
   );
 }
 
-export function useUnfinishedJobs() {
-  return useQuery(orpc.inventory.jobs.unfinished.queryOptions({}));
+export function useInventoryCounts(dateFrom?: string) {
+  return useQuery(orpc.inventory.jobs.counts.queryOptions({ input: { dateFrom } }));
 }
 
 export function useInventoryRecords(filters?: { type?: "eod" | "sod"; hasDiscrepancy?: boolean }) {

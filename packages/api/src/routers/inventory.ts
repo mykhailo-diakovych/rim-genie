@@ -1,62 +1,126 @@
 import { z } from "zod";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ne, sql } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
-import { inventoryRecord } from "@rim-genie/db/schema";
+import { inventoryRecord, invoice, job } from "@rim-genie/db/schema";
 
 import { inventoryClerkProcedure } from "../index";
 import * as InventoryService from "../services/inventory.service";
 import * as JobService from "../services/job.service";
 import { runEffect } from "../services/run-effect";
 
+const tabSchema = z.enum([
+  "overnight",
+  "readyForPickup",
+  "outstandingBalance",
+  "missing",
+  "pickedUp",
+]);
+
+export type InventoryTab = z.infer<typeof tabSchema>;
+
 export const inventoryRouter = {
   jobs: {
     list: inventoryClerkProcedure
-      .input(
-        z.object({
-          status: z.enum(["pending", "accepted", "in_progress", "completed"]).optional(),
-          isOvernight: z.boolean().optional(),
-        }),
-      )
+      .input(z.object({ tab: tabSchema, dateFrom: z.string().optional() }))
       .handler(async ({ input }) => {
+        const dateFilter = input.dateFrom
+          ? gte(job.createdAt, new Date(input.dateFrom))
+          : undefined;
+
+        if (input.tab === "outstandingBalance") {
+          const rows = await db
+            .select({
+              jobId: job.id,
+            })
+            .from(job)
+            .innerJoin(invoice, eq(job.invoiceId, invoice.id))
+            .where(and(ne(invoice.status, "paid"), eq(job.isPickedUp, false), dateFilter));
+
+          const jobIds = rows.map((r) => r.jobId);
+          if (jobIds.length === 0) return [];
+
+          return db.query.job.findMany({
+            where: (j, { inArray }) => inArray(j.id, jobIds),
+            orderBy: (j, { desc: descOp }) => [descOp(j.createdAt)],
+            with: {
+              invoiceItem: true,
+              invoice: { with: { customer: true, payments: true } },
+              technician: true,
+            },
+          });
+        }
+
         return db.query.job.findMany({
           where: (j, { and: andOp, eq: eqOp }) => {
-            const conditions = [];
-            if (input.status) conditions.push(eqOp(j.status, input.status));
-            if (input.isOvernight !== undefined)
-              conditions.push(eqOp(j.isOvernight, input.isOvernight));
-            return conditions.length > 0 ? andOp(...conditions) : undefined;
+            const tabCondition = (() => {
+              switch (input.tab) {
+                case "overnight":
+                  return andOp(eqOp(j.isOvernight, true), eqOp(j.isPickedUp, false));
+                case "readyForPickup":
+                  return andOp(eqOp(j.status, "completed"), eqOp(j.isPickedUp, false));
+                case "missing":
+                  return andOp(eqOp(j.isMissing, true), eqOp(j.isPickedUp, false));
+                case "pickedUp":
+                  return eqOp(j.isPickedUp, true);
+              }
+            })();
+            return dateFilter ? andOp(tabCondition, dateFilter) : tabCondition;
           },
           orderBy: (j, { desc: descOp }) => [descOp(j.createdAt)],
           with: {
             invoiceItem: true,
-            invoice: {
-              with: { customer: true },
-            },
+            invoice: { with: { customer: true, payments: true } },
             technician: true,
           },
         });
       }),
 
-    unfinished: inventoryClerkProcedure.handler(async () => {
-      return db.query.job.findMany({
-        where: (j, { and: andOp, eq: eqOp }) =>
-          andOp(eqOp(j.isOvernight, true), sql`${j.status} != 'completed'`),
-        orderBy: (j, { desc: descOp }) => [descOp(j.createdAt)],
-        with: {
-          invoiceItem: true,
-          invoice: {
-            with: { customer: true },
-          },
-          technician: true,
-        },
-      });
-    }),
+    counts: inventoryClerkProcedure
+      .input(z.object({ dateFrom: z.string().optional() }))
+      .handler(async ({ input }) => {
+        const dateFilter = input.dateFrom
+          ? gte(job.createdAt, new Date(input.dateFrom))
+          : undefined;
+
+        const [overnightResult, readyResult, missingResult, pickedUpResult, outstandingResult] =
+          await Promise.all([
+            db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(job)
+              .where(and(eq(job.isOvernight, true), eq(job.isPickedUp, false), dateFilter)),
+            db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(job)
+              .where(and(eq(job.status, "completed"), eq(job.isPickedUp, false), dateFilter)),
+            db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(job)
+              .where(and(eq(job.isMissing, true), eq(job.isPickedUp, false), dateFilter)),
+            db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(job)
+              .where(and(eq(job.isPickedUp, true), dateFilter)),
+            db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(job)
+              .innerJoin(invoice, eq(job.invoiceId, invoice.id))
+              .where(and(ne(invoice.status, "paid"), eq(job.isPickedUp, false), dateFilter)),
+          ]);
+
+        return {
+          overnight: overnightResult[0]!.count,
+          readyForPickup: readyResult[0]!.count,
+          outstandingBalance: outstandingResult[0]!.count,
+          missing: missingResult[0]!.count,
+          pickedUp: pickedUpResult[0]!.count,
+        };
+      }),
 
     markPickup: inventoryClerkProcedure
       .input(z.object({ jobId: z.string() }))
       .handler(async ({ input }) => {
-        return runEffect(JobService.completeJob(input.jobId));
+        return runEffect(JobService.markAsPickedUp(input.jobId));
       }),
 
     markOvernight: inventoryClerkProcedure
@@ -69,8 +133,7 @@ export const inventoryRouter = {
     markMissing: inventoryClerkProcedure
       .input(z.object({ jobId: z.string(), notes: z.string().optional() }))
       .handler(async ({ input }) => {
-        const note = input.notes ? `[MISSING]: ${input.notes}` : "[MISSING]";
-        return runEffect(JobService.addNote(input.jobId, note));
+        return runEffect(JobService.markAsMissing(input.jobId, input.notes));
       }),
   },
 

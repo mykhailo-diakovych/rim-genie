@@ -9,10 +9,11 @@ export type ApiRecord = Awaited<
 export type LatestRecords = Awaited<ReturnType<AppRouterClient["inventory"]["records"]["latest"]>>;
 
 export const TAB_CONFIG = [
-  { value: "overnight", label: "Overnight Jobs" },
-  { value: "eod", label: "End of Day" },
-  { value: "sod", label: "Start of Day" },
-  { value: "history", label: "History" },
+  { value: "overnight", label: "Overnight" },
+  { value: "readyForPickup", label: "Ready For Pickup" },
+  { value: "outstandingBalance", label: "Outstanding Balance" },
+  { value: "missing", label: "Missing" },
+  { value: "pickedUp", label: "Picked Up" },
 ] as const;
 
 export type TabValue = (typeof TAB_CONFIG)[number]["value"];

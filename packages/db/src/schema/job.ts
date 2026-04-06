@@ -33,6 +33,8 @@ export const job = pgTable(
     completedAt: timestamp("completed_at"),
     dueDate: timestamp("due_date"),
     isOvernight: boolean("is_overnight").default(false).notNull(),
+    isPickedUp: boolean("is_picked_up").default(false).notNull(),
+    isMissing: boolean("is_missing").default(false).notNull(),
     specialNotes: text("special_notes"),
     proofVideoUrl: text("proof_video_url"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

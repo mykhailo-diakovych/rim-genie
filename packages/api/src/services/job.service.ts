@@ -156,6 +156,60 @@ export function addNote(jobId: string, note: string) {
   });
 }
 
+export function markAsPickedUp(jobId: string) {
+  return Effect.gen(function* () {
+    const found = yield* Effect.tryPromise(() =>
+      db.query.job.findFirst({ where: eq(job.id, jobId) }),
+    );
+
+    if (!found) {
+      return yield* Effect.fail(new JobNotFound({ id: jobId }));
+    }
+
+    const [updated] = yield* Effect.tryPromise(() =>
+      db
+        .update(job)
+        .set({
+          isPickedUp: true,
+          status: "completed",
+          completedAt: new Date(),
+        })
+        .where(eq(job.id, jobId))
+        .returning(),
+    );
+
+    return updated!;
+  });
+}
+
+export function markAsMissing(jobId: string, note?: string) {
+  return Effect.gen(function* () {
+    const found = yield* Effect.tryPromise(() =>
+      db.query.job.findFirst({ where: eq(job.id, jobId) }),
+    );
+
+    if (!found) {
+      return yield* Effect.fail(new JobNotFound({ id: jobId }));
+    }
+
+    const missingNote = note ? `[MISSING]: ${note}` : "[MISSING]";
+    const combined = found.specialNotes ? `${found.specialNotes}\n${missingNote}` : missingNote;
+
+    const [updated] = yield* Effect.tryPromise(() =>
+      db
+        .update(job)
+        .set({
+          isMissing: true,
+          specialNotes: combined,
+        })
+        .where(eq(job.id, jobId))
+        .returning(),
+    );
+
+    return updated!;
+  });
+}
+
 export function reverseJob(jobId: string, reason: string) {
   return Effect.gen(function* () {
     const found = yield* Effect.tryPromise(() =>
