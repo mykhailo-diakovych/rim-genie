@@ -30,7 +30,6 @@ export type JobType =
   | "sprung"
   | "build-up"
   | "platinum-resurfacing"
-  | "hand-polish"
   | "polishing"
   | "general"
   | "welding"
@@ -41,7 +40,7 @@ export type JobTypeEntry = {
   input?: string;
   workTypes?: string[];
   rimAvailable?: boolean;
-  needsBuildUp?: boolean;
+
   comments?: string;
   subType?: string;
 };
@@ -67,6 +66,7 @@ const RIM_JOB_TYPES: {
   subTypeLabel?: string;
   subTypeOptions?: string[];
   hasExpandedOptions?: boolean;
+  hasInchesInput?: boolean;
 }[] = [
   { value: "bend-fix", label: "Bend Fix" },
   { value: "crack-fix", label: "Crack Fix" },
@@ -75,10 +75,10 @@ const RIM_JOB_TYPES: {
   { value: "reconstruct", label: "Reconstruct", hasExpandedOptions: true },
   {
     value: "sprung",
-    label: "Sprung",
+    label: "Sprong",
     hasSubType: true,
     subTypeLabel: "Type of damage:",
-    subTypeOptions: ["Corner Damaged", "Edge Damaged", "Full Side Damaged"],
+    subTypeOptions: ["Corner Damage", "Broken Sprong"],
   },
   {
     value: "build-up",
@@ -86,16 +86,22 @@ const RIM_JOB_TYPES: {
     hasSubType: true,
     subTypeLabel: "Type of build up:",
     subTypeOptions: ["Back Edge", "Front Edge", "Full Lip", "Barrel"],
+    hasInchesInput: true,
   },
   {
     value: "platinum-resurfacing",
     label: "Platinum Resurfacing",
     hasSubType: true,
     subTypeLabel: "Type of polishing:",
-    subTypeOptions: ["Rim Face Only", "Full Rim", "Inner Barrel"],
+    subTypeOptions: ["Full Face", "Full Lip", "Lip + Face"],
   },
-  { value: "hand-polish", label: "Hand Polish" },
-  { value: "polishing", label: "Polishing" },
+  {
+    value: "polishing",
+    label: "Spot Polishing",
+    hasSubType: true,
+    subTypeLabel: "How many spots?",
+    subTypeOptions: ["1 Spot", "2 Spots", "3 Spots"],
+  },
 ];
 
 const RECONSTRUCT_WORK_TYPES = [
@@ -121,7 +127,7 @@ const GENERAL_SERVICE_TYPES = [
   { value: "disc-rotor-skimming", label: "Disc Rotor Skimming" },
   { value: "brake-drum-skimming", label: "Brake Drum Skimming" },
   { value: "computerized-balancing", label: "Computerized Balancing" },
-  { value: "polishing", label: "Polishing" },
+  { value: "polishing", label: "Spot Polishing" },
   { value: "filing", label: "Filing" },
   { value: "dismount-mount-tire", label: "Dismount and Mount Tire" },
   { value: "tire-plug", label: "Tire Plug" },
@@ -135,14 +141,14 @@ const GENERAL_SERVICE_TYPES = [
 
 const rimsSchema = z.object({
   rimSize: z.string().min(1, "Rim size is required"),
-  rimType: z.string().min(1, "Rim type is required"),
+  vehicleType: z.string().min(1, "Vehicle type is required"),
+  material: z.string().min(1, "Material is required"),
   damageLevel: z.string().min(1, "Damage level is required"),
 });
 
 const weldingSchema = z.object({
   materialType: z.string().min(1, "Material type is required"),
   damageLevel: z.string().min(1, "Damage level is required"),
-  quantity: z.string().refine((v) => parseInt(v, 10) > 0, "Quantity is required"),
   lengthOfWeld: z.string().refine((v) => parseInt(v, 10) > 0, "Length is required"),
   comments: z.string(),
 });
@@ -206,11 +212,10 @@ interface QuoteGeneratorSheetProps {
 
 // ─── QuoteGeneratorSheet ──────────────────────────────────────────────────────
 
-const RIM_DEFAULTS = { rimSize: "", rimType: "", damageLevel: "" };
+const RIM_DEFAULTS = { rimSize: "", vehicleType: "", material: "", damageLevel: "" };
 const WELDING_DEFAULTS = {
   materialType: "",
   damageLevel: "",
-  quantity: "1",
   lengthOfWeld: "",
   comments: "",
 };
@@ -236,13 +241,16 @@ export function QuoteGeneratorSheet({
   const [reconstructWorkTypeError, setReconstructWorkTypeError] = useState<string | null>(null);
   const [subTypeErrors, setSubTypeErrors] = useState<Partial<Record<JobType, string>>>({});
   const [rimAvailable, setRimAvailable] = useState<string>("yes");
-  const [needsBuildUp, setNeedsBuildUp] = useState<string>("no");
+
   const [reconstructComments, setReconstructComments] = useState("");
   const [workTypePopupOpen, setWorkTypePopupOpen] = useState(false);
+  const [buildUpInches, setBuildUpInches] = useState("");
+  const [buildUpInchesError, setBuildUpInchesError] = useState<string | null>(null);
 
   const [rimSelects, setRimSelects] = useState({
     rimSize: "",
-    rimType: "",
+    vehicleType: "",
+    material: "",
     damageLevel: "",
   });
 
@@ -277,31 +285,41 @@ export function QuoteGeneratorSheet({
       const selectedJobs = RIM_JOB_TYPES.filter((j) => checkedJobs[j.value]);
 
       if (checkedJobs["reconstruct"] && reconstructWorkTypes.length === 0) {
-        setReconstructWorkTypeError("Select at least one type of work");
+        setReconstructWorkTypeError("Select a type of work");
         return;
       }
 
       const newSubTypeErrors: Partial<Record<JobType, string>> = {};
+      let hasInchesError = false;
       for (const j of selectedJobs) {
         if (j.hasSubType && !jobSubTypes[j.value]) {
           newSubTypeErrors[j.value] = `${j.subTypeLabel?.replace(":", "") ?? "Option"} is required`;
         }
+        if (j.hasInchesInput && !buildUpInches.trim()) {
+          setBuildUpInchesError("Inches is required");
+          hasInchesError = true;
+        }
       }
-      if (Object.keys(newSubTypeErrors).length > 0) {
+      if (Object.keys(newSubTypeErrors).length > 0 || hasInchesError) {
         setSubTypeErrors(newSubTypeErrors);
         return;
       }
       setSubTypeErrors({});
+      setBuildUpInchesError(null);
       const jobTypes: JobTypeEntry[] = selectedJobs.map((j) => {
         const entry: JobTypeEntry = { type: j.value };
 
         if (j.value === "reconstruct") {
           entry.workTypes = reconstructWorkTypes;
           entry.rimAvailable = rimAvailable === "yes";
-          entry.needsBuildUp = needsBuildUp === "yes";
+
           entry.comments = reconstructComments || undefined;
         } else if (j.hasSubType) {
           entry.subType = jobSubTypes[j.value];
+        }
+
+        if (j.hasInchesInput && buildUpInches.trim()) {
+          entry.input = buildUpInches.trim();
         }
 
         return entry;
@@ -309,11 +327,13 @@ export function QuoteGeneratorSheet({
 
       const description = [
         `${value.rimSize}" Rims`,
-        `Rim Type: ${value.rimType}`,
+        `Vehicle: ${value.vehicleType} - ${value.material}`,
         `Damage: ${value.damageLevel.toUpperCase()}`,
         ...selectedJobs.map((j) => {
           if (j.hasSubType && jobSubTypes[j.value]) {
-            return `${j.label}: ${jobSubTypes[j.value]}`;
+            const inches =
+              j.hasInchesInput && buildUpInches.trim() ? ` (${buildUpInches.trim()}")` : "";
+            return `${j.label}: ${jobSubTypes[j.value]}${inches}`;
           }
           return j.label;
         }),
@@ -329,7 +349,7 @@ export function QuoteGeneratorSheet({
 
       const data: QuoteGeneratorSheetData = {
         vehicleSize: value.rimSize,
-        sideOfVehicle: value.rimType,
+        sideOfVehicle: `${value.vehicleType} - ${value.material}`,
         damageLevel: value.damageLevel,
         quantity: 1,
         unitCost,
@@ -353,7 +373,6 @@ export function QuoteGeneratorSheet({
     defaultValues: WELDING_DEFAULTS,
     onSubmit: ({ value }) => {
       const inches = parseInt(value.lengthOfWeld, 10);
-      const qty = parseInt(value.quantity, 10);
       const desc = [
         `Welding: ${value.materialType}`,
         `Damage: ${value.damageLevel.toUpperCase()}`,
@@ -367,7 +386,7 @@ export function QuoteGeneratorSheet({
         vehicleSize: null,
         sideOfVehicle: value.materialType,
         damageLevel: value.damageLevel,
-        quantity: qty,
+        quantity: 1,
         unitCost: editItem?.unitCost ?? 0,
         inches,
         itemType: "welding",
@@ -464,7 +483,6 @@ export function QuoteGeneratorSheet({
       weldingForm.reset({
         materialType: mt,
         damageLevel: dl,
-        quantity: String(editItem.quantity),
         lengthOfWeld: String(editItem.inches ?? ""),
         comments: "",
       });
@@ -494,11 +512,15 @@ export function QuoteGeneratorSheet({
     } else {
       setTab("rims");
       const rs = editItem.vehicleSize ?? "";
-      const rt = editItem.sideOfVehicle ?? "";
       const dl = editItem.damageLevel ?? "";
-      setRimSelects({ rimSize: rs, rimType: rt, damageLevel: dl });
+      const sov = editItem.sideOfVehicle ?? "";
+      const parts = sov.split(" - ");
+      const vt = parts[0] ?? "";
+      const mat = parts[1] ?? "";
+      setRimSelects({ rimSize: rs, vehicleType: vt, material: mat, damageLevel: dl });
       rimForm.setFieldValue("rimSize", rs);
-      rimForm.setFieldValue("rimType", rt);
+      rimForm.setFieldValue("vehicleType", vt);
+      rimForm.setFieldValue("material", mat);
       rimForm.setFieldValue("damageLevel", dl);
     }
 
@@ -510,8 +532,11 @@ export function QuoteGeneratorSheet({
       if (jt.type === "reconstruct") {
         setReconstructWorkTypes(jt.workTypes ?? []);
         setRimAvailable(jt.rimAvailable === false ? "no" : "yes");
-        setNeedsBuildUp(jt.needsBuildUp ? "yes" : "no");
+
         setReconstructComments(jt.comments ?? "");
+      }
+      if (jt.type === "build-up" && jt.input) {
+        setBuildUpInches(jt.input);
       }
     }
     setCheckedJobs(checked);
@@ -521,7 +546,12 @@ export function QuoteGeneratorSheet({
   }, [editItem?.id]);
 
   function toggleJob(type: JobType, checked: boolean) {
-    setCheckedJobs((prev) => ({ ...prev, [type]: checked }));
+    setCheckedJobs((prev) => {
+      const next = { ...prev, [type]: checked };
+      if (checked && type === "straighten") next["twist"] = false;
+      if (checked && type === "twist") next["straighten"] = false;
+      return next;
+    });
     if (checked) setJobTypeError(null);
   }
 
@@ -538,10 +568,12 @@ export function QuoteGeneratorSheet({
     setReconstructWorkTypeError(null);
     setSubTypeErrors({});
     setRimAvailable("yes");
-    setNeedsBuildUp("no");
+
     setReconstructComments("");
     setWorkTypePopupOpen(false);
-    setRimSelects({ rimSize: "", rimType: "", damageLevel: "" });
+    setBuildUpInches("");
+    setBuildUpInchesError(null);
+    setRimSelects({ rimSize: "", vehicleType: "", material: "", damageLevel: "" });
     setWeldingSelects({ materialType: "", damageLevel: "" });
     setPcSelects({ rimSize: "", colorCoat: "" });
     setGeneralSelects({ vehicleSize: "", tireSize: "" });
@@ -665,26 +697,34 @@ export function QuoteGeneratorSheet({
                       </div>
                     )}
                   </rimForm.Field>
-                  <rimForm.Field name="rimType">
+                  <rimForm.Field name="vehicleType">
                     {(field) => (
                       <div className="flex flex-1 flex-col gap-1">
                         <label className="font-rubik text-xs leading-3.5 text-label">
-                          Rim Type:
+                          Vehicle Type:
                         </label>
                         <Select
-                          value={rimSelects.rimType || null}
+                          value={rimSelects.vehicleType || null}
                           onValueChange={(v) => {
                             const val = v as string;
-                            setRimSelects((prev) => ({ ...prev, rimType: val }));
+                            setRimSelects((prev) => ({ ...prev, vehicleType: val }));
                             field.handleChange(val);
+                            if (val === "Motorcycle") {
+                              setRimSelects((prev) => ({ ...prev, material: "Aluminum" }));
+                              rimForm.setFieldValue("material", "Aluminum");
+                            } else {
+                              setRimSelects((prev) => ({ ...prev, material: "" }));
+                              rimForm.setFieldValue("material", "");
+                            }
                           }}
                         >
                           <SelectTrigger error={field.state.meta.errors.length > 0}>
-                            <SelectValue placeholder="Select type" />
+                            <SelectValue placeholder="Select vehicle" />
                           </SelectTrigger>
                           <SelectPopup>
-                            <SelectOption value="Factory">Factory</SelectOption>
-                            <SelectOption value="Aftermarket">Aftermarket</SelectOption>
+                            <SelectOption value="Truck">Truck</SelectOption>
+                            <SelectOption value="Car/SUV">Car/SUV</SelectOption>
+                            <SelectOption value="Motorcycle">Motorcycle</SelectOption>
                           </SelectPopup>
                         </Select>
                         {field.state.meta.errors.length > 0 && (
@@ -696,6 +736,49 @@ export function QuoteGeneratorSheet({
                     )}
                   </rimForm.Field>
                 </div>
+
+                <rimForm.Field name="material">
+                  {(field) => (
+                    <div className="flex flex-col gap-1">
+                      <label className="font-rubik text-xs leading-3.5 text-label">Material:</label>
+                      <RadioGroup
+                        value={rimSelects.material}
+                        onValueChange={(v) => {
+                          const val = v as string;
+                          setRimSelects((prev) => ({ ...prev, material: val }));
+                          field.handleChange(val);
+                        }}
+                        className="flex gap-4"
+                        disabled={rimSelects.vehicleType === "Motorcycle"}
+                      >
+                        <label className="flex cursor-pointer items-center gap-2">
+                          <Radio.Root
+                            value="Steel"
+                            className="flex size-5 items-center justify-center rounded-full border-[1.2px] border-[#cdcfd1] bg-white data-checked:border-blue"
+                            disabled={rimSelects.vehicleType === "Motorcycle"}
+                          >
+                            <Radio.Indicator className="size-2.5 rounded-full bg-blue" />
+                          </Radio.Root>
+                          <span className="font-rubik text-sm text-body">Steel</span>
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-2">
+                          <Radio.Root
+                            value="Aluminum"
+                            className="flex size-5 items-center justify-center rounded-full border-[1.2px] border-[#cdcfd1] bg-white data-checked:border-blue"
+                          >
+                            <Radio.Indicator className="size-2.5 rounded-full bg-blue" />
+                          </Radio.Root>
+                          <span className="font-rubik text-sm text-body">Aluminum</span>
+                        </label>
+                      </RadioGroup>
+                      {field.state.meta.errors.length > 0 && (
+                        <p className="font-rubik text-xs text-red">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </rimForm.Field>
 
                 <rimForm.Field name="damageLevel">
                   {(field) => (
@@ -778,7 +861,7 @@ export function QuoteGeneratorSheet({
                               {job.label}
                             </span>
                           </div>
-                          {job.hasSubType && isChecked && (
+                          {job.hasSubType && isChecked && !job.hasInchesInput && (
                             <div className="flex w-40 flex-col gap-1">
                               <label className="font-rubik text-xs leading-3.5 text-label">
                                 {job.subTypeLabel}
@@ -817,6 +900,75 @@ export function QuoteGeneratorSheet({
                           )}
                         </div>
 
+                        {/* Build Up expanded panel */}
+                        {job.hasInchesInput && isChecked && (
+                          <div className="flex flex-col gap-3 bg-page px-3 py-2">
+                            <div className="flex gap-3">
+                              <div className="flex flex-1 flex-col gap-1">
+                                <label className="font-rubik text-xs leading-3.5 text-label">
+                                  {job.subTypeLabel}
+                                </label>
+                                <Select
+                                  value={jobSubTypes[job.value] ?? null}
+                                  onValueChange={(v) => {
+                                    setJobSubTypes((prev) => ({
+                                      ...prev,
+                                      [job.value]: v as string,
+                                    }));
+                                    setSubTypeErrors((prev) => {
+                                      const next = { ...prev };
+                                      delete next[job.value];
+                                      return next;
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger error={!!subTypeErrors[job.value]}>
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectPopup>
+                                    {job.subTypeOptions?.map((opt) => (
+                                      <SelectOption key={opt} value={opt}>
+                                        {opt}
+                                      </SelectOption>
+                                    ))}
+                                  </SelectPopup>
+                                </Select>
+                                {subTypeErrors[job.value] && (
+                                  <p className="font-rubik text-xs text-red">
+                                    {subTypeErrors[job.value]}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex flex-1 flex-col gap-1">
+                                <label className="font-rubik text-xs leading-3.5 text-label">
+                                  How many inches?
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  placeholder="Enter inches"
+                                  value={buildUpInches}
+                                  onChange={(e) => {
+                                    setBuildUpInches(e.target.value);
+                                    if (e.target.value.trim()) {
+                                      setBuildUpInchesError(null);
+                                    }
+                                  }}
+                                  className={cn(
+                                    "h-9 rounded-lg border bg-white px-3 font-rubik text-xs text-body outline-none",
+                                    buildUpInchesError ? "border-red/50" : "border-field-line",
+                                  )}
+                                />
+                                {buildUpInchesError && (
+                                  <p className="font-rubik text-xs text-red">
+                                    {buildUpInchesError}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Reconstruct expanded options */}
                         {job.hasExpandedOptions && isChecked && (
                           <div className="flex flex-col gap-4 bg-page px-3 py-2">
@@ -839,7 +991,7 @@ export function QuoteGeneratorSheet({
                                   <div className="flex flex-1 flex-wrap gap-1">
                                     {reconstructWorkTypes.length === 0 && (
                                       <span className="px-1 font-rubik text-xs text-ghost">
-                                        Select work types
+                                        Select work type
                                       </span>
                                     )}
                                     {reconstructWorkTypes.map((wt) => (
@@ -885,11 +1037,10 @@ export function QuoteGeneratorSheet({
                                             key={wt}
                                             type="button"
                                             onClick={() => {
-                                              if (isSelected) {
-                                                removeWorkType(wt);
-                                              } else {
-                                                setReconstructWorkTypes((prev) => [...prev, wt]);
+                                              if (!isSelected) {
+                                                setReconstructWorkTypes([wt]);
                                                 setReconstructWorkTypeError(null);
+                                                setWorkTypePopupOpen(false);
                                               }
                                             }}
                                             className={cn(
@@ -956,41 +1107,6 @@ export function QuoteGeneratorSheet({
                                   </span>
                                 </div>
                               )}
-                            </div>
-
-                            {/* Will rim need build up? */}
-                            <div className="flex flex-col gap-2">
-                              <label className="font-rubik text-xs leading-3.5 text-label">
-                                Will rim need build up?
-                              </label>
-                              <RadioGroup
-                                value={needsBuildUp}
-                                onValueChange={(v) => setNeedsBuildUp(v as string)}
-                                className="flex items-center gap-6"
-                              >
-                                <label className="flex cursor-pointer items-center gap-1.5">
-                                  <Radio.Root
-                                    value="yes"
-                                    className="flex size-4 shrink-0 items-center justify-center rounded-full border border-[#cdcfd1] bg-white transition-colors data-checked:border-blue"
-                                  >
-                                    <Radio.Indicator className="size-2 rounded-full bg-blue" />
-                                  </Radio.Root>
-                                  <span className="font-rubik text-sm leading-[18px] text-body">
-                                    Yes
-                                  </span>
-                                </label>
-                                <label className="flex cursor-pointer items-center gap-1.5">
-                                  <Radio.Root
-                                    value="no"
-                                    className="flex size-4 shrink-0 items-center justify-center rounded-full border border-[#cdcfd1] bg-white transition-colors data-checked:border-blue"
-                                  >
-                                    <Radio.Indicator className="size-2 rounded-full bg-blue" />
-                                  </Radio.Root>
-                                  <span className="font-rubik text-sm leading-[18px] text-body">
-                                    No
-                                  </span>
-                                </label>
-                              </RadioGroup>
                             </div>
 
                             {/* Comments */}
@@ -1128,64 +1244,34 @@ export function QuoteGeneratorSheet({
                   )}
                 </weldingForm.Field>
 
-                <div className="flex gap-3">
-                  <weldingForm.Field name="quantity">
-                    {(field) => (
-                      <div className="flex flex-1 flex-col gap-1">
-                        <label className="font-rubik text-xs leading-3.5 text-label">
-                          Quantity:
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="1"
-                          className={cn(
-                            "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
-                            field.state.meta.errors.length > 0
-                              ? "border-red/50"
-                              : "border-field-line",
-                          )}
-                        />
-                        {field.state.meta.errors.length > 0 && (
-                          <p className="font-rubik text-xs text-red">
-                            {field.state.meta.errors[0]?.message}
-                          </p>
+                <weldingForm.Field name="lengthOfWeld">
+                  {(field) => (
+                    <div className="flex flex-col gap-1">
+                      <label className="font-rubik text-xs leading-3.5 text-label">
+                        Length of weld (in inches):
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        placeholder="Enter length"
+                        className={cn(
+                          "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
+                          field.state.meta.errors.length > 0
+                            ? "border-red/50"
+                            : "border-field-line",
                         )}
-                      </div>
-                    )}
-                  </weldingForm.Field>
-                  <weldingForm.Field name="lengthOfWeld">
-                    {(field) => (
-                      <div className="flex flex-1 flex-col gap-1">
-                        <label className="font-rubik text-xs leading-3.5 text-label">
-                          Length of weld (in inches):
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="Enter length"
-                          className={cn(
-                            "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
-                            field.state.meta.errors.length > 0
-                              ? "border-red/50"
-                              : "border-field-line",
-                          )}
-                        />
-                        {field.state.meta.errors.length > 0 && (
-                          <p className="font-rubik text-xs text-red">
-                            {field.state.meta.errors[0]?.message}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </weldingForm.Field>
-                </div>
+                      />
+                      {field.state.meta.errors.length > 0 && (
+                        <p className="font-rubik text-xs text-red">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </weldingForm.Field>
 
                 <weldingForm.Field name="comments">
                   {(field) => (
