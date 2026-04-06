@@ -123,17 +123,29 @@ const WELDING_MATERIAL_TYPES = ["Aluminium", "Steel", "Stainless Steel", "Cast I
 
 const POWDER_COATING_COLORS = ["Black", "White", "Silver", "Gold", "Red", "Blue", "Grey"];
 
-const GENERAL_SERVICE_TYPES = [
-  { value: "disc-rotor-skimming", label: "Disc Rotor Skimming" },
-  { value: "brake-drum-skimming", label: "Brake Drum Skimming" },
-  { value: "computerized-balancing", label: "Computerized Balancing" },
-  { value: "dismount-mount-tire", label: "Dismount and Mount Tire" },
-  { value: "tire-plug", label: "Tire Plug" },
-  { value: "change-valve", label: "Change of Valve" },
-  { value: "remove-tire", label: "Remove Tire" },
-  { value: "replace-tire", label: "Replace Tire" },
-  { value: "remove-and-repair", label: "Remove and repair" },
+const BRAKE_SERVICE_TYPES = [
+  { value: "disc-rotor-skimming", label: "Disc Rotor Skimming", quantityLabel: "How many pairs?" },
+  { value: "brake-drum-skimming", label: "Brake Drum Skimming", quantityLabel: "How many pairs?" },
 ];
+
+const TIRE_SERVICE_TYPES = [
+  {
+    value: "computerized-balancing",
+    label: "Computerized Balancing",
+    quantityLabel: "How many tires?",
+  },
+  {
+    value: "dismount-mount-tire",
+    label: "Dismount and Mount Tire",
+    quantityLabel: "How many tires?",
+  },
+  { value: "dismount-only", label: "Dismount (Remove) Only", quantityLabel: "How many tires?" },
+  { value: "mount-only", label: "Mount (Replace) Tire Only", quantityLabel: "How many tires?" },
+  { value: "tire-plug", label: "Tire Plug", quantityLabel: "How many plugs?" },
+  { value: "change-valve", label: "Change of Valve", quantityLabel: "How many valves?" },
+];
+
+const GENERAL_SERVICE_TYPES = [...BRAKE_SERVICE_TYPES, ...TIRE_SERVICE_TYPES];
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -159,7 +171,6 @@ const powderCoatingSchema = z.object({
 const generalSchema = z.object({
   vehicleSize: z.string().min(1, "Vehicle size is required"),
   tireSize: z.string().min(1, "Tire size is required"),
-  numberOfTires: z.string().refine((v) => parseInt(v, 10) > 0, "Number of tires is required"),
 });
 
 // ─── FloorCheckbox ────────────────────────────────────────────────────────────
@@ -218,7 +229,7 @@ const WELDING_DEFAULTS = {
   comments: "",
 };
 const POWDER_COATING_DEFAULTS = { rimSize: "", colorCoat: "" };
-const GENERAL_DEFAULTS = { vehicleSize: "", tireSize: "", numberOfTires: "" };
+const GENERAL_DEFAULTS = { vehicleSize: "", tireSize: "" };
 
 export function QuoteGeneratorSheet({
   open,
@@ -265,6 +276,9 @@ export function QuoteGeneratorSheet({
   const [generalSelects, setGeneralSelects] = useState({ vehicleSize: "", tireSize: "" });
   const [checkedServices, setCheckedServices] = useState<Partial<Record<string, boolean>>>({});
   const [serviceTypeError, setServiceTypeError] = useState<string | null>(null);
+  const [generalSubTab, setGeneralSubTab] = useState("tire-service");
+  const [serviceQuantities, setServiceQuantities] = useState<Record<string, string>>({});
+  const [serviceQuantityErrors, setServiceQuantityErrors] = useState<Record<string, string>>({});
 
   const { data: rimServices } = useQuery(
     orpc.floor.services.list.queryOptions({ input: { type: "rim" } }),
@@ -437,21 +451,39 @@ export function QuoteGeneratorSheet({
         setServiceTypeError("Select at least one service type");
         return;
       }
+
+      const qtyErrors: Record<string, string> = {};
+      for (const svc of selectedServices) {
+        const qty = parseInt(serviceQuantities[svc.value] ?? "", 10);
+        if (!qty || qty <= 0) {
+          qtyErrors[svc.value] = `${svc.quantityLabel.replace("?", "")} is required`;
+        }
+      }
+      if (Object.keys(qtyErrors).length > 0) {
+        setServiceQuantityErrors(qtyErrors);
+        return;
+      }
+      setServiceQuantityErrors({});
+
       const desc = [
         `General: ${value.vehicleSize}`,
         `Tire: ${value.tireSize}"`,
-        ...selectedServices.map((s) => s.label),
+        ...selectedServices.map((s) => `${s.label} x${serviceQuantities[s.value]}`),
       ].join(", ");
 
       const data: QuoteGeneratorSheetData = {
         vehicleSize: value.vehicleSize,
         sideOfVehicle: null,
         damageLevel: null,
-        quantity: parseInt(value.numberOfTires, 10),
+        quantity: 1,
         unitCost: editItem?.unitCost ?? 0,
         inches: parseInt(value.tireSize, 10),
         itemType: "general",
-        jobTypes: selectedServices.map((s) => ({ type: "general" as const, subType: s.value })),
+        jobTypes: selectedServices.map((s) => ({
+          type: "general" as const,
+          subType: s.value,
+          input: serviceQuantities[s.value],
+        })),
         description: desc,
       };
 
@@ -495,18 +527,21 @@ export function QuoteGeneratorSheet({
       const vs = editItem.vehicleSize ?? "";
       const ts = String(editItem.inches ?? "");
       setGeneralSelects({ vehicleSize: vs, tireSize: ts });
-      generalForm.reset({
-        vehicleSize: vs,
-        tireSize: ts,
-        numberOfTires: String(editItem.quantity),
-      });
+      generalForm.reset({ vehicleSize: vs, tireSize: ts });
       const svcChecked: Partial<Record<string, boolean>> = {};
+      const svcQuantities: Record<string, string> = {};
       for (const jt of editItem.jobTypes) {
         if (jt.type === "general" && jt.subType) {
           svcChecked[jt.subType] = true;
+          if (jt.input) svcQuantities[jt.subType] = jt.input;
         }
       }
       setCheckedServices(svcChecked);
+      setServiceQuantities(svcQuantities);
+      const hasBrake = BRAKE_SERVICE_TYPES.some((s) => svcChecked[s.value]);
+      const hasTire = TIRE_SERVICE_TYPES.some((s) => svcChecked[s.value]);
+      if (hasBrake && !hasTire) setGeneralSubTab("brake-service");
+      else setGeneralSubTab("tire-service");
     } else {
       setTab("rims");
       const rs = editItem.vehicleSize ?? "";
@@ -577,6 +612,9 @@ export function QuoteGeneratorSheet({
     setGeneralSelects({ vehicleSize: "", tireSize: "" });
     setCheckedServices({});
     setServiceTypeError(null);
+    setGeneralSubTab("tire-service");
+    setServiceQuantities({});
+    setServiceQuantityErrors({});
     onClose();
   }
 
@@ -1473,69 +1511,179 @@ export function QuoteGeneratorSheet({
                   </generalForm.Field>
                 </div>
 
-                {/* Service Type checkboxes */}
-                <div className="flex flex-col gap-1">
+                {/* Service Type sub-tabs */}
+                <div className="flex flex-col gap-5">
                   <p className="px-3 font-rubik text-xs leading-3.5 font-medium text-body">
                     Service Type:
                   </p>
-                  <div className="flex flex-col gap-1">
-                    {GENERAL_SERVICE_TYPES.map((svc) => {
-                      const isChecked = !!checkedServices[svc.value];
-                      return (
-                        <div
-                          key={svc.value}
-                          className={cn(
-                            "flex items-center gap-1.5 px-3 py-2",
-                            isChecked && "bg-page",
-                          )}
-                        >
-                          <FloorCheckbox
-                            checked={isChecked}
-                            onCheckedChange={(c) => {
-                              setCheckedServices((prev) => ({ ...prev, [svc.value]: !!c }));
-                              if (c) setServiceTypeError(null);
-                            }}
-                          />
-                          <span className="font-rubik text-sm leading-[18px] text-body">
-                            {svc.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <Tabs value={generalSubTab} onValueChange={(v) => setGeneralSubTab(String(v))}>
+                    <div className="px-3">
+                      <TabsList className="gap-4 border-0">
+                        <TabsTrigger value="tire-service" className="px-2 whitespace-nowrap">
+                          Tire Service
+                        </TabsTrigger>
+                        <TabsTrigger value="brake-service" className="px-2 whitespace-nowrap">
+                          Brake Service
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
+
+                    <TabsContent value="tire-service">
+                      <div className="flex flex-col gap-1">
+                        {TIRE_SERVICE_TYPES.map((svc) => {
+                          const isChecked = !!checkedServices[svc.value];
+                          return (
+                            <div key={svc.value} className="flex flex-col">
+                              <div
+                                className={cn(
+                                  "flex items-center gap-1.5 px-3 py-2",
+                                  isChecked && "bg-page",
+                                )}
+                              >
+                                <FloorCheckbox
+                                  checked={isChecked}
+                                  onCheckedChange={(c) => {
+                                    setCheckedServices((prev) => ({ ...prev, [svc.value]: !!c }));
+                                    if (c) setServiceTypeError(null);
+                                    if (!c) {
+                                      setServiceQuantities((prev) => {
+                                        const next = { ...prev };
+                                        delete next[svc.value];
+                                        return next;
+                                      });
+                                      setServiceQuantityErrors((prev) => {
+                                        const next = { ...prev };
+                                        delete next[svc.value];
+                                        return next;
+                                      });
+                                    }
+                                  }}
+                                />
+                                <span className="font-rubik text-sm leading-[18px] text-body">
+                                  {svc.label}
+                                </span>
+                              </div>
+                              {isChecked && (
+                                <div className="flex flex-col gap-1 bg-page px-3 pb-2">
+                                  <label className="font-rubik text-xs leading-3.5 text-label">
+                                    {svc.quantityLabel}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={serviceQuantities[svc.value] ?? ""}
+                                    onChange={(e) => {
+                                      setServiceQuantities((prev) => ({
+                                        ...prev,
+                                        [svc.value]: e.target.value,
+                                      }));
+                                      setServiceQuantityErrors((prev) => {
+                                        const next = { ...prev };
+                                        delete next[svc.value];
+                                        return next;
+                                      });
+                                    }}
+                                    placeholder="Enter number"
+                                    className={cn(
+                                      "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
+                                      serviceQuantityErrors[svc.value]
+                                        ? "border-red/50"
+                                        : "border-field-line",
+                                    )}
+                                  />
+                                  {serviceQuantityErrors[svc.value] && (
+                                    <p className="font-rubik text-xs text-red">
+                                      {serviceQuantityErrors[svc.value]}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="brake-service">
+                      <div className="flex flex-col gap-1">
+                        {BRAKE_SERVICE_TYPES.map((svc) => {
+                          const isChecked = !!checkedServices[svc.value];
+                          return (
+                            <div key={svc.value} className="flex flex-col">
+                              <div
+                                className={cn(
+                                  "flex items-center gap-1.5 px-3 py-2",
+                                  isChecked && "bg-page",
+                                )}
+                              >
+                                <FloorCheckbox
+                                  checked={isChecked}
+                                  onCheckedChange={(c) => {
+                                    setCheckedServices((prev) => ({ ...prev, [svc.value]: !!c }));
+                                    if (c) setServiceTypeError(null);
+                                    if (!c) {
+                                      setServiceQuantities((prev) => {
+                                        const next = { ...prev };
+                                        delete next[svc.value];
+                                        return next;
+                                      });
+                                      setServiceQuantityErrors((prev) => {
+                                        const next = { ...prev };
+                                        delete next[svc.value];
+                                        return next;
+                                      });
+                                    }
+                                  }}
+                                />
+                                <span className="font-rubik text-sm leading-[18px] text-body">
+                                  {svc.label}
+                                </span>
+                              </div>
+                              {isChecked && (
+                                <div className="flex flex-col gap-1 bg-page px-3 pb-2">
+                                  <label className="font-rubik text-xs leading-3.5 text-label">
+                                    {svc.quantityLabel}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={serviceQuantities[svc.value] ?? ""}
+                                    onChange={(e) => {
+                                      setServiceQuantities((prev) => ({
+                                        ...prev,
+                                        [svc.value]: e.target.value,
+                                      }));
+                                      setServiceQuantityErrors((prev) => {
+                                        const next = { ...prev };
+                                        delete next[svc.value];
+                                        return next;
+                                      });
+                                    }}
+                                    placeholder="Enter number"
+                                    className={cn(
+                                      "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
+                                      serviceQuantityErrors[svc.value]
+                                        ? "border-red/50"
+                                        : "border-field-line",
+                                    )}
+                                  />
+                                  {serviceQuantityErrors[svc.value] && (
+                                    <p className="font-rubik text-xs text-red">
+                                      {serviceQuantityErrors[svc.value]}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                   {serviceTypeError && (
                     <p className="px-3 font-rubik text-xs text-red">{serviceTypeError}</p>
                   )}
                 </div>
-
-                <generalForm.Field name="numberOfTires">
-                  {(field) => (
-                    <div className="flex flex-col gap-1 px-3">
-                      <label className="font-rubik text-xs leading-3.5 text-label">
-                        No. of Tires:
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Enter number"
-                        className={cn(
-                          "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
-                          field.state.meta.errors.length > 0
-                            ? "border-red/50"
-                            : "border-field-line",
-                        )}
-                      />
-                      {field.state.meta.errors.length > 0 && (
-                        <p className="font-rubik text-xs text-red">
-                          {field.state.meta.errors[0]?.message}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </generalForm.Field>
               </form>
             </TabsContent>
           </Tabs>
