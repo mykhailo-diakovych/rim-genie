@@ -13,11 +13,28 @@ import {
   payment,
   job,
   service,
+  servicePrice,
   serviceTypeEnum,
+  serviceCategoryEnum,
+  quoteVehicleTypeEnum,
+  rimMaterialEnum,
   user,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { and, asc, desc, eq, ilike, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNull,
+  lte,
+  notInArray,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import { adminProcedure, floorManagerProcedure, protectedProcedure, requireRole } from "../index";
 import * as DiscountService from "../services/discount.service";
@@ -70,6 +87,67 @@ export const floorRouter = {
           .from(service)
           .where(eq(service.type, input.type))
           .orderBy(asc(service.name));
+      }),
+  },
+
+  pricing: {
+    lookup: protectedProcedure
+      .input(
+        z.object({
+          category: z.enum(serviceCategoryEnum.enumValues),
+          jobTypes: z.array(z.string().min(1)),
+          vehicleType: z.enum(quoteVehicleTypeEnum.enumValues).optional(),
+          rimMaterial: z.enum(rimMaterialEnum.enumValues).optional(),
+          size: z.number().int().optional(),
+        }),
+      )
+      .handler(async ({ input }) => {
+        const result: Record<string, { unitCost: number; found: boolean }> = {};
+
+        for (const jt of input.jobTypes) {
+          const conditions = [
+            eq(servicePrice.category, input.category),
+            eq(servicePrice.jobType, jt),
+          ];
+
+          if (input.vehicleType) {
+            conditions.push(
+              or(
+                isNull(servicePrice.vehicleType),
+                eq(servicePrice.vehicleType, input.vehicleType),
+              )!,
+            );
+          }
+          if (input.rimMaterial) {
+            conditions.push(
+              or(
+                isNull(servicePrice.rimMaterial),
+                eq(servicePrice.rimMaterial, input.rimMaterial),
+              )!,
+            );
+          }
+          if (input.size != null) {
+            conditions.push(
+              or(isNull(servicePrice.minSize), lte(servicePrice.minSize, input.size))!,
+            );
+            conditions.push(
+              or(isNull(servicePrice.maxSize), gte(servicePrice.maxSize, input.size))!,
+            );
+          }
+
+          const rows = await db
+            .select({ unitCost: servicePrice.unitCost })
+            .from(servicePrice)
+            .where(and(...conditions))
+            .limit(1);
+
+          result[jt] =
+            rows.length > 0
+              ? { unitCost: rows[0]!.unitCost, found: true }
+              : { unitCost: 0, found: false };
+        }
+
+        return result;
       }),
   },
 
@@ -414,6 +492,8 @@ export const floorRouter = {
           vehicleSize: z.string().optional(),
           sideOfVehicle: z.string().optional(),
           damageLevel: z.string().optional(),
+          vehicleType: z.enum(quoteVehicleTypeEnum.enumValues).nullable().optional(),
+          rimMaterial: z.enum(rimMaterialEnum.enumValues).nullable().optional(),
           quantity: z.number().int().min(1).default(1),
           unitCost: z.number().int().min(0).default(0),
           inches: z.number().int().min(1).optional(),
@@ -439,6 +519,8 @@ export const floorRouter = {
             vehicleSize: input.vehicleSize,
             sideOfVehicle: input.sideOfVehicle,
             damageLevel: input.damageLevel,
+            vehicleType: input.vehicleType ?? null,
+            rimMaterial: input.rimMaterial ?? null,
             quantity: input.quantity,
             unitCost: input.unitCost,
             inches: input.inches,
@@ -460,6 +542,8 @@ export const floorRouter = {
           vehicleSize: z.string().optional(),
           sideOfVehicle: z.string().optional(),
           damageLevel: z.string().optional(),
+          vehicleType: z.enum(quoteVehicleTypeEnum.enumValues).nullable().optional(),
+          rimMaterial: z.enum(rimMaterialEnum.enumValues).nullable().optional(),
           quantity: z.number().int().min(1).optional(),
           unitCost: z.number().int().min(0).optional(),
           inches: z.number().int().min(1).nullable().optional(),

@@ -14,7 +14,7 @@ import {
 
 import { user } from "./auth";
 import { invoice } from "./invoice";
-import { service } from "./manage";
+import { service, quoteVehicleTypeEnum, rimMaterialEnum } from "./manage";
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
 
@@ -126,6 +126,8 @@ export const quoteItem = pgTable("quote_item", {
   vehicleSize: text("vehicle_size"),
   sideOfVehicle: text("side_of_vehicle"),
   damageLevel: text("damage_level"),
+  vehicleType: quoteVehicleTypeEnum("vehicle_type"),
+  rimMaterial: rimMaterialEnum("rim_material"),
   quantity: integer("quantity").default(1).notNull(),
   unitCost: integer("unit_cost").default(0).notNull(),
   inches: integer("inches"),

@@ -50,6 +50,13 @@
       "when": 1775477718242,
       "tag": "0006_broad_obadiah_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1775506320956,
+      "tag": "0007_gifted_thunderball",
+      "breakpoints": true
     }
   ]
 }

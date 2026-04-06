@@ -50,6 +50,8 @@ export interface QuoteGeneratorSheetData {
   vehicleSize: string | null;
   sideOfVehicle: string | null;
   damageLevel: string | null;
+  vehicleType?: "truck" | "car_suv" | "motorcycle" | null;
+  rimMaterial?: "steel" | "aluminum" | null;
   quantity: number;
   unitCost: number;
   inches?: number;
@@ -147,6 +149,17 @@ const TIRE_SERVICE_TYPES = [
 ];
 
 const GENERAL_SERVICE_TYPES = [...BRAKE_SERVICE_TYPES, ...TIRE_SERVICE_TYPES];
+
+const VEHICLE_TYPE_MAP: Record<string, "truck" | "car_suv" | "motorcycle"> = {
+  Truck: "truck",
+  "Car/SUV": "car_suv",
+  Motorcycle: "motorcycle",
+};
+
+const MATERIAL_MAP: Record<string, "steel" | "aluminum"> = {
+  Steel: "steel",
+  Aluminum: "aluminum",
+};
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -281,8 +294,48 @@ export function QuoteGeneratorSheet({
   const [serviceQuantities, setServiceQuantities] = useState<Record<string, string>>({});
   const [serviceQuantityErrors, setServiceQuantityErrors] = useState<Record<string, string>>({});
 
-  const { data: rimServices } = useQuery(
-    orpc.floor.services.list.queryOptions({ input: { type: "rim" } }),
+  const mappedVehicleType = VEHICLE_TYPE_MAP[rimSelects.vehicleType];
+  const mappedMaterial = MATERIAL_MAP[rimSelects.material];
+  const rimSize = rimSelects.rimSize ? parseInt(rimSelects.rimSize, 10) : undefined;
+
+  const { data: rimPrices } = useQuery(
+    orpc.floor.pricing.lookup.queryOptions({
+      input: {
+        category: "rim" as const,
+        jobTypes: RIM_JOB_TYPES.map((j) => j.value),
+        vehicleType: mappedVehicleType,
+        rimMaterial: mappedMaterial,
+        size: rimSize,
+      },
+    }),
+  );
+
+  const { data: weldingPrices } = useQuery(
+    orpc.floor.pricing.lookup.queryOptions({
+      input: {
+        category: "welding" as const,
+        jobTypes: ["aluminium", "steel", "stainless-steel", "cast-iron"],
+      },
+    }),
+  );
+
+  const { data: powderCoatingPrices } = useQuery(
+    orpc.floor.pricing.lookup.queryOptions({
+      input: {
+        category: "powder_coating" as const,
+        jobTypes: ["powder-coating"],
+        size: pcSelects.rimSize ? parseInt(pcSelects.rimSize, 10) : undefined,
+      },
+    }),
+  );
+
+  const { data: generalPrices } = useQuery(
+    orpc.floor.pricing.lookup.queryOptions({
+      input: {
+        category: "general" as const,
+        jobTypes: GENERAL_SERVICE_TYPES.map((s) => s.value),
+      },
+    }),
   );
 
   const rimForm = useForm({
@@ -354,16 +407,16 @@ export function QuoteGeneratorSheet({
         .filter(Boolean)
         .join(", ");
 
-      // Calculate unit cost from first matching service, or use 0
-      const matchedService = rimServices?.find((s) =>
-        s.name.toLowerCase().includes(value.damageLevel.toLowerCase()),
-      );
-      const unitCost = matchedService?.unitCost ?? editItem?.unitCost ?? 0;
+      const unitCost = selectedJobs.reduce((sum, j) => {
+        return sum + (rimPrices?.[j.value]?.unitCost ?? 0);
+      }, 0);
 
       const data: QuoteGeneratorSheetData = {
         vehicleSize: value.rimSize,
         sideOfVehicle: `${value.vehicleType} - ${value.material}`,
         damageLevel: value.damageLevel,
+        vehicleType: VEHICLE_TYPE_MAP[value.vehicleType] ?? null,
+        rimMaterial: MATERIAL_MAP[value.material] ?? null,
         quantity: 1,
         unitCost,
         itemType: "rim",
@@ -395,12 +448,15 @@ export function QuoteGeneratorSheet({
         .filter(Boolean)
         .join(", ");
 
+      const weldingJobType = value.materialType.toLowerCase().replace(/\s+/g, "-");
+      const weldingUnitCost = weldingPrices?.[weldingJobType]?.unitCost ?? editItem?.unitCost ?? 0;
+
       const data: QuoteGeneratorSheetData = {
         vehicleSize: null,
         sideOfVehicle: value.materialType,
         damageLevel: value.damageLevel,
         quantity: 1,
-        unitCost: editItem?.unitCost ?? 0,
+        unitCost: weldingUnitCost,
         inches,
         itemType: "welding",
         jobTypes: [{ type: "welding", subType: value.materialType }],
@@ -422,12 +478,14 @@ export function QuoteGeneratorSheet({
     defaultValues: POWDER_COATING_DEFAULTS,
     onSubmit: ({ value }) => {
       const desc = `Powder Coating: ${value.rimSize}" Rim, Color: ${value.colorCoat}`;
+      const pcUnitCost =
+        powderCoatingPrices?.["powder-coating"]?.unitCost ?? editItem?.unitCost ?? 0;
       const data: QuoteGeneratorSheetData = {
         vehicleSize: value.rimSize,
         sideOfVehicle: value.colorCoat,
         damageLevel: null,
         quantity: 1,
-        unitCost: editItem?.unitCost ?? 0,
+        unitCost: pcUnitCost,
         itemType: "powder-coating",
         jobTypes: [{ type: "powder-coating", subType: value.colorCoat }],
         description: desc,
@@ -472,12 +530,18 @@ export function QuoteGeneratorSheet({
         ...selectedServices.map((s) => `${s.label} x${serviceQuantities[s.value]}`),
       ].join(", ");
 
+      const generalUnitCost = selectedServices.reduce((sum, s) => {
+        const qty = parseInt(serviceQuantities[s.value] ?? "1", 10);
+        const price = generalPrices?.[s.value]?.unitCost ?? 0;
+        return sum + price * qty;
+      }, 0);
+
       const data: QuoteGeneratorSheetData = {
         vehicleSize: value.vehicleSize,
         sideOfVehicle: null,
         damageLevel: null,
         quantity: 1,
-        unitCost: editItem?.unitCost ?? 0,
+        unitCost: generalUnitCost,
         inches: parseInt(value.tireSize, 10),
         itemType: "general",
         jobTypes: selectedServices.map((s) => ({
@@ -897,6 +961,18 @@ export function QuoteGeneratorSheet({
                             <span className="font-rubik text-sm leading-[18px] text-body">
                               {job.label}
                             </span>
+                            {rimPrices?.[job.value]?.found ? (
+                              <span className="ml-auto font-rubik text-xs text-label">
+                                $
+                                {(rimPrices[job.value]!.unitCost / 100).toLocaleString("en-US", {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </span>
+                            ) : mappedVehicleType && mappedMaterial && rimSize ? (
+                              <span className="ml-auto font-rubik text-xs text-red">
+                                No price set
+                              </span>
+                            ) : null}
                           </div>
                           {job.hasSubType && isChecked && !job.hasInchesInput && (
                             <div className="flex w-40 flex-col gap-1">
@@ -1563,6 +1639,20 @@ export function QuoteGeneratorSheet({
                                 <span className="font-rubik text-sm leading-[18px] text-body">
                                   {svc.label}
                                 </span>
+                                {generalPrices?.[svc.value]?.found ? (
+                                  <span className="ml-auto font-rubik text-xs text-label">
+                                    $
+                                    {(generalPrices[svc.value]!.unitCost / 100).toLocaleString(
+                                      "en-US",
+                                      { minimumFractionDigits: 2 },
+                                    )}
+                                    /ea
+                                  </span>
+                                ) : (
+                                  <span className="ml-auto font-rubik text-xs text-red">
+                                    No price set
+                                  </span>
+                                )}
                               </div>
                               {isChecked && (
                                 <div className="flex flex-col gap-1 bg-page px-3 pb-2">
@@ -1639,6 +1729,20 @@ export function QuoteGeneratorSheet({
                                 <span className="font-rubik text-sm leading-[18px] text-body">
                                   {svc.label}
                                 </span>
+                                {generalPrices?.[svc.value]?.found ? (
+                                  <span className="ml-auto font-rubik text-xs text-label">
+                                    $
+                                    {(generalPrices[svc.value]!.unitCost / 100).toLocaleString(
+                                      "en-US",
+                                      { minimumFractionDigits: 2 },
+                                    )}
+                                    /ea
+                                  </span>
+                                ) : (
+                                  <span className="ml-auto font-rubik text-xs text-red">
+                                    No price set
+                                  </span>
+                                )}
                               </div>
                               {isChecked && (
                                 <div className="flex flex-col gap-1 bg-page px-3 pb-2">
@@ -1695,7 +1799,39 @@ export function QuoteGeneratorSheet({
           <div className="flex items-center gap-2 font-rubik text-sm leading-[18px]">
             <span className="text-label">Total amount:</span>
             <span className="font-medium text-body">
-              ${((editItem?.unitCost ?? 0) / 100).toFixed(0) || "0"}
+              $
+              {(() => {
+                if (tab === "rims") {
+                  const selectedJobs = RIM_JOB_TYPES.filter((j) => checkedJobs[j.value]);
+                  const total = selectedJobs.reduce(
+                    (sum, j) => sum + (rimPrices?.[j.value]?.unitCost ?? 0),
+                    0,
+                  );
+                  return (total / 100).toLocaleString("en-US", { minimumFractionDigits: 2 });
+                }
+                if (tab === "general") {
+                  const selectedServices = GENERAL_SERVICE_TYPES.filter(
+                    (s) => checkedServices[s.value],
+                  );
+                  const total = selectedServices.reduce((sum, s) => {
+                    const qty = parseInt(serviceQuantities[s.value] ?? "1", 10) || 1;
+                    return sum + (generalPrices?.[s.value]?.unitCost ?? 0) * qty;
+                  }, 0);
+                  return (total / 100).toLocaleString("en-US", { minimumFractionDigits: 2 });
+                }
+                if (tab === "welding") {
+                  const wjt = weldingSelects.materialType.toLowerCase().replace(/\s+/g, "-");
+                  return ((weldingPrices?.[wjt]?.unitCost ?? 0) / 100).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  });
+                }
+                if (tab === "powder-coating") {
+                  return (
+                    (powderCoatingPrices?.["powder-coating"]?.unitCost ?? 0) / 100
+                  ).toLocaleString("en-US", { minimumFractionDigits: 2 });
+                }
+                return ((editItem?.unitCost ?? 0) / 100).toFixed(2);
+              })()}
             </span>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { ServiceType } from "@rim-genie/db/schema";
 
 import { DeleteServiceModal } from "@/components/manage/delete-service-modal";
+import { PricingTab } from "@/components/manage/pricing-tab";
 import { ServiceModal } from "@/components/manage/service-modal";
 import { ServiceTable, ServiceTableSkeleton } from "@/components/manage/service-table";
 import type { ServiceRow } from "@/components/manage/service-table";
@@ -18,11 +19,13 @@ import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
 
-type ManageTab = ServiceType | "loyalty" | "locations";
+type ManageTab = ServiceType | "pricing" | "loyalty" | "locations";
 
 export const Route = createFileRoute("/_app/manage")({
   validateSearch: (search: Record<string, unknown>): { tab: ManageTab } => ({
-    tab: (["rim", "general", "loyalty", "locations"] as const).includes(search.tab as ManageTab)
+    tab: (["rim", "general", "pricing", "loyalty", "locations"] as const).includes(
+      search.tab as ManageTab,
+    )
       ? (search.tab as ManageTab)
       : "rim",
   }),
@@ -486,6 +489,7 @@ function ManagePage() {
               {tab.label()}
             </TabsTrigger>
           ))}
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="loyalty">{m.loyalty_tab()}</TabsTrigger>
           <TabsTrigger value="locations">Locations</TabsTrigger>
         </TabsList>
@@ -499,6 +503,10 @@ function ManagePage() {
             />
           </TabsContent>
         ))}
+
+        <TabsContent value="pricing" className="pt-3">
+          <PricingTab />
+        </TabsContent>
 
         <TabsContent value="loyalty" className="pt-3">
           <LoyaltyTab />

@@ -14,6 +14,7 @@ import {
 import type { JobTypeEntry } from "./floor";
 import { customer, quote } from "./floor";
 import { user } from "./auth";
+import { quoteVehicleTypeEnum, rimMaterialEnum } from "./manage";
 import { job } from "./job";
 
 export const invoiceStatusEnum = pgEnum("invoice_status", ["unpaid", "partially_paid", "paid"]);
@@ -79,6 +80,8 @@ export const invoiceItem = pgTable(
     vehicleSize: text("vehicle_size"),
     sideOfVehicle: text("side_of_vehicle"),
     damageLevel: text("damage_level"),
+    vehicleType: quoteVehicleTypeEnum("vehicle_type"),
+    rimMaterial: rimMaterialEnum("rim_material"),
     quantity: integer("quantity").default(1).notNull(),
     unitCost: integer("unit_cost").default(0).notNull(),
     inches: integer("inches"),
