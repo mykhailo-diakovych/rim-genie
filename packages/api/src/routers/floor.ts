@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 
 import { db } from "@rim-genie/db";
@@ -49,6 +50,7 @@ import {
   QuoteNotFound,
 } from "../services/errors";
 import { runEffect } from "../services/run-effect";
+import { computeItemPrice } from "../services/pricing.service";
 import { recalcQuoteTotal } from "../services/quote.service";
 import { getQuotePdf } from "../pdf/get-quote-pdf";
 import { createQuoteEmail } from "../emails/quote-email";
@@ -511,6 +513,16 @@ export const floorRouter = {
 
         const sortOrder = (existing[0]?.sortOrder ?? -1) + 1;
 
+        const computedPrice = await computeItemPrice({
+          itemType: input.itemType,
+          jobTypes: input.jobTypes,
+          vehicleType: input.vehicleType,
+          rimMaterial: input.rimMaterial,
+          vehicleSize: input.vehicleSize,
+          inches: input.inches,
+        });
+        const unitCost = computedPrice > 0 ? computedPrice : input.unitCost;
+
         const rows = await db
           .insert(quoteItem)
           .values({
@@ -522,7 +534,7 @@ export const floorRouter = {
             vehicleType: input.vehicleType ?? null,
             rimMaterial: input.rimMaterial ?? null,
             quantity: input.quantity,
-            unitCost: input.unitCost,
+            unitCost,
             inches: input.inches,
             jobTypes: input.jobTypes as JobTypeEntry[],
             description: input.description,
@@ -555,21 +567,43 @@ export const floorRouter = {
       .handler(async ({ input }) => {
         const { id, ...fields } = input;
 
-        const existing = await db
-          .select({ quoteId: quoteItem.quoteId })
-          .from(quoteItem)
-          .where(eq(quoteItem.id, id));
+        const existing = await db.select().from(quoteItem).where(eq(quoteItem.id, id));
+
+        const current = existing[0];
+        if (!current) {
+          throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
+        }
+
+        const mergedItemType = fields.itemType ?? current.itemType;
+        const mergedJobTypes = fields.jobTypes ?? current.jobTypes;
+        const mergedVehicleType =
+          fields.vehicleType !== undefined ? fields.vehicleType : current.vehicleType;
+        const mergedRimMaterial =
+          fields.rimMaterial !== undefined ? fields.rimMaterial : current.rimMaterial;
+        const mergedVehicleSize = fields.vehicleSize ?? current.vehicleSize;
+        const mergedInches = fields.inches !== undefined ? fields.inches : current.inches;
+
+        const computedPrice = await computeItemPrice({
+          itemType: mergedItemType,
+          jobTypes: mergedJobTypes as { type: string; subType?: string; input?: string }[],
+          vehicleType: mergedVehicleType,
+          rimMaterial: mergedRimMaterial,
+          vehicleSize: mergedVehicleSize,
+          inches: mergedInches,
+        });
+
+        const updateFields = { ...fields } as Partial<typeof quoteItem.$inferInsert>;
+        if (computedPrice > 0) {
+          updateFields.unitCost = computedPrice;
+        }
 
         const rows = await db
           .update(quoteItem)
-          .set(fields as Partial<typeof quoteItem.$inferInsert>)
+          .set(updateFields)
           .where(eq(quoteItem.id, id))
           .returning();
 
-        const qId = existing[0]?.quoteId;
-        if (qId) {
-          await recalcQuoteTotal(qId);
-        }
+        await recalcQuoteTotal(current.quoteId);
 
         return rows[0]!;
       }),

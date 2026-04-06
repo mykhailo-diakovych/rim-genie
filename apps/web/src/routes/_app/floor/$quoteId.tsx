@@ -406,9 +406,6 @@ function QuoteEditorPage() {
                               setEditingItem(item);
                               setSheetOpen(true);
                             }}
-                            onUnitCostChange={(cents) =>
-                              updateItem.mutate({ id: item.id, unitCost: cents })
-                            }
                             isRemoving={
                               removeItem.isPending && removeItem.variables?.id === item.id
                             }
@@ -964,7 +961,6 @@ function ItemRow({
   index,
   onRemove,
   onEdit,
-  onUnitCostChange,
   isRemoving,
   isReadOnly,
 }: {
@@ -979,22 +975,9 @@ function ItemRow({
   index: number;
   onRemove: () => void;
   onEdit: () => void;
-  onUnitCostChange: (cents: number) => void;
   isRemoving: boolean;
   isReadOnly?: boolean;
 }) {
-  const [costStr, setCostStr] = useState((item.unitCost / 100).toFixed(2));
-
-  function handleBlur() {
-    const val = parseFloat(costStr);
-    if (!isNaN(val) && val >= 0) {
-      const cents = Math.round(val * 100);
-      onUnitCostChange(cents);
-    } else {
-      setCostStr((item.unitCost / 100).toFixed(2));
-    }
-  }
-
   const rowTotal = item.inches
     ? (item.inches * item.unitCost) / 100
     : (item.quantity * item.unitCost) / 100;
@@ -1014,18 +997,8 @@ function ItemRow({
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
         {item.inches ? `${item.inches}"` : item.quantity}
       </td>
-      <td className="border-l border-field-line px-2 py-2">
-        <div className="flex items-center gap-0.5">
-          <span className="text-sm text-ghost">$</span>
-          <input
-            type="text"
-            value={costStr}
-            onChange={(e) => setCostStr(e.target.value)}
-            onBlur={handleBlur}
-            disabled={isReadOnly}
-            className="w-16 rounded-sm border border-transparent bg-transparent px-1 py-0.5 font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line disabled:cursor-not-allowed"
-          />
-        </div>
+      <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+        ${(item.unitCost / 100).toFixed(2)}
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
         ${rowTotal.toFixed(2)}
