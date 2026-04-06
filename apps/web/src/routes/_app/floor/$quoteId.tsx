@@ -363,7 +363,7 @@ function QuoteEditorPage() {
                             <td className="border-l border-field-line px-2 py-2">
                               <div className="flex flex-col gap-2">
                                 <span className="text-sm leading-[18px] text-body">
-                                  Full Diagnostic Consent
+                                  Full Diagnostic Service
                                 </span>
                                 <div className="flex gap-1 text-sm leading-[18px]">
                                   <span className="text-label">Comments:</span>

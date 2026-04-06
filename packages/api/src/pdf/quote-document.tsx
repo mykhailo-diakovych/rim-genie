@@ -342,7 +342,7 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
           <View style={styles.tableRow}>
             <Text style={[styles.cell, styles.colNum]}>1</Text>
             <View style={styles.colDesc}>
-              <Text style={styles.cell}>Full Diagnostic Consent</Text>
+              <Text style={styles.cell}>Full Diagnostic Service</Text>
               <Text style={styles.itemComments}>
                 Comments: {data.fullDiagnosticConsent ? "Agree" : "Disagree"}
               </Text>

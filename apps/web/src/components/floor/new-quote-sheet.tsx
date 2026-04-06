@@ -235,7 +235,7 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
           {/* Full Diagnostic Consent */}
           <div className="flex flex-col gap-2">
             <label className="font-rubik text-xs leading-3.5 text-label">
-              Full Diagnostic Consent:
+              Full Diagnostic Service:
             </label>
             <RadioGroup
               value={fullDiagnosticConsent ? "agree" : "disagree"}
