@@ -384,7 +384,7 @@ export const floorRouter = {
         return rows[0]!;
       }),
 
-    delete: floorManagerProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+    delete: adminProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       const existing = await db.query.quote.findFirst({
         where: eq(quote.id, input.id),
         with: { invoice: true },

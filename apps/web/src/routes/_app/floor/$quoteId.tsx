@@ -220,6 +220,7 @@ function QuoteEditorPage() {
               customerPhone={quote?.customer?.phone}
               onDelete={() => setShowDeleteConfirm(true)}
               isDeleting={deleteQuote.isPending}
+              isAdmin={isAdmin}
             />
           </div>
         </div>
@@ -853,12 +854,14 @@ function MoreDropdown({
   customerPhone,
   onDelete,
   isDeleting,
+  isAdmin,
 }: {
   quoteId: string;
   customerEmail?: string | null;
   customerPhone?: string | null;
   onDelete: () => void;
   isDeleting: boolean;
+  isAdmin: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -927,19 +930,23 @@ function MoreDropdown({
             <Send className="size-4 text-blue" />
             Send (Email/SMS)
           </button>
-          <div className="h-px bg-field-line" />
-          <button
-            type="button"
-            disabled={isDeleting}
-            onClick={() => {
-              setOpen(false);
-              onDelete();
-            }}
-            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-destructive transition-colors hover:bg-page disabled:opacity-50"
-          >
-            <Trash2 className="size-4" />
-            Delete
-          </button>
+          {isAdmin && (
+            <>
+              <div className="h-px bg-field-line" />
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => {
+                  setOpen(false);
+                  onDelete();
+                }}
+                className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-destructive transition-colors hover:bg-page disabled:opacity-50"
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

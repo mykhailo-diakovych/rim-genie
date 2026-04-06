@@ -14,6 +14,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { authClient } from "@/lib/auth-client";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/floor/")({
@@ -59,11 +60,13 @@ function QuoteCard({
   quoteId,
   onDelete,
   isDeleting,
+  isAdmin,
 }: {
   quote: QuoteListItem;
   quoteId: string;
   onDelete: () => void;
   isDeleting: boolean;
+  isAdmin: boolean;
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:min-h-16 sm:flex-row sm:items-center sm:justify-between">
@@ -103,16 +106,18 @@ function QuoteCard({
           <Printer />
           Print
         </Button>
-        <Button
-          className="w-18 gap-1.5 px-2"
-          variant="outline"
-          color="destructive"
-          onClick={onDelete}
-          disabled={isDeleting}
-        >
-          <Trash2 />
-          Delete
-        </Button>
+        {isAdmin && (
+          <Button
+            className="w-18 gap-1.5 px-2"
+            variant="outline"
+            color="destructive"
+            onClick={onDelete}
+            disabled={isDeleting}
+          >
+            <Trash2 />
+            Delete
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -122,6 +127,8 @@ function QuoteCard({
 
 function FloorPage() {
   const queryClient = useQueryClient();
+  const { data: session } = authClient.useSession();
+  const isAdmin = session?.user?.role === "admin";
   const [search, setSearch] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showNewQuote, setShowNewQuote] = useState(false);
@@ -190,6 +197,7 @@ function FloorPage() {
               quoteId={quote.id}
               onDelete={() => setDeleteConfirm(quote.id)}
               isDeleting={false}
+              isAdmin={isAdmin}
             />
           ))
         )}
