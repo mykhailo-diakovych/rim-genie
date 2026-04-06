@@ -127,8 +127,6 @@ const GENERAL_SERVICE_TYPES = [
   { value: "disc-rotor-skimming", label: "Disc Rotor Skimming" },
   { value: "brake-drum-skimming", label: "Brake Drum Skimming" },
   { value: "computerized-balancing", label: "Computerized Balancing" },
-  { value: "polishing", label: "Spot Polishing" },
-  { value: "filing", label: "Filing" },
   { value: "dismount-mount-tire", label: "Dismount and Mount Tire" },
   { value: "tire-plug", label: "Tire Plug" },
   { value: "change-valve", label: "Change of Valve" },
