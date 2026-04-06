@@ -54,7 +54,7 @@ const baseFieldsSchema = z.object({
 const createEmployeeSchema = baseFieldsSchema.extend({
   pin: z
     .string()
-    .length(6, m.validation_pin_six_digits())
+    .length(4, m.validation_pin_six_digits())
     .regex(/^\d+$/, m.validation_pin_six_digits()),
 });
 

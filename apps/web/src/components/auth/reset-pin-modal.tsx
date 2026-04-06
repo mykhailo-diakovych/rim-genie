@@ -23,7 +23,7 @@ import type { DialogTriggerProps } from "@base-ui/react";
 
 const pinField = z
   .string()
-  .length(6, m.validation_pin_six_digits())
+  .length(4, m.validation_pin_six_digits())
   .regex(/^\d+$/, m.validation_pin_six_digits());
 
 interface ResetPinModalProps {

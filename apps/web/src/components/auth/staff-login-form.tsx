@@ -17,7 +17,6 @@ import {
   SelectOption,
   SelectPopup,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
@@ -100,9 +99,17 @@ export function StaffLoginForm() {
             <Label>Location</Label>
             <Select value={locationId} onValueChange={(v) => setLocationId(v ?? "")}>
               <SelectTrigger>
-                <div className="flex items-center gap-2">
-                  <MapPin className="size-4 text-ghost" />
-                  <SelectValue placeholder="Select location" />
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <MapPin className="size-4 shrink-0 text-ghost" />
+                  <span className="min-w-0 truncate text-left">
+                    {locationId ? (
+                      <span className="text-body">
+                        {locations?.find((l) => l.id === locationId)?.name ?? "—"}
+                      </span>
+                    ) : (
+                      <span className="text-ghost">Select location</span>
+                    )}
+                  </span>
                 </div>
               </SelectTrigger>
               <SelectPopup>
@@ -122,7 +129,7 @@ export function StaffLoginForm() {
           <Button
             type="submit"
             fullWidth
-            disabled={!state.canSubmit || state.isSubmitting || pin.length !== 6}
+            disabled={!state.canSubmit || state.isSubmitting || pin.length !== 4}
           >
             {state.isSubmitting ? m.btn_logging_in() : m.btn_login()}
           </Button>

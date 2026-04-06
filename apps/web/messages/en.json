@@ -21,7 +21,7 @@
   "validation_invalid_email": "Invalid email address",
   "validation_password_required": "Password is required",
   "validation_employee_id_required": "Employee ID is required",
-  "validation_pin_six_digits": "The PIN must contain 6 digits",
+  "validation_pin_six_digits": "The PIN must contain 4 digits",
   "validation_pin_invalid": "Invalid PIN",
   "validation_pins_mismatch": "PINs do not match",
   "toast_signed_in": "Signed in successfully",

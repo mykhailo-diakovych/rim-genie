@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function usePinState() {
-  const [pin, setPin] = useState(["", "", "", "", "", ""]);
+  const [pin, setPin] = useState(["", "", "", ""]);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   function handlePinChange(index: number, value: string) {
@@ -11,7 +11,7 @@ export function usePinState() {
     const next = [...pin];
     next[index] = digit;
     setPin(next);
-    if (digit && index < 5) inputsRef.current[index + 1]?.focus();
+    if (digit && index < 3) inputsRef.current[index + 1]?.focus();
   }
 
   function handlePinKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
@@ -24,7 +24,7 @@ export function usePinState() {
   }
 
   function resetPin() {
-    setPin(["", "", "", "", "", ""]);
+    setPin(["", "", "", ""]);
   }
 
   return { pin, inputsRef, handlePinChange, handlePinKeyDown, resetPin };
@@ -50,7 +50,7 @@ export function PinInput({ pin, inputsRef, onPinChange, onPinKeyDown }: PinInput
             ref={(el) => {
               inputsRef.current[i] = el;
             }}
-            type="text"
+            type="password"
             inputMode="numeric"
             maxLength={1}
             value={digit}

@@ -9,7 +9,7 @@ import { desc, eq, and, ne, like } from "drizzle-orm";
 
 import { adminProcedure } from "../index";
 
-const pinField = z.string().length(6).regex(/^\d+$/);
+const pinField = z.string().length(4).regex(/^\d+$/);
 
 const employeeIdField = z
   .string()
