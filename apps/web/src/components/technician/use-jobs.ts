@@ -85,13 +85,22 @@ function filterGroupsByDate(groups: JobGroup[], dateFilter: DateFilter): JobGrou
 interface UseJobsParams {
   ownerFilter?: OwnerFilter;
   dateFilter?: DateFilter;
+  technicianId?: string;
 }
 
 export function useJobs(params?: UseJobsParams) {
-  const { ownerFilter = "all", dateFilter = "" } = params ?? {};
+  const {
+    ownerFilter = "all",
+    dateFilter = "",
+    technicianId: explicitTechnicianId = "",
+  } = params ?? {};
   const { data: session } = authClient.useSession();
 
-  const technicianId = ownerFilter === "mine" ? session?.user?.id : undefined;
+  const technicianId = explicitTechnicianId
+    ? explicitTechnicianId
+    : ownerFilter === "mine"
+      ? session?.user?.id
+      : undefined;
 
   const { data, isLoading } = useQuery(
     orpc.technician.jobs.list.queryOptions({

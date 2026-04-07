@@ -48,6 +48,9 @@ interface FilterRowProps {
   dateFilter: DateFilter;
   onOwnerFilterChange: (value: OwnerFilter) => void;
   onDateFilterChange: (value: DateFilter) => void;
+  technicians?: Array<{ id: string; name: string }>;
+  technicianId: string;
+  onTechnicianIdChange: (value: string) => void;
 }
 
 export function FilterRow({
@@ -55,9 +58,28 @@ export function FilterRow({
   dateFilter,
   onOwnerFilterChange,
   onDateFilterChange,
+  technicians,
+  technicianId,
+  onTechnicianIdChange,
 }: FilterRowProps) {
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
+      {technicians && technicians.length > 0 && (
+        <Select value={technicianId} onValueChange={(v) => onTechnicianIdChange(v ?? "")}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All Technicians" />
+          </SelectTrigger>
+          <SelectPopup>
+            <SelectOption value="">All Technicians</SelectOption>
+            {technicians.map((t) => (
+              <SelectOption key={t.id} value={t.id}>
+                {t.name}
+              </SelectOption>
+            ))}
+          </SelectPopup>
+        </Select>
+      )}
+
       <Select
         value={ownerFilter}
         onValueChange={(v) => onOwnerFilterChange((v ?? "all") as OwnerFilter)}

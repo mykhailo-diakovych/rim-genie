@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { requireRoles } from "@/lib/route-permissions";
@@ -10,6 +11,7 @@ import { FilterRow, type DateFilter, type OwnerFilter } from "@/components/techn
 import { JobCard } from "@/components/technician/job-card";
 import { TAB_CONFIG, type TabValue } from "@/components/technician/types";
 import { useJobs } from "@/components/technician/use-jobs";
+import { orpc } from "@/utils/orpc";
 
 const TAB_VALUES = TAB_CONFIG.map((t) => t.value);
 
@@ -29,7 +31,13 @@ function TechnicianPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("");
-  const { assign, inProgress, completed, isLoading } = useJobs({ ownerFilter, dateFilter });
+  const [technicianId, setTechnicianId] = useState("");
+  const { data: technicians } = useQuery(orpc.technician.technicians.list.queryOptions({}));
+  const { assign, inProgress, completed, isLoading } = useJobs({
+    ownerFilter,
+    dateFilter,
+    technicianId,
+  });
   const listRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<TabValue, HTMLButtonElement | null>>(new Map());
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
@@ -63,6 +71,16 @@ function TechnicianPage() {
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Jobs</h1>
+
+      <FilterRow
+        ownerFilter={ownerFilter}
+        dateFilter={dateFilter}
+        onOwnerFilterChange={setOwnerFilter}
+        onDateFilterChange={setDateFilter}
+        technicians={technicians}
+        technicianId={technicianId}
+        onTechnicianIdChange={setTechnicianId}
+      />
 
       <div>
         {/* Animated tab bar */}
@@ -109,60 +127,44 @@ function TechnicianPage() {
         )}
 
         {!isLoading && activeTab === "in-progress" && (
-          <div className="flex flex-col gap-3 pt-3">
-            <FilterRow
-              ownerFilter={ownerFilter}
-              dateFilter={dateFilter}
-              onOwnerFilterChange={setOwnerFilter}
-              onDateFilterChange={setDateFilter}
-            />
-            <div className="flex flex-col gap-2">
-              {inProgress.map((group) => (
-                <JobCard
-                  key={group.invoiceId}
-                  group={group}
-                  onView={() =>
-                    void navigate({
-                      to: "/technician/$invoiceId",
-                      params: { invoiceId: group.invoiceId },
-                      search: { source: "in-progress" },
-                    })
-                  }
-                />
-              ))}
-              {inProgress.length === 0 && (
-                <p className="font-rubik text-xs leading-3.5 text-label">No in-progress jobs.</p>
-              )}
-            </div>
+          <div className="flex flex-col gap-2 pt-3">
+            {inProgress.map((group) => (
+              <JobCard
+                key={group.invoiceId}
+                group={group}
+                onView={() =>
+                  void navigate({
+                    to: "/technician/$invoiceId",
+                    params: { invoiceId: group.invoiceId },
+                    search: { source: "in-progress" },
+                  })
+                }
+              />
+            ))}
+            {inProgress.length === 0 && (
+              <p className="font-rubik text-xs leading-3.5 text-label">No in-progress jobs.</p>
+            )}
           </div>
         )}
 
         {!isLoading && activeTab === "assign" && (
-          <div className="flex flex-col gap-3 pt-3">
-            <FilterRow
-              ownerFilter={ownerFilter}
-              dateFilter={dateFilter}
-              onOwnerFilterChange={setOwnerFilter}
-              onDateFilterChange={setDateFilter}
-            />
-            <div className="flex flex-col gap-2">
-              {assign.map((group) => (
-                <AssignJobCard
-                  key={group.invoiceId}
-                  group={group}
-                  onView={() =>
-                    void navigate({
-                      to: "/technician/$invoiceId",
-                      params: { invoiceId: group.invoiceId },
-                      search: { source: "assign" },
-                    })
-                  }
-                />
-              ))}
-              {assign.length === 0 && (
-                <p className="font-rubik text-xs leading-3.5 text-label">No jobs to assign.</p>
-              )}
-            </div>
+          <div className="flex flex-col gap-2 pt-3">
+            {assign.map((group) => (
+              <AssignJobCard
+                key={group.invoiceId}
+                group={group}
+                onView={() =>
+                  void navigate({
+                    to: "/technician/$invoiceId",
+                    params: { invoiceId: group.invoiceId },
+                    search: { source: "assign" },
+                  })
+                }
+              />
+            ))}
+            {assign.length === 0 && (
+              <p className="font-rubik text-xs leading-3.5 text-label">No jobs to assign.</p>
+            )}
           </div>
         )}
 
@@ -171,31 +173,23 @@ function TechnicianPage() {
         )}
 
         {!isLoading && activeTab === "completed" && (
-          <div className="flex flex-col gap-3 pt-3">
-            <FilterRow
-              ownerFilter={ownerFilter}
-              dateFilter={dateFilter}
-              onOwnerFilterChange={setOwnerFilter}
-              onDateFilterChange={setDateFilter}
-            />
-            <div className="flex flex-col gap-2">
-              {completed.map((group) => (
-                <CompletedJobCard
-                  key={group.invoiceId}
-                  group={group}
-                  onView={() =>
-                    void navigate({
-                      to: "/technician/$invoiceId",
-                      params: { invoiceId: group.invoiceId },
-                      search: { source: "completed" },
-                    })
-                  }
-                />
-              ))}
-              {completed.length === 0 && (
-                <p className="font-rubik text-xs leading-3.5 text-label">No completed jobs.</p>
-              )}
-            </div>
+          <div className="flex flex-col gap-2 pt-3">
+            {completed.map((group) => (
+              <CompletedJobCard
+                key={group.invoiceId}
+                group={group}
+                onView={() =>
+                  void navigate({
+                    to: "/technician/$invoiceId",
+                    params: { invoiceId: group.invoiceId },
+                    search: { source: "completed" },
+                  })
+                }
+              />
+            ))}
+            {completed.length === 0 && (
+              <p className="font-rubik text-xs leading-3.5 text-label">No completed jobs.</p>
+            )}
           </div>
         )}
       </div>
