@@ -1,6 +1,7 @@
 import { IconMissing, IconNight, IconPickup } from "@/components/ui/nav-icons";
 
-import { JobActionDialog } from "./job-action-dialog";
+import { EditNoteDialog, JobActionDialog } from "./job-action-dialog";
+import type { NoteType } from "./job-action-dialog";
 import type { ApiJob } from "./types";
 
 function formatJobTypes(job: ApiJob): string {
@@ -70,6 +71,13 @@ export function OvernightJobCard({ job }: { job: ApiJob }) {
                   </span>
                 )}
                 {entry.text && <span className="text-label">{entry.text}</span>}
+                {(entry.tag === "OVERNIGHT" || entry.tag === "MISSING") && (
+                  <EditNoteDialog
+                    job={job}
+                    noteType={entry.tag as NoteType}
+                    initialNote={entry.text}
+                  />
+                )}
               </div>
             ))}
           </div>
