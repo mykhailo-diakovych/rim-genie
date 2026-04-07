@@ -1,13 +1,28 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { lazy } from "react";
 
 import type { orpc } from "@/utils/orpc";
 
 import { Toaster } from "@/components/ui/sonner";
 import { getLocale } from "@/paraglide/runtime";
+
+const TanStackRouterDevtools = import.meta.env.PROD
+  ? () => null
+  : lazy(() =>
+      import("@tanstack/react-router-devtools").then((m) => ({
+        default: m.TanStackRouterDevtools,
+      })),
+    );
+
+const ReactQueryDevtools = import.meta.env.PROD
+  ? () => null
+  : lazy(() =>
+      import("@tanstack/react-query-devtools").then((m) => ({
+        default: m.ReactQueryDevtools,
+      })),
+    );
 
 import appCss from "../index.css?url";
 
