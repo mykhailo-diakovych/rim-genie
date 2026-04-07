@@ -66,6 +66,7 @@ function QuoteEditorPage() {
   const [editingItem, setEditingItem] = useState<QuoteGeneratorEditItem | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editingConsent, setEditingConsent] = useState(false);
   const [comments, setComments] = useState("");
   const [commentsSynced, setCommentsSynced] = useState(false);
 
@@ -435,7 +436,11 @@ function QuoteEditorPage() {
                             </td>
                             <td className="border-r border-l border-field-line px-2 py-2">
                               {!isReadOnly && (
-                                <Button className="w-full" variant="outline" onClick={() => {}}>
+                                <Button
+                                  className="w-full"
+                                  variant="outline"
+                                  onClick={() => setEditingConsent(true)}
+                                >
                                   <Pencil className="size-3.5" />
                                   Edit
                                 </Button>
@@ -723,6 +728,39 @@ function QuoteEditorPage() {
                 Delete
               </Button>
             </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editingConsent} onOpenChange={setEditingConsent}>
+        <DialogContent>
+          <div className="flex flex-col gap-6 px-3 pt-4 pb-3">
+            <DialogHeader>
+              <DialogTitle>Full Diagnostic Service</DialogTitle>
+              <DialogDescription>
+                Does the customer consent to the Full Diagnostic Service?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-3">
+              <Button
+                color="success"
+                onClick={() => {
+                  updateQuote.mutate({ id: quoteId, fullDiagnosticConsent: true });
+                  setEditingConsent(false);
+                }}
+              >
+                Agree
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  updateQuote.mutate({ id: quoteId, fullDiagnosticConsent: false });
+                  setEditingConsent(false);
+                }}
+              >
+                Disagree
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

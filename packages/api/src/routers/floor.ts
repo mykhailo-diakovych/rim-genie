@@ -455,6 +455,7 @@ export const floorRouter = {
           comments: z.string().optional(),
           jobRack: z.string().optional(),
           discountPercent: z.number().int().min(0).max(100).optional(),
+          fullDiagnosticConsent: z.boolean().optional(),
         }),
       )
       .handler(async ({ input, context }) => {
