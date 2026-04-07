@@ -80,11 +80,11 @@ function TabCounter({ count, active }: { count: number; active: boolean }) {
 }
 
 function formatDate(date: Date | string) {
-  const d = new Date(date);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${dd}.${mm}.${yy}`;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(date));
 }
 
 function formatCents(cents: number) {
@@ -128,11 +128,11 @@ function InvoiceCard({
   isDeleting: boolean;
   onPay: () => void;
 }) {
-  const canPay = invoice.status === "unpaid";
+  const canPay = invoice.status === "unpaid" || invoice.status === "partially_paid";
 
   return (
     <div className="flex flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card sm:min-h-16 sm:flex-row sm:items-center sm:gap-4">
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="truncate font-rubik text-sm leading-4.5 font-medium text-body">
             {invoice.customerName}
@@ -144,7 +144,7 @@ function InvoiceCard({
           <span className="text-body">{`INV-${String(invoice.invoiceNumber).padStart(4, "0")}`}</span>
         </div>
 
-        <div className="flex w-16 shrink-0 flex-col gap-1 font-rubik text-xs leading-4">
+        <div className="flex w-24 shrink-0 flex-col gap-1 font-rubik text-xs leading-4">
           <span className="text-label">Date:</span>
           <span className="truncate text-body">{formatDate(invoice.createdAt)}</span>
         </div>
