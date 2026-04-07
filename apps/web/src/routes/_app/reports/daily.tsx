@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CircleDollarSign, FileText, Moon, Printer, Wrench } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { formatCents } from "@/lib/format-currency";
 import { requireRoles } from "@/lib/route-permissions";
 import { orpc } from "@/utils/orpc";
 
@@ -14,10 +15,6 @@ export const Route = createFileRoute("/_app/reports/daily")({
   }),
   component: DailyReportPage,
 });
-
-function formatCents(cents: number) {
-  return `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-}
 
 function formatDate(dateStr: string) {
   return new Date(`${dateStr}T12:00:00`).toLocaleDateString("en-US", {

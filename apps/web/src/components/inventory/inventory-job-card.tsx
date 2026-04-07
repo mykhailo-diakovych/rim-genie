@@ -1,4 +1,5 @@
 import { IconMissing, IconNight, IconPickup } from "@/components/ui/nav-icons";
+import { formatCents } from "@/lib/format-currency";
 
 import { JobActionDialog } from "./job-action-dialog";
 import type { ApiJob, TabValue } from "./types";
@@ -63,9 +64,9 @@ function InvoiceBalance({ invoice }: { invoice: ApiJob["invoice"] }) {
 
   return (
     <p className="font-rubik text-xs text-label">
-      Total: ${(total / 100).toFixed(2)} /{" "}
+      Total: {formatCents(total)} /{" "}
       <span className={balance > 0 ? "text-[#d92d20]" : undefined}>
-        Balance: ${(balance / 100).toFixed(2)}
+        Balance: {formatCents(balance)}
       </span>
     </p>
   );

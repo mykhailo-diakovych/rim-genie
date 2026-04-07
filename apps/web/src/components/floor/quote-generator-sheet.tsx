@@ -1807,7 +1807,10 @@ export function QuoteGeneratorSheet({
                     (sum, j) => sum + (rimPrices?.[j.value]?.unitCost ?? 0),
                     0,
                   );
-                  return (total / 100).toLocaleString("en-US", { minimumFractionDigits: 2 });
+                  return (total / 100).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  });
                 }
                 if (tab === "general") {
                   const selectedServices = GENERAL_SERVICE_TYPES.filter(
@@ -1817,20 +1820,27 @@ export function QuoteGeneratorSheet({
                     const qty = parseInt(serviceQuantities[s.value] ?? "1", 10) || 1;
                     return sum + (generalPrices?.[s.value]?.unitCost ?? 0) * qty;
                   }, 0);
-                  return (total / 100).toLocaleString("en-US", { minimumFractionDigits: 2 });
+                  return (total / 100).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  });
                 }
                 if (tab === "welding") {
                   const wjt = weldingSelects.materialType.toLowerCase().replace(/\s+/g, "-");
                   return ((weldingPrices?.[wjt]?.unitCost ?? 0) / 100).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
                   });
                 }
                 if (tab === "powder-coating") {
                   return (
                     (powderCoatingPrices?.["powder-coating"]?.unitCost ?? 0) / 100
-                  ).toLocaleString("en-US", { minimumFractionDigits: 2 });
+                  ).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 }
-                return ((editItem?.unitCost ?? 0) / 100).toFixed(2);
+                return ((editItem?.unitCost ?? 0) / 100).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                });
               })()}
             </span>
           </div>

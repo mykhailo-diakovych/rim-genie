@@ -837,7 +837,7 @@ export const floorRouter = {
 
               yield* SmsService.send({
                 to: cust.phone,
-                text: `Hi ${cust.name}, your Rim Genie quote ${quoteRow.quoteNumber} is ready. Total: JMD ${(quoteRow.total / 100).toFixed(2)}.`,
+                text: `Hi ${cust.name}, your Rim Genie quote ${quoteRow.quoteNumber} is ready. Total: JMD ${(quoteRow.total / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`,
               });
             }
 

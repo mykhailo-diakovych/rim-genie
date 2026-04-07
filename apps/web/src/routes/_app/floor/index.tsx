@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Eye, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { NewQuoteSheet } from "@/components/floor/new-quote-sheet";
+import { formatCents } from "@/lib/format-currency";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -82,7 +83,7 @@ function QuoteCard({
           <span className="text-body">{`QUO-${String(quote.quoteNumber).padStart(4, "0")}`}</span>
           <span className="size-1 rounded-full bg-ghost" />
           <span className="text-label">Total:</span>
-          <span className="text-body">${(quote.total / 100).toFixed(2)}</span>
+          <span className="text-body">{formatCents(quote.total)}</span>
           <span className="size-1 rounded-full bg-ghost" />
           <span className="text-label">Job Rack:</span>
           <span className="text-body">{quote.jobRack ?? "—"}</span>

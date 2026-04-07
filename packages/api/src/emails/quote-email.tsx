@@ -1,9 +1,6 @@
 import type { ReactElement } from "react";
 import { EmailLayout, styles } from "./email-layout";
-
-function formatCents(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
-}
+import { formatCents } from "../lib/format-currency";
 
 export type QuoteEmailProps = {
   baseUrl: string;

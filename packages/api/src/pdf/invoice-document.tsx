@@ -1,5 +1,6 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import path from "path";
+import { formatCents } from "../lib/format-currency";
 
 const styles = StyleSheet.create({
   page: {
@@ -267,10 +268,6 @@ function fmtDate(d: Date | string | null | undefined): string {
   });
 }
 
-function fmtMoney(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
-}
-
 const paymentModeLabels: Record<string, string> = {
   cash: "Cash",
   credit_card: "Credit Card",
@@ -340,7 +337,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
         <View style={styles.metaRow}>
           <View style={styles.metaBlock}>
             <Text style={styles.totalDisplayLabel}>Total:</Text>
-            <Text style={styles.totalDisplay}>{fmtMoney(data.total)}</Text>
+            <Text style={styles.totalDisplay}>{formatCents(data.total)}</Text>
           </View>
           <View style={styles.addressBlock}>
             <Text style={styles.addressLine}>82c Waltham Park Rd,</Text>
@@ -371,9 +368,9 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
                 )}
               </View>
               <Text style={[styles.cell, styles.colQty]}>{item.quantity}</Text>
-              <Text style={[styles.cell, styles.colUnit]}>{fmtMoney(item.unitCost)}</Text>
+              <Text style={[styles.cell, styles.colUnit]}>{formatCents(item.unitCost)}</Text>
               <Text style={[styles.cell, styles.colTotal]}>
-                {fmtMoney(item.quantity * item.unitCost)}
+                {formatCents(item.quantity * item.unitCost)}
               </Text>
             </View>
           ))}
@@ -410,7 +407,9 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
                     <Text style={styles.notIncludedBadge}>NOT INCLUDED</Text>
                     <Text style={styles.cell}>{svc.name}</Text>
                   </View>
-                  <Text style={[styles.cell, styles.excludedColCost]}>{fmtMoney(svc.price)}</Text>
+                  <Text style={[styles.cell, styles.excludedColCost]}>
+                    {formatCents(svc.price)}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -423,34 +422,34 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
         <View style={styles.totalsBlock}>
           <View style={styles.subtotalRow}>
             <Text style={styles.subtotalLabel}>Subtotal:</Text>
-            <Text style={styles.subtotalValue}>{fmtMoney(data.subtotal)}</Text>
+            <Text style={styles.subtotalValue}>{formatCents(data.subtotal)}</Text>
           </View>
           {data.discount > 0 && (
             <View style={styles.subtotalRow}>
               <Text style={styles.subtotalLabel}>Discount:</Text>
-              <Text style={styles.subtotalValue}>-{fmtMoney(data.discount)}</Text>
+              <Text style={styles.subtotalValue}>-{formatCents(data.discount)}</Text>
             </View>
           )}
           {data.tax > 0 && (
             <View style={styles.subtotalRow}>
               <Text style={styles.subtotalLabel}>Tax:</Text>
-              <Text style={styles.subtotalValue}>+{fmtMoney(data.tax)}</Text>
+              <Text style={styles.subtotalValue}>+{formatCents(data.tax)}</Text>
             </View>
           )}
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalValue}>{fmtMoney(data.total)}</Text>
+            <Text style={styles.totalValue}>{formatCents(data.total)}</Text>
           </View>
           {totalPaid > 0 && (
             <View style={styles.subtotalRow}>
               <Text style={styles.subtotalLabel}>Paid:</Text>
-              <Text style={styles.subtotalValue}>{fmtMoney(totalPaid)}</Text>
+              <Text style={styles.subtotalValue}>{formatCents(totalPaid)}</Text>
             </View>
           )}
           <View style={styles.subtotalRow}>
             <Text style={styles.subtotalLabel}>Balance Due:</Text>
             <Text style={[styles.subtotalValue, { fontFamily: "Helvetica-Bold" }]}>
-              {fmtMoney(balance)}
+              {formatCents(balance)}
             </Text>
           </View>
         </View>
@@ -473,7 +472,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
                   <Text style={[styles.cell, styles.payColMethod]}>
                     {paymentModeLabels[p.mode] ?? p.mode}
                   </Text>
-                  <Text style={[styles.cell, styles.payColAmount]}>{fmtMoney(p.amount)}</Text>
+                  <Text style={[styles.cell, styles.payColAmount]}>{formatCents(p.amount)}</Text>
                   <Text style={[styles.cell, styles.payColRef]}>{p.reference ?? "—"}</Text>
                   <Text style={[styles.cell, styles.payColReceived]}>
                     {p.receivedByName ?? "—"}

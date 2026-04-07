@@ -19,6 +19,7 @@ import {
 import type { AppRouterClient } from "@rim-genie/api/routers/index";
 
 import { authClient } from "@/lib/auth-client";
+import { formatCents } from "@/lib/format-currency";
 import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
@@ -58,10 +59,6 @@ function formatDate(d: Date | string | null | undefined) {
 function formatBirthday(day: number | null, month: number | null) {
   if (!day || !month) return "—";
   return `${MONTH_NAMES[month - 1]} ${day}`;
-}
-
-function formatTotal(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
 }
 
 type CustomerDetail = Awaited<ReturnType<AppRouterClient["floor"]["customers"]["getById"]>>;
@@ -711,7 +708,7 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
                   <td
                     className={`border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
                   >
-                    {formatTotal(q.total)}
+                    {formatCents(q.total)}
                   </td>
                   <td className={`border-t border-l border-field-line p-2 ${borderB}`}>
                     <StatusBadge status={q.status} />

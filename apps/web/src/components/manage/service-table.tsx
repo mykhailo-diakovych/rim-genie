@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { formatCents } from "@/lib/format-currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { m } from "@/paraglide/messages";
 
@@ -11,10 +12,6 @@ export interface ServiceRow {
   minSize: string;
   maxSize: string;
   unitCost: number;
-}
-
-function formatUSD(cents: number): string {
-  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
 export function IconEdit({ className }: { className?: string }) {
@@ -114,7 +111,7 @@ export function ServiceTable({
             </div>
             <div className="flex w-28 items-center self-stretch border-r border-field-line p-2">
               <span className="font-rubik text-sm leading-4.5 text-body">
-                {formatUSD(svc.unitCost)}
+                {formatCents(svc.unitCost)}
               </span>
             </div>
             <div className="flex items-center justify-end gap-2 self-stretch p-2">

@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { formatDollars } from "@/lib/format-currency";
 import { cn } from "@/lib/utils";
 import { orpc } from "@/utils/orpc";
 
@@ -43,10 +44,6 @@ const PAYMENT_METHODS: {
     apiMode: "bank_transfer",
   },
 ];
-
-function formatDollars(dollars: number) {
-  return `$${dollars.toFixed(2)}`;
-}
 
 function PaymentAccordionHeader({
   iconSrc,

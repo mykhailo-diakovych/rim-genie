@@ -17,6 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { formatCents } from "@/lib/format-currency";
 import {
   Dialog,
   DialogClose,
@@ -45,10 +46,6 @@ function formatDate(d: Date | string | null | undefined) {
     day: "2-digit",
     year: "numeric",
   });
-}
-
-function formatCents(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function formatPaymentMode(mode: string) {

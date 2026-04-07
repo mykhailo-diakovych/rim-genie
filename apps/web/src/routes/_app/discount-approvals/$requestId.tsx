@@ -5,6 +5,7 @@ import { ArrowLeft, Percent, ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { formatCents } from "@/lib/format-currency";
 import { client, orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/discount-approvals/$requestId")({
@@ -23,10 +24,6 @@ function formatDate(d: Date | string | null | undefined) {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function formatCents(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function DiscountApprovalPage() {

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { formatCents } from "@/lib/format-currency";
 import {
   Select,
   SelectOption,
@@ -85,10 +86,6 @@ function formatDate(date: Date | string) {
     day: "numeric",
     year: "numeric",
   }).format(new Date(date));
-}
-
-function formatCents(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function InvoiceCardSkeleton() {
