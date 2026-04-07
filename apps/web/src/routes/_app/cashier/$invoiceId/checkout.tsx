@@ -191,6 +191,7 @@ function CheckoutPage() {
   const bankTotal = parseFloat(bankAmount) || 0;
   const grandTotal = cashTotal + creditTotal + debitTotal + chequeTotal + bankTotal;
   const totalDue = grandTotal - balanceDollars;
+  const isOverpaying = grandTotal > balanceDollars;
 
   const paymentEntries = [
     { mode: "cash" as const, amount: cashTotal, reference: undefined as string | undefined },
@@ -342,6 +343,11 @@ function CheckoutPage() {
                 {formatDollars(totalDue)}
               </span>
             </div>
+            {isOverpaying && (
+              <p className="font-rubik text-xs text-red">
+                Payment amount cannot exceed the balance due
+              </p>
+            )}
 
             <div className="h-px bg-field-line" />
 
@@ -407,7 +413,7 @@ function CheckoutPage() {
         <Button
           color="success"
           onClick={handleConfirm}
-          disabled={isSubmitting || paymentEntries.length === 0}
+          disabled={paymentEntries.length === 0 || isSubmitting || grandTotal <= 0 || isOverpaying}
         >
           Confirm Payment
         </Button>
