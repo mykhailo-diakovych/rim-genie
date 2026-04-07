@@ -41,7 +41,6 @@ import type {
   QuoteGeneratorSheetData,
   QuoteGeneratorEditItem,
 } from "@/components/floor/quote-generator-sheet";
-import { CommentsSection } from "@/components/shared/comments-section";
 
 export const Route = createFileRoute("/_app/floor/$quoteId")({
   head: () => ({
@@ -501,13 +500,17 @@ function QuoteEditorPage() {
           </div>
 
           {/* Comments */}
-          <CommentsSection
-            value={comments}
-            onChange={setComments}
-            onSave={handleSave}
-            isSaving={updateQuote.isPending}
-            disabled={isReadOnly}
-          />
+          <div className="flex flex-col gap-1">
+            <label className="font-rubik text-xs leading-3.5 text-label">Comments:</label>
+            <textarea
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              placeholder="Enter note"
+              rows={3}
+              disabled={isReadOnly}
+              className="w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-xs leading-3.5 text-body transition-colors outline-none placeholder:text-ghost disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
 
           <div className="h-px bg-field-line" />
 
