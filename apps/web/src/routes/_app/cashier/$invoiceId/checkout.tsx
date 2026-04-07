@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, ChevronLeft, ChevronUp } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, ChevronLeft, ChevronUp, Mail, Printer } from "lucide-react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatDollars } from "@/lib/format-currency";
 import { cn } from "@/lib/utils";
 import { orpc } from "@/utils/orpc";
@@ -177,6 +184,14 @@ function CheckoutPage() {
   const [discount, setDiscount] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const sendReceipt = useMutation(
+    orpc.cashier.invoices.sendReceipt.mutationOptions({
+      onSuccess: () => toast.success("Receipt sent to customer"),
+      onError: (err) => toast.error(err.message),
+    }),
+  );
 
   const cashTotal = CASH_DENOMINATIONS.reduce((sum, denom) => {
     const count = parseInt(cashCounts[denom.value] || "0", 10);
@@ -242,7 +257,7 @@ function CheckoutPage() {
         queryKey: orpc.cashier.invoices.list.key(),
       });
       toast.success("Payment recorded");
-      navigate({ to: "/cashier/$invoiceId", params: { invoiceId } });
+      setShowSuccess(true);
     } catch (err) {
       toast.error(`Payment failed: ${(err as Error).message}`);
     } finally {
@@ -418,6 +433,40 @@ function CheckoutPage() {
           Confirm Payment
         </Button>
       </div>
+
+      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Payment Confirmed</DialogTitle>
+            <DialogDescription>Payment has been recorded successfully.</DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.open(`/api/invoices/${invoiceId}/pdf`, "_blank")}
+            >
+              <Printer /> Print Receipt
+            </Button>
+            <Button
+              onClick={() => sendReceipt.mutate({ invoiceId })}
+              disabled={sendReceipt.isPending}
+            >
+              <Mail /> Send to Customer
+            </Button>
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowSuccess(false);
+                navigate({ to: "/cashier/$invoiceId", params: { invoiceId } });
+              }}
+            >
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
