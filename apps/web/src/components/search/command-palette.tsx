@@ -10,6 +10,15 @@ import { useDebounce } from "@/lib/use-debounce";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 
+type SearchFilter = "all" | "customer" | "quote" | "invoice";
+
+const FILTER_TABS: { value: SearchFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "customer", label: "Customers" },
+  { value: "quote", label: "Quotes" },
+  { value: "invoice", label: "Invoices" },
+];
+
 export function CommandPalette({
   open,
   onOpenChange,
@@ -19,10 +28,11 @@ export function CommandPalette({
 }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<SearchFilter>("all");
   const debouncedQuery = useDebounce(query, 300);
 
   const { data, isFetching } = useQuery({
-    ...orpc.search.global.queryOptions({ input: { query: debouncedQuery } }),
+    ...orpc.search.global.queryOptions({ input: { query: debouncedQuery, filter } }),
     enabled: debouncedQuery.length >= 1,
   });
 
@@ -36,6 +46,7 @@ export function CommandPalette({
   function select(cb: () => void) {
     onOpenChange(false);
     setQuery("");
+    setFilter("all");
     cb();
   }
 
@@ -59,6 +70,21 @@ export function CommandPalette({
               {isFetching && (
                 <div className="size-4 shrink-0 animate-spin rounded-full border-2 border-ghost border-t-transparent" />
               )}
+            </div>
+
+            <div className="flex gap-1 border-b border-field-line px-3 py-1.5">
+              {FILTER_TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => setFilter(tab.value)}
+                  className={`rounded-full px-2.5 py-1 font-rubik text-xs transition-colors ${
+                    filter === tab.value ? "bg-blue text-white" : "text-label hover:bg-page"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             <Command.List className="max-h-72 overflow-y-auto p-2">
