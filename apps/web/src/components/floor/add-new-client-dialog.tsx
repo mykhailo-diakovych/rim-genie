@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { PhoneInput, composePhone } from "@/components/ui/phone-input";
 import {
   Select,
   SelectTrigger,
@@ -64,7 +65,8 @@ export function AddNewClientDialog({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phonePrefix, setPhonePrefix] = useState("1876");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [birthdayDay, setBirthdayDay] = useState<number | null>(null);
   const [birthdayMonth, setBirthdayMonth] = useState<number | null>(null);
   const [discount, setDiscount] = useState("");
@@ -75,7 +77,7 @@ export function AddNewClientDialog({
   function validate(): ValidationErrors {
     const errs: ValidationErrors = {};
     if (!firstName.trim()) errs.firstName = "First name is required";
-    if (!phone.trim()) errs.phone = "Phone number is required";
+    if (!phoneNumber.trim()) errs.phone = "Phone number is required";
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
       errs.email = "Invalid email address";
     if (discount && (Number(discount) < 0 || Number(discount) > 100))
@@ -87,7 +89,8 @@ export function AddNewClientDialog({
     setFirstName("");
     setLastName("");
     setEmail("");
-    setPhone("");
+    setPhonePrefix("1876");
+    setPhoneNumber("");
     setBirthdayDay(null);
     setBirthdayMonth(null);
     setDiscount("");
@@ -105,7 +108,7 @@ export function AddNewClientDialog({
     if (Object.keys(errs).length > 0) return;
 
     const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
-    const fullPhone = phone.startsWith("+") ? phone : `+1 876 ${phone}`;
+    const fullPhone = composePhone(phonePrefix, phoneNumber);
     onSubmit({
       name: fullName,
       phone: fullPhone,
@@ -181,28 +184,17 @@ export function AddNewClientDialog({
                     <span className="font-rubik text-xs leading-3.5 text-red">{errors.email}</span>
                   )}
                 </div>
-                <div className="flex flex-1 flex-col gap-1">
-                  <label className="font-rubik text-xs leading-3.5 text-label">Mobile Phone:</label>
-                  <div
-                    className={`flex h-9 w-full items-center gap-1 overflow-hidden rounded-lg border bg-white px-2 ${errors.phone ? "border-red/50" : "border-field-line"}`}
-                  >
-                    <span className="shrink-0 border-r border-field-line pr-1.5 font-rubik text-xs leading-3.5 text-body">
-                      +1 876
-                    </span>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value);
-                        if (submitted) setErrors((prev) => ({ ...prev, phone: undefined }));
-                      }}
-                      placeholder="000-0000"
-                      className="min-w-0 flex-1 bg-transparent font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
-                    />
-                  </div>
-                  {errors.phone && (
-                    <span className="font-rubik text-xs leading-3.5 text-red">{errors.phone}</span>
-                  )}
+                <div className="flex flex-1">
+                  <PhoneInput
+                    prefix={phonePrefix}
+                    onPrefixChange={setPhonePrefix}
+                    number={phoneNumber}
+                    onNumberChange={(val) => {
+                      setPhoneNumber(val);
+                      if (submitted) setErrors((prev) => ({ ...prev, phone: undefined }));
+                    }}
+                    error={errors.phone}
+                  />
                 </div>
               </div>
 

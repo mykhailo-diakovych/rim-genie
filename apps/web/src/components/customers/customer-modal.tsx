@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput, composePhone, parsePhoneToComponents } from "@/components/ui/phone-input";
 import {
   Select,
   SelectOption,
@@ -26,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 import type { DialogTriggerProps } from "@base-ui/react";
@@ -34,7 +34,6 @@ import type { DialogTriggerProps } from "@base-ui/react";
 const customerSchema = z.object({
   firstName: z.string().min(1, m.customers_validation_first_name_required()),
   lastName: z.string().min(1, m.customers_validation_last_name_required()),
-  phone: z.string().min(1, m.customers_validation_phone_required()),
   email: z.union([z.string().email(m.customers_validation_email_invalid()), z.literal("")]),
   birthdayDay: z.string(),
   birthdayMonth: z.string(),
@@ -57,16 +56,6 @@ const MONTH_OPTIONS = [
   { value: "11", label: "Nov" },
   { value: "12", label: "Dec" },
 ];
-
-const PHONE_PREFIX = "+1 876 ";
-
-function stripPhonePrefix(phone: string): string {
-  return phone.startsWith(PHONE_PREFIX) ? phone.slice(PHONE_PREFIX.length) : phone;
-}
-
-function addPhonePrefix(phone: string): string {
-  return phone.startsWith("+") ? phone : `${PHONE_PREFIX}${phone}`;
-}
 
 function splitName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/);
@@ -94,6 +83,12 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
+  const initialPhone = customer
+    ? parsePhoneToComponents(customer.phone)
+    : { prefix: "1876", number: "" };
+  const [phonePrefix, setPhonePrefix] = useState(initialPhone.prefix);
+  const [phoneNumber, setPhoneNumber] = useState(initialPhone.number);
+
   const createCustomer = useMutation({
     ...orpc.floor.customers.create.mutationOptions(),
     onSuccess: async () => {
@@ -117,7 +112,6 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
   const initial = customer
     ? {
         ...splitName(customer.name),
-        phone: stripPhonePrefix(customer.phone),
         email: customer.email ?? "",
         birthdayDay: customer.birthdayDay?.toString() ?? "",
         birthdayMonth: customer.birthdayMonth?.toString() ?? "",
@@ -127,7 +121,6 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
     : {
         firstName: "",
         lastName: "",
-        phone: "",
         email: "",
         birthdayDay: "",
         birthdayMonth: "",
@@ -139,7 +132,7 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
     defaultValues: initial,
     onSubmit: ({ value }) => {
       const name = [value.firstName.trim(), value.lastName.trim()].filter(Boolean).join(" ");
-      const phone = addPhonePrefix(value.phone.trim());
+      const phone = composePhone(phonePrefix, phoneNumber);
       const emailValue = value.email || undefined;
       const birthdayDay = value.birthdayDay ? parseInt(value.birthdayDay) : undefined;
       const birthdayMonth = value.birthdayMonth ? parseInt(value.birthdayMonth) : undefined;
@@ -178,7 +171,11 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
-        if (!nextOpen) form.reset();
+        if (!nextOpen) {
+          form.reset();
+          setPhonePrefix("1876");
+          setPhoneNumber("");
+        }
       }}
     >
       <DialogTrigger render={trigger} />
@@ -266,38 +263,14 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
                 )}
               </form.Field>
 
-              <form.Field name="phone">
-                {(field) => (
-                  <div className="flex flex-1 flex-col gap-1">
-                    <Label>{m.customers_label_mobile_phone()}</Label>
-                    <div
-                      className={cn(
-                        "flex h-9 w-full items-center overflow-hidden rounded-md border bg-white transition-colors",
-                        field.state.meta.errors.length > 0 ? "border-red/50" : "border-field-line",
-                      )}
-                    >
-                      <div className="flex h-full shrink-0 items-center border-r border-field-line px-2">
-                        <span className="font-rubik text-[12px] leading-[14px] text-body">
-                          +1 876
-                        </span>
-                      </div>
-                      <input
-                        name={field.name}
-                        value={field.state.value}
-                        placeholder={m.customers_placeholder_phone()}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="min-w-0 flex-1 bg-transparent px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
-                      />
-                    </div>
-                    {field.state.meta.errors.length > 0 && (
-                      <p className="font-rubik text-xs text-red">
-                        {field.state.meta.errors[0]?.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </form.Field>
+              <div className="flex flex-1">
+                <PhoneInput
+                  prefix={phonePrefix}
+                  onPrefixChange={setPhonePrefix}
+                  number={phoneNumber}
+                  onNumberChange={setPhoneNumber}
+                />
+              </div>
             </div>
 
             <div className="flex w-[222px] gap-3">
