@@ -333,23 +333,13 @@ function QuoteEditorPage() {
           {/* Row 3: Dates + Address */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-1 gap-4 font-rubik">
-              <div className="flex w-34 flex-col gap-2">
+              <div className="flex flex-col gap-2">
                 <span className="text-xs leading-3.5 text-label">Quote Date:</span>
                 <span className="text-sm leading-4.5 text-body">
                   {quoteQuery.isLoading ? (
                     <Skeleton className="h-4 w-24" />
                   ) : (
                     formatDate(quote?.createdAt)
-                  )}
-                </span>
-              </div>
-              <div className="flex w-34 flex-col gap-2">
-                <span className="text-xs leading-3.5 text-label">Valid Until:</span>
-                <span className="text-sm leading-4.5 text-body">
-                  {quoteQuery.isLoading ? (
-                    <Skeleton className="h-4 w-24" />
-                  ) : (
-                    formatDate(quote?.validUntil)
                   )}
                 </span>
               </div>

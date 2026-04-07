@@ -23,7 +23,6 @@ export async function getQuotePdf(
   const buffer = await renderQuotePdf({
     quoteNumber: quoteRow.quoteNumber,
     createdAt: quoteRow.createdAt,
-    validUntil: quoteRow.validUntil,
     customerReason: quoteRow.customerReason,
     fullDiagnosticConsent: quoteRow.fullDiagnosticConsent,
     customer: quoteRow.customer

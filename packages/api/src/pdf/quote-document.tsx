@@ -216,7 +216,6 @@ const styles = StyleSheet.create({
 export type QuoteData = {
   quoteNumber: number;
   createdAt: Date | string | null;
-  validUntil: Date | string | null;
   customerReason: string | null;
   fullDiagnosticConsent: boolean;
   customer: { name: string; phone: string | null; email: string | null } | null;
@@ -313,10 +312,6 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
             <View style={styles.metaBlock}>
               <Text style={styles.metaLabel}>Quote Date</Text>
               <Text style={styles.metaValue}>{fmtDate(data.createdAt)}</Text>
-            </View>
-            <View style={styles.metaBlock}>
-              <Text style={styles.metaLabel}>Valid Until</Text>
-              <Text style={styles.metaValue}>{fmtDate(data.validUntil)}</Text>
             </View>
           </View>
           <View style={styles.addressBlock}>

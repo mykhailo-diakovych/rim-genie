@@ -387,14 +387,11 @@ export const floorRouter = {
       .input(
         z.object({
           customerId: z.string(),
-          validUntilDays: z.number().int().optional(),
           customerReason: z.string().optional(),
           fullDiagnosticConsent: z.boolean().optional(),
         }),
       )
       .handler(async ({ input, context }) => {
-        const validUntil = new Date(Date.now() + (input.validUntilDays ?? 7) * 86_400_000);
-
         const cust = await db.query.customer.findFirst({
           where: eq(customer.id, input.customerId),
         });
@@ -428,7 +425,6 @@ export const floorRouter = {
             customerId: input.customerId,
             createdById: context.session.user.id,
             status: "draft",
-            validUntil,
             discountPercent,
             vipDiscountPercent,
             rewardDiscountPercent,
