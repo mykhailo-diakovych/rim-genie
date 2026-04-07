@@ -21,10 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { PinInput } from "@/components/ui/pin-input";
 import { client, orpc } from "@/utils/orpc";
 
 import { DialogCustomerRow } from "./dialog-shared";
-import { PinInput, usePinState } from "./pin-input";
 
 function getDateValue(key: string): string {
   const now = new Date();
@@ -57,21 +58,20 @@ export function AcceptJobDialog({
   const [open, setOpen] = useState(false);
   const [technician, setTechnician] = useState("");
   const [completionDate, setCompletionDate] = useState("");
-  const { pin, inputsRef, handlePinChange, handlePinKeyDown, resetPin } = usePinState();
+  const [pin, setPin] = useState("");
   const queryClient = useQueryClient();
 
   const { data: technicians } = useQuery(orpc.technician.technicians.list.queryOptions());
 
   const acceptMutation = useMutation({
     mutationFn: async () => {
-      const pinString = pin.join("");
-      if (!technician || !completionDate || pinString.length !== 6) {
+      if (!technician || !completionDate || pin.length !== 4) {
         throw new Error("Please fill in all fields");
       }
 
       const { valid } = await client.technician.jobs.verifyPin({
         userId: technician,
-        pin: pinString,
+        pin,
       });
       if (!valid) throw new Error("Invalid technician code");
 
@@ -97,7 +97,7 @@ export function AcceptJobDialog({
   function resetForm() {
     setTechnician("");
     setCompletionDate("");
-    resetPin();
+    setPin("");
   }
 
   function handleConfirm() {
@@ -152,12 +152,10 @@ export function AcceptJobDialog({
               </SelectPopup>
             </Select>
 
-            <PinInput
-              pin={pin}
-              inputsRef={inputsRef}
-              onPinChange={handlePinChange}
-              onPinKeyDown={handlePinKeyDown}
-            />
+            <div className="flex flex-col gap-1">
+              <Label>Technician Code:</Label>
+              <PinInput value={pin} onChange={setPin} />
+            </div>
           </div>
 
           <DialogFooter className="p-0">

@@ -15,8 +15,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PinInput } from "@/components/ui/pin-input";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 import type { DialogTriggerProps } from "@base-ui/react";
@@ -37,15 +37,15 @@ export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
   const resetPin = useMutation(orpc.employees.resetPin.mutationOptions());
 
   const form = useForm({
-    defaultValues: { oldPin: "", newPin: "", confirmPin: "" },
+    defaultValues: { newPin: "", confirmPin: "" },
     onSubmit: async ({ value }) => {
       try {
         await resetPin.mutateAsync({
           userId: employeeId,
-          oldPin: value.oldPin,
           newPin: value.newPin,
         });
         toast.success(m.employees_toast_pin_reset());
+        form.reset();
         setOpen(false);
       } catch (err) {
         toast.error((err as Error).message);
@@ -54,7 +54,6 @@ export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
     validators: {
       onSubmit: z
         .object({
-          oldPin: pinField,
           newPin: pinField,
           confirmPin: z.string(),
         })
@@ -89,38 +88,14 @@ export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
           className="flex flex-col gap-6 p-3"
         >
           <div className="flex flex-col gap-3">
-            <form.Field name="oldPin">
-              {(field) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor={field.name}>{m.label_old_pin()}</Label>
-                  <Input
-                    id={field.name}
-                    type="password"
-                    value={field.state.value}
-                    error={field.state.meta.errors.length > 0}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                  {field.state.meta.errors.length > 0 && (
-                    <p className="font-rubik text-xs text-red">
-                      {field.state.meta.errors[0]?.message}
-                    </p>
-                  )}
-                </div>
-              )}
-            </form.Field>
-
             <form.Field name="newPin">
               {(field) => (
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor={field.name}>{m.label_new_pin()}</Label>
-                  <Input
-                    id={field.name}
-                    type="password"
+                  <Label>{m.label_new_pin()}</Label>
+                  <PinInput
                     value={field.state.value}
+                    onChange={field.handleChange}
                     error={field.state.meta.errors.length > 0}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="font-rubik text-xs text-red">
@@ -134,14 +109,11 @@ export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
             <form.Field name="confirmPin">
               {(field) => (
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor={field.name}>{m.label_confirm_pin()}</Label>
-                  <Input
-                    id={field.name}
-                    type="password"
+                  <Label>{m.label_confirm_pin()}</Label>
+                  <PinInput
                     value={field.state.value}
+                    onChange={field.handleChange}
                     error={field.state.meta.errors.length > 0}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="font-rubik text-xs text-red">

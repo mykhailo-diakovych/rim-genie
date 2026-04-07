@@ -13,10 +13,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { PinInput } from "@/components/ui/pin-input";
 import { client, orpc } from "@/utils/orpc";
 
 import { DialogCustomerRow } from "./dialog-shared";
-import { PinInput, usePinState } from "./pin-input";
 
 interface ReverseJobDialogProps {
   customer: string;
@@ -37,18 +38,17 @@ export function ReverseJobDialog({
 }: ReverseJobDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const { pin, inputsRef, handlePinChange, handlePinKeyDown, resetPin } = usePinState();
+  const [pin, setPin] = useState("");
   const queryClient = useQueryClient();
 
   const reverseMutation = useMutation({
     mutationFn: async () => {
-      const pinString = pin.join("");
       if (!reason.trim()) throw new Error("Please enter a reversal reason");
-      if (pinString.length !== 6) throw new Error("Please enter a complete 6-digit code");
+      if (pin.length !== 4) throw new Error("Please enter a complete 4-digit code");
 
       const { valid } = await client.technician.jobs.verifyPin({
         userId: technicianId,
-        pin: pinString,
+        pin,
       });
       if (!valid) throw new Error("Invalid technician code");
 
@@ -67,7 +67,7 @@ export function ReverseJobDialog({
 
   function resetForm() {
     setReason("");
-    resetPin();
+    setPin("");
   }
 
   function handleConfirm() {
@@ -102,12 +102,10 @@ export function ReverseJobDialog({
               />
             </div>
 
-            <PinInput
-              pin={pin}
-              inputsRef={inputsRef}
-              onPinChange={handlePinChange}
-              onPinKeyDown={handlePinKeyDown}
-            />
+            <div className="flex flex-col gap-1">
+              <Label>Technician Code:</Label>
+              <PinInput value={pin} onChange={setPin} />
+            </div>
           </div>
 
           <DialogFooter className="p-0">

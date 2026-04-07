@@ -2,9 +2,8 @@ import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 
 import { auth } from "@rim-genie/auth";
-import { verifyPassword } from "@rim-genie/auth/crypto";
 import { db } from "@rim-genie/db";
-import { location, userRoleEnum, user, account } from "@rim-genie/db/schema";
+import { location, userRoleEnum, user } from "@rim-genie/db/schema";
 import { desc, eq, and, ne, like } from "drizzle-orm";
 
 import { adminProcedure } from "../index";
@@ -131,22 +130,8 @@ export const employeesRouter = {
   }),
 
   resetPin: adminProcedure
-    .input(z.object({ userId: z.string().min(1), oldPin: pinField, newPin: pinField }))
+    .input(z.object({ userId: z.string().min(1), newPin: pinField }))
     .handler(async ({ input, context }) => {
-      const [found] = await db
-        .select({ password: account.password })
-        .from(account)
-        .where(eq(account.userId, input.userId));
-
-      if (!found?.password) {
-        throw new ORPCError("NOT_FOUND", { message: "Account not found" });
-      }
-
-      const valid = await verifyPassword({ hash: found.password, password: input.oldPin });
-      if (!valid) {
-        throw new ORPCError("BAD_REQUEST", { message: "Current PIN is incorrect" });
-      }
-
       await auth.api.setUserPassword({
         body: { userId: input.userId, newPassword: input.newPin },
         headers: context.headers,
