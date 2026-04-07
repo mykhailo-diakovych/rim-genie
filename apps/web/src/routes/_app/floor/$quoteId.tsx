@@ -574,6 +574,24 @@ function QuoteEditorPage() {
                 <span className="text-label">Subtotal:</span>
                 <span className="text-body">${subtotal.toFixed(2)}</span>
               </div>
+              {(quote?.vipDiscountPercent ?? 0) > 0 && (
+                <div className="flex items-center justify-end gap-3 px-3 font-rubik text-sm leading-5">
+                  <span className="text-label">VIP Discount ({quote!.vipDiscountPercent}%):</span>
+                  <span className="text-green">
+                    -${((subtotal * quote!.vipDiscountPercent) / 100).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              {(quote?.rewardDiscountPercent ?? 0) > 0 && (
+                <div className="flex items-center justify-end gap-3 px-3 font-rubik text-sm leading-5">
+                  <span className="text-label">
+                    Reward Discount ({quote!.rewardDiscountPercent}%):
+                  </span>
+                  <span className="text-green">
+                    -${((subtotal * quote!.rewardDiscountPercent) / 100).toFixed(2)}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-end gap-3 px-3 font-rubik text-sm leading-5">
                 <span className="text-label">Discount:</span>
                 <div className="flex items-center gap-1">

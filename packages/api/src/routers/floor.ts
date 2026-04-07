@@ -11,6 +11,7 @@ import {
   quoteExcludedService,
   termsSignature,
   invoice,
+  loyaltyConfig,
   payment,
   job,
   service,
@@ -397,7 +398,29 @@ export const floorRouter = {
         const cust = await db.query.customer.findFirst({
           where: eq(customer.id, input.customerId),
         });
-        const discountPercent = cust?.isVip && cust?.discount ? cust.discount : 0;
+        const vipDiscountPercent = cust?.isVip && cust?.discount ? cust.discount : 0;
+
+        const loyaltyConf = await db.query.loyaltyConfig.findFirst({
+          where: eq(loyaltyConfig.id, "singleton"),
+        });
+        let rewardDiscountPercent = 0;
+        if (loyaltyConf) {
+          const [stats] = await db
+            .select({
+              paidCount: sql<number>`count(*)::int`,
+              totalSpent: sql<number>`coalesce(sum(${invoice.total}), 0)::int`,
+            })
+            .from(invoice)
+            .where(sql`${invoice.customerId} = ${input.customerId} AND ${invoice.status} = 'paid'`);
+          const isEligible =
+            (stats?.paidCount ?? 0) >= loyaltyConf.purchaseThreshold ||
+            (stats?.totalSpent ?? 0) >= loyaltyConf.spendThreshold;
+          if (isEligible) {
+            rewardDiscountPercent = loyaltyConf.rewardPercent;
+          }
+        }
+
+        const discountPercent = vipDiscountPercent + rewardDiscountPercent;
 
         const rows = await db
           .insert(quote)
@@ -407,6 +430,8 @@ export const floorRouter = {
             status: "draft",
             validUntil,
             discountPercent,
+            vipDiscountPercent,
+            rewardDiscountPercent,
             customerReason: input.customerReason,
             fullDiagnosticConsent: input.fullDiagnosticConsent ?? false,
           })

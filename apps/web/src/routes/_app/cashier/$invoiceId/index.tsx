@@ -473,6 +473,30 @@ function InvoiceDetailPage() {
             <span className="text-label">Subtotal:</span>
             <span className="text-body">{formatCents(inv?.subtotal ?? 0)}</span>
           </div>
+          {(inv?.quote?.vipDiscountPercent ?? 0) > 0 && (
+            <div className="flex items-center gap-3 px-3 font-rubik text-sm">
+              <span className="text-label">VIP Discount ({inv!.quote!.vipDiscountPercent}%):</span>
+              <span className="text-green">
+                -
+                {formatCents(
+                  Math.round(((inv?.subtotal ?? 0) * inv!.quote!.vipDiscountPercent) / 100),
+                )}
+              </span>
+            </div>
+          )}
+          {(inv?.quote?.rewardDiscountPercent ?? 0) > 0 && (
+            <div className="flex items-center gap-3 px-3 font-rubik text-sm">
+              <span className="text-label">
+                Reward Discount ({inv!.quote!.rewardDiscountPercent}%):
+              </span>
+              <span className="text-green">
+                -
+                {formatCents(
+                  Math.round(((inv?.subtotal ?? 0) * inv!.quote!.rewardDiscountPercent) / 100),
+                )}
+              </span>
+            </div>
+          )}
           {(inv?.discount ?? 0) > 0 && (
             <div className="flex items-center gap-3 px-3 font-rubik text-base">
               <span className="text-label">Discount:</span>

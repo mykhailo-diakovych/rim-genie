@@ -100,6 +100,8 @@ export const quote = pgTable(
     validUntil: timestamp("valid_until"),
     subtotal: integer("subtotal").default(0).notNull(),
     discountPercent: integer("discount_percent").default(0).notNull(),
+    vipDiscountPercent: integer("vip_discount_percent").default(0).notNull(),
+    rewardDiscountPercent: integer("reward_discount_percent").default(0).notNull(),
     discountAmount: integer("discount_amount").default(0).notNull(),
     total: integer("total").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
