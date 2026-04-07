@@ -12,7 +12,6 @@ const ROUTE_PERMISSIONS: Record<string, UserRole[] | null> = {
   "/customers": ["admin", "floorManager", "cashier"],
   "/manage": ["admin"],
   "/reports/daily": ["admin"],
-  "/terms": null,
 };
 
 export function hasRouteAccess(route: string, role: UserRole | undefined): boolean {

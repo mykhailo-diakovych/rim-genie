@@ -17,7 +17,6 @@ import {
   IconManage,
   IconReports,
   IconTechnician,
-  IconTerms,
 } from "@/components/ui/nav-icons";
 
 const navItem = tv({
@@ -96,7 +95,6 @@ const NAV_ITEMS = [
   { to: "/customers", labelKey: "nav_customers" as const, icon: IconCustomers },
   { to: "/manage", labelKey: "nav_manage" as const, icon: IconManage },
   { to: "/reports/daily", labelKey: "nav_reports" as const, icon: IconReports },
-  { to: "/terms", labelKey: "nav_terms" as const, icon: IconTerms },
 ];
 
 interface AppSidebarProps {
