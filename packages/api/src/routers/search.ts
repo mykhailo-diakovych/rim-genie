@@ -19,6 +19,7 @@ export const searchRouter = {
     .handler(async ({ input }) => {
       const pattern = `%${input.query}%`;
       const { filter } = input;
+      const isNumericQuery = /^\d+$/.test(input.query);
 
       const emptyCustomers: { id: string; name: string; phone: string; email: string | null }[] =
         [];
@@ -54,11 +55,13 @@ export const searchRouter = {
               .where(
                 and(
                   isNull(customer.deletedAt),
-                  or(
-                    ilike(customer.name, pattern),
-                    ilike(customer.phone, pattern),
-                    ilike(customer.email, pattern),
-                  ),
+                  isNumericQuery
+                    ? ilike(customer.phone, pattern)
+                    : or(
+                        ilike(customer.name, pattern),
+                        ilike(customer.phone, pattern),
+                        ilike(customer.email, pattern),
+                      ),
                 ),
               )
               .orderBy(desc(customer.createdAt))
@@ -76,12 +79,14 @@ export const searchRouter = {
               .from(quote)
               .innerJoin(customer, eq(customer.id, quote.customerId))
               .where(
-                or(
-                  sql`${quote.quoteNumber}::text ILIKE ${pattern}`,
-                  ilike(customer.name, pattern),
-                  ilike(customer.phone, pattern),
-                  ilike(customer.email, pattern),
-                ),
+                isNumericQuery
+                  ? sql`${quote.quoteNumber}::text ILIKE ${pattern}`
+                  : or(
+                      sql`${quote.quoteNumber}::text ILIKE ${pattern}`,
+                      ilike(customer.name, pattern),
+                      ilike(customer.phone, pattern),
+                      ilike(customer.email, pattern),
+                    ),
               )
               .orderBy(desc(quote.createdAt))
               .limit(filter === "quote" ? 20 : 5)
@@ -98,18 +103,20 @@ export const searchRouter = {
               .from(invoice)
               .innerJoin(customer, eq(customer.id, invoice.customerId))
               .where(
-                or(
-                  sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
-                  ilike(customer.name, pattern),
-                  ilike(customer.phone, pattern),
-                  ilike(customer.email, pattern),
-                ),
+                isNumericQuery
+                  ? sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`
+                  : or(
+                      sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
+                      ilike(customer.name, pattern),
+                      ilike(customer.phone, pattern),
+                      ilike(customer.email, pattern),
+                    ),
               )
               .orderBy(desc(invoice.createdAt))
               .limit(filter === "invoice" ? 20 : 5)
           : emptyInvoices,
 
-        filter === "all"
+        filter === "all" && !isNumericQuery
           ? db
               .select({
                 id: user.id,
