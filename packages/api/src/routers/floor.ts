@@ -192,30 +192,36 @@ export const floorRouter = {
         return rows[0]!;
       }),
 
-    list: requireRole("admin", "floorManager", "cashier").handler(async () => {
-      return db
-        .select({
-          id: customer.id,
-          name: customer.name,
-          phone: customer.phone,
-          email: customer.email,
-          birthdayDay: customer.birthdayDay,
-          birthdayMonth: customer.birthdayMonth,
-          isVip: customer.isVip,
-          discount: customer.discount,
-          quotesCount: sql<number>`count(distinct ${quote.id})::int`,
-          jobsCount: sql<number>`count(${quoteItem.id})::int`,
-          paidInvoiceCount: sql<number>`count(distinct ${invoice.id}) filter (where ${invoice.status} = 'paid')::int`,
-          totalSpent: sql<number>`coalesce(sum(distinct case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end), 0)::int`,
-        })
-        .from(customer)
-        .leftJoin(quote, eq(quote.customerId, customer.id))
-        .leftJoin(quoteItem, eq(quoteItem.quoteId, quote.id))
-        .leftJoin(invoice, eq(invoice.customerId, customer.id))
-        .where(isNull(customer.deletedAt))
-        .groupBy(customer.id)
-        .orderBy(desc(customer.createdAt));
-    }),
+    list: requireRole("admin", "floorManager", "cashier")
+      .input(z.object({ dateFrom: z.string().optional() }).optional())
+      .handler(async ({ input }) => {
+        const dateFilter = input?.dateFrom
+          ? gte(customer.createdAt, new Date(input.dateFrom))
+          : undefined;
+
+        return db
+          .select({
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone,
+            email: customer.email,
+            birthdayDay: customer.birthdayDay,
+            birthdayMonth: customer.birthdayMonth,
+            isVip: customer.isVip,
+            discount: customer.discount,
+            quotesCount: sql<number>`count(distinct ${quote.id})::int`,
+            jobsCount: sql<number>`count(${quoteItem.id})::int`,
+            paidInvoiceCount: sql<number>`count(distinct ${invoice.id}) filter (where ${invoice.status} = 'paid')::int`,
+            totalSpent: sql<number>`coalesce(sum(distinct case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end), 0)::int`,
+          })
+          .from(customer)
+          .leftJoin(quote, eq(quote.customerId, customer.id))
+          .leftJoin(quoteItem, eq(quoteItem.quoteId, quote.id))
+          .leftJoin(invoice, eq(invoice.customerId, customer.id))
+          .where(and(isNull(customer.deletedAt), dateFilter))
+          .groupBy(customer.id)
+          .orderBy(desc(customer.createdAt));
+      }),
 
     getById: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       return db.query.customer.findFirst({
