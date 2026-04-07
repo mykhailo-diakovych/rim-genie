@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { orpc } from "@/utils/orpc";
+import { CommentsSection } from "@/components/shared/comments-section";
 
 export const Route = createFileRoute("/_app/cashier/$invoiceId/")({
   head: () => ({
@@ -154,11 +155,18 @@ function InvoiceDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [notesSynced, setNotesSynced] = useState(false);
 
   const invoiceQuery = useQuery(
     orpc.cashier.invoices.get.queryOptions({ input: { id: invoiceId } }),
   );
   const inv = invoiceQuery.data;
+
+  if (inv && !notesSynced) {
+    setNotes(inv.notes ?? "");
+    setNotesSynced(true);
+  }
 
   const totalPaid = inv?.payments?.reduce((sum, p) => sum + p.amount, 0) ?? 0;
   const balance = (inv?.total ?? 0) - totalPaid;
@@ -192,6 +200,15 @@ function InvoiceDetailPage() {
       toast.success("Jobs sent to technician");
     },
     onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
+  });
+
+  const updateInvoice = useMutation({
+    ...orpc.cashier.invoices.update.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateInvoice();
+      toast.success("Comment saved");
+    },
+    onError: (err: Error) => toast.error(`Failed to save: ${err.message}`),
   });
 
   const canPay = inv?.status !== "paid";
@@ -574,6 +591,13 @@ function InvoiceDetailPage() {
           <strong>$500 daily</strong>
         </p>
       </div>
+
+      <CommentsSection
+        value={notes}
+        onChange={setNotes}
+        onSave={() => updateInvoice.mutate({ id: invoiceId, notes })}
+        isSaving={updateInvoice.isPending}
+      />
 
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>
