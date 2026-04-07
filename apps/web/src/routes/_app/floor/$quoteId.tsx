@@ -734,8 +734,8 @@ function QuoteEditorPage() {
 
       <Dialog open={editingConsent} onOpenChange={setEditingConsent}>
         <DialogContent>
-          <div className="flex flex-col gap-6 px-3 pt-4 pb-3">
-            <DialogHeader className="flex flex-col gap-3 p-0">
+          <div className="flex flex-col gap-3 px-3 pt-4 pb-3">
+            <DialogHeader className="flex flex-col gap-3 p-0 pb-3">
               <DialogTitle>Full Diagnostic Service</DialogTitle>
               <DialogDescription>
                 Does the customer consent to the Full Diagnostic Service?
