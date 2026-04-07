@@ -78,8 +78,8 @@ function QuoteCard({
           <StatusBadge status={quote.status} />
         </div>
         <div className="flex flex-wrap items-center gap-2 font-rubik text-xs leading-3.5">
-          <span className="text-label">Quote ID:</span>
-          <span className="text-body">{quote.quoteNumber}</span>
+          <span className="text-label">Quote #:</span>
+          <span className="text-body">{`QUO-${String(quote.quoteNumber).padStart(4, "0")}`}</span>
           <span className="size-1 rounded-full bg-ghost" />
           <span className="text-label">Total:</span>
           <span className="text-body">${(quote.total / 100).toFixed(2)}</span>
