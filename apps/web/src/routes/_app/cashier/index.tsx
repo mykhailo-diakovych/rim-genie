@@ -139,17 +139,17 @@ function InvoiceCard({
           </span>
         </div>
 
-        <div className="flex w-8 shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
-          <span className="text-label">ID:</span>
-          <span className="text-body">{invoice.invoiceNumber}</span>
+        <div className="flex w-22 shrink-0 flex-col gap-1 font-rubik text-xs leading-4">
+          <span className="text-label">Invoice #:</span>
+          <span className="text-body">{`INV-${String(invoice.invoiceNumber).padStart(4, "0")}`}</span>
         </div>
 
-        <div className="flex w-12 shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
+        <div className="flex w-16 shrink-0 flex-col gap-1 font-rubik text-xs leading-4">
           <span className="text-label">Date:</span>
           <span className="truncate text-body">{formatDate(invoice.createdAt)}</span>
         </div>
 
-        <div className="flex w-28 shrink-0 flex-col gap-1 font-rubik text-[11px] leading-3.5">
+        <div className="flex w-36 shrink-0 flex-col gap-1 font-rubik text-xs leading-4">
           <span className="text-label">Total / Balance</span>
           <span className="text-body">
             {formatCents(invoice.total)} / {formatCents(invoice.balance)}
