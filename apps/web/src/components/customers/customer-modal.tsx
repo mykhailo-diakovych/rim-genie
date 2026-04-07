@@ -43,7 +43,20 @@ const customerSchema = z.object({
 });
 
 const DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => String(i + 1));
-const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const MONTH_OPTIONS = [
+  { value: "1", label: "Jan" },
+  { value: "2", label: "Feb" },
+  { value: "3", label: "Mar" },
+  { value: "4", label: "Apr" },
+  { value: "5", label: "May" },
+  { value: "6", label: "Jun" },
+  { value: "7", label: "Jul" },
+  { value: "8", label: "Aug" },
+  { value: "9", label: "Sep" },
+  { value: "10", label: "Oct" },
+  { value: "11", label: "Nov" },
+  { value: "12", label: "Dec" },
+];
 
 const PHONE_PREFIX = "+1 876 ";
 
@@ -318,14 +331,15 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
                     <Select
                       value={field.state.value || null}
                       onValueChange={(val) => field.handleChange(val as string)}
+                      items={MONTH_OPTIONS}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="—" />
                       </SelectTrigger>
                       <SelectPopup>
                         {MONTH_OPTIONS.map((mo) => (
-                          <SelectOption key={mo} value={mo}>
-                            {mo}
+                          <SelectOption key={mo.value} value={mo.value}>
+                            {mo.label}
                           </SelectOption>
                         ))}
                       </SelectPopup>
