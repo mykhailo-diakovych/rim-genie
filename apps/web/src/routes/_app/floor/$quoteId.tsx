@@ -258,6 +258,15 @@ function QuoteEditorPage() {
           </Button>
 
           <div className="flex items-center gap-2">
+            {!isReadOnly && (
+              <Button
+                onClick={() => setSendToCashierConfirm(true)}
+                disabled={!isSigned || sendToCashier.isPending}
+              >
+                <SendHorizonal />
+                Send to Cashier
+              </Button>
+            )}
             <Button
               color="success"
               onClick={handleSave}
@@ -526,13 +535,6 @@ function QuoteEditorPage() {
               >
                 <Send />
                 Send Quote
-              </Button>
-              <Button
-                onClick={() => setSendToCashierConfirm(true)}
-                disabled={!isSigned || sendToCashier.isPending}
-              >
-                <SendHorizonal />
-                To Cashier
               </Button>
               {isSigned && (
                 <Button variant="outline" onClick={() => setSignedDocOpen(true)}>

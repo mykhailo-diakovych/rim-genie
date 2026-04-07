@@ -11,6 +11,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -618,105 +619,273 @@ interface QuoteRow {
 
 function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: session } = authClient.useSession();
+  const isAdmin = session?.user?.role === "admin";
+
+  const [sendQuoteId, setSendQuoteId] = useState<string | null>(null);
+  const [cashierQuoteId, setCashierQuoteId] = useState<string | null>(null);
+  const [signedDocQuoteId, setSignedDocQuoteId] = useState<string | null>(null);
+
+  const { data: signedDocData } = useQuery(
+    orpc.floor.termsSignature.getByQuoteId.queryOptions({
+      input: { quoteId: signedDocQuoteId ?? "" },
+      enabled: !!signedDocQuoteId,
+    }),
+  );
+
+  const sendQuote = useMutation({
+    ...orpc.floor.quotes.send.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Quote sent to customer");
+      setSendQuoteId(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const sendToCashier = useMutation({
+    ...orpc.floor.quotes.sendToCashier.mutationOptions(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: orpc.floor.customers.getById.key() });
+      toast.success("Quote converted to invoice and sent to cashier");
+      setCashierQuoteId(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full min-w-[600px] font-rubik text-xs">
-        <thead>
-          <tr className="text-left text-label">
-            <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
-              Date
-            </th>
-            <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
-              Quote #
-            </th>
-            <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
-              Total
-            </th>
-            <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
-              Status
-            </th>
-            <th className="h-8 w-[120px] border-t border-r border-l border-field-line px-2 py-1.5 font-normal" />
-          </tr>
-        </thead>
-        <tbody>
-          {quotes.length === 0 && (
-            <tr>
-              <td
-                colSpan={5}
-                className="border border-field-line px-2 py-6 text-center text-sm text-label"
-              >
-                No quotes yet
-              </td>
+    <>
+      <div className="w-full overflow-x-auto">
+        <table className="w-full min-w-[600px] font-rubik text-xs">
+          <thead>
+            <tr className="text-left text-label">
+              <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Date
+              </th>
+              <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Quote #
+              </th>
+              <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Total
+              </th>
+              <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Status
+              </th>
+              <th className="h-8 w-[120px] border-t border-r border-l border-field-line px-2 py-1.5 font-normal" />
             </tr>
-          )}
-          {quotes.map((q, idx) => {
-            const isLast = idx === quotes.length - 1;
-            const borderB = isLast ? "border-b" : "";
-            return (
-              <tr key={q.id}>
+          </thead>
+          <tbody>
+            {quotes.length === 0 && (
+              <tr>
                 <td
-                  className={`border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
+                  colSpan={5}
+                  className="border border-field-line px-2 py-6 text-center text-sm text-label"
                 >
-                  {formatDate(q.createdAt)}
+                  No quotes yet
                 </td>
-                <td
-                  className={`border-t border-l border-field-line p-2 text-sm leading-4.5 ${borderB}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void navigate({ to: "/floor/$quoteId", params: { quoteId: q.id } })
-                    }
-                    className="cursor-pointer text-blue underline"
+              </tr>
+            )}
+            {quotes.map((q, idx) => {
+              const isLast = idx === quotes.length - 1;
+              const borderB = isLast ? "border-b" : "";
+              return (
+                <tr key={q.id}>
+                  <td
+                    className={`border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
                   >
-                    {q.quoteNumber}
-                  </button>
-                </td>
-                <td
-                  className={`border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
-                >
-                  {formatTotal(q.total)}
-                </td>
-                <td className={`border-t border-l border-field-line p-2 ${borderB}`}>
-                  <StatusBadge status={q.status} />
-                </td>
-                <td className={`border-t border-r border-l border-field-line p-2 ${borderB}`}>
-                  <div className="flex flex-col items-stretch gap-2">
-                    <Button size="sm">
-                      <IconSendQuote />
-                      Send Quote
-                    </Button>
-                    {q.status === "completed" && (
-                      <Button size="sm" variant="outline" color="success">
-                        <IconCashier />
-                        To Cashier
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
+                    {formatDate(q.createdAt)}
+                  </td>
+                  <td
+                    className={`border-t border-l border-field-line p-2 text-sm leading-4.5 ${borderB}`}
+                  >
+                    <button
+                      type="button"
                       onClick={() =>
                         void navigate({ to: "/floor/$quoteId", params: { quoteId: q.id } })
                       }
+                      className="cursor-pointer text-blue underline"
                     >
-                      <Pencil />
-                      Edit Quote
-                    </Button>
-                    {q.status === "completed" && (
-                      <Button size="sm" variant="outline">
+                      {q.quoteNumber}
+                    </button>
+                  </td>
+                  <td
+                    className={`border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
+                  >
+                    {formatTotal(q.total)}
+                  </td>
+                  <td className={`border-t border-l border-field-line p-2 ${borderB}`}>
+                    <StatusBadge status={q.status} />
+                  </td>
+                  <td className={`border-t border-r border-l border-field-line p-2 ${borderB}`}>
+                    <div className="flex flex-col items-stretch gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => setSendQuoteId(q.id)}
+                        disabled={q.status === "completed"}
+                      >
+                        <IconSendQuote />
+                        Send Quote
+                      </Button>
+                      {q.status !== "completed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          color="success"
+                          onClick={() => setCashierQuoteId(q.id)}
+                        >
+                          <IconCashier />
+                          To Cashier
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            void navigate({ to: "/floor/$quoteId", params: { quoteId: q.id } })
+                          }
+                        >
+                          <Pencil />
+                          Edit Quote
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" onClick={() => setSignedDocQuoteId(q.id)}>
                         <IconSignedDoc />
                         Signed Doc
                       </Button>
-                    )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Send Quote Confirmation */}
+      <Dialog
+        open={!!sendQuoteId}
+        onOpenChange={(open) => {
+          if (!open) setSendQuoteId(null);
+        }}
+      >
+        <DialogContent>
+          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <DialogTitle>Send Quote to Customer?</DialogTitle>
+              <DialogDescription>
+                You are about to send the quote to customer via email, click Send.
+              </DialogDescription>
+            </div>
+            <DialogFooter>
+              <DialogClose
+                render={
+                  <Button variant="ghost" type="button">
+                    Cancel
+                  </Button>
+                }
+              />
+              <Button
+                className="w-32"
+                onClick={() => sendQuoteId && sendQuote.mutate({ quoteId: sendQuoteId })}
+                disabled={sendQuote.isPending}
+              >
+                Send Quote
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* To Cashier Confirmation */}
+      <Dialog
+        open={!!cashierQuoteId}
+        onOpenChange={(open) => {
+          if (!open) setCashierQuoteId(null);
+        }}
+      >
+        <DialogContent>
+          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <DialogTitle>Convert Quote to Invoice</DialogTitle>
+              <DialogDescription>
+                You are about to convert the quote to an invoice and send to cashier.
+              </DialogDescription>
+            </div>
+            <DialogFooter>
+              <DialogClose
+                render={
+                  <Button variant="ghost" type="button">
+                    Cancel
+                  </Button>
+                }
+              />
+              <Button
+                className="w-32"
+                onClick={() => cashierQuoteId && sendToCashier.mutate({ quoteId: cashierQuoteId })}
+                disabled={sendToCashier.isPending}
+              >
+                Send Quote
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Signed Doc Modal */}
+      <Dialog
+        open={!!signedDocQuoteId}
+        onOpenChange={(open) => {
+          if (!open) setSignedDocQuoteId(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Signed Disclaimer</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 p-3">
+            <div className="rounded-md border border-field-line bg-page p-3">
+              <p className="font-rubik text-sm leading-5 text-body">
+                The customer has reviewed and accepted the service conditions for this quote. By
+                signing, they acknowledge the services to be performed and agree to the terms
+                outlined.
+              </p>
+            </div>
+            {signedDocData ? (
+              <>
+                <div className="flex flex-col gap-1">
+                  <span className="font-rubik text-xs leading-3.5 text-label">Signature:</span>
+                  <div className="rounded-md border border-field-line bg-white p-2">
+                    <img
+                      src={signedDocData.signatureDataUrl}
+                      alt="Customer signature"
+                      className="h-[120px] w-full object-contain"
+                    />
                   </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                </div>
+                <div className="font-rubik text-xs text-label">
+                  Signed on{" "}
+                  {new Date(signedDocData.signedAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </>
+            ) : (
+              <p className="py-4 text-center font-rubik text-sm text-label">
+                No disclaimer has been signed for this quote yet.
+              </p>
+            )}
+          </div>
+          <DialogFooter className="p-3 pt-0">
+            <DialogClose render={<Button variant="ghost">Close</Button>} />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -731,88 +900,158 @@ interface JobRow {
 
 function JobsTable({ jobs }: { jobs: JobRow[] }) {
   const navigate = useNavigate();
+  const [signedDocQuoteId, setSignedDocQuoteId] = useState<string | null>(null);
+
+  const { data: signedDocData } = useQuery(
+    orpc.floor.termsSignature.getByQuoteId.queryOptions({
+      input: { quoteId: signedDocQuoteId ?? "" },
+      enabled: !!signedDocQuoteId,
+    }),
+  );
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full min-w-[600px] font-rubik text-xs">
-        <thead>
-          <tr className="text-left text-label">
-            <th className="h-8 w-[144px] border-t border-l border-field-line px-2 py-1.5 font-normal">
-              Date
-            </th>
-            <th className="h-8 w-[104px] border-t border-l border-field-line px-2 py-1.5 font-normal">
-              Job #
-            </th>
-            <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
-              Description
-            </th>
-            <th className="h-8 w-[104px] border-t border-l border-field-line px-2 py-1.5 font-normal">
-              Status
-            </th>
-            <th className="h-8 w-[120px] border-t border-r border-l border-field-line px-2 py-1.5 font-normal" />
-          </tr>
-        </thead>
-        <tbody>
-          {jobs.length === 0 && (
-            <tr>
-              <td
-                colSpan={5}
-                className="border border-field-line px-2 py-6 text-center text-sm text-label"
-              >
-                No jobs yet
-              </td>
+    <>
+      <div className="w-full overflow-x-auto">
+        <table className="w-full min-w-[600px] font-rubik text-xs">
+          <thead>
+            <tr className="text-left text-label">
+              <th className="h-8 w-[144px] border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Date
+              </th>
+              <th className="h-8 w-[104px] border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Job #
+              </th>
+              <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Description
+              </th>
+              <th className="h-8 w-[104px] border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Status
+              </th>
+              <th className="h-8 w-[120px] border-t border-r border-l border-field-line px-2 py-1.5 font-normal" />
             </tr>
-          )}
-          {jobs.map((job, idx) => {
-            const isLast = idx === jobs.length - 1;
-            const borderB = isLast ? "border-b" : "";
-            const description = job.invoiceItem?.description ?? "—";
-
-            return (
-              <tr key={job.id}>
+          </thead>
+          <tbody>
+            {jobs.length === 0 && (
+              <tr>
                 <td
-                  className={`h-12 w-[144px] border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
+                  colSpan={5}
+                  className="border border-field-line px-2 py-6 text-center text-sm text-label"
                 >
-                  {formatDate(job.completedAt ?? job.createdAt)}
-                </td>
-                <td
-                  className={`h-12 w-[104px] border-t border-l border-field-line p-2 text-sm leading-4.5 ${borderB}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void navigate({ to: "/floor/$quoteId", params: { quoteId: job.quoteId } })
-                    }
-                    className="cursor-pointer text-blue underline"
-                  >
-                    {job.id.slice(0, 7).toUpperCase()}
-                  </button>
-                </td>
-                <td
-                  className={`h-12 border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
-                >
-                  {description}
-                </td>
-                <td className={`h-12 w-[104px] border-t border-l border-field-line p-2 ${borderB}`}>
-                  <StatusBadge status={job.status} />
-                </td>
-                <td
-                  className={`h-12 w-[120px] border-t border-r border-l border-field-line p-2 ${borderB}`}
-                >
-                  <div className="flex flex-col items-stretch">
-                    {job.status === "completed" && (
-                      <Button size="sm" variant="outline">
-                        <IconSignedDoc />
-                        Signed Doc
-                      </Button>
-                    )}
-                  </div>
+                  No jobs yet
                 </td>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+            )}
+            {jobs.map((job, idx) => {
+              const isLast = idx === jobs.length - 1;
+              const borderB = isLast ? "border-b" : "";
+              const description = job.invoiceItem?.description ?? "—";
+
+              return (
+                <tr key={job.id}>
+                  <td
+                    className={`h-12 w-[144px] border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
+                  >
+                    {formatDate(job.completedAt ?? job.createdAt)}
+                  </td>
+                  <td
+                    className={`h-12 w-[104px] border-t border-l border-field-line p-2 text-sm leading-4.5 ${borderB}`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void navigate({ to: "/floor/$quoteId", params: { quoteId: job.quoteId } })
+                      }
+                      className="cursor-pointer text-blue underline"
+                    >
+                      {job.id.slice(0, 7).toUpperCase()}
+                    </button>
+                  </td>
+                  <td
+                    className={`h-12 border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
+                  >
+                    {description}
+                  </td>
+                  <td
+                    className={`h-12 w-[104px] border-t border-l border-field-line p-2 ${borderB}`}
+                  >
+                    <StatusBadge status={job.status} />
+                  </td>
+                  <td
+                    className={`h-12 w-[120px] border-t border-r border-l border-field-line p-2 ${borderB}`}
+                  >
+                    <div className="flex flex-col items-stretch">
+                      {job.status === "completed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSignedDocQuoteId(job.quoteId)}
+                        >
+                          <IconSignedDoc />
+                          Signed Doc
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Signed Doc Modal */}
+      <Dialog
+        open={!!signedDocQuoteId}
+        onOpenChange={(open) => {
+          if (!open) setSignedDocQuoteId(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Signed Disclaimer</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 p-3">
+            <div className="rounded-md border border-field-line bg-page p-3">
+              <p className="font-rubik text-sm leading-5 text-body">
+                The customer has reviewed and accepted the service conditions for this quote. By
+                signing, they acknowledge the services to be performed and agree to the terms
+                outlined.
+              </p>
+            </div>
+            {signedDocData ? (
+              <>
+                <div className="flex flex-col gap-1">
+                  <span className="font-rubik text-xs leading-3.5 text-label">Signature:</span>
+                  <div className="rounded-md border border-field-line bg-white p-2">
+                    <img
+                      src={signedDocData.signatureDataUrl}
+                      alt="Customer signature"
+                      className="h-[120px] w-full object-contain"
+                    />
+                  </div>
+                </div>
+                <div className="font-rubik text-xs text-label">
+                  Signed on{" "}
+                  {new Date(signedDocData.signedAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </>
+            ) : (
+              <p className="py-4 text-center font-rubik text-sm text-label">
+                No disclaimer has been signed for this quote yet.
+              </p>
+            )}
+          </div>
+          <DialogFooter className="p-3 pt-0">
+            <DialogClose render={<Button variant="ghost">Close</Button>} />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
