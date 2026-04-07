@@ -611,17 +611,19 @@ export const floorRouter = {
     removeItem: protectedProcedure
       .input(z.object({ id: z.string() }))
       .handler(async ({ input }) => {
-        const existing = await db
-          .select({ quoteId: quoteItem.quoteId })
-          .from(quoteItem)
-          .where(eq(quoteItem.id, input.id));
+        const existing = await db.select().from(quoteItem).where(eq(quoteItem.id, input.id));
+
+        const item = existing[0];
+        if (!item) return { success: true as const };
+
+        await db.insert(quoteExcludedService).values({
+          quoteId: item.quoteId,
+          name: item.description || item.itemType,
+          price: item.unitCost,
+        });
 
         await db.delete(quoteItem).where(eq(quoteItem.id, input.id));
-
-        const qId = existing[0]?.quoteId;
-        if (qId) {
-          await recalcQuoteTotal(qId);
-        }
+        await recalcQuoteTotal(item.quoteId);
 
         return { success: true as const };
       }),
