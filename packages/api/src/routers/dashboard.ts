@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { and, count, eq, gte, isNull, lt, ne, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
-import { inventoryRecord, invoice, job, payment, user } from "@rim-genie/db/schema";
+import { customer, inventoryRecord, invoice, job, payment, user } from "@rim-genie/db/schema";
 
 import { protectedProcedure } from "../index";
 
@@ -226,6 +226,39 @@ export const dashboardRouter = {
         completedToday: Number(r.completedToday),
       })),
     };
+  }),
+
+  latestInvoices: protectedProcedure.input(periodSchema).handler(async ({ input, context }) => {
+    const { start } = periodDates(input.period);
+    const locId = context.locationId;
+
+    const conditions = [gte(invoice.createdAt, start)];
+    if (locId) {
+      conditions.push(
+        inArray(
+          invoice.createdById,
+          db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
+        ),
+      );
+    }
+
+    const rows = await db
+      .select({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        total: invoice.total,
+        status: invoice.status,
+        createdAt: invoice.createdAt,
+        customerName: customer.name,
+        customerEmail: customer.email,
+      })
+      .from(invoice)
+      .innerJoin(customer, eq(invoice.customerId, customer.id))
+      .where(and(...conditions))
+      .orderBy(desc(invoice.createdAt))
+      .limit(10);
+
+    return rows;
   }),
 
   attentionRequired: protectedProcedure.input(periodSchema).handler(async () => {

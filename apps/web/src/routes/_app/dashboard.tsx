@@ -5,6 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { AttentionRequiredCard } from "@/components/dashboard/attention-required-card";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { LatestInvoices } from "@/components/dashboard/latest-invoices";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { TeamActivityTable } from "@/components/dashboard/team-activity-table";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -41,6 +42,9 @@ function RouteComponent() {
   const teamQuery = useQuery(orpc.dashboard.teamActivity.queryOptions({ input: { period } }));
   const attentionQuery = useQuery(
     orpc.dashboard.attentionRequired.queryOptions({ input: { period } }),
+  );
+  const latestInvoicesQuery = useQuery(
+    orpc.dashboard.latestInvoices.queryOptions({ input: { period } }),
   );
 
   const isLoading =
@@ -104,6 +108,8 @@ function RouteComponent() {
         {teamQuery.data && <TeamActivityTable rows={teamQuery.data.rows} />}
         {attentionQuery.data && <AttentionRequiredCard items={attentionQuery.data.items} />}
       </div>
+
+      {latestInvoicesQuery.data && <LatestInvoices invoices={latestInvoicesQuery.data} />}
     </div>
   );
 }
