@@ -1,6 +1,8 @@
 import { IconMissing, IconNight, IconPickup } from "@/components/ui/nav-icons";
+import { formatCents } from "@/lib/format-currency";
 
-import { JobActionDialog } from "./job-action-dialog";
+import { EditNoteDialog, JobActionDialog } from "./job-action-dialog";
+import type { NoteType } from "./job-action-dialog";
 import type { ApiJob, TabValue } from "./types";
 
 function formatJobTypes(job: ApiJob): string {
@@ -63,9 +65,9 @@ function InvoiceBalance({ invoice }: { invoice: ApiJob["invoice"] }) {
 
   return (
     <p className="font-rubik text-xs text-label">
-      Total: ${(total / 100).toFixed(2)} /{" "}
+      Total: {formatCents(total)} /{" "}
       <span className={balance > 0 ? "text-[#d92d20]" : undefined}>
-        Balance: ${(balance / 100).toFixed(2)}
+        Balance: {formatCents(balance)}
       </span>
     </p>
   );
@@ -112,6 +114,13 @@ export function InventoryJobCard({ job, tab }: { job: ApiJob; tab: TabValue }) {
                   </span>
                 )}
                 {entry.text && <span className="text-label">{entry.text}</span>}
+                {(entry.tag === "OVERNIGHT" || entry.tag === "MISSING") && (
+                  <EditNoteDialog
+                    job={job}
+                    noteType={entry.tag as NoteType}
+                    initialNote={entry.text}
+                  />
+                )}
               </div>
             ))}
           </div>

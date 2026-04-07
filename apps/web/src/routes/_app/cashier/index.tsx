@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Calendar, Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { formatCents } from "@/lib/format-currency";
 import {
-  Select,
-  SelectOption,
-  SelectPopup,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DateRangeFilter,
+  getDateFrom,
+  type DateRange,
+  DATE_RANGES,
+} from "@/components/ui/date-range-filter";
 import {
   Dialog,
   DialogClose,
@@ -33,25 +33,6 @@ const TAB_LABELS: Record<InvoiceTab, string> = {
   partially: "Partially",
   paid: "Paid",
 };
-
-const DATE_RANGES = ["7d", "30d", "90d", "all"] as const;
-type DateRange = (typeof DATE_RANGES)[number];
-
-const DATE_RANGE_LABELS: Record<DateRange, string> = {
-  "7d": "Last 7 days",
-  "30d": "Last 30 days",
-  "90d": "Last 90 days",
-  all: "All time",
-};
-
-function getDateFrom(range: DateRange): string | undefined {
-  if (range === "all") return undefined;
-  const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
 
 export const Route = createFileRoute("/_app/cashier/")({
   validateSearch: (search: Record<string, unknown>): { tab: InvoiceTab; dateRange: DateRange } => ({
@@ -85,10 +66,6 @@ function formatDate(date: Date | string) {
     day: "numeric",
     year: "numeric",
   }).format(new Date(date));
-}
-
-function formatCents(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function InvoiceCardSkeleton() {
@@ -261,26 +238,10 @@ function CashierPage() {
         </TabsList>
 
         <div className="flex justify-end pt-3">
-          <Select
+          <DateRangeFilter
             value={dateRange}
-            onValueChange={(v) =>
-              navigate({ search: (prev) => ({ ...prev, dateRange: v as DateRange }) })
-            }
-          >
-            <SelectTrigger className="w-36">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="size-4 shrink-0 text-label" />
-                <SelectValue />
-              </div>
-            </SelectTrigger>
-            <SelectPopup>
-              {DATE_RANGES.map((range) => (
-                <SelectOption key={range} value={range}>
-                  {DATE_RANGE_LABELS[range]}
-                </SelectOption>
-              ))}
-            </SelectPopup>
-          </Select>
+            onChange={(v) => navigate({ search: (prev) => ({ ...prev, dateRange: v }) })}
+          />
         </div>
 
         {TAB_VALUES.map((value) => (

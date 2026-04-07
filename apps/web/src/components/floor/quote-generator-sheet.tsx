@@ -513,7 +513,7 @@ export function QuoteGeneratorSheet({
 
       const qtyErrors: Record<string, string> = {};
       for (const svc of selectedServices) {
-        const qty = parseInt(serviceQuantities[svc.value] ?? "", 10);
+        const qty = parseInt(serviceQuantities[svc.value] ?? "1", 10);
         if (!qty || qty <= 0) {
           qtyErrors[svc.value] = `${svc.quantityLabel.replace("?", "")} is required`;
         }
@@ -1058,12 +1058,13 @@ export function QuoteGeneratorSheet({
                                 </label>
                                 <input
                                   type="number"
-                                  min="1"
+                                  min={1}
                                   placeholder="Enter inches"
                                   value={buildUpInches}
                                   onChange={(e) => {
-                                    setBuildUpInches(e.target.value);
-                                    if (e.target.value.trim()) {
+                                    const raw = e.target.value.replace(/\D/g, "");
+                                    setBuildUpInches(raw);
+                                    if (raw) {
                                       setBuildUpInchesError(null);
                                     }
                                   }}
@@ -1661,12 +1662,13 @@ export function QuoteGeneratorSheet({
                                   </label>
                                   <input
                                     type="number"
-                                    min="1"
-                                    value={serviceQuantities[svc.value] ?? ""}
+                                    min={1}
+                                    value={serviceQuantities[svc.value] ?? "1"}
                                     onChange={(e) => {
+                                      const raw = e.target.value.replace(/\D/g, "");
                                       setServiceQuantities((prev) => ({
                                         ...prev,
-                                        [svc.value]: e.target.value,
+                                        [svc.value]: raw === "" ? "1" : raw,
                                       }));
                                       setServiceQuantityErrors((prev) => {
                                         const next = { ...prev };
@@ -1751,12 +1753,13 @@ export function QuoteGeneratorSheet({
                                   </label>
                                   <input
                                     type="number"
-                                    min="1"
-                                    value={serviceQuantities[svc.value] ?? ""}
+                                    min={1}
+                                    value={serviceQuantities[svc.value] ?? "1"}
                                     onChange={(e) => {
+                                      const raw = e.target.value.replace(/\D/g, "");
                                       setServiceQuantities((prev) => ({
                                         ...prev,
-                                        [svc.value]: e.target.value,
+                                        [svc.value]: raw === "" ? "1" : raw,
                                       }));
                                       setServiceQuantityErrors((prev) => {
                                         const next = { ...prev };
@@ -1807,7 +1810,10 @@ export function QuoteGeneratorSheet({
                     (sum, j) => sum + (rimPrices?.[j.value]?.unitCost ?? 0),
                     0,
                   );
-                  return (total / 100).toLocaleString("en-US", { minimumFractionDigits: 2 });
+                  return (total / 100).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  });
                 }
                 if (tab === "general") {
                   const selectedServices = GENERAL_SERVICE_TYPES.filter(
@@ -1817,20 +1823,27 @@ export function QuoteGeneratorSheet({
                     const qty = parseInt(serviceQuantities[s.value] ?? "1", 10) || 1;
                     return sum + (generalPrices?.[s.value]?.unitCost ?? 0) * qty;
                   }, 0);
-                  return (total / 100).toLocaleString("en-US", { minimumFractionDigits: 2 });
+                  return (total / 100).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  });
                 }
                 if (tab === "welding") {
                   const wjt = weldingSelects.materialType.toLowerCase().replace(/\s+/g, "-");
                   return ((weldingPrices?.[wjt]?.unitCost ?? 0) / 100).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
                   });
                 }
                 if (tab === "powder-coating") {
                   return (
                     (powderCoatingPrices?.["powder-coating"]?.unitCost ?? 0) / 100
-                  ).toLocaleString("en-US", { minimumFractionDigits: 2 });
+                  ).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 }
-                return ((editItem?.unitCost ?? 0) / 100).toFixed(2);
+                return ((editItem?.unitCost ?? 0) / 100).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                });
               })()}
             </span>
           </div>

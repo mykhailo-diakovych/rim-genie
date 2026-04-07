@@ -8,6 +8,7 @@ import type { ServiceCategory } from "@rim-genie/db/schema";
 import { serviceCategoryEnum } from "@rim-genie/db/schema";
 
 import { Button } from "@/components/ui/button";
+import { formatCents } from "@/lib/format-currency";
 import {
   Select,
   SelectOption,
@@ -41,10 +42,6 @@ const MATERIAL_LABELS: Record<string, string> = {
   steel: "Steel",
   aluminum: "Aluminum",
 };
-
-function formatUSD(cents: number): string {
-  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-}
 
 function formatJobType(jobType: string): string {
   return jobType
@@ -232,7 +229,7 @@ export function PricingTab() {
                     </div>
                     <div className="flex w-28 items-center self-stretch border-r border-field-line p-2">
                       <span className="font-rubik text-sm leading-4.5 text-body">
-                        {formatUSD(item.unitCost)}
+                        {formatCents(item.unitCost)}
                       </span>
                     </div>
                     <div className="flex items-center justify-end gap-2 self-stretch p-2">

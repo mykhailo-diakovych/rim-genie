@@ -34,12 +34,14 @@ import {
 } from "@/components/ui/dialog";
 import { SignatureModal } from "@/components/terms/signature-modal";
 import { authClient } from "@/lib/auth-client";
+import { formatCents, formatDollars } from "@/lib/format-currency";
 import { client, orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
 import type {
   QuoteGeneratorSheetData,
   QuoteGeneratorEditItem,
 } from "@/components/floor/quote-generator-sheet";
+import { CommentsSection } from "@/components/shared/comments-section";
 
 export const Route = createFileRoute("/_app/floor/$quoteId")({
   head: () => ({
@@ -65,6 +67,7 @@ function QuoteEditorPage() {
   const [editingItem, setEditingItem] = useState<QuoteGeneratorEditItem | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editingConsent, setEditingConsent] = useState(false);
   const [comments, setComments] = useState("");
   const [commentsSynced, setCommentsSynced] = useState(false);
 
@@ -434,7 +437,11 @@ function QuoteEditorPage() {
                             </td>
                             <td className="border-r border-l border-field-line px-2 py-2">
                               {!isReadOnly && (
-                                <Button className="w-full" variant="outline" onClick={() => {}}>
+                                <Button
+                                  className="w-full"
+                                  variant="outline"
+                                  onClick={() => setEditingConsent(true)}
+                                >
                                   <Pencil className="size-3.5" />
                                   Edit
                                 </Button>
@@ -494,17 +501,13 @@ function QuoteEditorPage() {
           </div>
 
           {/* Comments */}
-          <div className="flex flex-col gap-1">
-            <label className="font-rubik text-xs leading-3.5 text-label">Comments:</label>
-            <textarea
-              value={comments}
-              onChange={(e) => setComments(e.target.value)}
-              placeholder="Enter note"
-              rows={3}
-              disabled={isReadOnly}
-              className="w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-xs leading-3.5 text-body transition-colors outline-none placeholder:text-ghost disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
+          <CommentsSection
+            value={comments}
+            onChange={setComments}
+            onSave={handleSave}
+            isSaving={updateQuote.isPending}
+            disabled={isReadOnly}
+          />
 
           <div className="h-px bg-field-line" />
 
@@ -562,13 +565,13 @@ function QuoteEditorPage() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-end gap-3 px-3 font-rubik text-base leading-5">
                 <span className="text-label">Subtotal:</span>
-                <span className="text-body">${subtotal.toFixed(2)}</span>
+                <span className="text-body">{formatDollars(subtotal)}</span>
               </div>
               {(quote?.vipDiscountPercent ?? 0) > 0 && (
                 <div className="flex items-center justify-end gap-3 px-3 font-rubik text-sm leading-5">
                   <span className="text-label">VIP Discount ({quote!.vipDiscountPercent}%):</span>
                   <span className="text-green">
-                    -${((subtotal * quote!.vipDiscountPercent) / 100).toFixed(2)}
+                    -{formatDollars((subtotal * quote!.vipDiscountPercent) / 100)}
                   </span>
                 </div>
               )}
@@ -578,7 +581,7 @@ function QuoteEditorPage() {
                     Reward Discount ({quote!.rewardDiscountPercent}%):
                   </span>
                   <span className="text-green">
-                    -${((subtotal * quote!.rewardDiscountPercent) / 100).toFixed(2)}
+                    -{formatDollars((subtotal * quote!.rewardDiscountPercent) / 100)}
                   </span>
                 </div>
               )}
@@ -617,7 +620,7 @@ function QuoteEditorPage() {
                   />
                   <span className="text-label">%</span>
                   {discountAmount > 0 && (
-                    <span className="text-body">(-${discountAmount.toFixed(2)})</span>
+                    <span className="text-body">(-{formatDollars(discountAmount)})</span>
                   )}
                   {pendingDiscount && (
                     <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 font-rubik text-xs text-amber-700">
@@ -628,7 +631,7 @@ function QuoteEditorPage() {
               </div>
               <div className="flex items-center justify-end gap-3 rounded-sm bg-green px-3 py-2 font-rubik text-[22px] leading-6.5 text-white">
                 <span>Total:</span>
-                <span className="font-medium">${total.toFixed(2)}</span>
+                <span className="font-medium">{formatDollars(total)}</span>
               </div>
             </div>
           </div>
@@ -722,6 +725,39 @@ function QuoteEditorPage() {
                 Delete
               </Button>
             </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editingConsent} onOpenChange={setEditingConsent}>
+        <DialogContent>
+          <div className="flex flex-col gap-6 px-3 pt-4 pb-3">
+            <DialogHeader>
+              <DialogTitle>Full Diagnostic Service</DialogTitle>
+              <DialogDescription>
+                Does the customer consent to the Full Diagnostic Service?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-3">
+              <Button
+                color="success"
+                onClick={() => {
+                  updateQuote.mutate({ id: quoteId, fullDiagnosticConsent: true });
+                  setEditingConsent(false);
+                }}
+              >
+                Agree
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  updateQuote.mutate({ id: quoteId, fullDiagnosticConsent: false });
+                  setEditingConsent(false);
+                }}
+              >
+                Disagree
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -888,9 +924,7 @@ function ServicesExcluded({
             <div key={svc.id} className="flex items-center gap-2 rounded-lg bg-page px-2 py-1">
               <div className="flex flex-1 items-baseline gap-2 font-rubik">
                 <span className="text-sm leading-[18px] text-body">{svc.name}</span>
-                <span className="text-xs leading-3.5 text-label">
-                  (${(svc.price / 100).toFixed(2)})
-                </span>
+                <span className="text-xs leading-3.5 text-label">({formatCents(svc.price)})</span>
               </div>
               {!isReadOnly && (
                 <Button
@@ -1061,10 +1095,10 @@ function ItemRow({
         {item.inches ? `${item.inches}"` : item.quantity}
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-        ${(item.unitCost / 100).toFixed(2)}
+        {formatCents(item.unitCost)}
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-        ${rowTotal.toFixed(2)}
+        {formatDollars(rowTotal)}
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
         {!isReadOnly && (

@@ -1,5 +1,6 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import path from "path";
+import { formatCents } from "../lib/format-currency";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -250,10 +251,6 @@ function fmtDate(d: Date | string | null | undefined): string {
   });
 }
 
-function fmtMoney(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
-}
-
 // ─── Logo path (resolved relative to CWD at render time) ─────────────────────
 
 function resolveLogoPath(): string {
@@ -364,8 +361,8 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
                 <Text style={[styles.cell, styles.colQty]}>
                   {item.inches ? `${item.inches}"` : item.quantity}
                 </Text>
-                <Text style={[styles.cell, styles.colUnit]}>{fmtMoney(item.unitCost)}</Text>
-                <Text style={[styles.cell, styles.colTotal]}>{fmtMoney(rowTotal)}</Text>
+                <Text style={[styles.cell, styles.colUnit]}>{formatCents(item.unitCost)}</Text>
+                <Text style={[styles.cell, styles.colTotal]}>{formatCents(rowTotal)}</Text>
               </View>
             );
           })}
@@ -394,7 +391,9 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
                     <Text style={styles.notIncludedBadge}>NOT INCLUDED</Text>
                     <Text style={styles.cell}>{svc.name}</Text>
                   </View>
-                  <Text style={[styles.cell, styles.excludedColCost]}>{fmtMoney(svc.price)}</Text>
+                  <Text style={[styles.cell, styles.excludedColCost]}>
+                    {formatCents(svc.price)}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -422,17 +421,17 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
           <View style={styles.totalsBlock}>
             <View style={styles.subtotalRow}>
               <Text style={styles.subtotalLabel}>Subtotal:</Text>
-              <Text style={styles.subtotalValue}>{fmtMoney(data.subtotal)}</Text>
+              <Text style={styles.subtotalValue}>{formatCents(data.subtotal)}</Text>
             </View>
             {data.discountPercent > 0 && (
               <View style={styles.subtotalRow}>
                 <Text style={styles.subtotalLabel}>Discount ({data.discountPercent}%):</Text>
-                <Text style={styles.subtotalValue}>-{fmtMoney(data.discountAmount)}</Text>
+                <Text style={styles.subtotalValue}>-{formatCents(data.discountAmount)}</Text>
               </View>
             )}
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total:</Text>
-              <Text style={styles.totalValue}>{fmtMoney(data.total)}</Text>
+              <Text style={styles.totalValue}>{formatCents(data.total)}</Text>
             </View>
           </View>
         </View>

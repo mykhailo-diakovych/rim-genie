@@ -135,6 +135,30 @@ export const inventoryRouter = {
       .handler(async ({ input }) => {
         return runEffect(JobService.markAsMissing(input.jobId, input.notes));
       }),
+
+    updateNote: inventoryClerkProcedure
+      .input(
+        z.object({
+          jobId: z.string(),
+          noteType: z.enum(["OVERNIGHT", "MISSING"]),
+          newNote: z.string().min(1),
+        }),
+      )
+      .handler(async ({ input }) => {
+        const existing = await db.query.job.findFirst({ where: eq(job.id, input.jobId) });
+        const tag = `[${input.noteType}]:`;
+        const lines = (existing?.specialNotes ?? "").split("\n");
+        const updatedLines = lines.map((line) =>
+          line.startsWith(tag) ? `${tag} ${input.newNote}` : line,
+        );
+        if (!lines.some((l) => l.startsWith(tag))) {
+          updatedLines.push(`${tag} ${input.newNote}`);
+        }
+        await db
+          .update(job)
+          .set({ specialNotes: updatedLines.join("\n") })
+          .where(eq(job.id, input.jobId));
+      }),
   },
 
   records: {

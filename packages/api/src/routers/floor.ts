@@ -192,30 +192,36 @@ export const floorRouter = {
         return rows[0]!;
       }),
 
-    list: requireRole("admin", "floorManager", "cashier").handler(async () => {
-      return db
-        .select({
-          id: customer.id,
-          name: customer.name,
-          phone: customer.phone,
-          email: customer.email,
-          birthdayDay: customer.birthdayDay,
-          birthdayMonth: customer.birthdayMonth,
-          isVip: customer.isVip,
-          discount: customer.discount,
-          quotesCount: sql<number>`count(distinct ${quote.id})::int`,
-          jobsCount: sql<number>`count(${quoteItem.id})::int`,
-          paidInvoiceCount: sql<number>`count(distinct ${invoice.id}) filter (where ${invoice.status} = 'paid')::int`,
-          totalSpent: sql<number>`coalesce(sum(distinct case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end), 0)::int`,
-        })
-        .from(customer)
-        .leftJoin(quote, eq(quote.customerId, customer.id))
-        .leftJoin(quoteItem, eq(quoteItem.quoteId, quote.id))
-        .leftJoin(invoice, eq(invoice.customerId, customer.id))
-        .where(isNull(customer.deletedAt))
-        .groupBy(customer.id)
-        .orderBy(desc(customer.createdAt));
-    }),
+    list: requireRole("admin", "floorManager", "cashier")
+      .input(z.object({ dateFrom: z.string().optional() }).optional())
+      .handler(async ({ input }) => {
+        const dateFilter = input?.dateFrom
+          ? gte(customer.createdAt, new Date(input.dateFrom))
+          : undefined;
+
+        return db
+          .select({
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone,
+            email: customer.email,
+            birthdayDay: customer.birthdayDay,
+            birthdayMonth: customer.birthdayMonth,
+            isVip: customer.isVip,
+            discount: customer.discount,
+            quotesCount: sql<number>`count(distinct ${quote.id})::int`,
+            jobsCount: sql<number>`count(${quoteItem.id})::int`,
+            paidInvoiceCount: sql<number>`count(distinct ${invoice.id}) filter (where ${invoice.status} = 'paid')::int`,
+            totalSpent: sql<number>`coalesce(sum(distinct case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end), 0)::int`,
+          })
+          .from(customer)
+          .leftJoin(quote, eq(quote.customerId, customer.id))
+          .leftJoin(quoteItem, eq(quoteItem.quoteId, quote.id))
+          .leftJoin(invoice, eq(invoice.customerId, customer.id))
+          .where(and(isNull(customer.deletedAt), dateFilter))
+          .groupBy(customer.id)
+          .orderBy(desc(customer.createdAt));
+      }),
 
     getById: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       return db.query.customer.findFirst({
@@ -310,7 +316,9 @@ export const floorRouter = {
 
   quotes: {
     list: protectedProcedure
-      .input(z.object({ search: z.string().optional() }).optional())
+      .input(
+        z.object({ search: z.string().optional(), dateFrom: z.string().optional() }).optional(),
+      )
       .handler(async ({ input, context }) => {
         const search = input?.search?.trim();
         const locId = context.locationId;
@@ -320,6 +328,10 @@ export const floorRouter = {
               quote.createdById,
               db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
             )
+          : undefined;
+
+        const dateFilter = input?.dateFrom
+          ? gte(quote.createdAt, new Date(input.dateFrom))
           : undefined;
 
         if (search && search.length > 0) {
@@ -332,6 +344,7 @@ export const floorRouter = {
             .where(
               and(
                 locationFilter,
+                dateFilter,
                 or(
                   sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
                   sql`${quote.quoteNumber}::text ILIKE ${pattern}`,
@@ -358,7 +371,7 @@ export const floorRouter = {
         }
 
         return db.query.quote.findMany({
-          where: locationFilter,
+          where: and(locationFilter, dateFilter),
           orderBy: (q, { desc }) => [desc(q.createdAt)],
           with: {
             customer: true,
@@ -442,6 +455,7 @@ export const floorRouter = {
           comments: z.string().optional(),
           jobRack: z.string().optional(),
           discountPercent: z.number().int().min(0).max(100).optional(),
+          fullDiagnosticConsent: z.boolean().optional(),
         }),
       )
       .handler(async ({ input, context }) => {
@@ -837,7 +851,7 @@ export const floorRouter = {
 
               yield* SmsService.send({
                 to: cust.phone,
-                text: `Hi ${cust.name}, your Rim Genie quote ${quoteRow.quoteNumber} is ready. Total: JMD ${(quoteRow.total / 100).toFixed(2)}.`,
+                text: `Hi ${cust.name}, your Rim Genie quote ${quoteRow.quoteNumber} is ready. Total: JMD ${(quoteRow.total / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`,
               });
             }
 

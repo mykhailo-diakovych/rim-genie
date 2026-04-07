@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Eye, Plus, RotateCcw } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import type { UserRole } from "@rim-genie/db/schema";
@@ -8,6 +9,7 @@ import type { UserRole } from "@rim-genie/db/schema";
 import { CustomerCard, CustomerCardSkeleton } from "@/components/customers/customer-card";
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { Button } from "@/components/ui/button";
+import { DateRangeFilter, getDateFrom, type DateRange } from "@/components/ui/date-range-filter";
 import { authClient } from "@/lib/auth-client";
 import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
@@ -43,7 +45,12 @@ function CustomersPage() {
   const canEdit = !!userRole && CAN_EDIT_ROLES.includes(userRole);
   const isAdmin = userRole === "admin";
 
-  const { data: customers, isLoading } = useQuery(orpc.floor.customers.list.queryOptions({}));
+  const [dateRange, setDateRange] = useState<DateRange>("all");
+  const dateFrom = getDateFrom(dateRange);
+
+  const { data: customers, isLoading } = useQuery(
+    orpc.floor.customers.list.queryOptions({ input: { dateFrom } }),
+  );
   const { data: loyaltyConfig } = useQuery(orpc.loyalty.config.get.queryOptions());
 
   return (
@@ -52,16 +59,19 @@ function CustomersPage() {
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           {m.customers_title()}
         </h1>
-        {canEdit && (
-          <CustomerModal
-            trigger={
-              <Button>
-                <Plus />
-                {m.customers_btn_add()}
-              </Button>
-            }
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          {canEdit && (
+            <CustomerModal
+              trigger={
+                <Button>
+                  <Plus />
+                  {m.customers_btn_add()}
+                </Button>
+              }
+            />
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">

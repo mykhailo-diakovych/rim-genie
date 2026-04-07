@@ -2,10 +2,12 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Eye, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { NewQuoteSheet } from "@/components/floor/new-quote-sheet";
+import { formatCents } from "@/lib/format-currency";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { DateRangeFilter, getDateFrom, type DateRange } from "@/components/ui/date-range-filter";
 import {
   Dialog,
   DialogClose,
@@ -82,7 +84,7 @@ function QuoteCard({
           <span className="text-body">{`QUO-${String(quote.quoteNumber).padStart(4, "0")}`}</span>
           <span className="size-1 rounded-full bg-ghost" />
           <span className="text-label">Total:</span>
-          <span className="text-body">${(quote.total / 100).toFixed(2)}</span>
+          <span className="text-body">{formatCents(quote.total)}</span>
           <span className="size-1 rounded-full bg-ghost" />
           <span className="text-label">Job Rack:</span>
           <span className="text-body">{quote.jobRack ?? "—"}</span>
@@ -130,12 +132,15 @@ function FloorPage() {
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
   const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange>("30d");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showNewQuote, setShowNewQuote] = useState(false);
 
+  const dateFrom = getDateFrom(dateRange);
+
   const quotesQuery = useQuery(
     orpc.floor.quotes.list.queryOptions({
-      input: search.trim() ? { search: search.trim() } : undefined,
+      input: { search: search.trim() || undefined, dateFrom },
     }),
   );
 
@@ -161,16 +166,19 @@ function FloorPage() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ghost" />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by invoice #, quote #, or customer..."
-          className="flex h-10 w-full rounded-lg border border-field-line bg-white pr-3 pl-9 font-rubik text-sm text-body outline-none placeholder:text-ghost"
-        />
+      {/* Search + Date filter */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ghost" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by invoice #, quote #, or customer..."
+            className="flex h-10 w-full rounded-lg border border-field-line bg-white pr-3 pl-9 font-rubik text-sm text-body outline-none placeholder:text-ghost"
+          />
+        </div>
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
       </div>
 
       {/* Quote list */}
