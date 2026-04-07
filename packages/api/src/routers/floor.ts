@@ -310,7 +310,9 @@ export const floorRouter = {
 
   quotes: {
     list: protectedProcedure
-      .input(z.object({ search: z.string().optional() }).optional())
+      .input(
+        z.object({ search: z.string().optional(), dateFrom: z.string().optional() }).optional(),
+      )
       .handler(async ({ input, context }) => {
         const search = input?.search?.trim();
         const locId = context.locationId;
@@ -320,6 +322,10 @@ export const floorRouter = {
               quote.createdById,
               db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
             )
+          : undefined;
+
+        const dateFilter = input?.dateFrom
+          ? gte(quote.createdAt, new Date(input.dateFrom))
           : undefined;
 
         if (search && search.length > 0) {
@@ -332,6 +338,7 @@ export const floorRouter = {
             .where(
               and(
                 locationFilter,
+                dateFilter,
                 or(
                   sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
                   sql`${quote.quoteNumber}::text ILIKE ${pattern}`,
@@ -358,7 +365,7 @@ export const floorRouter = {
         }
 
         return db.query.quote.findMany({
-          where: locationFilter,
+          where: and(locationFilter, dateFilter),
           orderBy: (q, { desc }) => [desc(q.createdAt)],
           with: {
             customer: true,

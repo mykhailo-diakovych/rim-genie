@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { DateRangeFilter, getDateFrom, type DateRange } from "@/components/ui/date-range-filter";
 import {
   Dialog,
   DialogClose,
@@ -131,12 +132,15 @@ function FloorPage() {
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
   const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange>("30d");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showNewQuote, setShowNewQuote] = useState(false);
 
+  const dateFrom = getDateFrom(dateRange);
+
   const quotesQuery = useQuery(
     orpc.floor.quotes.list.queryOptions({
-      input: search.trim() ? { search: search.trim() } : undefined,
+      input: { search: search.trim() || undefined, dateFrom },
     }),
   );
 
@@ -162,16 +166,19 @@ function FloorPage() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ghost" />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by invoice #, quote #, or customer..."
-          className="flex h-10 w-full rounded-lg border border-field-line bg-white pr-3 pl-9 font-rubik text-sm text-body outline-none placeholder:text-ghost"
-        />
+      {/* Search + Date filter */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ghost" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by invoice #, quote #, or customer..."
+            className="flex h-10 w-full rounded-lg border border-field-line bg-white pr-3 pl-9 font-rubik text-sm text-body outline-none placeholder:text-ghost"
+          />
+        </div>
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
       </div>
 
       {/* Quote list */}
