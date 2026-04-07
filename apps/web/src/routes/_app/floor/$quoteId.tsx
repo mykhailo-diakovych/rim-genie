@@ -5,6 +5,8 @@ import {
   Building2,
   Check,
   ChevronDown,
+  FileCheck,
+  FileSignature,
   Images,
   Mail,
   MapPin,
@@ -14,6 +16,7 @@ import {
   Printer,
   Save,
   Send,
+  SendHorizonal,
   Trash2,
   User,
 } from "lucide-react";
@@ -27,8 +30,10 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SignatureModal } from "@/components/terms/signature-modal";
 import { authClient } from "@/lib/auth-client";
 import { client, orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
@@ -129,6 +134,49 @@ function QuoteEditorPage() {
       navigate({ to: "/floor" });
     },
     onError: (err) => toast.error(`Failed to delete: ${err.message}`),
+  });
+
+  // ─── Disclaimer & Actions ───────────────────────────────────────────────────
+  const [signModalOpen, setSignModalOpen] = useState(false);
+  const [sendQuoteConfirm, setSendQuoteConfirm] = useState(false);
+  const [sendToCashierConfirm, setSendToCashierConfirm] = useState(false);
+  const [signedDocOpen, setSignedDocOpen] = useState(false);
+
+  const { data: termsSignatureData } = useQuery(
+    orpc.floor.termsSignature.getByQuoteId.queryOptions({ input: { quoteId } }),
+  );
+  const isSigned = !!termsSignatureData;
+
+  const signDisclaimer = useMutation({
+    ...orpc.floor.termsSignature.sign.mutationOptions(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: orpc.floor.termsSignature.getByQuoteId.key({ input: { quoteId } }),
+      });
+      toast.success("Disclaimer signed successfully");
+      setSignModalOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const sendQuote = useMutation({
+    ...orpc.floor.quotes.send.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Quote sent to customer");
+      setSendQuoteConfirm(false);
+    },
+    onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
+  });
+
+  const sendToCashier = useMutation({
+    ...orpc.floor.quotes.sendToCashier.mutationOptions(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
+      toast.success("Quote sent to cashier and converted to invoice");
+      setSendToCashierConfirm(false);
+      navigate({ to: "/floor" });
+    },
+    onError: (err: Error) => toast.error(`Failed to send to cashier: ${err.message}`),
   });
 
   function handleAdd(data: QuoteGeneratorSheetData) {
@@ -462,6 +510,41 @@ function QuoteEditorPage() {
 
           <div className="h-px bg-field-line" />
 
+          {/* Action Buttons */}
+          {!isReadOnly && (
+            <div className="flex flex-wrap gap-2">
+              {!isSigned && (
+                <Button variant="outline" onClick={() => setSignModalOpen(true)}>
+                  <FileSignature />
+                  Sign Disclaimer
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => setSendQuoteConfirm(true)}
+                disabled={sendQuote.isPending}
+              >
+                <Send />
+                Send Quote
+              </Button>
+              <Button
+                onClick={() => setSendToCashierConfirm(true)}
+                disabled={!isSigned || sendToCashier.isPending}
+              >
+                <SendHorizonal />
+                To Cashier
+              </Button>
+              {isSigned && (
+                <Button variant="outline" onClick={() => setSignedDocOpen(true)}>
+                  <FileCheck />
+                  Signed Doc
+                </Button>
+              )}
+            </div>
+          )}
+
+          <div className="h-px bg-field-line" />
+
           {/* Footer: Share Quote + Totals */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             {/* Share Quote */}
@@ -631,6 +714,129 @@ function QuoteEditorPage() {
               </Button>
             </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sign Disclaimer Modal */}
+      <SignatureModal
+        open={signModalOpen}
+        onOpenChange={setSignModalOpen}
+        onSign={(dataUrl) => signDisclaimer.mutate({ quoteId, signatureDataUrl: dataUrl })}
+      />
+
+      {/* Send Quote Confirmation */}
+      <Dialog open={sendQuoteConfirm} onOpenChange={setSendQuoteConfirm}>
+        <DialogContent>
+          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-blue/10 bg-blue/20">
+                <Send className="size-6 text-blue" />
+              </div>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <DialogTitle>Send Quote to Customer?</DialogTitle>
+                <DialogDescription>
+                  You are about to send the quote to customer via email, click Send.
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose
+                render={
+                  <Button variant="ghost" type="button">
+                    Cancel
+                  </Button>
+                }
+              />
+              <Button
+                className="w-32"
+                onClick={() => sendQuote.mutate({ quoteId })}
+                disabled={sendQuote.isPending}
+              >
+                Send Quote
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send to Cashier Confirmation */}
+      <Dialog open={sendToCashierConfirm} onOpenChange={setSendToCashierConfirm}>
+        <DialogContent>
+          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-blue/10 bg-blue/20">
+                <SendHorizonal className="size-6 text-blue" />
+              </div>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <DialogTitle>Ready to proceed?</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to finalize the quote and send it to the cashier? This will
+                  remove the quote from your view and send it directly to the cashier.
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose
+                render={
+                  <Button variant="ghost" type="button">
+                    Cancel
+                  </Button>
+                }
+              />
+              <Button
+                className="w-32"
+                onClick={() => sendToCashier.mutate({ quoteId })}
+                disabled={sendToCashier.isPending}
+              >
+                Proceed
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Signed Doc Modal */}
+      <Dialog open={signedDocOpen} onOpenChange={setSignedDocOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Signed Disclaimer</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 p-3">
+            <div className="rounded-md border border-field-line bg-page p-3">
+              <p className="font-rubik text-sm leading-5 text-body">
+                The customer has reviewed and accepted the service conditions for this quote. By
+                signing, they acknowledge the services to be performed and agree to the terms
+                outlined.
+              </p>
+            </div>
+            {termsSignatureData && (
+              <>
+                <div className="flex flex-col gap-1">
+                  <span className="font-rubik text-xs leading-3.5 text-label">Signature:</span>
+                  <div className="rounded-md border border-field-line bg-white p-2">
+                    <img
+                      src={termsSignatureData.signatureDataUrl}
+                      alt="Customer signature"
+                      className="h-[120px] w-full object-contain"
+                    />
+                  </div>
+                </div>
+                <div className="font-rubik text-xs text-label">
+                  Signed on{" "}
+                  {new Date(termsSignatureData.signedAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter className="p-3 pt-0">
+            <DialogClose render={<Button variant="ghost">Close</Button>} />
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

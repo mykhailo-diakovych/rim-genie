@@ -822,6 +822,20 @@ export const floorRouter = {
           }),
         );
       }),
+
+    sendToCashier: floorManagerProcedure
+      .input(z.object({ quoteId: z.string() }))
+      .handler(async ({ input, context }) => {
+        const sig = await db.query.termsSignature.findFirst({
+          where: eq(termsSignature.quoteId, input.quoteId),
+        });
+        if (!sig) {
+          throw new ORPCError("PRECONDITION_FAILED", {
+            message: "Disclaimer must be signed before sending to cashier",
+          });
+        }
+        return runEffect(InvoiceService.createFromQuote(input.quoteId, context.session.user.id));
+      }),
   },
 
   termsSignature: {
