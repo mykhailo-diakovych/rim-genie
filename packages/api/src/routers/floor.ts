@@ -349,7 +349,6 @@ export const floorRouter = {
                   sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
                   sql`${quote.quoteNumber}::text ILIKE ${pattern}`,
                   ilike(customer.name, pattern),
-                  ilike(customer.phone, pattern),
                 ),
               ),
             );
