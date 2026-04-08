@@ -1662,6 +1662,8 @@ export function QuoteGeneratorSheet({
                                   </label>
                                   <input
                                     type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     min={1}
                                     value={serviceQuantities[svc.value] ?? "1"}
                                     onChange={(e) => {
@@ -1675,6 +1677,11 @@ export function QuoteGeneratorSheet({
                                         delete next[svc.value];
                                         return next;
                                       });
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                        e.preventDefault();
+                                      }
                                     }}
                                     placeholder="Enter number"
                                     className={cn(
@@ -1753,6 +1760,8 @@ export function QuoteGeneratorSheet({
                                   </label>
                                   <input
                                     type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     min={1}
                                     value={serviceQuantities[svc.value] ?? "1"}
                                     onChange={(e) => {
@@ -1766,6 +1775,11 @@ export function QuoteGeneratorSheet({
                                         delete next[svc.value];
                                         return next;
                                       });
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                        e.preventDefault();
+                                      }
                                     }}
                                     placeholder="Enter number"
                                     className={cn(

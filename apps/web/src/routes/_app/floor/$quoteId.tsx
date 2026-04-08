@@ -1083,7 +1083,7 @@ function ItemRow({
         </div>
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-        {item.inches ? `${item.inches}"` : item.quantity}
+        {item.inches || item.quantity || 1}
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
         {formatCents(item.unitCost)}
