@@ -43,6 +43,10 @@ lerna-debug.log*
 coverage
 .nyc_output
 
+# Skills
+.agents/skills
+skills-lock.json
+
 # Misc
 *.tgz
 .cache

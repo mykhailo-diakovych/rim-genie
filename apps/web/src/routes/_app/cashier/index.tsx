@@ -220,6 +220,10 @@ function CashierPage() {
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           List of Invoices
         </h1>
+        <DateRangeFilter
+          value={dateRange}
+          onChange={(v) => navigate({ search: (prev) => ({ ...prev, dateRange: v }) })}
+        />
       </div>
 
       <Tabs
@@ -236,13 +240,6 @@ function CashierPage() {
             </TabsTrigger>
           ))}
         </TabsList>
-
-        <div className="flex justify-end pt-3">
-          <DateRangeFilter
-            value={dateRange}
-            onChange={(v) => navigate({ search: (prev) => ({ ...prev, dateRange: v }) })}
-          />
-        </div>
 
         {TAB_VALUES.map((value) => (
           <TabsContent key={value} value={value}>
