@@ -386,10 +386,13 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
                 <View style={styles.tableRow} key={svc.id}>
                   <Text style={[styles.cell, styles.excludedColNum]}>{idx + 1}</Text>
                   <View
-                    style={[styles.excludedColName, { flexDirection: "row", alignItems: "center" }]}
+                    style={[
+                      styles.excludedColName,
+                      { flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap" },
+                    ]}
                   >
-                    <Text style={styles.notIncludedBadge}>NOT INCLUDED</Text>
-                    <Text style={styles.cell}>{svc.name}</Text>
+                    <Text style={[styles.notIncludedBadge, { marginTop: 1 }]}>NOT INCLUDED</Text>
+                    <Text style={[styles.cell, { flex: 1 }]}>{svc.name}</Text>
                   </View>
                   <Text style={[styles.cell, styles.excludedColCost]}>
                     {formatCents(svc.price)}
