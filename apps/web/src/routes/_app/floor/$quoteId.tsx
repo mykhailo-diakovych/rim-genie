@@ -6,7 +6,6 @@ import {
   ChevronDown,
   FileCheck,
   FileSignature,
-  Images,
   Mail,
   MapPin,
   Pencil,
@@ -1007,17 +1006,6 @@ function MoreDropdown({
           >
             <Printer className="size-4 text-blue" />
             Print
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              toast.info("Proofs feature coming soon");
-            }}
-            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page"
-          >
-            <Images className="size-4 text-blue" />
-            Proofs
           </button>
           <button
             type="button"
