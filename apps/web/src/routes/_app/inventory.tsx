@@ -69,7 +69,35 @@ function InventoryJobList({ tab, dateFrom }: { tab: TabValue; dateFrom?: string 
   const { data: jobs, isLoading } = useInventoryJobs(tab, dateFrom);
 
   if (isLoading) {
-    return <p className="py-4 font-rubik text-xs leading-3.5 text-label">Loading jobs...</p>;
+    return (
+      <div className="flex flex-col gap-2 pt-4">
+        {Array.from({ length: 3 }, (_, i) => (
+          <div
+            key={i}
+            className="flex animate-pulse gap-4 rounded-xl border border-card-line bg-white p-3 shadow-card"
+          >
+            <div className="flex flex-1 flex-col gap-3">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-4">
+                  <div className="h-4 w-32 rounded bg-page" />
+                  <div className="h-5 w-16 rounded bg-page" />
+                </div>
+                <div className="h-3 w-24 rounded bg-page" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="h-4 w-48 rounded bg-page" />
+                <div className="h-4 w-36 rounded bg-page" />
+              </div>
+              <div className="h-3 w-40 rounded bg-page" />
+            </div>
+            <div className="flex shrink-0 flex-col gap-2">
+              <div className="size-9 rounded-lg bg-page" />
+              <div className="size-9 rounded-lg bg-page" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (!jobs || jobs.length === 0) {

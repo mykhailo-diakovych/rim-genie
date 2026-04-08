@@ -323,13 +323,26 @@ function LocationsTab() {
             </tr>
           </thead>
           <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-label">
-                  Loading...
-                </td>
-              </tr>
-            )}
+            {isLoading &&
+              Array.from({ length: 3 }, (_, i) => (
+                <tr key={i} className="animate-pulse border-b border-field-line last:border-b-0">
+                  <td className="px-3 py-2.5">
+                    <div className="h-4 w-28 rounded bg-page" />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="h-4 w-44 rounded bg-page" />
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <div className="ml-auto h-4 w-8 rounded bg-page" />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex justify-end gap-1">
+                      <div className="size-8 rounded bg-page" />
+                      <div className="size-8 rounded bg-page" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
             {!isLoading && (!locations || locations.length === 0) && !addMode && (
               <tr>
                 <td colSpan={4} className="px-3 py-6 text-center text-label">

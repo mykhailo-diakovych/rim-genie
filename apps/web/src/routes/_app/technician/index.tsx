@@ -122,7 +122,29 @@ function TechnicianPage() {
         </div>
 
         {isLoading && (
-          <p className="pt-3 font-rubik text-xs leading-3.5 text-label">Loading jobs...</p>
+          <div className="flex flex-col gap-2 pt-3">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div
+                key={i}
+                className="flex animate-pulse flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center"
+              >
+                <div className="flex flex-1 flex-col gap-2">
+                  <div className="flex items-center gap-4">
+                    <div className="h-4 w-32 rounded bg-page" />
+                    <div className="h-5 w-16 rounded bg-page" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-20 rounded bg-page" />
+                    <div className="h-3 w-24 rounded bg-page" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="h-9 w-20 rounded-lg bg-page" />
+                  <div className="h-9 w-28 rounded-lg bg-page" />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {!isLoading && activeTab === "in-progress" && (
