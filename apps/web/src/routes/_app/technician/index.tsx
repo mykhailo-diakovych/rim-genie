@@ -3,11 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
+import type { DateRange } from "@/components/ui/date-range-filter";
 import { requireRoles } from "@/lib/route-permissions";
 import { cn } from "@/lib/utils";
 import { AssignJobCard } from "@/components/technician/assign-job-card";
 import { CompletedJobCard } from "@/components/technician/completed-job-card";
-import { FilterRow, type DateFilter, type OwnerFilter } from "@/components/technician/filter-row";
+import { FilterRow } from "@/components/technician/filter-row";
 import { JobCard } from "@/components/technician/job-card";
 import { TAB_CONFIG, type TabValue } from "@/components/technician/types";
 import { useJobs } from "@/components/technician/use-jobs";
@@ -29,13 +30,11 @@ export const Route = createFileRoute("/_app/technician/")({
 function TechnicianPage() {
   const { tab: activeTab } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("");
+  const [dateRange, setDateRange] = useState<DateRange>("all");
   const [technicianId, setTechnicianId] = useState("");
   const { data: technicians } = useQuery(orpc.technician.technicians.list.queryOptions({}));
   const { assign, inProgress, completed, isLoading } = useJobs({
-    ownerFilter,
-    dateFilter,
+    dateRange,
     technicianId,
   });
   const listRef = useRef<HTMLDivElement>(null);
@@ -70,17 +69,17 @@ function TechnicianPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
-      <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Jobs</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Jobs</h1>
 
-      <FilterRow
-        ownerFilter={ownerFilter}
-        dateFilter={dateFilter}
-        onOwnerFilterChange={setOwnerFilter}
-        onDateFilterChange={setDateFilter}
-        technicians={technicians}
-        technicianId={technicianId}
-        onTechnicianIdChange={setTechnicianId}
-      />
+        <FilterRow
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          technicians={technicians}
+          technicianId={technicianId}
+          onTechnicianIdChange={setTechnicianId}
+        />
+      </div>
 
       <div>
         {/* Animated tab bar */}

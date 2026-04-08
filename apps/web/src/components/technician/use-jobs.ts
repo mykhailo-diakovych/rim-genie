@@ -2,10 +2,9 @@ import { useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { authClient } from "@/lib/auth-client";
+import { type DateRange, getDateFrom } from "@/components/ui/date-range-filter";
 import { orpc } from "@/utils/orpc";
 
-import type { DateFilter, OwnerFilter } from "./filter-row";
 import type { ApiJob, JobGroup } from "./types";
 
 function groupJobsByInvoice(jobs: ApiJob[]): JobGroup[] {
@@ -44,63 +43,28 @@ export function getGroupAction(group: JobGroup): "proofs" | "done" {
   return group.jobs.some((j) => j.status === "accepted") ? "proofs" : "done";
 }
 
-function getDateRange(dateFilter: DateFilter): { start: Date; end: Date } | null {
-  if (!dateFilter) return null;
+function filterGroupsByDateRange(groups: JobGroup[], dateRange: DateRange): JobGroup[] {
+  const dateFrom = getDateFrom(dateRange);
+  if (!dateFrom) return groups;
 
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfDay = new Date(startOfDay);
-  endOfDay.setDate(endOfDay.getDate() + 1);
-
-  if (dateFilter === "today") {
-    return { start: startOfDay, end: endOfDay };
-  }
-
-  if (dateFilter === "week") {
-    const dayOfWeek = now.getDay();
-    const startOfWeek = new Date(startOfDay);
-    startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(endOfWeek.getDate() + 7);
-    return { start: startOfWeek, end: endOfWeek };
-  }
-
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return { start: startOfMonth, end: endOfMonth };
-}
-
-function filterGroupsByDate(groups: JobGroup[], dateFilter: DateFilter): JobGroup[] {
-  const range = getDateRange(dateFilter);
-  if (!range) return groups;
-
+  const from = new Date(dateFrom);
   return groups.filter((group) =>
-    group.jobs.some((job) => {
-      const created = new Date(job.createdAt);
-      return created >= range.start && created < range.end;
-    }),
+    group.jobs.some((job) => new Date(job.createdAt) >= from),
   );
 }
 
 interface UseJobsParams {
-  ownerFilter?: OwnerFilter;
-  dateFilter?: DateFilter;
+  dateRange?: DateRange;
   technicianId?: string;
 }
 
 export function useJobs(params?: UseJobsParams) {
   const {
-    ownerFilter = "all",
-    dateFilter = "",
+    dateRange = "all",
     technicianId: explicitTechnicianId = "",
   } = params ?? {};
-  const { data: session } = authClient.useSession();
 
-  const technicianId = explicitTechnicianId
-    ? explicitTechnicianId
-    : ownerFilter === "mine"
-      ? session?.user?.id
-      : undefined;
+  const technicianId = explicitTechnicianId || undefined;
 
   const { data, isLoading } = useQuery(
     orpc.technician.jobs.list.queryOptions({
@@ -131,11 +95,11 @@ export function useJobs(params?: UseJobsParams) {
     }
 
     return {
-      assign: filterGroupsByDate(groupJobsByInvoice(assignJobs), dateFilter),
-      inProgress: filterGroupsByDate(groupJobsByInvoice(inProgressJobs), dateFilter),
-      completed: filterGroupsByDate(groupJobsByInvoice(completedJobs), dateFilter),
+      assign: filterGroupsByDateRange(groupJobsByInvoice(assignJobs), dateRange),
+      inProgress: filterGroupsByDateRange(groupJobsByInvoice(inProgressJobs), dateRange),
+      completed: filterGroupsByDateRange(groupJobsByInvoice(completedJobs), dateRange),
     };
-  }, [data, dateFilter]);
+  }, [data, dateRange]);
 
   return { ...groups, isLoading };
 }
