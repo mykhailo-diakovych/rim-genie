@@ -180,6 +180,7 @@ const weldingSchema = z.object({
 const powderCoatingSchema = z.object({
   rimSize: z.string().min(1, "Rim size is required"),
   colorCoat: z.string().min(1, "Color coat is required"),
+  comments: z.string(),
 });
 
 const generalSchema = z.object({
@@ -242,7 +243,7 @@ const WELDING_DEFAULTS = {
   lengthOfWeld: "",
   comments: "",
 };
-const POWDER_COATING_DEFAULTS = { rimSize: "", colorCoat: "" };
+const POWDER_COATING_DEFAULTS = { rimSize: "", colorCoat: "", comments: "" };
 const GENERAL_DEFAULTS = { vehicleSize: "", tireSize: "" };
 
 export function QuoteGeneratorSheet({
@@ -266,6 +267,8 @@ export function QuoteGeneratorSheet({
   const [rimAvailable, setRimAvailable] = useState<string>("yes");
 
   const [reconstructComments, setReconstructComments] = useState("");
+  const [rimComments, setRimComments] = useState("");
+  const [generalComments, setGeneralComments] = useState("");
   const [workTypePopupOpen, setWorkTypePopupOpen] = useState(false);
   const [buildUpInches, setBuildUpInches] = useState("");
   const [buildUpInchesError, setBuildUpInchesError] = useState<string | null>(null);
@@ -403,6 +406,7 @@ export function QuoteGeneratorSheet({
           }
           return j.label;
         }),
+        rimComments.trim() || null,
       ]
         .filter(Boolean)
         .join(", ");
@@ -477,7 +481,12 @@ export function QuoteGeneratorSheet({
   const powderCoatingForm = useForm({
     defaultValues: POWDER_COATING_DEFAULTS,
     onSubmit: ({ value }) => {
-      const desc = `Powder Coating: ${value.rimSize}" Rim, Color: ${value.colorCoat}`;
+      const desc = [
+        `Powder Coating: ${value.rimSize}" Rim, Color: ${value.colorCoat}`,
+        value.comments?.trim() || null,
+      ]
+        .filter(Boolean)
+        .join(", ");
       const pcUnitCost =
         powderCoatingPrices?.["powder-coating"]?.unitCost ?? editItem?.unitCost ?? 0;
       const data: QuoteGeneratorSheetData = {
@@ -528,7 +537,10 @@ export function QuoteGeneratorSheet({
         `General: ${value.vehicleSize}`,
         `Tire: ${value.tireSize}"`,
         ...selectedServices.map((s) => `${s.label} x${serviceQuantities[s.value]}`),
-      ].join(", ");
+        generalComments.trim() || null,
+      ]
+        .filter(Boolean)
+        .join(", ");
 
       const generalUnitCost = selectedServices.reduce((sum, s) => {
         const qty = parseInt(serviceQuantities[s.value] ?? "1", 10);
@@ -586,7 +598,7 @@ export function QuoteGeneratorSheet({
       const rs = editItem.vehicleSize ?? "";
       const cc = editItem.sideOfVehicle ?? "";
       setPcSelects({ rimSize: rs, colorCoat: cc });
-      powderCoatingForm.reset({ rimSize: rs, colorCoat: cc });
+      powderCoatingForm.reset({ rimSize: rs, colorCoat: cc, comments: "" });
     } else if (editItem.itemType === "general") {
       setTab("general");
       const vs = editItem.vehicleSize ?? "";
@@ -668,6 +680,8 @@ export function QuoteGeneratorSheet({
     setRimAvailable("yes");
 
     setReconstructComments("");
+    setRimComments("");
+    setGeneralComments("");
     setWorkTypePopupOpen(false);
     setBuildUpInches("");
     setBuildUpInchesError(null);
@@ -1242,6 +1256,15 @@ export function QuoteGeneratorSheet({
                 </div>
                 {jobTypeError && <p className="px-3 font-rubik text-xs text-red">{jobTypeError}</p>}
               </div>
+
+              <div className="flex flex-col gap-1 px-3">
+                <label className="font-rubik text-xs leading-3.5 text-label">Comments:</label>
+                <textarea
+                  value={rimComments}
+                  onChange={(e) => setRimComments(e.target.value)}
+                  className="min-h-[70px] w-full resize-none rounded-lg border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-ghost"
+                />
+              </div>
             </TabsContent>
 
             {/* ─── Other Welding Tab ─── */}
@@ -1494,6 +1517,20 @@ export function QuoteGeneratorSheet({
                     )}
                   </powderCoatingForm.Field>
                 </div>
+
+                <powderCoatingForm.Field name="comments">
+                  {(field) => (
+                    <div className="flex flex-col gap-1">
+                      <label className="font-rubik text-xs leading-3.5 text-label">Comments:</label>
+                      <textarea
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        className="min-h-[70px] w-full resize-none rounded-lg border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-ghost"
+                      />
+                    </div>
+                  )}
+                </powderCoatingForm.Field>
               </form>
             </TabsContent>
 
@@ -1807,6 +1844,15 @@ export function QuoteGeneratorSheet({
                   )}
                 </div>
               </form>
+
+              <div className="flex flex-col gap-1 px-3">
+                <label className="font-rubik text-xs leading-3.5 text-label">Comments:</label>
+                <textarea
+                  value={generalComments}
+                  onChange={(e) => setGeneralComments(e.target.value)}
+                  className="min-h-[70px] w-full resize-none rounded-lg border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-ghost"
+                />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
