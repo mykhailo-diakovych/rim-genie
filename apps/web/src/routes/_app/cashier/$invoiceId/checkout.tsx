@@ -438,32 +438,34 @@ function CheckoutPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Payment Confirmed</DialogTitle>
-            <DialogDescription>Payment has been recorded successfully.</DialogDescription>
           </DialogHeader>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => window.open(`/api/invoices/${invoiceId}/pdf`, "_blank")}
-            >
-              <Printer /> Print Receipt
-            </Button>
-            <Button
-              onClick={() => sendReceipt.mutate({ invoiceId })}
-              disabled={sendReceipt.isPending}
-            >
-              <Mail /> Send to Customer
-            </Button>
-          </div>
-          <div className="flex justify-end pt-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowSuccess(false);
-                navigate({ to: "/cashier/$invoiceId", params: { invoiceId } });
-              }}
-            >
-              Done
-            </Button>
+          <div className="flex flex-col gap-3 p-3">
+            <DialogDescription>Payment has been recorded successfully.</DialogDescription>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => window.open(`/api/invoices/${invoiceId}/pdf`, "_blank")}
+              >
+                <Printer /> Print Receipt
+              </Button>
+              <Button
+                onClick={() => sendReceipt.mutate({ invoiceId })}
+                disabled={sendReceipt.isPending}
+              >
+                <Mail /> Send to Customer
+              </Button>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSuccess(false);
+                  navigate({ to: "/cashier/$invoiceId", params: { invoiceId } });
+                }}
+              >
+                Done
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
