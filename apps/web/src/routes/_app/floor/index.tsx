@@ -160,25 +160,25 @@ function FloorPage() {
       {/* Title row */}
       <div className="flex items-center justify-between">
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Quotes</h1>
-        <Button className="w-32" onClick={() => setShowNewQuote(true)}>
-          <Plus />
-          New Quote
-        </Button>
+        <div className="flex items-center gap-2">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          <Button className="w-32" onClick={() => setShowNewQuote(true)}>
+            <Plus />
+            New Quote
+          </Button>
+        </div>
       </div>
 
-      {/* Search + Date filter */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ghost" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by invoice #, quote #, or customer..."
-            className="flex h-10 w-full rounded-lg border border-field-line bg-white pr-3 pl-9 font-rubik text-sm text-body outline-none placeholder:text-ghost"
-          />
-        </div>
-        <DateRangeFilter value={dateRange} onChange={setDateRange} />
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ghost" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by invoice #, quote #, or customer..."
+          className="flex h-10 w-full rounded-lg border border-field-line bg-white pr-3 pl-9 font-rubik text-sm text-body outline-none placeholder:text-ghost"
+        />
       </div>
 
       {/* Quote list */}
