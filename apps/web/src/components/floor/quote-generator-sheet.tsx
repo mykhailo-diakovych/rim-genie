@@ -988,44 +988,44 @@ export function QuoteGeneratorSheet({
                               </span>
                             ) : null}
                           </div>
-                          {job.hasSubType && isChecked && !job.hasInchesInput && (
-                            <div className="flex w-40 flex-col gap-1">
-                              <label className="font-rubik text-xs leading-3.5 text-label">
-                                {job.subTypeLabel}
-                              </label>
-                              <Select
-                                value={jobSubTypes[job.value] ?? null}
-                                onValueChange={(v) => {
-                                  setJobSubTypes((prev) => ({
-                                    ...prev,
-                                    [job.value]: v as string,
-                                  }));
-                                  setSubTypeErrors((prev) => {
-                                    const next = { ...prev };
-                                    delete next[job.value];
-                                    return next;
-                                  });
-                                }}
-                              >
-                                <SelectTrigger error={!!subTypeErrors[job.value]}>
-                                  <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectPopup>
-                                  {job.subTypeOptions?.map((opt) => (
-                                    <SelectOption key={opt} value={opt}>
-                                      {opt}
-                                    </SelectOption>
-                                  ))}
-                                </SelectPopup>
-                              </Select>
-                              {subTypeErrors[job.value] && (
-                                <p className="font-rubik text-xs text-red">
-                                  {subTypeErrors[job.value]}
-                                </p>
-                              )}
-                            </div>
-                          )}
                         </div>
+                        {job.hasSubType && isChecked && !job.hasInchesInput && (
+                          <div className="flex flex-col gap-1 bg-page px-3 pb-2">
+                            <label className="font-rubik text-xs leading-3.5 text-label">
+                              {job.subTypeLabel}
+                            </label>
+                            <Select
+                              value={jobSubTypes[job.value] ?? null}
+                              onValueChange={(v) => {
+                                setJobSubTypes((prev) => ({
+                                  ...prev,
+                                  [job.value]: v as string,
+                                }));
+                                setSubTypeErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next[job.value];
+                                  return next;
+                                });
+                              }}
+                            >
+                              <SelectTrigger error={!!subTypeErrors[job.value]}>
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectPopup>
+                                {job.subTypeOptions?.map((opt) => (
+                                  <SelectOption key={opt} value={opt}>
+                                    {opt}
+                                  </SelectOption>
+                                ))}
+                              </SelectPopup>
+                            </Select>
+                            {subTypeErrors[job.value] && (
+                              <p className="font-rubik text-xs text-red">
+                                {subTypeErrors[job.value]}
+                              </p>
+                            )}
+                          </div>
+                        )}
 
                         {/* Build Up expanded panel */}
                         {job.hasInchesInput && isChecked && (
