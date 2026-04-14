@@ -6,24 +6,29 @@ import { customer, inventoryRecord, invoice, job, payment, user } from "@rim-gen
 
 import { protectedProcedure } from "../index";
 
-const periodSchema = z.object({ period: z.enum(["today", "week", "month"]) });
+const dateFromSchema = z.object({
+  dateFrom: z.string().optional(),
+});
 
-function periodDates(period: "today" | "week" | "month") {
+function dateRange(dateFrom?: string) {
   const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const days = period === "today" ? 1 : period === "week" ? 7 : 30;
-  const start = new Date(startOfDay);
-  start.setDate(start.getDate() - days + 1);
-  const prevStart = new Date(start);
-  prevStart.setDate(prevStart.getDate() - days);
-  return { start, end: now, prevStart, prevEnd: start };
-}
+  const start = dateFrom ? new Date(dateFrom) : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const diffDays = (now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000);
+  const prevStart = new Date(start.getTime() - (now.getTime() - start.getTime()));
 
-const BUCKET_INTERVAL = {
-  today: "2 hours",
-  week: "14 hours",
-  month: "2.5 days",
-} as const;
+  const interval =
+    diffDays <= 1
+      ? "2 hours"
+      : diffDays <= 7
+        ? "14 hours"
+        : diffDays <= 30
+          ? "2.5 days"
+          : diffDays <= 90
+            ? "7.5 days"
+            : "30 days";
+
+  return { start, end: now, prevStart, prevEnd: start, interval };
+}
 
 function changePercent(current: number, previous: number): number {
   if (previous === 0) return current > 0 ? 100 : 0;
@@ -81,9 +86,8 @@ async function jobCountSparkline(
 }
 
 export const dashboardRouter = {
-  metrics: protectedProcedure.input(periodSchema).handler(async ({ input }) => {
-    const { start, end, prevStart, prevEnd } = periodDates(input.period);
-    const interval = BUCKET_INTERVAL[input.period];
+  metrics: protectedProcedure.input(dateFromSchema).handler(async ({ input }) => {
+    const { start, end, prevStart, prevEnd, interval } = dateRange(input.dateFrom);
 
     const [
       currentRevenueRows,
@@ -197,8 +201,8 @@ export const dashboardRouter = {
     ];
   }),
 
-  teamActivity: protectedProcedure.input(periodSchema).handler(async ({ input, context }) => {
-    const { start } = periodDates(input.period);
+  teamActivity: protectedProcedure.input(dateFromSchema).handler(async ({ input, context }) => {
+    const { start } = dateRange(input.dateFrom);
     const locId = context.locationId;
     const locationCondition = locId ? sql`AND u.location_id = ${locId}` : sql``;
 
@@ -228,8 +232,8 @@ export const dashboardRouter = {
     };
   }),
 
-  latestInvoices: protectedProcedure.input(periodSchema).handler(async ({ input, context }) => {
-    const { start } = periodDates(input.period);
+  latestInvoices: protectedProcedure.input(dateFromSchema).handler(async ({ input, context }) => {
+    const { start } = dateRange(input.dateFrom);
     const locId = context.locationId;
 
     const conditions = [gte(invoice.createdAt, start)];
@@ -261,7 +265,7 @@ export const dashboardRouter = {
     return rows;
   }),
 
-  attentionRequired: protectedProcedure.input(periodSchema).handler(async () => {
+  attentionRequired: protectedProcedure.input(dateFromSchema).handler(async () => {
     const now = new Date();
 
     const [overdueRows, lowInventoryRows, unassignedRows, pendingRows] = await Promise.all([

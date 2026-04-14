@@ -82,6 +82,7 @@ function Button({
   color = "default",
   size = "default",
   fullWidth,
+  render,
   ...props
 }: ButtonPrimitive.Props &
   VariantProps<typeof buttonVariants> & {
@@ -91,6 +92,7 @@ function Button({
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, color, size, className }), fullWidth && "w-full")}
+      {...(render ? { nativeButton: false, render } : {})}
       {...props}
     />
   );

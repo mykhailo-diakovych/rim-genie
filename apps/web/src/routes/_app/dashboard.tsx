@@ -8,12 +8,14 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { LatestInvoices } from "@/components/dashboard/latest-invoices";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { TeamActivityTable } from "@/components/dashboard/team-activity-table";
-import { SegmentedControl } from "@/components/ui/segmented-control";
+import {
+  DateRangeFilter,
+  getDateFrom,
+  type DateRange,
+} from "@/components/ui/date-range-filter";
 import { IconInvoice, IconJobs, IconNight, IconRevenue } from "@/components/ui/nav-icons";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
-
-type Period = "today" | "week" | "month";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -21,12 +23,6 @@ export const Route = createFileRoute("/_app/dashboard")({
   }),
   component: RouteComponent,
 });
-
-const PERIOD_TABS: readonly { value: Period; label: string }[] = [
-  { value: "today", label: "Today" },
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-];
 
 const METRIC_CONFIG = {
   revenue: { icon: IconRevenue, color: "#6bc851", subtitle: () => m.metric_subtitle_today() },
@@ -36,16 +32,14 @@ const METRIC_CONFIG = {
 } as const;
 
 function RouteComponent() {
-  const [period, setPeriod] = useState<Period>("today");
+  const [dateRange, setDateRange] = useState<DateRange>("today");
+  const dateFrom = getDateFrom(dateRange);
 
-  const metricsQuery = useQuery(orpc.dashboard.metrics.queryOptions({ input: { period } }));
-  const teamQuery = useQuery(orpc.dashboard.teamActivity.queryOptions({ input: { period } }));
-  const attentionQuery = useQuery(
-    orpc.dashboard.attentionRequired.queryOptions({ input: { period } }),
-  );
-  const latestInvoicesQuery = useQuery(
-    orpc.dashboard.latestInvoices.queryOptions({ input: { period } }),
-  );
+  const input = { dateFrom };
+  const metricsQuery = useQuery(orpc.dashboard.metrics.queryOptions({ input }));
+  const teamQuery = useQuery(orpc.dashboard.teamActivity.queryOptions({ input }));
+  const attentionQuery = useQuery(orpc.dashboard.attentionRequired.queryOptions({ input }));
+  const latestInvoicesQuery = useQuery(orpc.dashboard.latestInvoices.queryOptions({ input }));
 
   const isLoading =
     (metricsQuery.isLoading && !metricsQuery.data) ||
@@ -63,19 +57,7 @@ function RouteComponent() {
         <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
           {m.dashboard_title()}
         </h1>
-        <SegmentedControl
-          tabs={PERIOD_TABS.map((t) => ({
-            ...t,
-            label:
-              t.value === "today"
-                ? m.period_today()
-                : t.value === "week"
-                  ? m.period_week()
-                  : m.period_month(),
-          }))}
-          value={period}
-          onChange={setPeriod}
-        />
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
       </div>
 
       {/* Metric cards 2×2 */}
