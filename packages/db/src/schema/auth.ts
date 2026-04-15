@@ -2,7 +2,7 @@ import { relations } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import { pgEnum, pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
-import { location } from "./location";
+import { location, userLocation } from "./location";
 
 export const userRoleEnum = pgEnum("user_role", [
   "admin",
@@ -103,6 +103,7 @@ export const userRelations = relations(user, ({ one, many }) => ({
     fields: [user.locationId],
     references: [location.id],
   }),
+  userLocations: many(userLocation),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

@@ -15,6 +15,7 @@ export interface EmployeeCardData {
   username: string | null;
   role: UserRole | null;
   banned: boolean | null;
+  locations?: { id: string; name: string }[];
 }
 
 export function IconEdit({ className }: { className?: string }) {
@@ -78,6 +79,17 @@ export function EmployeeCard({ employee, actions }: EmployeeCardProps) {
           <span className="size-1 rounded-full bg-label" />
           <span className="text-label">{m.employees_label_email()}</span>
           <span className="text-body">{employee.email}</span>
+          {employee.locations && employee.locations.length > 0 && (
+            <>
+              <span className="size-1 rounded-full bg-label" />
+              <span className="text-label">{m.label_location()}</span>
+              <span className="text-body">
+                {employee.locations.length <= 2
+                  ? employee.locations.map((l) => l.name).join(", ")
+                  : m.location_count({ count: employee.locations.length })}
+              </span>
+            </>
+          )}
         </div>
       </div>
       <div className="flex flex-wrap gap-2">{actions}</div>

@@ -8,11 +8,7 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { LatestInvoices } from "@/components/dashboard/latest-invoices";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { TeamActivityTable } from "@/components/dashboard/team-activity-table";
-import {
-  DateRangeFilter,
-  getDateFrom,
-  type DateRange,
-} from "@/components/ui/date-range-filter";
+import { DateRangeFilter, getDateFrom, type DateRange } from "@/components/ui/date-range-filter";
 import { IconInvoice, IconJobs, IconNight, IconRevenue } from "@/components/ui/nav-icons";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";

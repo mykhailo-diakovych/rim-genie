@@ -64,6 +64,13 @@
       "when": 1775551816485,
       "tag": "0008_magical_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776238042145,
+      "tag": "0009_aberrant_storm",
+      "breakpoints": true
     }
   ]
 }

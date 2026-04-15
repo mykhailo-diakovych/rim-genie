@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -15,26 +13,19 @@ import { Select, SelectOption, SelectPopup, SelectTrigger } from "@/components/u
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 
-function setLocationCookie(locationId: string) {
-  document.cookie = `rim-genie-location=${encodeURIComponent(locationId)}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-}
-
 export function EmailLoginForm() {
   const navigate = useNavigate();
-  const [locationId, setLocationId] = useState("");
 
   const { data: locations } = useQuery(orpc.locations.queryOptions({}));
 
   const form = useForm({
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", locationId: "" },
     onSubmit: async ({ value }) => {
       await authClient.signIn.email(
         { email: value.email, password: value.password },
         {
+          headers: { "x-rim-genie-location": value.locationId },
           onSuccess: () => {
-            if (locationId) {
-              setLocationCookie(locationId);
-            }
             navigate({ to: "/dashboard" });
             toast.success(m.toast_signed_in());
           },
@@ -48,6 +39,7 @@ export function EmailLoginForm() {
       onSubmit: z.object({
         email: z.email(m.validation_invalid_email()),
         password: z.string().min(1, m.validation_password_required()),
+        locationId: z.string().min(1, m.validation_location_required()),
       }),
     },
   });
@@ -104,34 +96,44 @@ export function EmailLoginForm() {
           )}
         </form.Field>
 
-        {locations && locations.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <Label>Location</Label>
-            <Select value={locationId} onValueChange={(v) => setLocationId(v ?? "")}>
-              <SelectTrigger>
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <MapPin className="size-4 shrink-0 text-ghost" />
-                  <span className="min-w-0 truncate text-left">
-                    {locationId ? (
-                      <span className="text-body">
-                        {locations?.find((l) => l.id === locationId)?.name ?? "—"}
-                      </span>
-                    ) : (
-                      <span className="text-ghost">Select location</span>
-                    )}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectPopup>
-                {locations.map((loc) => (
-                  <SelectOption key={loc.id} value={loc.id}>
-                    {loc.name}
-                  </SelectOption>
-                ))}
-              </SelectPopup>
-            </Select>
-          </div>
-        )}
+        <form.Field name="locationId">
+          {(field) => (
+            <div className="flex flex-col gap-1">
+              <Label>{m.label_location()}</Label>
+              <Select
+                value={field.state.value || null}
+                onValueChange={(v) => field.handleChange(v ?? "")}
+              >
+                <SelectTrigger
+                  className={field.state.meta.errors.length > 0 ? "border-red/50" : ""}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <MapPin className="size-4 shrink-0 text-ghost" />
+                    <span className="min-w-0 truncate text-left">
+                      {field.state.value ? (
+                        <span className="text-body">
+                          {locations?.find((l) => l.id === field.state.value)?.name ?? "—"}
+                        </span>
+                      ) : (
+                        <span className="text-ghost">{m.placeholder_select_location()}</span>
+                      )}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectPopup>
+                  {(locations ?? []).map((loc) => (
+                    <SelectOption key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </SelectOption>
+                  ))}
+                </SelectPopup>
+              </Select>
+              {field.state.meta.errors.length > 0 && (
+                <p className="font-rubik text-xs text-red">{field.state.meta.errors[0]?.message}</p>
+              )}
+            </div>
+          )}
+        </form.Field>
       </div>
 
       <form.Subscribe>

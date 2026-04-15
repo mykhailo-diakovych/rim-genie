@@ -3,8 +3,8 @@ import { z } from "zod";
 
 import { auth } from "@rim-genie/auth";
 import { db } from "@rim-genie/db";
-import { location, userRoleEnum, user } from "@rim-genie/db/schema";
-import { desc, eq, and, ne, like } from "drizzle-orm";
+import { location, userLocation, userRoleEnum, user } from "@rim-genie/db/schema";
+import { desc, eq, and, ne, like, inArray } from "drizzle-orm";
 
 import { adminProcedure } from "../index";
 
@@ -23,7 +23,7 @@ const createEmployeeSchema = z.object({
   employeeId: employeeIdField,
   pin: pinField,
   role: z.enum(userRoleEnum.enumValues),
-  locationId: z.string().optional(),
+  locationIds: z.array(z.string().min(1)).optional().default([]),
 });
 
 const updateEmployeeSchema = z.object({
@@ -33,12 +33,26 @@ const updateEmployeeSchema = z.object({
   email: z.email(),
   employeeId: employeeIdField,
   role: z.enum(userRoleEnum.enumValues),
-  locationId: z.string().nullable().optional(),
+  locationIds: z.array(z.string().min(1)).optional(),
 });
 
+async function setUserLocations(userId: string, locationIds: string[]) {
+  await db.delete(userLocation).where(eq(userLocation.userId, userId));
+  if (locationIds.length > 0) {
+    await db
+      .insert(userLocation)
+      .values(locationIds.map((locationId) => ({ userId, locationId })))
+      .onConflictDoNothing();
+  }
+  await db
+    .update(user)
+    .set({ locationId: locationIds[0] ?? null })
+    .where(eq(user.id, userId));
+}
+
 export const employeesRouter = {
-  list: adminProcedure.handler(() => {
-    return db
+  list: adminProcedure.handler(async () => {
+    const users = await db
       .select({
         id: user.id,
         name: user.name,
@@ -46,13 +60,36 @@ export const employeesRouter = {
         username: user.username,
         role: user.role,
         banned: user.banned,
-        locationId: user.locationId,
-        locationName: location.name,
         createdAt: user.createdAt,
       })
       .from(user)
-      .leftJoin(location, eq(user.locationId, location.id))
       .orderBy(desc(user.createdAt));
+
+    if (users.length === 0) return [];
+
+    const assignments = await db
+      .select({
+        userId: userLocation.userId,
+        locationId: userLocation.locationId,
+        locationName: location.name,
+      })
+      .from(userLocation)
+      .innerJoin(location, eq(userLocation.locationId, location.id))
+      .where(
+        inArray(
+          userLocation.userId,
+          users.map((u) => u.id),
+        ),
+      );
+
+    const byUser = new Map<string, { id: string; name: string }[]>();
+    for (const row of assignments) {
+      const list = byUser.get(row.userId) ?? [];
+      list.push({ id: row.locationId, name: row.locationName });
+      byUser.set(row.userId, list);
+    }
+
+    return users.map((u) => ({ ...u, locations: byUser.get(u.id) ?? [] }));
   }),
 
   create: adminProcedure.input(createEmployeeSchema).handler(async ({ input }) => {
@@ -74,14 +111,16 @@ export const employeesRouter = {
         },
       });
 
-      await db
-        .update(user)
-        .set({ username: input.employeeId, locationId: input.locationId ?? null })
-        .where(eq(user.id, created.user.id));
+      await db.update(user).set({ username: input.employeeId }).where(eq(user.id, created.user.id));
+      await setUserLocations(created.user.id, input.locationIds);
 
       return {
         ...created,
-        user: { ...created.user, username: input.employeeId, locationId: input.locationId ?? null },
+        user: {
+          ...created.user,
+          username: input.employeeId,
+          locationIds: input.locationIds,
+        },
       };
     } catch (error) {
       if (error instanceof ORPCError) throw error;
@@ -110,20 +149,23 @@ export const employeesRouter = {
       throw new ORPCError("CONFLICT", { message: "A user with this Employee ID already exists" });
     }
 
-    const setFields: Record<string, unknown> = {
-      name: `${input.firstName} ${input.lastName}`,
-      email: input.email,
-      username: input.employeeId,
-      role: input.role,
-    };
-    if (input.locationId !== undefined) {
-      setFields.locationId = input.locationId;
-    }
-
-    const [updated] = await db.update(user).set(setFields).where(eq(user.id, input.id)).returning();
+    const [updated] = await db
+      .update(user)
+      .set({
+        name: `${input.firstName} ${input.lastName}`,
+        email: input.email,
+        username: input.employeeId,
+        role: input.role,
+      })
+      .where(eq(user.id, input.id))
+      .returning();
 
     if (!updated) {
       throw new ORPCError("NOT_FOUND", { message: "Employee not found" });
+    }
+
+    if (input.locationIds !== undefined) {
+      await setUserLocations(input.id, input.locationIds);
     }
 
     return updated;

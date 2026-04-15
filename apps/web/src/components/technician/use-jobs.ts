@@ -48,9 +48,7 @@ function filterGroupsByDateRange(groups: JobGroup[], dateRange: DateRange): JobG
   if (!dateFrom) return groups;
 
   const from = new Date(dateFrom);
-  return groups.filter((group) =>
-    group.jobs.some((job) => new Date(job.createdAt) >= from),
-  );
+  return groups.filter((group) => group.jobs.some((job) => new Date(job.createdAt) >= from));
 }
 
 interface UseJobsParams {
@@ -59,10 +57,7 @@ interface UseJobsParams {
 }
 
 export function useJobs(params?: UseJobsParams) {
-  const {
-    dateRange = "all",
-    technicianId: explicitTechnicianId = "",
-  } = params ?? {};
+  const { dateRange = "all", technicianId: explicitTechnicianId = "" } = params ?? {};
 
   const technicianId = explicitTechnicianId || undefined;
 

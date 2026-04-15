@@ -22,7 +22,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectOption, SelectPopup, SelectTrigger } from "@/components/ui/select";
-import { MapPin } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
@@ -48,7 +55,7 @@ const baseFieldsSchema = z.object({
     .max(30)
     .regex(/^[a-zA-Z0-9_.]+$/, m.validation_employee_id_required()),
   role: z.enum(userRoleEnum.enumValues, { message: m.employees_validation_role_required() }),
-  locationId: z.string(),
+  locationIds: z.array(z.string().min(1)),
 });
 
 const createEmployeeSchema = baseFieldsSchema.extend({
@@ -109,8 +116,9 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
         employeeId: employee.username ?? "",
         role: employee.role ?? ("" as string),
         pin: "",
-        locationId:
-          (employee as EmployeeCardData & { locationId?: string | null }).locationId ?? "",
+        locationIds: (
+          (employee as EmployeeCardData & { locations?: { id: string }[] }).locations ?? []
+        ).map((l) => l.id),
       }
     : {
         firstName: "",
@@ -119,7 +127,7 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
         employeeId: "",
         role: "" as string,
         pin: "",
-        locationId: "",
+        locationIds: [] as string[],
       };
 
   const form = useForm({
@@ -133,13 +141,17 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
           email: value.email,
           employeeId: value.employeeId,
           role: value.role as UserRole,
-          locationId: value.locationId || null,
+          locationIds: value.locationIds,
         });
       } else {
         createEmployee.mutate({
-          ...value,
+          firstName: value.firstName,
+          lastName: value.lastName,
+          email: value.email,
+          employeeId: value.employeeId,
+          pin: value.pin,
           role: value.role as UserRole,
-          locationId: value.locationId || undefined,
+          locationIds: value.locationIds,
         });
       }
     },
@@ -369,38 +381,72 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
             )}
 
             {locations && locations.length > 0 && (
-              <form.Field name="locationId">
-                {(field) => (
-                  <div className="flex flex-col gap-1">
-                    <Label>Location</Label>
-                    <Select
-                      value={field.state.value || null}
-                      onValueChange={(val) => field.handleChange(val ?? "")}
-                    >
-                      <SelectTrigger>
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
-                          <MapPin className="size-4 shrink-0 text-ghost" />
-                          <span className="min-w-0 truncate text-left">
-                            {field.state.value ? (
-                              <span className="text-body">
-                                {locations.find((l) => l.id === field.state.value)?.name ?? "—"}
-                              </span>
-                            ) : (
-                              <span className="text-ghost">Select location</span>
-                            )}
-                          </span>
-                        </div>
-                      </SelectTrigger>
-                      <SelectPopup>
-                        {locations.map((loc) => (
-                          <SelectOption key={loc.id} value={loc.id}>
-                            {loc.name}
-                          </SelectOption>
-                        ))}
-                      </SelectPopup>
-                    </Select>
-                  </div>
-                )}
+              <form.Field name="locationIds">
+                {(field) => {
+                  const selected = field.state.value;
+                  const selectedNames = locations
+                    .filter((l) => selected.includes(l.id))
+                    .map((l) => l.name);
+                  const triggerLabel =
+                    selectedNames.length === 0
+                      ? null
+                      : selectedNames.length === 1
+                        ? selectedNames[0]
+                        : m.location_count({ count: selectedNames.length });
+                  return (
+                    <div className="flex flex-col gap-1">
+                      <Label>{m.label_location()}</Label>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <button
+                              type="button"
+                              className={cn(
+                                "flex h-9 w-full items-center justify-between rounded-md border bg-white px-2 font-rubik text-xs leading-3.5 outline-none",
+                                "border-field-line",
+                              )}
+                            />
+                          }
+                        >
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <MapPin className="size-4 shrink-0 text-ghost" />
+                            <span className="min-w-0 truncate text-left">
+                              {triggerLabel ? (
+                                <span className="text-body">{triggerLabel}</span>
+                              ) : (
+                                <span className="text-ghost">
+                                  {m.placeholder_select_locations()}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <ChevronDown className="size-4 shrink-0 text-ghost" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-[--anchor-width] rounded-md border border-field-line bg-white py-1 shadow-[0px_4px_16px_0px_rgba(42,44,45,0.12)]">
+                          {locations.map((loc) => {
+                            const checked = selected.includes(loc.id);
+                            return (
+                              <DropdownMenuCheckboxItem
+                                key={loc.id}
+                                checked={checked}
+                                closeOnClick={false}
+                                onCheckedChange={(next) => {
+                                  if (next) {
+                                    field.handleChange([...selected, loc.id]);
+                                  } else {
+                                    field.handleChange(selected.filter((id) => id !== loc.id));
+                                  }
+                                }}
+                              >
+                                {loc.name}
+                              </DropdownMenuCheckboxItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  );
+                }}
               </form.Field>
             )}
           </div>
