@@ -1,0 +1,4644 @@
+{
+  "_meta": {
+    "source": "docs/Rim Genie Price list.xlsx",
+    "currency": "JMD",
+    "moneyNote": "All *Cents fields are integer cents. Source sheet values were whole dollars; cents = dollars * 100.",
+    "colorsNote": "powderCoatColors are NOT in the spreadsheet; seeded from the existing frontend POWDER_COATING_COLORS list. Confirm with client.",
+    "gaps": [
+      "Powder coating size ranges skip 23\" and stop at 26\" (no 27\"+).",
+      "Rim Service matrix spans 10-30\"; Build Up & Reconstruction have no price for 27-30\"."
+    ]
+  },
+  "jobTypeGroups": [
+    {
+      "section": "brake-service",
+      "tab": "general",
+      "groupKey": "brake-drum-skimming",
+      "label": "Brake Drum Skimming",
+      "isGeneric": true,
+      "subTypes": []
+    },
+    {
+      "section": "brake-service",
+      "tab": "general",
+      "groupKey": "disc-rotor-skimming",
+      "label": "Disc Rotor Skimming",
+      "isGeneric": true,
+      "subTypes": []
+    },
+    {
+      "section": "tire-service",
+      "tab": "general",
+      "groupKey": "computerized-balancing",
+      "label": "Computerized Balancing",
+      "isGeneric": false,
+      "subTypes": [
+        {
+          "key": "standard-balance",
+          "label": "Standard Balance"
+        },
+        {
+          "key": "road-force-balance",
+          "label": "Road Force Balance"
+        }
+      ]
+    },
+    {
+      "section": "tire-service",
+      "tab": "general",
+      "groupKey": "valve",
+      "label": "Valve",
+      "isGeneric": false,
+      "subTypes": [
+        {
+          "key": "valve-only",
+          "label": "Valve Only"
+        },
+        {
+          "key": "valve-lube",
+          "label": "Valve + Lube"
+        }
+      ]
+    },
+    {
+      "section": "tire-service",
+      "tab": "general",
+      "groupKey": "dismount",
+      "label": "Dismount",
+      "isGeneric": true,
+      "subTypes": []
+    },
+    {
+      "section": "tire-service",
+      "tab": "general",
+      "groupKey": "mount",
+      "label": "Mount",
+      "isGeneric": true,
+      "subTypes": []
+    },
+    {
+      "section": "tire-service",
+      "tab": "general",
+      "groupKey": "mount-and-dismount-combo-service",
+      "label": "Mount and Dismount: (Combo Service)",
+      "isGeneric": true,
+      "subTypes": []
+    },
+    {
+      "section": "tire-service",
+      "tab": "general",
+      "groupKey": "tire-plug",
+      "label": "Tire Plug",
+      "isGeneric": true,
+      "subTypes": []
+    },
+    {
+      "section": "rims",
+      "tab": "rims",
+      "groupKey": "build-up",
+      "label": "Build Up",
+      "isGeneric": false,
+      "subTypes": [
+        {
+          "key": "edge-back-edge-front-sprong-hole",
+          "label": "Edge Back/ Edge Front/ Sprong/ Hole"
+        }
+      ]
+    },
+    {
+      "section": "rims",
+      "tab": "rims",
+      "groupKey": "crack-fix",
+      "label": "Crack Fix",
+      "isGeneric": false,
+      "subTypes": [
+        {
+          "key": "new-crack-damage-type-1-medium",
+          "label": "New Crack (Damage: Type 1 - Medium )"
+        },
+        {
+          "key": "new-crack-damage-type-2-high",
+          "label": "New Crack (Damage: Type 2 - High)"
+        },
+        {
+          "key": "old-crack-damage-type-1-medium",
+          "label": "Old Crack (Damage: Type 1 - Medium)"
+        },
+        {
+          "key": "old-crack-damage-type-2-high",
+          "label": "Old Crack (Damage: Type 2 - High)"
+        }
+      ]
+    },
+    {
+      "section": "rims",
+      "tab": "rims",
+      "groupKey": "platinum-resurfacing",
+      "label": "Platinum Resurfacing",
+      "isGeneric": false,
+      "subTypes": [
+        {
+          "key": "platinum-resurfacing-rim-face",
+          "label": "Platinum Resurfacing -Rim Face"
+        },
+        {
+          "key": "platinum-resurfacing-rim-face-with-lip",
+          "label": "Platinum Resurfacing -Rim Face with lip"
+        }
+      ]
+    },
+    {
+      "section": "rims",
+      "tab": "rims",
+      "groupKey": "reconstruction",
+      "label": "Reconstruction",
+      "isGeneric": false,
+      "subTypes": [
+        {
+          "key": "reconstruction-burst-full-back-front",
+          "label": "Reconstruction/ Burst (Full Back/ Front)"
+        },
+        {
+          "key": "reconstruction-burst-three-quarter",
+          "label": "Reconstruction/ Burst (Three Quarter)"
+        },
+        {
+          "key": "reconstructiion-burst-half",
+          "label": "Reconstructiion/ Burst (Half)"
+        },
+        {
+          "key": "reconstruction-burst-quarter",
+          "label": "Reconstruction/Burst (Quarter)"
+        }
+      ]
+    },
+    {
+      "section": "rims",
+      "tab": "rims",
+      "groupKey": "spot-polish",
+      "label": "Spot Polish",
+      "isGeneric": false,
+      "subTypes": [
+        {
+          "key": "spot",
+          "label": "Spot"
+        },
+        {
+          "key": "edge",
+          "label": "Edge"
+        },
+        {
+          "key": "lip-2-3",
+          "label": "Lip 2-3\""
+        },
+        {
+          "key": "lip-4-5",
+          "label": "Lip 4-5''"
+        },
+        {
+          "key": "lip-5-6",
+          "label": "Lip 5-6\""
+        }
+      ]
+    },
+    {
+      "section": "rims",
+      "tab": "rims",
+      "groupKey": "sprong",
+      "label": "Sprong",
+      "isGeneric": false,
+      "subTypes": [
+        {
+          "key": "sprong-corner-new",
+          "label": "Sprong Corner New"
+        },
+        {
+          "key": "sprong-corner-old",
+          "label": "Sprong Corner Old"
+        },
+        {
+          "key": "broken-sprong-new-1-3",
+          "label": "Broken Sprong New (1-3')"
+        },
+        {
+          "key": "broken-sprong-new-4-6",
+          "label": "Broken Sprong New (4-6'')"
+        },
+        {
+          "key": "broken-sprong-old-1-3",
+          "label": "Broken Sprong Old (1-3'')"
+        },
+        {
+          "key": "broken-sprong-old-4-6",
+          "label": "Broken Sprong Old ( 4-6 '')"
+        }
+      ]
+    },
+    {
+      "section": "rims",
+      "tab": "rims",
+      "groupKey": "bend",
+      "label": "Bend",
+      "isGeneric": true,
+      "subTypes": []
+    },
+    {
+      "section": "rims",
+      "tab": "rims",
+      "groupKey": "complete-straighten",
+      "label": "Complete Straighten",
+      "isGeneric": true,
+      "subTypes": []
+    },
+    {
+      "section": "rims",
+      "tab": "rims",
+      "groupKey": "twist",
+      "label": "Twist",
+      "isGeneric": true,
+      "subTypes": []
+    }
+  ],
+  "rimServicePrices": [
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 10,
+      "unitCostCents": 680000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 10,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 10,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 10,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 10,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 10,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 10,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 10,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 10,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 10,
+      "unitCostCents": 70000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 10,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 10,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 10,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 10,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 10,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 10,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 10,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 10,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 10,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 10,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 10,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 10,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 10,
+      "unitCostCents": 1690000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 10,
+      "unitCostCents": 1260000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 10,
+      "unitCostCents": 850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 10,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 10,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 10,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 11,
+      "unitCostCents": 680000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 11,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 11,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 11,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 11,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 11,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 11,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 11,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 11,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 11,
+      "unitCostCents": 70000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 11,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 11,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 11,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 11,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 11,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 11,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 11,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 11,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 11,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 11,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 11,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 11,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 11,
+      "unitCostCents": 1690000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 11,
+      "unitCostCents": 1260000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 11,
+      "unitCostCents": 850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 11,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 11,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 11,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 12,
+      "unitCostCents": 680000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 12,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 12,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 12,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 12,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 12,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 12,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 12,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 12,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 12,
+      "unitCostCents": 70000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 12,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 12,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 12,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 12,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 12,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 12,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 12,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 12,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 12,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 12,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 12,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 12,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 12,
+      "unitCostCents": 1690000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 12,
+      "unitCostCents": 1260000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 12,
+      "unitCostCents": 850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 12,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 12,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 12,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 13,
+      "unitCostCents": 680000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 13,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 13,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 13,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 13,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 13,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 13,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 13,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 13,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 13,
+      "unitCostCents": 70000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 13,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 13,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 13,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 13,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 13,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 13,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 13,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 13,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 13,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 13,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 13,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 13,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 13,
+      "unitCostCents": 1690000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 13,
+      "unitCostCents": 1260000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 13,
+      "unitCostCents": 850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 13,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 13,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 13,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 14,
+      "unitCostCents": 680000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 14,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 14,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 14,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 14,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 14,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 14,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 14,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 14,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 14,
+      "unitCostCents": 70000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 14,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 14,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 14,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 14,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 14,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 14,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 14,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 14,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 14,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 14,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 14,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 14,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 14,
+      "unitCostCents": 1820000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 14,
+      "unitCostCents": 1360000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 14,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 14,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 14,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 14,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 15,
+      "unitCostCents": 680000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 15,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 15,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 15,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 15,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 15,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 15,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 15,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 15,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 15,
+      "unitCostCents": 70000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 15,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 15,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 15,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 15,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 15,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 15,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 15,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 15,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 15,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 15,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 15,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 15,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 15,
+      "unitCostCents": 1950000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 15,
+      "unitCostCents": 1460000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 15,
+      "unitCostCents": 950000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 15,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 15,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 15,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 16,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 16,
+      "unitCostCents": 1300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 16,
+      "unitCostCents": 250000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 16,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 16,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 16,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 16,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 16,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 16,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 16,
+      "unitCostCents": 70000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 16,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 16,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 16,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 16,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 16,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 16,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 16,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 16,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 16,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 16,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 16,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 16,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 16,
+      "unitCostCents": 2080000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 16,
+      "unitCostCents": 1560000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 16,
+      "unitCostCents": 1050000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 16,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 16,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 16,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 17,
+      "unitCostCents": 930000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 17,
+      "unitCostCents": 1450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 17,
+      "unitCostCents": 250000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 17,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 17,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 17,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 17,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 17,
+      "unitCostCents": 50000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 17,
+      "unitCostCents": 50000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 17,
+      "unitCostCents": 90000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 17,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 17,
+      "unitCostCents": 90000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 17,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 17,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 17,
+      "unitCostCents": 140000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 17,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 17,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 17,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 17,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 17,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 17,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 17,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 17,
+      "unitCostCents": 2210000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 17,
+      "unitCostCents": 1660000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 17,
+      "unitCostCents": 1100000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 17,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 17,
+      "unitCostCents": 750000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 17,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 18,
+      "unitCostCents": 1050000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 18,
+      "unitCostCents": 1600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 18,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 18,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 18,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 18,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 18,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 18,
+      "unitCostCents": 50000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 18,
+      "unitCostCents": 50000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 18,
+      "unitCostCents": 90000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 18,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 18,
+      "unitCostCents": 90000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 18,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 18,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 18,
+      "unitCostCents": 140000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 18,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 18,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 18,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 18,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 18,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 18,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 18,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 18,
+      "unitCostCents": 2340000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 18,
+      "unitCostCents": 1760000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 18,
+      "unitCostCents": 1150000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 18,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 18,
+      "unitCostCents": 750000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 18,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 19,
+      "unitCostCents": 1150000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 19,
+      "unitCostCents": 1750000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 19,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 19,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 19,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 19,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 19,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 19,
+      "unitCostCents": 60000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 19,
+      "unitCostCents": 60000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 19,
+      "unitCostCents": 110000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 19,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 19,
+      "unitCostCents": 110000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 19,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 19,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 19,
+      "unitCostCents": 160000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 19,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 19,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 19,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 19,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 19,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 19,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 19,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 19,
+      "unitCostCents": 2470000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 19,
+      "unitCostCents": 1860000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 19,
+      "unitCostCents": 1250000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 19,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 19,
+      "unitCostCents": 750000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 19,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 20,
+      "unitCostCents": 1300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 20,
+      "unitCostCents": 1850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 20,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 20,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 20,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 20,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 20,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 20,
+      "unitCostCents": 60000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 20,
+      "unitCostCents": 60000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 20,
+      "unitCostCents": 110000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 20,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 20,
+      "unitCostCents": 110000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 20,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 20,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 20,
+      "unitCostCents": 160000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 20,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 20,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 20,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 20,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 20,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 20,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 20,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 20,
+      "unitCostCents": 2600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 20,
+      "unitCostCents": 1950000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 20,
+      "unitCostCents": 1300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 20,
+      "unitCostCents": 650000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 20,
+      "unitCostCents": 850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 20,
+      "unitCostCents": 1200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 21,
+      "unitCostCents": 1430000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 21,
+      "unitCostCents": 2100000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 21,
+      "unitCostCents": 350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 21,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 21,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 21,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 21,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 21,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 21,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 21,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 21,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 21,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 21,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 21,
+      "unitCostCents": 140000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 21,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 21,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 21,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 21,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 21,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 21,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 21,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 21,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 21,
+      "unitCostCents": 2730000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 21,
+      "unitCostCents": 2050000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 21,
+      "unitCostCents": 1350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 21,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 21,
+      "unitCostCents": 850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 21,
+      "unitCostCents": 1200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 22,
+      "unitCostCents": 1550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 22,
+      "unitCostCents": 2350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 22,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 22,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 22,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 22,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 22,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 22,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 22,
+      "unitCostCents": 80000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 22,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 22,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 22,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 22,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 22,
+      "unitCostCents": 140000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 22,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 22,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 22,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 22,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 22,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 22,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 22,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 22,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 22,
+      "unitCostCents": 2860000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 22,
+      "unitCostCents": 2150000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 22,
+      "unitCostCents": 1450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 22,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 22,
+      "unitCostCents": 850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 22,
+      "unitCostCents": 1200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 23,
+      "unitCostCents": 1650000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 23,
+      "unitCostCents": 2620000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 23,
+      "unitCostCents": 400000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 23,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 23,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 23,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 23,
+      "unitCostCents": 650000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 23,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 23,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 23,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 23,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 23,
+      "unitCostCents": 140000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 23,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 23,
+      "unitCostCents": 160000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 23,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 23,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 23,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 23,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 23,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 23,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 23,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 23,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 23,
+      "unitCostCents": 2990000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 23,
+      "unitCostCents": 2250000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 23,
+      "unitCostCents": 1500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 23,
+      "unitCostCents": 750000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 23,
+      "unitCostCents": 850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 23,
+      "unitCostCents": 1200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 24,
+      "unitCostCents": 1800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 24,
+      "unitCostCents": 2870000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 24,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 24,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 24,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 24,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 24,
+      "unitCostCents": 650000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 24,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 24,
+      "unitCostCents": 100000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 24,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 24,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 24,
+      "unitCostCents": 140000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 24,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 24,
+      "unitCostCents": 160000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 24,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 24,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 24,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 24,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 24,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 24,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 24,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 24,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 24,
+      "unitCostCents": 3120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 24,
+      "unitCostCents": 2350000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 24,
+      "unitCostCents": 1550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 24,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 24,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 24,
+      "unitCostCents": 1500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 25,
+      "unitCostCents": 1900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 25,
+      "unitCostCents": 3120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 25,
+      "unitCostCents": 450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 25,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 25,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 25,
+      "unitCostCents": 650000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 25,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 25,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 25,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 25,
+      "unitCostCents": 220000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 25,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 25,
+      "unitCostCents": 160000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 25,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 25,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 25,
+      "unitCostCents": 220000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 25,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 25,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 25,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 25,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 25,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 25,
+      "unitCostCents": 1100000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 25,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 25,
+      "unitCostCents": 3250000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 25,
+      "unitCostCents": 2450000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 25,
+      "unitCostCents": 1600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 25,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 25,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 25,
+      "unitCostCents": 1500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 26,
+      "unitCostCents": 2050000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 26,
+      "unitCostCents": 3370000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 26,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 26,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 26,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 26,
+      "unitCostCents": 650000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 26,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 26,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 26,
+      "unitCostCents": 120000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 26,
+      "unitCostCents": 220000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 26,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 26,
+      "unitCostCents": 160000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 26,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 26,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 26,
+      "unitCostCents": 220000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 26,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 26,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 26,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 26,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 26,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 26,
+      "unitCostCents": 1100000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "edge-back-edge-front-sprong-hole",
+      "rimSize": 26,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-full-back-front",
+      "rimSize": 26,
+      "unitCostCents": 3380000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-three-quarter",
+      "rimSize": 26,
+      "unitCostCents": 2550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstructiion-burst-half",
+      "rimSize": 26,
+      "unitCostCents": 1700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "reconstruction-burst-quarter",
+      "rimSize": 26,
+      "unitCostCents": 850000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 26,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 26,
+      "unitCostCents": 1500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 27,
+      "unitCostCents": 2150000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 27,
+      "unitCostCents": 3620000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 27,
+      "unitCostCents": 500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 27,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 27,
+      "unitCostCents": 650000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 27,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 27,
+      "unitCostCents": 750000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 27,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 27,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 27,
+      "unitCostCents": 280000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 27,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 27,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 27,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 27,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 27,
+      "unitCostCents": 240000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 27,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 27,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 27,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 27,
+      "unitCostCents": 1100000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 27,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 27,
+      "unitCostCents": 1200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 27,
+      "unitCostCents": 1500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 27,
+      "unitCostCents": 2000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 28,
+      "unitCostCents": 2300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 28,
+      "unitCostCents": 3870000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 28,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 28,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 28,
+      "unitCostCents": 650000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 28,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 28,
+      "unitCostCents": 750000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 28,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 28,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 28,
+      "unitCostCents": 280000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 28,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 28,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 28,
+      "unitCostCents": 150000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 28,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 28,
+      "unitCostCents": 240000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 28,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 28,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 28,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 28,
+      "unitCostCents": 1100000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 28,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 28,
+      "unitCostCents": 1200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 28,
+      "unitCostCents": 1500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 28,
+      "unitCostCents": 2000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 29,
+      "unitCostCents": 2430000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 29,
+      "unitCostCents": 4120000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 29,
+      "unitCostCents": 550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 29,
+      "unitCostCents": 650000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 29,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 29,
+      "unitCostCents": 750000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 29,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 29,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 29,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 29,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 29,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 29,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 29,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 29,
+      "unitCostCents": 220000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 29,
+      "unitCostCents": 260000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 29,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 29,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 29,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 29,
+      "unitCostCents": 1200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 29,
+      "unitCostCents": 1100000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 29,
+      "unitCostCents": 1300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 29,
+      "unitCostCents": 2000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 29,
+      "unitCostCents": 2500000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "complete-straighten",
+      "rimSize": 30,
+      "unitCostCents": 2550000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "twist",
+      "rimSize": 30,
+      "unitCostCents": 4370000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "bend",
+      "rimSize": 30,
+      "unitCostCents": 600000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-1-medium",
+      "rimSize": 30,
+      "unitCostCents": 650000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "new-crack-damage-type-2-high",
+      "rimSize": 30,
+      "unitCostCents": 700000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-1-medium",
+      "rimSize": 30,
+      "unitCostCents": 750000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "old-crack-damage-type-2-high",
+      "rimSize": 30,
+      "unitCostCents": 800000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount",
+      "rimSize": 30,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "dismount",
+      "rimSize": 30,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "mount-and-dismount-combo-service",
+      "rimSize": 30,
+      "unitCostCents": 300000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-only",
+      "rimSize": 30,
+      "unitCostCents": 40000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "valve-lube",
+      "rimSize": 30,
+      "unitCostCents": 200000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "tire-plug",
+      "rimSize": 30,
+      "unitCostCents": 180000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "standard-balance",
+      "rimSize": 30,
+      "unitCostCents": 220000
+    },
+    {
+      "category": "general",
+      "section": "tire-service",
+      "jobType": "road-force-balance",
+      "rimSize": 30,
+      "unitCostCents": 260000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-new",
+      "rimSize": 30,
+      "unitCostCents": 900000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "sprong-corner-old",
+      "rimSize": 30,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-1-3",
+      "rimSize": 30,
+      "unitCostCents": 1000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-new-4-6",
+      "rimSize": 30,
+      "unitCostCents": 1200000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-1-3",
+      "rimSize": 30,
+      "unitCostCents": 1100000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "broken-sprong-old-4-6",
+      "rimSize": 30,
+      "unitCostCents": 1300000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face",
+      "rimSize": 30,
+      "unitCostCents": 2000000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "platinum-resurfacing-rim-face-with-lip",
+      "rimSize": 30,
+      "unitCostCents": 2500000
+    }
+  ],
+  "brakeServicePrices": [
+    {
+      "vehicleSize": "Small Car",
+      "vehicleSizeKey": "small-car",
+      "unit": "single",
+      "removalIncluded": false,
+      "unitCostCents": 100000
+    },
+    {
+      "vehicleSize": "Small Car",
+      "vehicleSizeKey": "small-car",
+      "unit": "single",
+      "removalIncluded": true,
+      "unitCostCents": 200000
+    },
+    {
+      "vehicleSize": "Small Car",
+      "vehicleSizeKey": "small-car",
+      "unit": "pair",
+      "removalIncluded": false,
+      "unitCostCents": 200000
+    },
+    {
+      "vehicleSize": "Small Car",
+      "vehicleSizeKey": "small-car",
+      "unit": "pair",
+      "removalIncluded": true,
+      "unitCostCents": 400000
+    },
+    {
+      "vehicleSize": "Mid Size Van",
+      "vehicleSizeKey": "mid-size-van",
+      "unit": "single",
+      "removalIncluded": false,
+      "unitCostCents": 200000
+    },
+    {
+      "vehicleSize": "Mid Size Van",
+      "vehicleSizeKey": "mid-size-van",
+      "unit": "single",
+      "removalIncluded": true,
+      "unitCostCents": 450000
+    },
+    {
+      "vehicleSize": "Mid Size Van",
+      "vehicleSizeKey": "mid-size-van",
+      "unit": "pair",
+      "removalIncluded": false,
+      "unitCostCents": 400000
+    },
+    {
+      "vehicleSize": "Mid Size Van",
+      "vehicleSizeKey": "mid-size-van",
+      "unit": "pair",
+      "removalIncluded": true,
+      "unitCostCents": 900000
+    },
+    {
+      "vehicleSize": "SUV",
+      "vehicleSizeKey": "suv",
+      "unit": "single",
+      "removalIncluded": false,
+      "unitCostCents": 150000
+    },
+    {
+      "vehicleSize": "SUV",
+      "vehicleSizeKey": "suv",
+      "unit": "single",
+      "removalIncluded": true,
+      "unitCostCents": 400000
+    },
+    {
+      "vehicleSize": "SUV",
+      "vehicleSizeKey": "suv",
+      "unit": "pair",
+      "removalIncluded": false,
+      "unitCostCents": 300000
+    },
+    {
+      "vehicleSize": "SUV",
+      "vehicleSizeKey": "suv",
+      "unit": "pair",
+      "removalIncluded": true,
+      "unitCostCents": 800000
+    },
+    {
+      "vehicleSize": "Full Size Vehicle",
+      "vehicleSizeKey": "full-size-vehicle",
+      "unit": "single",
+      "removalIncluded": false,
+      "unitCostCents": 250000
+    },
+    {
+      "vehicleSize": "Full Size Vehicle",
+      "vehicleSizeKey": "full-size-vehicle",
+      "unit": "single",
+      "removalIncluded": true,
+      "unitCostCents": 500000
+    },
+    {
+      "vehicleSize": "Full Size Vehicle",
+      "vehicleSizeKey": "full-size-vehicle",
+      "unit": "pair",
+      "removalIncluded": false,
+      "unitCostCents": 500000
+    },
+    {
+      "vehicleSize": "Full Size Vehicle",
+      "vehicleSizeKey": "full-size-vehicle",
+      "unit": "pair",
+      "removalIncluded": true,
+      "unitCostCents": 1000000
+    },
+    {
+      "vehicleSize": "Pick Up Truck",
+      "vehicleSizeKey": "pick-up-truck",
+      "unit": "single",
+      "removalIncluded": false,
+      "unitCostCents": 500000
+    },
+    {
+      "vehicleSize": "Pick Up Truck",
+      "vehicleSizeKey": "pick-up-truck",
+      "unit": "single",
+      "removalIncluded": true,
+      "unitCostCents": 600000
+    },
+    {
+      "vehicleSize": "Pick Up Truck",
+      "vehicleSizeKey": "pick-up-truck",
+      "unit": "pair",
+      "removalIncluded": false,
+      "unitCostCents": 1000000
+    },
+    {
+      "vehicleSize": "Pick Up Truck",
+      "vehicleSizeKey": "pick-up-truck",
+      "unit": "pair",
+      "removalIncluded": true,
+      "unitCostCents": 1200000
+    }
+  ],
+  "vehicleSizes": [
+    {
+      "name": "Small Car",
+      "key": "small-car",
+      "sortOrder": 1
+    },
+    {
+      "name": "Mid Size Van",
+      "key": "mid-size-van",
+      "sortOrder": 2
+    },
+    {
+      "name": "SUV",
+      "key": "suv",
+      "sortOrder": 3
+    },
+    {
+      "name": "Full Size Vehicle",
+      "key": "full-size-vehicle",
+      "sortOrder": 4
+    },
+    {
+      "name": "Pick Up Truck",
+      "key": "pick-up-truck",
+      "sortOrder": 5
+    }
+  ],
+  "weldingPrices": [
+    {
+      "material": "Aluminium",
+      "key": "aluminium",
+      "perInchCents": 130000
+    },
+    {
+      "material": "Steel",
+      "key": "steel",
+      "perInchCents": 100000
+    },
+    {
+      "material": "Stainless Steel",
+      "key": "stainless-steel",
+      "perInchCents": 130000
+    },
+    {
+      "material": "Cast Iron",
+      "key": "cast-iron",
+      "perInchCents": 150000
+    }
+  ],
+  "powderCoatPrices": [
+    {
+      "minSize": 10,
+      "maxSize": 16,
+      "scope": "set",
+      "colorCount": 1,
+      "unitCostCents": 4000000
+    },
+    {
+      "minSize": 10,
+      "maxSize": 16,
+      "scope": "set",
+      "colorCount": 2,
+      "unitCostCents": 6000000
+    },
+    {
+      "minSize": 10,
+      "maxSize": 16,
+      "scope": "rim",
+      "colorCount": 1,
+      "unitCostCents": 1000000
+    },
+    {
+      "minSize": 10,
+      "maxSize": 16,
+      "scope": "rim",
+      "colorCount": 2,
+      "unitCostCents": 1500000
+    },
+    {
+      "minSize": 17,
+      "maxSize": 20,
+      "scope": "set",
+      "colorCount": 1,
+      "unitCostCents": 6000000
+    },
+    {
+      "minSize": 17,
+      "maxSize": 20,
+      "scope": "set",
+      "colorCount": 2,
+      "unitCostCents": 8000000
+    },
+    {
+      "minSize": 17,
+      "maxSize": 20,
+      "scope": "rim",
+      "colorCount": 1,
+      "unitCostCents": 1500000
+    },
+    {
+      "minSize": 17,
+      "maxSize": 20,
+      "scope": "rim",
+      "colorCount": 2,
+      "unitCostCents": 2000000
+    },
+    {
+      "minSize": 21,
+      "maxSize": 22,
+      "scope": "set",
+      "colorCount": 1,
+      "unitCostCents": 8000000
+    },
+    {
+      "minSize": 21,
+      "maxSize": 22,
+      "scope": "set",
+      "colorCount": 2,
+      "unitCostCents": 10000000
+    },
+    {
+      "minSize": 21,
+      "maxSize": 22,
+      "scope": "rim",
+      "colorCount": 1,
+      "unitCostCents": 2000000
+    },
+    {
+      "minSize": 21,
+      "maxSize": 22,
+      "scope": "rim",
+      "colorCount": 2,
+      "unitCostCents": 2500000
+    },
+    {
+      "minSize": 24,
+      "maxSize": 26,
+      "scope": "set",
+      "colorCount": 1,
+      "unitCostCents": 10000000
+    },
+    {
+      "minSize": 24,
+      "maxSize": 26,
+      "scope": "set",
+      "colorCount": 2,
+      "unitCostCents": 14000000
+    },
+    {
+      "minSize": 24,
+      "maxSize": 26,
+      "scope": "rim",
+      "colorCount": 1,
+      "unitCostCents": 2500000
+    },
+    {
+      "minSize": 24,
+      "maxSize": 26,
+      "scope": "rim",
+      "colorCount": 2,
+      "unitCostCents": 3500000
+    }
+  ],
+  "powderCoatColors": [
+    {
+      "name": "Black",
+      "key": "black",
+      "sortOrder": 1
+    },
+    {
+      "name": "White",
+      "key": "white",
+      "sortOrder": 2
+    },
+    {
+      "name": "Silver",
+      "key": "silver",
+      "sortOrder": 3
+    },
+    {
+      "name": "Gold",
+      "key": "gold",
+      "sortOrder": 4
+    },
+    {
+      "name": "Red",
+      "key": "red",
+      "sortOrder": 5
+    },
+    {
+      "name": "Blue",
+      "key": "blue",
+      "sortOrder": 6
+    },
+    {
+      "name": "Grey",
+      "key": "grey",
+      "sortOrder": 7
+    }
+  ],
+  "spotPolishPrices": [
+    {
+      "type": "Spot",
+      "typeKey": "spot",
+      "sizeBucket": "le20",
+      "unitCostCents": 150000
+    },
+    {
+      "type": "Spot",
+      "typeKey": "spot",
+      "sizeBucket": "ge21",
+      "unitCostCents": 300000
+    },
+    {
+      "type": "Edge",
+      "typeKey": "edge",
+      "sizeBucket": "le20",
+      "unitCostCents": 200000
+    },
+    {
+      "type": "Edge",
+      "typeKey": "edge",
+      "sizeBucket": "ge21",
+      "unitCostCents": 400000
+    },
+    {
+      "type": "Lip 2-3\"",
+      "typeKey": "lip-2-3",
+      "sizeBucket": "le20",
+      "unitCostCents": 300000
+    },
+    {
+      "type": "Lip 2-3\"",
+      "typeKey": "lip-2-3",
+      "sizeBucket": "ge21",
+      "unitCostCents": 600000
+    },
+    {
+      "type": "Lip 4-5''",
+      "typeKey": "lip-4-5",
+      "sizeBucket": "le20",
+      "unitCostCents": 400000
+    },
+    {
+      "type": "Lip 4-5''",
+      "typeKey": "lip-4-5",
+      "sizeBucket": "ge21",
+      "unitCostCents": 800000
+    },
+    {
+      "type": "Lip 5-6\"",
+      "typeKey": "lip-5-6",
+      "sizeBucket": "le20",
+      "unitCostCents": 500000
+    },
+    {
+      "type": "Lip 5-6\"",
+      "typeKey": "lip-5-6",
+      "sizeBucket": "ge21",
+      "unitCostCents": 1000000
+    }
+  ]
+}
