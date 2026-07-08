@@ -703,10 +703,9 @@ export function QuoteGeneratorSheet({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — does not close on click; use the X button or Cancel (RIM-3 R9) */}
       <div
         className={`fixed inset-0 z-40 bg-black/75 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
-        onClick={handleClose}
       />
 
       {/* Sheet */}
@@ -976,7 +975,7 @@ export function QuoteGeneratorSheet({
                               {job.label}
                             </span>
                             {rimPrices?.[job.value]?.found ? (
-                              <span className="ml-auto font-rubik text-xs text-label">
+                              <span className="ml-auto font-rubik text-sm font-semibold text-body">
                                 $
                                 {(rimPrices[job.value]!.unitCost / 100).toLocaleString("en-US", {
                                   minimumFractionDigits: 2,
@@ -1678,13 +1677,12 @@ export function QuoteGeneratorSheet({
                                   {svc.label}
                                 </span>
                                 {generalPrices?.[svc.value]?.found ? (
-                                  <span className="ml-auto font-rubik text-xs text-label">
+                                  <span className="ml-auto font-rubik text-sm font-semibold text-body">
                                     $
                                     {(generalPrices[svc.value]!.unitCost / 100).toLocaleString(
                                       "en-US",
                                       { minimumFractionDigits: 2 },
                                     )}
-                                    /ea
                                   </span>
                                 ) : (
                                   <span className="ml-auto font-rubik text-xs text-red">
@@ -1776,13 +1774,12 @@ export function QuoteGeneratorSheet({
                                   {svc.label}
                                 </span>
                                 {generalPrices?.[svc.value]?.found ? (
-                                  <span className="ml-auto font-rubik text-xs text-label">
+                                  <span className="ml-auto font-rubik text-sm font-semibold text-body">
                                     $
                                     {(generalPrices[svc.value]!.unitCost / 100).toLocaleString(
                                       "en-US",
                                       { minimumFractionDigits: 2 },
                                     )}
-                                    /ea
                                   </span>
                                 ) : (
                                   <span className="ml-auto font-rubik text-xs text-red">

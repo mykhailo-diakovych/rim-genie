@@ -57,21 +57,9 @@ import { getQuotePdf } from "../pdf/get-quote-pdf";
 import { createQuoteEmail } from "../emails/quote-email";
 
 const jobTypeEntrySchema = z.object({
-  type: z.enum([
-    "bend-fix",
-    "crack-fix",
-    "straighten",
-    "twist",
-    "reconstruct",
-    "sprung",
-    "build-up",
-    "platinum-resurfacing",
-    "hand-polish",
-    "polishing",
-    "general",
-    "welding",
-    "powder-coating",
-  ]),
+  // Dynamic job-type key (from the catalog `job_type` table). Kept as a free
+  // string so new admin-defined job types are accepted without code changes.
+  type: z.string().min(1),
   input: z.string().optional(),
   workTypes: z.array(z.string()).optional(),
   rimAvailable: z.boolean().optional(),
