@@ -73,25 +73,6 @@ const BRAKE_SERVICE_TYPES = [
   { value: "brake-drum-skimming", label: "Brake Drum Skimming", quantityLabel: "How many pairs?" },
 ];
 
-const TIRE_SERVICE_TYPES = [
-  {
-    value: "computerized-balancing",
-    label: "Computerized Balancing",
-    quantityLabel: "How many tires?",
-  },
-  {
-    value: "dismount-mount-tire",
-    label: "Dismount and Mount Tire",
-    quantityLabel: "How many tires?",
-  },
-  { value: "dismount-only", label: "Dismount (Remove) Only", quantityLabel: "How many tires?" },
-  { value: "mount-only", label: "Mount (Replace) Tire Only", quantityLabel: "How many tires?" },
-  { value: "tire-plug", label: "Tire Plug", quantityLabel: "How many plugs?" },
-  { value: "change-valve", label: "Change of Valve", quantityLabel: "How many valves?" },
-];
-
-const GENERAL_SERVICE_TYPES = [...BRAKE_SERVICE_TYPES, ...TIRE_SERVICE_TYPES];
-
 const VEHICLE_TYPE_MAP: Record<string, "truck" | "car_suv" | "motorcycle"> = {
   Truck: "truck",
   "Car/SUV": "car_suv",
@@ -125,8 +106,8 @@ const powderCoatingSchema = z.object({
 });
 
 const generalSchema = z.object({
-  vehicleSize: z.string().min(1, "Vehicle size is required"),
-  tireSize: z.string().min(1, "Tire size is required"),
+  vehicleSize: z.string(),
+  tireSize: z.string(),
 });
 
 // ─── FloorCheckbox ────────────────────────────────────────────────────────────
@@ -228,6 +209,8 @@ export function QuoteGeneratorSheet({
   const [generalSubTab, setGeneralSubTab] = useState("tire-service");
   const [serviceQuantities, setServiceQuantities] = useState<Record<string, string>>({});
   const [serviceQuantityErrors, setServiceQuantityErrors] = useState<Record<string, string>>({});
+  const [brakeUnit, setBrakeUnit] = useState<Record<string, string>>({});
+  const [brakeRemoval, setBrakeRemoval] = useState<Record<string, boolean>>({});
 
   const mappedVehicleType = VEHICLE_TYPE_MAP[rimSelects.vehicleType];
   const mappedMaterial = MATERIAL_MAP[rimSelects.material];
@@ -308,15 +291,6 @@ export function QuoteGeneratorSheet({
     enabled: !!(pcSize && pcSelects.scope && pcColorCount),
   });
 
-  const { data: generalPrices } = useQuery(
-    orpc.floor.pricing.lookup.queryOptions({
-      input: {
-        category: "general" as const,
-        jobTypes: GENERAL_SERVICE_TYPES.map((s) => s.value),
-      },
-    }),
-  );
-
   const { data: tireGroups } = useQuery(
     orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "tire-service" } }),
   );
@@ -335,6 +309,19 @@ export function QuoteGeneratorSheet({
       },
     }),
   );
+
+  const { data: vehicleSizes } = useQuery(
+    orpc.catalog.vehicleSizes.list.queryOptions({ input: { includeInactive: false } }),
+  );
+  const { data: brakeCombos } = useQuery({
+    ...orpc.catalog.brakePrices.byVehicleSize.queryOptions({
+      input: { vehicleSizeName: generalSelects.vehicleSize || "" },
+    }),
+    enabled: !!generalSelects.vehicleSize,
+  });
+  const brakePriceFor = (key: string) =>
+    brakeCombos?.find((c) => c.unit === brakeUnit[key] && c.removalIncluded === brakeRemoval[key])
+      ?.unitCost ?? 0;
 
   const rimForm = useForm({
     defaultValues: RIM_DEFAULTS,
@@ -516,6 +503,20 @@ export function QuoteGeneratorSheet({
         setServiceTypeError("Select at least one service type");
         return;
       }
+      if (tireSelected.length > 0 && !value.tireSize) {
+        setServiceTypeError("Select a tire size");
+        return;
+      }
+      if (brakeSelected.length > 0 && !value.vehicleSize) {
+        setServiceTypeError("Select a vehicle size");
+        return;
+      }
+      for (const b of brakeSelected) {
+        if (!brakeUnit[b.key] || brakeRemoval[b.key] === undefined) {
+          setServiceTypeError(`Choose single/pair and removal for ${b.label}`);
+          return;
+        }
+      }
 
       const qtyErrors: Record<string, string> = {};
       for (const svc of selectedServices) {
@@ -541,23 +542,28 @@ export function QuoteGeneratorSheet({
 
       const generalUnitCost = selectedServices.reduce((sum, s) => {
         const qty = parseInt(serviceQuantities[s.key] ?? "1", 10);
-        const price =
-          (s.isTire ? tirePrices?.[s.key]?.unitCost : generalPrices?.[s.key]?.unitCost) ?? 0;
+        const price = s.isTire ? (tirePrices?.[s.key]?.unitCost ?? 0) : brakePriceFor(s.key);
         return sum + price * qty;
       }, 0);
 
       const data: QuoteGeneratorSheetData = {
-        vehicleSize: value.vehicleSize,
+        vehicleSize: value.vehicleSize || null,
         sideOfVehicle: null,
         damageLevel: null,
         quantity: 1,
         unitCost: generalUnitCost,
-        inches: parseInt(value.tireSize, 10),
+        inches: value.tireSize ? parseInt(value.tireSize, 10) : undefined,
         itemType: "general",
-        jobTypes: selectedServices.map((s) => ({
-          type: s.key as JobType,
-          input: serviceQuantities[s.key] ?? "1",
-        })),
+        jobTypes: selectedServices.map((s) =>
+          s.isTire
+            ? { type: s.key as JobType, input: serviceQuantities[s.key] ?? "1" }
+            : {
+                type: s.key as JobType,
+                input: serviceQuantities[s.key] ?? "1",
+                unit: brakeUnit[s.key] as "single" | "pair",
+                removalIncluded: brakeRemoval[s.key],
+              },
+        ),
         description: desc,
       };
 
@@ -606,13 +612,19 @@ export function QuoteGeneratorSheet({
       generalForm.reset({ vehicleSize: vs, tireSize: ts });
       const svcChecked: Partial<Record<string, boolean>> = {};
       const svcQuantities: Record<string, string> = {};
+      const bUnit: Record<string, string> = {};
+      const bRemoval: Record<string, boolean> = {};
       for (const jt of editItem.jobTypes) {
         const key = jt.subType ?? jt.type;
         svcChecked[key] = true;
         if (jt.input) svcQuantities[key] = jt.input;
+        if (jt.unit) bUnit[key] = jt.unit;
+        if (jt.removalIncluded !== undefined) bRemoval[key] = jt.removalIncluded;
       }
       setCheckedServices(svcChecked);
       setServiceQuantities(svcQuantities);
+      setBrakeUnit(bUnit);
+      setBrakeRemoval(bRemoval);
       const hasBrake = BRAKE_SERVICE_TYPES.some((s) => svcChecked[s.value]);
       const hasTire = tireLeaves.some((t) => svcChecked[t.key]);
       if (hasBrake && !hasTire) setGeneralSubTab("brake-service");
@@ -678,6 +690,8 @@ export function QuoteGeneratorSheet({
     setGeneralSubTab("tire-service");
     setServiceQuantities({});
     setServiceQuantityErrors({});
+    setBrakeUnit({});
+    setBrakeRemoval({});
     onClose();
   }
 
@@ -1320,72 +1334,65 @@ export function QuoteGeneratorSheet({
                 className="flex flex-col gap-4"
               >
                 <div className="flex gap-3 px-3">
-                  <generalForm.Field name="vehicleSize">
-                    {(field) => (
-                      <div className="flex flex-1 flex-col gap-1">
-                        <label className="font-rubik text-xs leading-3.5 text-label">
-                          Vehicle Size:
-                        </label>
-                        <Select
-                          value={generalSelects.vehicleSize || null}
-                          onValueChange={(v) => {
-                            const val = v as string;
-                            setGeneralSelects((prev) => ({ ...prev, vehicleSize: val }));
-                            field.handleChange(val);
-                          }}
-                        >
-                          <SelectTrigger error={field.state.meta.errors.length > 0}>
-                            <SelectValue placeholder="Select vehicle size" />
-                          </SelectTrigger>
-                          <SelectPopup>
-                            {["Sedan", "SUV", "Truck", "Van", "Motorcycle"].map((v) => (
-                              <SelectOption key={v} value={v}>
-                                {v}
-                              </SelectOption>
-                            ))}
-                          </SelectPopup>
-                        </Select>
-                        {field.state.meta.errors.length > 0 && (
-                          <p className="font-rubik text-xs text-red">
-                            {field.state.meta.errors[0]?.message}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </generalForm.Field>
-                  <generalForm.Field name="tireSize">
-                    {(field) => (
-                      <div className="flex flex-1 flex-col gap-1">
-                        <label className="font-rubik text-xs leading-3.5 text-label">
-                          Tire Size:
-                        </label>
-                        <Select
-                          value={generalSelects.tireSize || null}
-                          onValueChange={(v) => {
-                            const val = v as string;
-                            setGeneralSelects((prev) => ({ ...prev, tireSize: val }));
-                            field.handleChange(val);
-                          }}
-                        >
-                          <SelectTrigger error={field.state.meta.errors.length > 0}>
-                            <SelectValue placeholder="Select size" />
-                          </SelectTrigger>
-                          <SelectPopup>
-                            {Array.from({ length: 16 }, (_, i) => i + 13).map((size) => (
-                              <SelectOption key={size} value={String(size)}>
-                                {size} inches
-                              </SelectOption>
-                            ))}
-                          </SelectPopup>
-                        </Select>
-                        {field.state.meta.errors.length > 0 && (
-                          <p className="font-rubik text-xs text-red">
-                            {field.state.meta.errors[0]?.message}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </generalForm.Field>
+                  {generalSubTab === "brake-service" ? (
+                    <generalForm.Field name="vehicleSize">
+                      {(field) => (
+                        <div className="flex flex-1 flex-col gap-1">
+                          <label className="font-rubik text-xs leading-3.5 text-label">
+                            Vehicle Size:
+                          </label>
+                          <Select
+                            value={generalSelects.vehicleSize || null}
+                            onValueChange={(v) => {
+                              const val = v as string;
+                              setGeneralSelects((prev) => ({ ...prev, vehicleSize: val }));
+                              field.handleChange(val);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select vehicle size" />
+                            </SelectTrigger>
+                            <SelectPopup>
+                              {(vehicleSizes ?? []).map((vs) => (
+                                <SelectOption key={vs.id} value={vs.name}>
+                                  {vs.name}
+                                </SelectOption>
+                              ))}
+                            </SelectPopup>
+                          </Select>
+                        </div>
+                      )}
+                    </generalForm.Field>
+                  ) : (
+                    <generalForm.Field name="tireSize">
+                      {(field) => (
+                        <div className="flex flex-1 flex-col gap-1">
+                          <label className="font-rubik text-xs leading-3.5 text-label">
+                            Tire Size:
+                          </label>
+                          <Select
+                            value={generalSelects.tireSize || null}
+                            onValueChange={(v) => {
+                              const val = v as string;
+                              setGeneralSelects((prev) => ({ ...prev, tireSize: val }));
+                              field.handleChange(val);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select size" />
+                            </SelectTrigger>
+                            <SelectPopup>
+                              {Array.from({ length: 21 }, (_, i) => i + 10).map((size) => (
+                                <SelectOption key={size} value={String(size)}>
+                                  {size} inches
+                                </SelectOption>
+                              ))}
+                            </SelectPopup>
+                          </Select>
+                        </div>
+                      )}
+                    </generalForm.Field>
+                  )}
                 </div>
 
                 {/* Service Type sub-tabs */}
@@ -1505,6 +1512,15 @@ export function QuoteGeneratorSheet({
                       <div className="flex flex-col gap-1">
                         {BRAKE_SERVICE_TYPES.map((svc) => {
                           const isChecked = !!checkedServices[svc.value];
+                          const unit = brakeUnit[svc.value] ?? "";
+                          const removal = brakeRemoval[svc.value];
+                          const qty = parseInt(serviceQuantities[svc.value] ?? "1", 10) || 1;
+                          const priceReady = !!(
+                            unit &&
+                            removal !== undefined &&
+                            generalSelects.vehicleSize
+                          );
+                          const brakeUnitCost = priceReady ? brakePriceFor(svc.value) : 0;
                           return (
                             <div key={svc.value} className="flex flex-col">
                               <div
@@ -1518,78 +1534,85 @@ export function QuoteGeneratorSheet({
                                   onCheckedChange={(c) => {
                                     setCheckedServices((prev) => ({ ...prev, [svc.value]: !!c }));
                                     if (c) setServiceTypeError(null);
-                                    if (!c) {
-                                      setServiceQuantities((prev) => {
-                                        const next = { ...prev };
-                                        delete next[svc.value];
-                                        return next;
-                                      });
-                                      setServiceQuantityErrors((prev) => {
-                                        const next = { ...prev };
-                                        delete next[svc.value];
-                                        return next;
-                                      });
-                                    }
                                   }}
                                 />
                                 <span className="font-rubik text-sm leading-[18px] text-body">
                                   {svc.label}
                                 </span>
-                                {generalPrices?.[svc.value]?.found ? (
+                                {priceReady && brakeUnitCost > 0 ? (
                                   <span className="ml-auto font-rubik text-sm font-semibold text-body">
                                     $
-                                    {(generalPrices[svc.value]!.unitCost / 100).toLocaleString(
-                                      "en-US",
-                                      { minimumFractionDigits: 2 },
-                                    )}
+                                    {((brakeUnitCost * qty) / 100).toLocaleString("en-US", {
+                                      minimumFractionDigits: 2,
+                                    })}
                                   </span>
-                                ) : (
-                                  <span className="ml-auto font-rubik text-xs text-red">
-                                    No price set
-                                  </span>
-                                )}
+                                ) : null}
                               </div>
                               {isChecked && (
-                                <div className="flex flex-col gap-1 bg-page px-3 pb-2">
-                                  <label className="font-rubik text-xs leading-3.5 text-label">
-                                    {svc.quantityLabel}
-                                  </label>
-                                  <input
-                                    type="number"
-                                    inputMode="numeric"
-                                    pattern="[0-9]*"
-                                    min={1}
-                                    value={serviceQuantities[svc.value] ?? "1"}
-                                    onChange={(e) => {
-                                      const raw = e.target.value.replace(/\D/g, "");
-                                      setServiceQuantities((prev) => ({
-                                        ...prev,
-                                        [svc.value]: raw === "" ? "1" : raw,
-                                      }));
-                                      setServiceQuantityErrors((prev) => {
-                                        const next = { ...prev };
-                                        delete next[svc.value];
-                                        return next;
-                                      });
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (["e", "E", "+", "-", "."].includes(e.key)) {
-                                        e.preventDefault();
+                                <div className="flex flex-col gap-3 bg-page px-3 pb-3">
+                                  <div className="flex flex-col gap-1">
+                                    <label className="font-rubik text-xs leading-3.5 text-label">
+                                      Single or Pair?
+                                    </label>
+                                    <Select
+                                      value={unit || null}
+                                      onValueChange={(v) =>
+                                        setBrakeUnit((p) => ({ ...p, [svc.value]: (v as string) ?? "" }))
                                       }
-                                    }}
-                                    placeholder="Enter number"
-                                    className={cn(
-                                      "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
-                                      serviceQuantityErrors[svc.value]
-                                        ? "border-red/50"
-                                        : "border-field-line",
-                                    )}
-                                  />
-                                  {serviceQuantityErrors[svc.value] && (
-                                    <p className="font-rubik text-xs text-red">
-                                      {serviceQuantityErrors[svc.value]}
-                                    </p>
-                                  )}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectPopup>
+                                        <SelectOption value="single">Single</SelectOption>
+                                        <SelectOption value="pair">Pair</SelectOption>
+                                      </SelectPopup>
+                                    </Select>
+                                  </div>
+                                  <div className="flex flex-col gap-1">
+                                    <label className="font-rubik text-xs leading-3.5 text-label">
+                                      Removal
+                                    </label>
+                                    <Select
+                                      value={
+                                        removal === undefined ? null : removal ? "include" : "without"
+                                      }
+                                      onValueChange={(v) =>
+                                        setBrakeRemoval((p) => ({ ...p, [svc.value]: v === "include" }))
+                                      }
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select">
+                                          {(v) =>
+                                            v === "include" ? "Include Removal" : "Without Removal"
+                                          }
+                                        </SelectValue>
+                                      </SelectTrigger>
+                                      <SelectPopup>
+                                        <SelectOption value="without">Without Removal</SelectOption>
+                                        <SelectOption value="include">Include Removal</SelectOption>
+                                      </SelectPopup>
+                                    </Select>
+                                  </div>
+                                  <div className="flex flex-col gap-1">
+                                    <label className="font-rubik text-xs leading-3.5 text-label">
+                                      How many?
+                                    </label>
+                                    <input
+                                      type="number"
+                                      inputMode="numeric"
+                                      min={1}
+                                      value={serviceQuantities[svc.value] ?? "1"}
+                                      onChange={(e) => {
+                                        const raw = e.target.value.replace(/\D/g, "");
+                                        setServiceQuantities((prev) => ({
+                                          ...prev,
+                                          [svc.value]: raw === "" ? "1" : raw,
+                                        }));
+                                      }}
+                                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none"
+                                    />
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -1650,7 +1673,7 @@ export function QuoteGeneratorSheet({
                     (s) => checkedServices[s.value],
                   ).reduce((sum, s) => {
                     const qty = parseInt(serviceQuantities[s.value] ?? "1", 10) || 1;
-                    return sum + (generalPrices?.[s.value]?.unitCost ?? 0) * qty;
+                    return sum + brakePriceFor(s.value) * qty;
                   }, 0);
                   const total = tireTotal + brakeTotal;
                   return (total / 100).toLocaleString("en-US", {

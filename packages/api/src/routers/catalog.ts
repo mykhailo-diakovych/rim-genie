@@ -374,6 +374,20 @@ export const catalogRouter = {
         );
     }),
 
+    byVehicleSize: protectedProcedure
+      .input(z.object({ vehicleSizeName: z.string().min(1) }))
+      .handler(async ({ input }) => {
+        return db
+          .select({
+            unit: brakeServicePrice.unit,
+            removalIncluded: brakeServicePrice.removalIncluded,
+            unitCost: brakeServicePrice.unitCost,
+          })
+          .from(brakeServicePrice)
+          .leftJoin(vehicleSize, eq(brakeServicePrice.vehicleSizeId, vehicleSize.id))
+          .where(eq(vehicleSize.name, input.vehicleSizeName));
+      }),
+
     create: adminProcedure.input(brakePriceBodySchema).handler(async ({ input }) => {
       const existing = await db
         .select({ id: brakeServicePrice.id })
