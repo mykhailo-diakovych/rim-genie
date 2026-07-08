@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Check, ChevronDown, Info, Plus, X } from "lucide-react";
+import { Check, Info, Plus, X } from "lucide-react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Radio } from "@base-ui/react/radio";
@@ -62,59 +62,6 @@ export interface QuoteGeneratorSheetData {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const RIM_JOB_TYPES: {
-  value: JobType;
-  label: string;
-  hasSubType?: boolean;
-  subTypeLabel?: string;
-  subTypeOptions?: string[];
-  hasExpandedOptions?: boolean;
-  hasInchesInput?: boolean;
-}[] = [
-  { value: "bend-fix", label: "Bend Fix" },
-  { value: "crack-fix", label: "Crack Fix" },
-  { value: "straighten", label: "Straighten" },
-  { value: "twist", label: "Twist" },
-  { value: "reconstruct", label: "Reconstruct", hasExpandedOptions: true },
-  {
-    value: "sprung",
-    label: "Sprong",
-    hasSubType: true,
-    subTypeLabel: "Type of damage:",
-    subTypeOptions: ["Corner Damage", "Broken Sprong"],
-  },
-  {
-    value: "build-up",
-    label: "Build Up",
-    hasSubType: true,
-    subTypeLabel: "Type of build up:",
-    subTypeOptions: ["Back Edge", "Front Edge", "Full Lip", "Barrel"],
-    hasInchesInput: true,
-  },
-  {
-    value: "platinum-resurfacing",
-    label: "Platinum Resurfacing",
-    hasSubType: true,
-    subTypeLabel: "Type of polishing:",
-    subTypeOptions: ["Full Face", "Full Lip", "Lip + Face"],
-  },
-  {
-    value: "polishing",
-    label: "Spot Polishing",
-    hasSubType: true,
-    subTypeLabel: "How many spots?",
-    subTypeOptions: ["1 Spot", "2 Spots", "3 Spots"],
-  },
-];
-
-const RECONSTRUCT_WORK_TYPES = [
-  "Full Front Repairs",
-  "Full Back Repairs",
-  "Three Quarter Damage",
-  "Half Damage",
-  "Quarter Damage",
-];
-
 const DAMAGE_DESCRIPTIONS: Record<string, string> = {
   low: "Low: Minor cosmetic damage. Surface scratches or light curb rash only.",
   medium:
@@ -167,7 +114,6 @@ const rimsSchema = z.object({
   rimSize: z.string().min(1, "Rim size is required"),
   vehicleType: z.string().min(1, "Vehicle type is required"),
   material: z.string().min(1, "Material is required"),
-  damageLevel: z.string().min(1, "Damage level is required"),
 });
 
 const weldingSchema = z.object({
@@ -236,7 +182,7 @@ interface QuoteGeneratorSheetProps {
 
 // ─── QuoteGeneratorSheet ──────────────────────────────────────────────────────
 
-const RIM_DEFAULTS = { rimSize: "", vehicleType: "", material: "", damageLevel: "" };
+const RIM_DEFAULTS = { rimSize: "", vehicleType: "", material: "" };
 const WELDING_DEFAULTS = {
   materialType: "",
   damageLevel: "",
@@ -255,29 +201,19 @@ export function QuoteGeneratorSheet({
   isAdding,
 }: QuoteGeneratorSheetProps) {
   const [tab, setTab] = useState("rims");
-  const [checkedJobs, setCheckedJobs] = useState<Partial<Record<JobType, boolean>>>({});
-  const [jobSubTypes, setJobSubTypes] = useState<Partial<Record<JobType, string>>>({});
+  // Rims: selected groups by root key + chosen sub-type leaf key per group
+  const [checkedJobs, setCheckedJobs] = useState<Record<string, boolean>>({});
+  const [jobSubTypes, setJobSubTypes] = useState<Record<string, string>>({});
   const [jobTypeError, setJobTypeError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState<string | null>(null);
 
-  // Reconstruct-specific state
-  const [reconstructWorkTypes, setReconstructWorkTypes] = useState<string[]>([]);
-  const [reconstructWorkTypeError, setReconstructWorkTypeError] = useState<string | null>(null);
-  const [subTypeErrors, setSubTypeErrors] = useState<Partial<Record<JobType, string>>>({});
-  const [rimAvailable, setRimAvailable] = useState<string>("yes");
-
-  const [reconstructComments, setReconstructComments] = useState("");
   const [rimComments, setRimComments] = useState("");
   const [generalComments, setGeneralComments] = useState("");
-  const [workTypePopupOpen, setWorkTypePopupOpen] = useState(false);
-  const [buildUpInches, setBuildUpInches] = useState("");
-  const [buildUpInchesError, setBuildUpInchesError] = useState<string | null>(null);
 
   const [rimSelects, setRimSelects] = useState({
     rimSize: "",
     vehicleType: "",
     material: "",
-    damageLevel: "",
   });
 
   // Welding tab selects
@@ -301,11 +237,36 @@ export function QuoteGeneratorSheet({
   const mappedMaterial = MATERIAL_MAP[rimSelects.material];
   const rimSize = rimSelects.rimSize ? parseInt(rimSelects.rimSize, 10) : undefined;
 
+  const { data: rimGroups } = useQuery(
+    orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "rims" } }),
+  );
+  const { data: pricingConfig } = useQuery(orpc.catalog.config.get.queryOptions());
+
+  const rimJobList = (rimGroups ?? []).map((root) => ({
+    key: root.key,
+    label: root.label,
+    children: root.children.map((c) => ({ key: c.key, label: c.label })),
+  }));
+  const rimLeafKeys = rimJobList.flatMap((j) =>
+    j.children.length ? j.children.map((c) => c.key) : [j.key],
+  );
+
+  const applyRimModifier = (base: number) => {
+    let p = base;
+    if (mappedMaterial === "steel" && pricingConfig) {
+      p = Math.round((p * (100 - pricingConfig.steelDiscountPercent)) / 100);
+    }
+    if (mappedVehicleType === "truck" && pricingConfig) {
+      p = Math.round((p * (100 + pricingConfig.truckMarkupPercent)) / 100);
+    }
+    return p;
+  };
+
   const { data: rimPrices } = useQuery(
     orpc.floor.pricing.lookup.queryOptions({
       input: {
         category: "rim" as const,
-        jobTypes: RIM_JOB_TYPES.map((j) => j.value),
+        jobTypes: rimLeafKeys,
         vehicleType: mappedVehicleType,
         rimMaterial: mappedMaterial,
         size: rimSize,
@@ -344,81 +305,53 @@ export function QuoteGeneratorSheet({
   const rimForm = useForm({
     defaultValues: RIM_DEFAULTS,
     onSubmit: ({ value }) => {
-      const hasJob = RIM_JOB_TYPES.some((j) => checkedJobs[j.value]);
-
-      if (!hasJob) {
+      const selectedRoots = rimJobList.filter((j) => checkedJobs[j.key]);
+      if (selectedRoots.length === 0) {
         setJobTypeError("Select at least one job type");
         return;
       }
-
-      const selectedJobs = RIM_JOB_TYPES.filter((j) => checkedJobs[j.value]);
-
-      if (checkedJobs["reconstruct"] && reconstructWorkTypes.length === 0) {
-        setReconstructWorkTypeError("Select a type of work");
-        return;
-      }
-
-      const newSubTypeErrors: Partial<Record<JobType, string>> = {};
-      let hasInchesError = false;
-      for (const j of selectedJobs) {
-        if (j.hasSubType && !jobSubTypes[j.value]) {
-          newSubTypeErrors[j.value] = `${j.subTypeLabel?.replace(":", "") ?? "Option"} is required`;
-        }
-        if (j.hasInchesInput && !buildUpInches.trim()) {
-          setBuildUpInchesError("Inches is required");
-          hasInchesError = true;
+      for (const root of selectedRoots) {
+        if (root.children.length > 0 && !jobSubTypes[root.key]) {
+          setJobTypeError(`Select an option for ${root.label}`);
+          return;
         }
       }
-      if (Object.keys(newSubTypeErrors).length > 0 || hasInchesError) {
-        setSubTypeErrors(newSubTypeErrors);
-        return;
-      }
-      setSubTypeErrors({});
-      setBuildUpInchesError(null);
-      const jobTypes: JobTypeEntry[] = selectedJobs.map((j) => {
-        const entry: JobTypeEntry = { type: j.value };
+      setJobTypeError(null);
 
-        if (j.value === "reconstruct") {
-          entry.workTypes = reconstructWorkTypes;
-          entry.rimAvailable = rimAvailable === "yes";
-
-          entry.comments = reconstructComments || undefined;
-        } else if (j.hasSubType) {
-          entry.subType = jobSubTypes[j.value];
-        }
-
-        if (j.hasInchesInput && buildUpInches.trim()) {
-          entry.input = buildUpInches.trim();
-        }
-
+      const jobTypes: JobTypeEntry[] = selectedRoots.map((root) => {
+        const leafKey = root.children.length ? jobSubTypes[root.key]! : root.key;
+        const childLabel = root.children.find((c) => c.key === leafKey)?.label;
+        const entry: JobTypeEntry = { type: leafKey as JobType };
+        if (childLabel) entry.subType = childLabel;
         return entry;
       });
 
       const description = [
         `${value.rimSize}" Rims`,
         `Vehicle: ${value.vehicleType} - ${value.material}`,
-        `Damage: ${value.damageLevel.toUpperCase()}`,
-        ...selectedJobs.map((j) => {
-          if (j.hasSubType && jobSubTypes[j.value]) {
-            const inches =
-              j.hasInchesInput && buildUpInches.trim() ? ` (${buildUpInches.trim()}")` : "";
-            return `${j.label}: ${jobSubTypes[j.value]}${inches}`;
+        ...selectedRoots.map((root) => {
+          if (root.children.length) {
+            const leafKey = jobSubTypes[root.key];
+            const childLabel = root.children.find((c) => c.key === leafKey)?.label;
+            return `${root.label}: ${childLabel ?? ""}`;
           }
-          return j.label;
+          return root.label;
         }),
         rimComments.trim() || null,
       ]
         .filter(Boolean)
         .join(", ");
 
-      const unitCost = selectedJobs.reduce((sum, j) => {
-        return sum + (rimPrices?.[j.value]?.unitCost ?? 0);
+      const unitCost = selectedRoots.reduce((sum, root) => {
+        const leafKey = root.children.length ? jobSubTypes[root.key] : root.key;
+        const base = leafKey ? (rimPrices?.[leafKey]?.unitCost ?? 0) : 0;
+        return sum + applyRimModifier(base);
       }, 0);
 
       const data: QuoteGeneratorSheetData = {
         vehicleSize: value.rimSize,
         sideOfVehicle: `${value.vehicleType} - ${value.material}`,
-        damageLevel: value.damageLevel,
+        damageLevel: null,
         vehicleType: VEHICLE_TYPE_MAP[value.vehicleType] ?? null,
         rimMaterial: MATERIAL_MAP[value.material] ?? null,
         quantity: 1,
@@ -622,31 +555,27 @@ export function QuoteGeneratorSheet({
     } else {
       setTab("rims");
       const rs = editItem.vehicleSize ?? "";
-      const dl = editItem.damageLevel ?? "";
       const sov = editItem.sideOfVehicle ?? "";
       const parts = sov.split(" - ");
       const vt = parts[0] ?? "";
       const mat = parts[1] ?? "";
-      setRimSelects({ rimSize: rs, vehicleType: vt, material: mat, damageLevel: dl });
+      setRimSelects({ rimSize: rs, vehicleType: vt, material: mat });
       rimForm.setFieldValue("rimSize", rs);
       rimForm.setFieldValue("vehicleType", vt);
       rimForm.setFieldValue("material", mat);
-      rimForm.setFieldValue("damageLevel", dl);
     }
 
-    const checked: Partial<Record<JobType, boolean>> = {};
-    const subTypes: Partial<Record<JobType, string>> = {};
+    const checked: Record<string, boolean> = {};
+    const subTypes: Record<string, string> = {};
     for (const jt of editItem.jobTypes) {
-      checked[jt.type] = true;
-      if (jt.subType) subTypes[jt.type] = jt.subType;
-      if (jt.type === "reconstruct") {
-        setReconstructWorkTypes(jt.workTypes ?? []);
-        setRimAvailable(jt.rimAvailable === false ? "no" : "yes");
-
-        setReconstructComments(jt.comments ?? "");
-      }
-      if (jt.type === "build-up" && jt.input) {
-        setBuildUpInches(jt.input);
+      const root = rimJobList.find(
+        (r) => r.key === jt.type || r.children.some((c) => c.key === jt.type),
+      );
+      if (root) {
+        checked[root.key] = true;
+        if (root.children.length) subTypes[root.key] = jt.type;
+      } else {
+        checked[jt.type] = true;
       }
     }
     setCheckedJobs(checked);
@@ -655,13 +584,8 @@ export function QuoteGeneratorSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editItem?.id]);
 
-  function toggleJob(type: JobType, checked: boolean) {
-    setCheckedJobs((prev) => {
-      const next = { ...prev, [type]: checked };
-      if (checked && type === "straighten") next["twist"] = false;
-      if (checked && type === "twist") next["straighten"] = false;
-      return next;
-    });
+  function toggleRimJob(key: string, checked: boolean) {
+    setCheckedJobs((prev) => ({ ...prev, [key]: checked }));
     if (checked) setJobTypeError(null);
   }
 
@@ -674,18 +598,9 @@ export function QuoteGeneratorSheet({
     setJobSubTypes({});
     setJobTypeError(null);
     setInitialized(null);
-    setReconstructWorkTypes([]);
-    setReconstructWorkTypeError(null);
-    setSubTypeErrors({});
-    setRimAvailable("yes");
-
-    setReconstructComments("");
     setRimComments("");
     setGeneralComments("");
-    setWorkTypePopupOpen(false);
-    setBuildUpInches("");
-    setBuildUpInchesError(null);
-    setRimSelects({ rimSize: "", vehicleType: "", material: "", damageLevel: "" });
+    setRimSelects({ rimSize: "", vehicleType: "", material: "" });
     setWeldingSelects({ materialType: "", damageLevel: "" });
     setPcSelects({ rimSize: "", colorCoat: "" });
     setGeneralSelects({ vehicleSize: "", tireSize: "" });
@@ -695,10 +610,6 @@ export function QuoteGeneratorSheet({
     setServiceQuantities({});
     setServiceQuantityErrors({});
     onClose();
-  }
-
-  function removeWorkType(wt: string) {
-    setReconstructWorkTypes((prev) => prev.filter((t) => t !== wt));
   }
 
   return (
@@ -894,60 +805,6 @@ export function QuoteGeneratorSheet({
                   )}
                 </rimForm.Field>
 
-                <rimForm.Field name="damageLevel">
-                  {(field) => (
-                    <div className="flex flex-col gap-1">
-                      <label className="font-rubik text-xs leading-3.5 text-label">
-                        Damage Level:
-                      </label>
-                      <Select
-                        value={rimSelects.damageLevel || null}
-                        onValueChange={(v) => {
-                          const val = v as string;
-                          setRimSelects((prev) => ({ ...prev, damageLevel: val }));
-                          field.handleChange(val);
-                        }}
-                      >
-                        <SelectTrigger
-                          className="capitalize"
-                          error={field.state.meta.errors.length > 0}
-                        >
-                          <SelectValue placeholder="Select level" />
-                        </SelectTrigger>
-                        <SelectPopup>
-                          <SelectOption value="low">Low</SelectOption>
-                          <SelectOption value="medium">Medium</SelectOption>
-                          <SelectOption value="high">High</SelectOption>
-                        </SelectPopup>
-                      </Select>
-                      {field.state.meta.errors.length > 0 && (
-                        <p className="font-rubik text-xs text-red">
-                          {field.state.meta.errors[0]?.message}
-                        </p>
-                      )}
-                      {rimSelects.damageLevel && DAMAGE_DESCRIPTIONS[rimSelects.damageLevel] && (
-                        <div className="mt-1 flex items-center gap-3 rounded-lg bg-[#ebf5ff] px-3 py-2">
-                          <div className="flex shrink-0 items-center justify-center rounded-full bg-[#cbe5fc] p-2">
-                            <Info className="size-5 text-blue" />
-                          </div>
-                          <p className="font-rubik text-xs leading-3.5 text-body">
-                            <span className="font-medium">
-                              {rimSelects.damageLevel === "medium"
-                                ? "Medium (Type 1):"
-                                : rimSelects.damageLevel === "low"
-                                  ? "Low:"
-                                  : "High:"}
-                            </span>{" "}
-                            {DAMAGE_DESCRIPTIONS[rimSelects.damageLevel]
-                              .split(": ")
-                              .slice(1)
-                              .join(": ")}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </rimForm.Field>
               </form>
 
               {/* Job Types */}
@@ -956,10 +813,12 @@ export function QuoteGeneratorSheet({
                   Job Type:
                 </p>
                 <div className="flex flex-col gap-1">
-                  {RIM_JOB_TYPES.map((job) => {
-                    const isChecked = !!checkedJobs[job.value];
+                  {rimJobList.map((job) => {
+                    const isChecked = !!checkedJobs[job.key];
+                    const leafKey = job.children.length ? jobSubTypes[job.key] : job.key;
+                    const priceRow = leafKey ? rimPrices?.[leafKey] : undefined;
                     return (
-                      <div key={job.value}>
+                      <div key={job.key}>
                         <div
                           className={cn(
                             "flex items-center gap-4 px-3 py-2",
@@ -969,284 +828,49 @@ export function QuoteGeneratorSheet({
                           <div className="flex flex-1 items-center gap-1.5">
                             <FloorCheckbox
                               checked={isChecked}
-                              onCheckedChange={(c) => toggleJob(job.value, !!c)}
+                              onCheckedChange={(c) => toggleRimJob(job.key, !!c)}
                             />
                             <span className="font-rubik text-sm leading-[18px] text-body">
                               {job.label}
                             </span>
-                            {rimPrices?.[job.value]?.found ? (
+                            {priceRow?.found ? (
                               <span className="ml-auto font-rubik text-sm font-semibold text-body">
                                 $
-                                {(rimPrices[job.value]!.unitCost / 100).toLocaleString("en-US", {
-                                  minimumFractionDigits: 2,
-                                })}
+                                {(applyRimModifier(priceRow.unitCost) / 100).toLocaleString(
+                                  "en-US",
+                                  { minimumFractionDigits: 2 },
+                                )}
                               </span>
-                            ) : mappedVehicleType && mappedMaterial && rimSize ? (
+                            ) : isChecked && leafKey && rimSize ? (
                               <span className="ml-auto font-rubik text-xs text-red">
                                 No price set
                               </span>
                             ) : null}
                           </div>
                         </div>
-                        {job.hasSubType && isChecked && !job.hasInchesInput && (
+                        {job.children.length > 0 && isChecked && (
                           <div className="flex flex-col gap-1 bg-page px-3 pb-2">
                             <label className="font-rubik text-xs leading-3.5 text-label">
-                              {job.subTypeLabel}
+                              Select option:
                             </label>
                             <Select
-                              value={jobSubTypes[job.value] ?? null}
+                              value={jobSubTypes[job.key] ?? null}
                               onValueChange={(v) => {
-                                setJobSubTypes((prev) => ({
-                                  ...prev,
-                                  [job.value]: v as string,
-                                }));
-                                setSubTypeErrors((prev) => {
-                                  const next = { ...prev };
-                                  delete next[job.value];
-                                  return next;
-                                });
+                                setJobSubTypes((prev) => ({ ...prev, [job.key]: v as string }));
+                                setJobTypeError(null);
                               }}
                             >
-                              <SelectTrigger error={!!subTypeErrors[job.value]}>
+                              <SelectTrigger>
                                 <SelectValue placeholder="Select" />
                               </SelectTrigger>
                               <SelectPopup>
-                                {job.subTypeOptions?.map((opt) => (
-                                  <SelectOption key={opt} value={opt}>
-                                    {opt}
+                                {job.children.map((c) => (
+                                  <SelectOption key={c.key} value={c.key}>
+                                    {c.label}
                                   </SelectOption>
                                 ))}
                               </SelectPopup>
                             </Select>
-                            {subTypeErrors[job.value] && (
-                              <p className="font-rubik text-xs text-red">
-                                {subTypeErrors[job.value]}
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Build Up expanded panel */}
-                        {job.hasInchesInput && isChecked && (
-                          <div className="flex flex-col gap-3 bg-page px-3 py-2">
-                            <div className="flex gap-3">
-                              <div className="flex flex-1 flex-col gap-1">
-                                <label className="font-rubik text-xs leading-3.5 text-label">
-                                  {job.subTypeLabel}
-                                </label>
-                                <Select
-                                  value={jobSubTypes[job.value] ?? null}
-                                  onValueChange={(v) => {
-                                    setJobSubTypes((prev) => ({
-                                      ...prev,
-                                      [job.value]: v as string,
-                                    }));
-                                    setSubTypeErrors((prev) => {
-                                      const next = { ...prev };
-                                      delete next[job.value];
-                                      return next;
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger error={!!subTypeErrors[job.value]}>
-                                    <SelectValue placeholder="Select" />
-                                  </SelectTrigger>
-                                  <SelectPopup>
-                                    {job.subTypeOptions?.map((opt) => (
-                                      <SelectOption key={opt} value={opt}>
-                                        {opt}
-                                      </SelectOption>
-                                    ))}
-                                  </SelectPopup>
-                                </Select>
-                                {subTypeErrors[job.value] && (
-                                  <p className="font-rubik text-xs text-red">
-                                    {subTypeErrors[job.value]}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex flex-1 flex-col gap-1">
-                                <label className="font-rubik text-xs leading-3.5 text-label">
-                                  How many inches?
-                                </label>
-                                <input
-                                  type="number"
-                                  min={1}
-                                  placeholder="Enter inches"
-                                  value={buildUpInches}
-                                  onChange={(e) => {
-                                    const raw = e.target.value.replace(/\D/g, "");
-                                    setBuildUpInches(raw);
-                                    if (raw) {
-                                      setBuildUpInchesError(null);
-                                    }
-                                  }}
-                                  className={cn(
-                                    "h-9 rounded-lg border bg-white px-3 font-rubik text-xs text-body outline-none",
-                                    buildUpInchesError ? "border-red/50" : "border-field-line",
-                                  )}
-                                />
-                                {buildUpInchesError && (
-                                  <p className="font-rubik text-xs text-red">
-                                    {buildUpInchesError}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Reconstruct expanded options */}
-                        {job.hasExpandedOptions && isChecked && (
-                          <div className="flex flex-col gap-4 bg-page px-3 py-2">
-                            {/* Type of work multiselect */}
-                            <div className="flex flex-col gap-1">
-                              <label className="font-rubik text-xs leading-3.5 text-label">
-                                Type of work:
-                              </label>
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  onClick={() => setWorkTypePopupOpen((v) => !v)}
-                                  className={cn(
-                                    "flex min-h-9 w-full items-center rounded-lg border bg-white py-1 pr-2 pl-1",
-                                    reconstructWorkTypeError
-                                      ? "border-red/50"
-                                      : "border-field-line",
-                                  )}
-                                >
-                                  <div className="flex flex-1 flex-wrap gap-1">
-                                    {reconstructWorkTypes.length === 0 && (
-                                      <span className="px-1 font-rubik text-xs text-ghost">
-                                        Select work type
-                                      </span>
-                                    )}
-                                    {reconstructWorkTypes.map((wt) => (
-                                      <span
-                                        key={wt}
-                                        className="flex h-7 items-center gap-2 rounded-md bg-blue py-1 pr-1.5 pl-2 font-rubik text-xs text-white"
-                                      >
-                                        {wt}
-                                        <span
-                                          role="button"
-                                          tabIndex={0}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            removeWorkType(wt);
-                                          }}
-                                          onKeyDown={(e) => {
-                                            if (e.key === "Enter" || e.key === " ") {
-                                              e.stopPropagation();
-                                              removeWorkType(wt);
-                                            }
-                                          }}
-                                          className="flex cursor-pointer items-center justify-center"
-                                        >
-                                          <X className="size-3" />
-                                        </span>
-                                      </span>
-                                    ))}
-                                  </div>
-                                  <ChevronDown className="size-4 shrink-0 text-ghost" />
-                                </button>
-
-                                {workTypePopupOpen && (
-                                  <>
-                                    <div
-                                      className="fixed inset-0 z-40"
-                                      onClick={() => setWorkTypePopupOpen(false)}
-                                    />
-                                    <div className="absolute top-full left-0 z-50 mt-1 flex w-full flex-col gap-0.5 overflow-clip rounded-lg bg-white py-1 shadow-[0px_0px_32px_0px_rgba(10,13,18,0.1)]">
-                                      {RECONSTRUCT_WORK_TYPES.map((wt) => {
-                                        const isSelected = reconstructWorkTypes.includes(wt);
-                                        return (
-                                          <button
-                                            key={wt}
-                                            type="button"
-                                            onClick={() => {
-                                              if (!isSelected) {
-                                                setReconstructWorkTypes([wt]);
-                                                setReconstructWorkTypeError(null);
-                                                setWorkTypePopupOpen(false);
-                                              }
-                                            }}
-                                            className={cn(
-                                              "flex items-center gap-4 px-2 py-2 text-left font-rubik text-xs leading-3.5 text-body",
-                                              isSelected && "bg-[#f0f5fa]",
-                                            )}
-                                          >
-                                            <span className="flex-1">{wt}</span>
-                                            {isSelected && (
-                                              <Check className="size-4 shrink-0 text-blue" />
-                                            )}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                              {reconstructWorkTypeError && (
-                                <p className="font-rubik text-xs text-red">
-                                  {reconstructWorkTypeError}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Is there a rim available? */}
-                            <div className="flex flex-col gap-2">
-                              <label className="font-rubik text-xs leading-3.5 text-label">
-                                Is there a rim available?
-                              </label>
-                              <RadioGroup
-                                value={rimAvailable}
-                                onValueChange={(v) => setRimAvailable(v as string)}
-                                className="flex items-center gap-6"
-                              >
-                                <label className="flex cursor-pointer items-center gap-1.5">
-                                  <Radio.Root
-                                    value="yes"
-                                    className="flex size-4 shrink-0 items-center justify-center rounded-full border border-[#cdcfd1] bg-white transition-colors data-checked:border-blue"
-                                  >
-                                    <Radio.Indicator className="size-2 rounded-full bg-blue" />
-                                  </Radio.Root>
-                                  <span className="font-rubik text-sm leading-[18px] text-body">
-                                    Yes, Rim is available
-                                  </span>
-                                </label>
-                                <label className="flex cursor-pointer items-center gap-1.5">
-                                  <Radio.Root
-                                    value="no"
-                                    className="flex size-4 shrink-0 items-center justify-center rounded-full border border-[#cdcfd1] bg-white transition-colors data-checked:border-blue"
-                                  >
-                                    <Radio.Indicator className="size-2 rounded-full bg-blue" />
-                                  </Radio.Root>
-                                  <span className="font-rubik text-sm leading-[18px] text-body">
-                                    No, Rim is NOT available
-                                  </span>
-                                </label>
-                              </RadioGroup>
-                              {rimAvailable === "no" && (
-                                <div className="flex items-center gap-1">
-                                  <AlertTriangle className="size-4 shrink-0 text-red" />
-                                  <span className="font-rubik text-xs leading-3.5 text-red">
-                                    Must source rim to complete job. Additional charges apply.
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Comments */}
-                            <div className="flex flex-col gap-1">
-                              <label className="font-rubik text-xs leading-3.5 text-label">
-                                Comments:
-                              </label>
-                              <textarea
-                                value={reconstructComments}
-                                onChange={(e) => setReconstructComments(e.target.value)}
-                                className="min-h-[70px] w-full resize-none rounded-lg border border-field-line bg-white p-2 font-rubik text-sm leading-[18px] text-body outline-none placeholder:text-[#a0a3a0]"
-                              />
-                            </div>
                           </div>
                         )}
                       </div>
@@ -1862,11 +1486,12 @@ export function QuoteGeneratorSheet({
               $
               {(() => {
                 if (tab === "rims") {
-                  const selectedJobs = RIM_JOB_TYPES.filter((j) => checkedJobs[j.value]);
-                  const total = selectedJobs.reduce(
-                    (sum, j) => sum + (rimPrices?.[j.value]?.unitCost ?? 0),
-                    0,
-                  );
+                  const selectedRoots = rimJobList.filter((j) => checkedJobs[j.key]);
+                  const total = selectedRoots.reduce((sum, root) => {
+                    const leafKey = root.children.length ? jobSubTypes[root.key] : root.key;
+                    const base = leafKey ? (rimPrices?.[leafKey]?.unitCost ?? 0) : 0;
+                    return sum + applyRimModifier(base);
+                  }, 0);
                   return (total / 100).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
