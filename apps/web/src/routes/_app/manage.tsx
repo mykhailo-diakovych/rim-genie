@@ -7,8 +7,12 @@ import { toast } from "sonner";
 
 import type { ServiceType } from "@rim-genie/db/schema";
 
+import { ColorsTab } from "@/components/manage/colors-tab";
 import { DeleteServiceModal } from "@/components/manage/delete-service-modal";
+import { JobTypesTab } from "@/components/manage/job-types-tab";
+import { PricingConfigTab } from "@/components/manage/pricing-config-tab";
 import { PricingTab } from "@/components/manage/pricing-tab";
+import { VehicleSizesTab } from "@/components/manage/vehicle-sizes-tab";
 import { ServiceModal } from "@/components/manage/service-modal";
 import { ServiceTable, ServiceTableSkeleton } from "@/components/manage/service-table";
 import type { ServiceRow } from "@/components/manage/service-table";
@@ -19,13 +23,31 @@ import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
 
-type ManageTab = ServiceType | "pricing" | "loyalty" | "locations";
+type ManageTab =
+  | ServiceType
+  | "pricing"
+  | "job-types"
+  | "pricing-config"
+  | "vehicle-sizes"
+  | "colors"
+  | "loyalty"
+  | "locations";
 
 export const Route = createFileRoute("/_app/manage")({
   validateSearch: (search: Record<string, unknown>): { tab: ManageTab } => ({
-    tab: (["rim", "general", "pricing", "loyalty", "locations"] as const).includes(
-      search.tab as ManageTab,
-    )
+    tab: (
+      [
+        "rim",
+        "general",
+        "pricing",
+        "job-types",
+        "pricing-config",
+        "vehicle-sizes",
+        "colors",
+        "loyalty",
+        "locations",
+      ] as const
+    ).includes(search.tab as ManageTab)
       ? (search.tab as ManageTab)
       : "rim",
   }),
@@ -503,6 +525,10 @@ function ManagePage() {
             </TabsTrigger>
           ))}
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="job-types">Job Types</TabsTrigger>
+          <TabsTrigger value="pricing-config">Pricing Config</TabsTrigger>
+          <TabsTrigger value="vehicle-sizes">Vehicle Sizes</TabsTrigger>
+          <TabsTrigger value="colors">Colors</TabsTrigger>
           <TabsTrigger value="loyalty">{m.loyalty_tab()}</TabsTrigger>
           <TabsTrigger value="locations">Locations</TabsTrigger>
         </TabsList>
@@ -519,6 +545,22 @@ function ManagePage() {
 
         <TabsContent value="pricing" className="pt-3">
           <PricingTab />
+        </TabsContent>
+
+        <TabsContent value="job-types" className="pt-3">
+          <JobTypesTab />
+        </TabsContent>
+
+        <TabsContent value="pricing-config" className="pt-3">
+          <PricingConfigTab />
+        </TabsContent>
+
+        <TabsContent value="vehicle-sizes" className="pt-3">
+          <VehicleSizesTab />
+        </TabsContent>
+
+        <TabsContent value="colors" className="pt-3">
+          <ColorsTab />
         </TabsContent>
 
         <TabsContent value="loyalty" className="pt-3">
