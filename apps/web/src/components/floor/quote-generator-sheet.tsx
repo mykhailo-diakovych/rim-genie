@@ -37,13 +37,17 @@ export type JobType =
   | "powder-coating";
 
 export type JobTypeEntry = {
-  type: JobType;
+  type: string;
   input?: string;
   workTypes?: string[];
   rimAvailable?: boolean;
-
   comments?: string;
   subType?: string;
+  unit?: "single" | "pair";
+  removalIncluded?: boolean;
+  scope?: "set" | "rim";
+  colorCount?: number;
+  colors?: string[];
 };
 
 export interface QuoteGeneratorSheetData {
@@ -61,13 +65,6 @@ export interface QuoteGeneratorSheetData {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const DAMAGE_DESCRIPTIONS: Record<string, string> = {
-  low: "Low: Minor cosmetic damage. Surface scratches or light curb rash only.",
-  medium:
-    "Medium (Type 1): Older damage that is not severe. May include minor previous correction.",
-  high: "High: Severe structural damage requiring extensive repair or reconstruction.",
-};
 
 const WELDING_MATERIAL_TYPES = ["Aluminium", "Steel", "Stainless Steel", "Cast Iron"];
 
@@ -118,7 +115,6 @@ const rimsSchema = z.object({
 
 const weldingSchema = z.object({
   materialType: z.string().min(1, "Material type is required"),
-  damageLevel: z.string().min(1, "Damage level is required"),
   lengthOfWeld: z.string().refine((v) => parseInt(v, 10) > 0, "Length is required"),
   comments: z.string(),
 });
@@ -185,7 +181,6 @@ interface QuoteGeneratorSheetProps {
 const RIM_DEFAULTS = { rimSize: "", vehicleType: "", material: "" };
 const WELDING_DEFAULTS = {
   materialType: "",
-  damageLevel: "",
   lengthOfWeld: "",
   comments: "",
 };
@@ -219,7 +214,6 @@ export function QuoteGeneratorSheet({
   // Welding tab selects
   const [weldingSelects, setWeldingSelects] = useState({
     materialType: "",
-    damageLevel: "",
   });
 
   // Powder coating tab selects
@@ -302,6 +296,25 @@ export function QuoteGeneratorSheet({
     }),
   );
 
+  const { data: tireGroups } = useQuery(
+    orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "tire-service" } }),
+  );
+  const tireLeaves = (tireGroups ?? []).flatMap((root) =>
+    root.children.length
+      ? root.children.map((c) => ({ key: c.key, label: c.label }))
+      : [{ key: root.key, label: root.label }],
+  );
+  const tireSize = generalSelects.tireSize ? parseInt(generalSelects.tireSize, 10) : undefined;
+  const { data: tirePrices } = useQuery(
+    orpc.floor.pricing.lookup.queryOptions({
+      input: {
+        category: "general" as const,
+        jobTypes: tireLeaves.map((t) => t.key),
+        size: tireSize,
+      },
+    }),
+  );
+
   const rimForm = useForm({
     defaultValues: RIM_DEFAULTS,
     onSubmit: ({ value }) => {
@@ -378,7 +391,6 @@ export function QuoteGeneratorSheet({
       const inches = parseInt(value.lengthOfWeld, 10);
       const desc = [
         `Welding: ${value.materialType}`,
-        `Damage: ${value.damageLevel.toUpperCase()}`,
         `${inches}" weld`,
         value.comments?.trim() || null,
       ]
@@ -386,12 +398,13 @@ export function QuoteGeneratorSheet({
         .join(", ");
 
       const weldingJobType = value.materialType.toLowerCase().replace(/\s+/g, "-");
-      const weldingUnitCost = weldingPrices?.[weldingJobType]?.unitCost ?? editItem?.unitCost ?? 0;
+      const perInch = weldingPrices?.[weldingJobType]?.unitCost ?? 0;
+      const weldingUnitCost = perInch > 0 ? perInch * inches : (editItem?.unitCost ?? 0);
 
       const data: QuoteGeneratorSheetData = {
         vehicleSize: null,
         sideOfVehicle: value.materialType,
-        damageLevel: value.damageLevel,
+        damageLevel: null,
         quantity: 1,
         unitCost: weldingUnitCost,
         inches,
@@ -447,7 +460,15 @@ export function QuoteGeneratorSheet({
   const generalForm = useForm({
     defaultValues: GENERAL_DEFAULTS,
     onSubmit: ({ value }) => {
-      const selectedServices = GENERAL_SERVICE_TYPES.filter((s) => checkedServices[s.value]);
+      const tireSelected = tireLeaves
+        .filter((t) => checkedServices[t.key])
+        .map((t) => ({ key: t.key, label: t.label, isTire: true }));
+      const brakeSelected = BRAKE_SERVICE_TYPES.filter((s) => checkedServices[s.value]).map((s) => ({
+        key: s.value,
+        label: s.label,
+        isTire: false,
+      }));
+      const selectedServices = [...tireSelected, ...brakeSelected];
       if (selectedServices.length === 0) {
         setServiceTypeError("Select at least one service type");
         return;
@@ -455,9 +476,9 @@ export function QuoteGeneratorSheet({
 
       const qtyErrors: Record<string, string> = {};
       for (const svc of selectedServices) {
-        const qty = parseInt(serviceQuantities[svc.value] ?? "1", 10);
+        const qty = parseInt(serviceQuantities[svc.key] ?? "1", 10);
         if (!qty || qty <= 0) {
-          qtyErrors[svc.value] = `${svc.quantityLabel.replace("?", "")} is required`;
+          qtyErrors[svc.key] = "Quantity is required";
         }
       }
       if (Object.keys(qtyErrors).length > 0) {
@@ -469,15 +490,16 @@ export function QuoteGeneratorSheet({
       const desc = [
         `General: ${value.vehicleSize}`,
         `Tire: ${value.tireSize}"`,
-        ...selectedServices.map((s) => `${s.label} x${serviceQuantities[s.value]}`),
+        ...selectedServices.map((s) => `${s.label} x${serviceQuantities[s.key] ?? "1"}`),
         generalComments.trim() || null,
       ]
         .filter(Boolean)
         .join(", ");
 
       const generalUnitCost = selectedServices.reduce((sum, s) => {
-        const qty = parseInt(serviceQuantities[s.value] ?? "1", 10);
-        const price = generalPrices?.[s.value]?.unitCost ?? 0;
+        const qty = parseInt(serviceQuantities[s.key] ?? "1", 10);
+        const price =
+          (s.isTire ? tirePrices?.[s.key]?.unitCost : generalPrices?.[s.key]?.unitCost) ?? 0;
         return sum + price * qty;
       }, 0);
 
@@ -490,9 +512,8 @@ export function QuoteGeneratorSheet({
         inches: parseInt(value.tireSize, 10),
         itemType: "general",
         jobTypes: selectedServices.map((s) => ({
-          type: "general" as const,
-          subType: s.value,
-          input: serviceQuantities[s.value],
+          type: s.key as JobType,
+          input: serviceQuantities[s.key] ?? "1",
         })),
         description: desc,
       };
@@ -518,11 +539,9 @@ export function QuoteGeneratorSheet({
     if (editItem.itemType === "welding") {
       setTab("other-welding");
       const mt = editItem.sideOfVehicle ?? "";
-      const dl = editItem.damageLevel ?? "";
-      setWeldingSelects({ materialType: mt, damageLevel: dl });
+      setWeldingSelects({ materialType: mt });
       weldingForm.reset({
         materialType: mt,
-        damageLevel: dl,
         lengthOfWeld: String(editItem.inches ?? ""),
         comments: "",
       });
@@ -541,15 +560,14 @@ export function QuoteGeneratorSheet({
       const svcChecked: Partial<Record<string, boolean>> = {};
       const svcQuantities: Record<string, string> = {};
       for (const jt of editItem.jobTypes) {
-        if (jt.type === "general" && jt.subType) {
-          svcChecked[jt.subType] = true;
-          if (jt.input) svcQuantities[jt.subType] = jt.input;
-        }
+        const key = jt.subType ?? jt.type;
+        svcChecked[key] = true;
+        if (jt.input) svcQuantities[key] = jt.input;
       }
       setCheckedServices(svcChecked);
       setServiceQuantities(svcQuantities);
       const hasBrake = BRAKE_SERVICE_TYPES.some((s) => svcChecked[s.value]);
-      const hasTire = TIRE_SERVICE_TYPES.some((s) => svcChecked[s.value]);
+      const hasTire = tireLeaves.some((t) => svcChecked[t.key]);
       if (hasBrake && !hasTire) setGeneralSubTab("brake-service");
       else setGeneralSubTab("tire-service");
     } else {
@@ -601,7 +619,7 @@ export function QuoteGeneratorSheet({
     setRimComments("");
     setGeneralComments("");
     setRimSelects({ rimSize: "", vehicleType: "", material: "" });
-    setWeldingSelects({ materialType: "", damageLevel: "" });
+    setWeldingSelects({ materialType: "" });
     setPcSelects({ rimSize: "", colorCoat: "" });
     setGeneralSelects({ vehicleSize: "", tireSize: "" });
     setCheckedServices({});
@@ -861,7 +879,11 @@ export function QuoteGeneratorSheet({
                               }}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Select" />
+                                <SelectValue placeholder="Select">
+                                  {(value) =>
+                                    job.children.find((c) => c.key === value)?.label ?? "Select"
+                                  }
+                                </SelectValue>
                               </SelectTrigger>
                               <SelectPopup>
                                 {job.children.map((c) => (
@@ -944,62 +966,6 @@ export function QuoteGeneratorSheet({
                           {field.state.meta.errors[0]?.message}
                         </p>
                       )}
-                    </div>
-                  )}
-                </weldingForm.Field>
-
-                <weldingForm.Field name="damageLevel">
-                  {(field) => (
-                    <div className="flex flex-col gap-1">
-                      <label className="font-rubik text-xs leading-3.5 text-label">
-                        Damage Level:
-                      </label>
-                      <Select
-                        value={weldingSelects.damageLevel || null}
-                        onValueChange={(v) => {
-                          const val = v as string;
-                          setWeldingSelects((prev) => ({ ...prev, damageLevel: val }));
-                          field.handleChange(val);
-                        }}
-                      >
-                        <SelectTrigger
-                          className="capitalize"
-                          error={field.state.meta.errors.length > 0}
-                        >
-                          <SelectValue placeholder="Select level" />
-                        </SelectTrigger>
-                        <SelectPopup>
-                          <SelectOption value="low">Low</SelectOption>
-                          <SelectOption value="medium">Medium</SelectOption>
-                          <SelectOption value="high">High</SelectOption>
-                        </SelectPopup>
-                      </Select>
-                      {field.state.meta.errors.length > 0 && (
-                        <p className="font-rubik text-xs text-red">
-                          {field.state.meta.errors[0]?.message}
-                        </p>
-                      )}
-                      {weldingSelects.damageLevel &&
-                        DAMAGE_DESCRIPTIONS[weldingSelects.damageLevel] && (
-                          <div className="mt-1 flex items-center gap-3 rounded-lg bg-[#ebf5ff] px-3 py-2">
-                            <div className="flex shrink-0 items-center justify-center rounded-full bg-[#cbe5fc] p-2">
-                              <Info className="size-5 text-blue" />
-                            </div>
-                            <p className="font-rubik text-xs leading-3.5 text-body">
-                              <span className="font-medium">
-                                {weldingSelects.damageLevel === "medium"
-                                  ? "Medium (Type 1):"
-                                  : weldingSelects.damageLevel === "low"
-                                    ? "Low:"
-                                    : "High:"}
-                              </span>{" "}
-                              {DAMAGE_DESCRIPTIONS[weldingSelects.damageLevel]
-                                .split(": ")
-                                .slice(1)
-                                .join(": ")}
-                            </p>
-                          </div>
-                        )}
                     </div>
                   )}
                 </weldingForm.Field>
@@ -1268,10 +1234,10 @@ export function QuoteGeneratorSheet({
 
                     <TabsContent value="tire-service">
                       <div className="flex flex-col gap-1">
-                        {TIRE_SERVICE_TYPES.map((svc) => {
-                          const isChecked = !!checkedServices[svc.value];
+                        {tireLeaves.map((svc) => {
+                          const isChecked = !!checkedServices[svc.key];
                           return (
-                            <div key={svc.value} className="flex flex-col">
+                            <div key={svc.key} className="flex flex-col">
                               <div
                                 className={cn(
                                   "flex items-center gap-1.5 px-3 py-2",
@@ -1281,17 +1247,17 @@ export function QuoteGeneratorSheet({
                                 <FloorCheckbox
                                   checked={isChecked}
                                   onCheckedChange={(c) => {
-                                    setCheckedServices((prev) => ({ ...prev, [svc.value]: !!c }));
+                                    setCheckedServices((prev) => ({ ...prev, [svc.key]: !!c }));
                                     if (c) setServiceTypeError(null);
                                     if (!c) {
                                       setServiceQuantities((prev) => {
                                         const next = { ...prev };
-                                        delete next[svc.value];
+                                        delete next[svc.key];
                                         return next;
                                       });
                                       setServiceQuantityErrors((prev) => {
                                         const next = { ...prev };
-                                        delete next[svc.value];
+                                        delete next[svc.key];
                                         return next;
                                       });
                                     }
@@ -1300,40 +1266,39 @@ export function QuoteGeneratorSheet({
                                 <span className="font-rubik text-sm leading-[18px] text-body">
                                   {svc.label}
                                 </span>
-                                {generalPrices?.[svc.value]?.found ? (
+                                {tirePrices?.[svc.key]?.found ? (
                                   <span className="ml-auto font-rubik text-sm font-semibold text-body">
                                     $
-                                    {(generalPrices[svc.value]!.unitCost / 100).toLocaleString(
-                                      "en-US",
-                                      { minimumFractionDigits: 2 },
-                                    )}
+                                    {(tirePrices[svc.key]!.unitCost / 100).toLocaleString("en-US", {
+                                      minimumFractionDigits: 2,
+                                    })}
                                   </span>
-                                ) : (
+                                ) : isChecked && tireSize ? (
                                   <span className="ml-auto font-rubik text-xs text-red">
                                     No price set
                                   </span>
-                                )}
+                                ) : null}
                               </div>
                               {isChecked && (
                                 <div className="flex flex-col gap-1 bg-page px-3 pb-2">
                                   <label className="font-rubik text-xs leading-3.5 text-label">
-                                    {svc.quantityLabel}
+                                    How many?
                                   </label>
                                   <input
                                     type="number"
                                     inputMode="numeric"
                                     pattern="[0-9]*"
                                     min={1}
-                                    value={serviceQuantities[svc.value] ?? "1"}
+                                    value={serviceQuantities[svc.key] ?? "1"}
                                     onChange={(e) => {
                                       const raw = e.target.value.replace(/\D/g, "");
                                       setServiceQuantities((prev) => ({
                                         ...prev,
-                                        [svc.value]: raw === "" ? "1" : raw,
+                                        [svc.key]: raw === "" ? "1" : raw,
                                       }));
                                       setServiceQuantityErrors((prev) => {
                                         const next = { ...prev };
-                                        delete next[svc.value];
+                                        delete next[svc.key];
                                         return next;
                                       });
                                     }}
@@ -1345,14 +1310,14 @@ export function QuoteGeneratorSheet({
                                     placeholder="Enter number"
                                     className={cn(
                                       "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
-                                      serviceQuantityErrors[svc.value]
+                                      serviceQuantityErrors[svc.key]
                                         ? "border-red/50"
                                         : "border-field-line",
                                     )}
                                   />
-                                  {serviceQuantityErrors[svc.value] && (
+                                  {serviceQuantityErrors[svc.key] && (
                                     <p className="font-rubik text-xs text-red">
-                                      {serviceQuantityErrors[svc.value]}
+                                      {serviceQuantityErrors[svc.key]}
                                     </p>
                                   )}
                                 </div>
@@ -1498,13 +1463,19 @@ export function QuoteGeneratorSheet({
                   });
                 }
                 if (tab === "general") {
-                  const selectedServices = GENERAL_SERVICE_TYPES.filter(
+                  const tireTotal = tireLeaves
+                    .filter((t) => checkedServices[t.key])
+                    .reduce((sum, t) => {
+                      const qty = parseInt(serviceQuantities[t.key] ?? "1", 10) || 1;
+                      return sum + (tirePrices?.[t.key]?.unitCost ?? 0) * qty;
+                    }, 0);
+                  const brakeTotal = BRAKE_SERVICE_TYPES.filter(
                     (s) => checkedServices[s.value],
-                  );
-                  const total = selectedServices.reduce((sum, s) => {
+                  ).reduce((sum, s) => {
                     const qty = parseInt(serviceQuantities[s.value] ?? "1", 10) || 1;
                     return sum + (generalPrices?.[s.value]?.unitCost ?? 0) * qty;
                   }, 0);
+                  const total = tireTotal + brakeTotal;
                   return (total / 100).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,

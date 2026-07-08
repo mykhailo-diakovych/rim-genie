@@ -20,6 +20,8 @@ import {
   serviceCategoryEnum,
   quoteVehicleTypeEnum,
   rimMaterialEnum,
+  brakeUnitEnum,
+  powderCoatScopeEnum,
   user,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
@@ -66,6 +68,12 @@ const jobTypeEntrySchema = z.object({
   needsBuildUp: z.boolean().optional(),
   comments: z.string().optional(),
   subType: z.string().optional(),
+  // Module-specific selections (brake / powder coating)
+  unit: z.enum(brakeUnitEnum.enumValues).optional(),
+  removalIncluded: z.boolean().optional(),
+  scope: z.enum(powderCoatScopeEnum.enumValues).optional(),
+  colorCount: z.number().int().optional(),
+  colors: z.array(z.string()).optional(),
 });
 
 export const floorRouter = {

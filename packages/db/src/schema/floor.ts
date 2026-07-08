@@ -28,26 +28,20 @@ export const quoteStatusEnum = pgEnum("quote_status", [
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type JobTypeEntry = {
-  type:
-    | "bend-fix"
-    | "crack-fix"
-    | "straighten"
-    | "twist"
-    | "reconstruct"
-    | "sprung"
-    | "build-up"
-    | "platinum-resurfacing"
-    | "hand-polish"
-    | "polishing"
-    | "general"
-    | "welding"
-    | "powder-coating";
+  // Dynamic job-type key from the catalog `job_type` table.
+  type: string;
   input?: string;
   workTypes?: string[];
   rimAvailable?: boolean;
   needsBuildUp?: boolean;
   comments?: string;
   subType?: string;
+  // Module-specific selections
+  unit?: "single" | "pair";
+  removalIncluded?: boolean;
+  scope?: "set" | "rim";
+  colorCount?: number;
+  colors?: string[];
 };
 
 // ─── Tables ───────────────────────────────────────────────────────────────────

@@ -164,9 +164,19 @@ const ITEM_TYPE_TO_CATEGORY: Record<string, ServiceCategory> = {
   general: "general",
 };
 
+interface ComputeItemPriceJob {
+  type: string;
+  subType?: string;
+  input?: string;
+  unit?: BrakeUnit;
+  removalIncluded?: boolean;
+  scope?: PowderCoatScope;
+  colorCount?: number;
+}
+
 interface ComputeItemPriceParams {
   itemType: string;
-  jobTypes: { type: string; subType?: string; input?: string }[];
+  jobTypes: ComputeItemPriceJob[];
   vehicleType?: string | null;
   rimMaterial?: string | null;
   vehicleSize?: string | null;
@@ -188,8 +198,21 @@ export async function computeItemPrice(params: ComputeItemPriceParams): Promise<
     let total = 0;
     for (const jt of params.jobTypes) {
       const base = await lookupPrice({ category, jobType: jt.type, size });
-      if (base == null) continue;
-      total += applyRimModifiers(base, { isSteel, isTruck, ...config });
+      if (base != null) {
+        total += applyRimModifiers(base, { isSteel, isTruck, ...config });
+        continue;
+      }
+      // Spot polish (priced by size bucket × qty) lives in the Rims section.
+      if (size != null) {
+        const spot = await lookupSpotPrice({
+          jobTypeKey: jt.type,
+          sizeBucket: spotSizeBucket(size),
+        });
+        if (spot != null) {
+          const qty = jt.input ? parseInt(jt.input, 10) || 1 : 1;
+          total += spot * qty;
+        }
+      }
     }
     return total;
   }
@@ -203,17 +226,33 @@ export async function computeItemPrice(params: ComputeItemPriceParams): Promise<
   }
 
   if (category === "powder_coating") {
-    // Powder pricing is scope × color-count × size range (see lookupPowderPrice).
-    // Wired once the item contract carries scope/colorCount (frontend phase).
-    return 0;
+    const jt = params.jobTypes[0];
+    if (!jt || size == null || !jt.scope || jt.colorCount == null) return 0;
+    const price = await lookupPowderPrice({ size, scope: jt.scope, colorCount: jt.colorCount });
+    if (price == null) return 0;
+    // Per-set is a flat price; per-rim multiplies by the number of rims.
+    const qty = jt.input ? parseInt(jt.input, 10) || 1 : 1;
+    return jt.scope === "rim" ? price * qty : price;
   }
 
   if (category === "general") {
+    // Tire service is priced by rim/tire size (rides in `inches`);
+    // brake service is priced by vehicle size + single/pair + removal.
+    const tireSize = params.inches ?? size;
     let total = 0;
     for (const jt of params.jobTypes) {
-      const serviceKey = jt.subType ?? jt.type;
       const qty = jt.input ? parseInt(jt.input, 10) || 1 : 1;
-      const price = await lookupPrice({ category, jobType: serviceKey, size });
+      if (jt.unit) {
+        const price = await lookupBrakePrice({
+          vehicleSizeName: params.vehicleSize ?? "",
+          unit: jt.unit,
+          removalIncluded: !!jt.removalIncluded,
+        });
+        if (price != null) total += price * qty;
+        continue;
+      }
+      const serviceKey = jt.subType ?? jt.type;
+      const price = await lookupPrice({ category, jobType: serviceKey, size: tireSize });
       if (price != null) total += price * qty;
     }
     return total;
