@@ -6,6 +6,7 @@ import { location } from "@rim-genie/db/schema";
 
 import { protectedProcedure, publicProcedure } from "../index";
 import { cashierRouter } from "./cashier";
+import { catalogRouter } from "./catalog";
 import { dashboardRouter } from "./dashboard";
 import { discountRouter } from "./discount";
 import { employeesRouter } from "./employees";
@@ -33,6 +34,7 @@ export const appRouter = {
       .orderBy(asc(location.name));
   }),
   cashier: cashierRouter,
+  catalog: catalogRouter,
   discount: discountRouter,
   employees: employeesRouter,
   floor: floorRouter,
