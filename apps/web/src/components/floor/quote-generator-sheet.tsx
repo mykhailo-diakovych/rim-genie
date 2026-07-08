@@ -68,8 +68,6 @@ export interface QuoteGeneratorSheetData {
 
 const WELDING_MATERIAL_TYPES = ["Aluminium", "Steel", "Stainless Steel", "Cast Iron"];
 
-const POWDER_COATING_COLORS = ["Black", "White", "Silver", "Gold", "Red", "Blue", "Grey"];
-
 const BRAKE_SERVICE_TYPES = [
   { value: "disc-rotor-skimming", label: "Disc Rotor Skimming", quantityLabel: "How many pairs?" },
   { value: "brake-drum-skimming", label: "Brake Drum Skimming", quantityLabel: "How many pairs?" },
@@ -121,7 +119,8 @@ const weldingSchema = z.object({
 
 const powderCoatingSchema = z.object({
   rimSize: z.string().min(1, "Rim size is required"),
-  colorCoat: z.string().min(1, "Color coat is required"),
+  scope: z.string().min(1, "Select coating scope"),
+  colorCount: z.string().min(1, "Select number of colors"),
   comments: z.string(),
 });
 
@@ -184,7 +183,7 @@ const WELDING_DEFAULTS = {
   lengthOfWeld: "",
   comments: "",
 };
-const POWDER_COATING_DEFAULTS = { rimSize: "", colorCoat: "", comments: "" };
+const POWDER_COATING_DEFAULTS = { rimSize: "", scope: "", colorCount: "", comments: "" };
 const GENERAL_DEFAULTS = { vehicleSize: "", tireSize: "" };
 
 export function QuoteGeneratorSheet({
@@ -204,6 +203,7 @@ export function QuoteGeneratorSheet({
 
   const [rimComments, setRimComments] = useState("");
   const [generalComments, setGeneralComments] = useState("");
+  const [spotQty, setSpotQty] = useState("1");
 
   const [rimSelects, setRimSelects] = useState({
     rimSize: "",
@@ -217,7 +217,9 @@ export function QuoteGeneratorSheet({
   });
 
   // Powder coating tab selects
-  const [pcSelects, setPcSelects] = useState({ rimSize: "", colorCoat: "" });
+  const [pcSelects, setPcSelects] = useState({ rimSize: "", scope: "", colorCount: "" });
+  const [pcColors, setPcColors] = useState<string[]>([]);
+  const [pcQty, setPcQty] = useState("1");
 
   // General tab state
   const [generalSelects, setGeneralSelects] = useState({ vehicleSize: "", tireSize: "" });
@@ -268,6 +270,19 @@ export function QuoteGeneratorSheet({
     }),
   );
 
+  // Spot polish is a Rims group priced by size bucket × qty (its own price table).
+  const spotBucket = rimSize != null ? (rimSize >= 21 ? "ge21" : "le20") : undefined;
+  const spotLeafKey = jobSubTypes["spot-polish"];
+  const { data: spotPrice } = useQuery({
+    ...orpc.catalog.spotPrices.lookup.queryOptions({
+      input: {
+        jobTypeKey: spotLeafKey ?? "",
+        sizeBucket: (spotBucket ?? "le20") as "le20" | "ge21",
+      },
+    }),
+    enabled: !!(spotLeafKey && spotBucket),
+  });
+
   const { data: weldingPrices } = useQuery(
     orpc.floor.pricing.lookup.queryOptions({
       input: {
@@ -277,15 +292,21 @@ export function QuoteGeneratorSheet({
     }),
   );
 
-  const { data: powderCoatingPrices } = useQuery(
-    orpc.floor.pricing.lookup.queryOptions({
+  const { data: powderColors } = useQuery(
+    orpc.catalog.colors.list.queryOptions({ input: { includeInactive: false } }),
+  );
+  const pcSize = pcSelects.rimSize ? parseInt(pcSelects.rimSize, 10) : undefined;
+  const pcColorCount = pcSelects.colorCount ? parseInt(pcSelects.colorCount, 10) : undefined;
+  const { data: powderPrice } = useQuery({
+    ...orpc.catalog.powderPrices.lookup.queryOptions({
       input: {
-        category: "powder_coating" as const,
-        jobTypes: ["powder-coating"],
-        size: pcSelects.rimSize ? parseInt(pcSelects.rimSize, 10) : undefined,
+        size: pcSize ?? 1,
+        scope: (pcSelects.scope || "set") as "set" | "rim",
+        colorCount: pcColorCount ?? 1,
       },
     }),
-  );
+    enabled: !!(pcSize && pcSelects.scope && pcColorCount),
+  });
 
   const { data: generalPrices } = useQuery(
     orpc.floor.pricing.lookup.queryOptions({
@@ -336,6 +357,7 @@ export function QuoteGeneratorSheet({
         const childLabel = root.children.find((c) => c.key === leafKey)?.label;
         const entry: JobTypeEntry = { type: leafKey as JobType };
         if (childLabel) entry.subType = childLabel;
+        if (root.key === "spot-polish") entry.input = spotQty;
         return entry;
       });
 
@@ -356,6 +378,10 @@ export function QuoteGeneratorSheet({
         .join(", ");
 
       const unitCost = selectedRoots.reduce((sum, root) => {
+        if (root.key === "spot-polish") {
+          const base = spotPrice?.found ? spotPrice.unitCost : 0;
+          return sum + base * (parseInt(spotQty, 10) || 1);
+        }
         const leafKey = root.children.length ? jobSubTypes[root.key] : root.key;
         const base = leafKey ? (rimPrices?.[leafKey]?.unitCost ?? 0) : 0;
         return sum + applyRimModifier(base);
@@ -427,22 +453,39 @@ export function QuoteGeneratorSheet({
   const powderCoatingForm = useForm({
     defaultValues: POWDER_COATING_DEFAULTS,
     onSubmit: ({ value }) => {
+      const colorCount = parseInt(value.colorCount, 10);
+      if (pcColors.length !== colorCount) return;
+      const scope = value.scope as "set" | "rim";
+      const qty = scope === "rim" ? Math.max(1, parseInt(pcQty, 10) || 1) : 1;
+      const unit = powderPrice?.unitCost ?? editItem?.unitCost ?? 0;
+      const pcUnitCost = scope === "rim" ? unit * qty : unit;
+
       const desc = [
-        `Powder Coating: ${value.rimSize}" Rim, Color: ${value.colorCoat}`,
+        `Powder Coating: ${value.rimSize}" Rim`,
+        scope === "set" ? "Per Set of 4 Rims" : "Per Rim",
+        `${colorCount} Color${colorCount > 1 ? "s" : ""}: ${pcColors.join(", ")}`,
+        scope === "rim" ? `x${qty}` : null,
         value.comments?.trim() || null,
       ]
         .filter(Boolean)
         .join(", ");
-      const pcUnitCost =
-        powderCoatingPrices?.["powder-coating"]?.unitCost ?? editItem?.unitCost ?? 0;
+
       const data: QuoteGeneratorSheetData = {
         vehicleSize: value.rimSize,
-        sideOfVehicle: value.colorCoat,
+        sideOfVehicle: pcColors.join(", "),
         damageLevel: null,
         quantity: 1,
         unitCost: pcUnitCost,
         itemType: "powder-coating",
-        jobTypes: [{ type: "powder-coating", subType: value.colorCoat }],
+        jobTypes: [
+          {
+            type: "powder-coating",
+            scope,
+            colorCount,
+            colors: pcColors,
+            input: scope === "rim" ? String(qty) : undefined,
+          },
+        ],
         description: desc,
       };
 
@@ -548,9 +591,13 @@ export function QuoteGeneratorSheet({
     } else if (editItem.itemType === "powder-coating") {
       setTab("powder-coating");
       const rs = editItem.vehicleSize ?? "";
-      const cc = editItem.sideOfVehicle ?? "";
-      setPcSelects({ rimSize: rs, colorCoat: cc });
-      powderCoatingForm.reset({ rimSize: rs, colorCoat: cc, comments: "" });
+      const pcEntry = editItem.jobTypes[0];
+      const sc = pcEntry?.scope ?? "";
+      const ccnt = pcEntry?.colorCount ? String(pcEntry.colorCount) : "";
+      setPcSelects({ rimSize: rs, scope: sc, colorCount: ccnt });
+      setPcColors(pcEntry?.colors ?? []);
+      setPcQty(pcEntry?.input ?? "1");
+      powderCoatingForm.reset({ rimSize: rs, scope: sc, colorCount: ccnt, comments: "" });
     } else if (editItem.itemType === "general") {
       setTab("general");
       const vs = editItem.vehicleSize ?? "";
@@ -592,6 +639,7 @@ export function QuoteGeneratorSheet({
       if (root) {
         checked[root.key] = true;
         if (root.children.length) subTypes[root.key] = jt.type;
+        if (root.key === "spot-polish" && jt.input) setSpotQty(jt.input);
       } else {
         checked[jt.type] = true;
       }
@@ -618,9 +666,12 @@ export function QuoteGeneratorSheet({
     setInitialized(null);
     setRimComments("");
     setGeneralComments("");
+    setSpotQty("1");
     setRimSelects({ rimSize: "", vehicleType: "", material: "" });
     setWeldingSelects({ materialType: "" });
-    setPcSelects({ rimSize: "", colorCoat: "" });
+    setPcSelects({ rimSize: "", scope: "", colorCount: "" });
+    setPcColors([]);
+    setPcQty("1");
     setGeneralSelects({ vehicleSize: "", tireSize: "" });
     setCheckedServices({});
     setServiceTypeError(null);
@@ -834,7 +885,15 @@ export function QuoteGeneratorSheet({
                   {rimJobList.map((job) => {
                     const isChecked = !!checkedJobs[job.key];
                     const leafKey = job.children.length ? jobSubTypes[job.key] : job.key;
-                    const priceRow = leafKey ? rimPrices?.[leafKey] : undefined;
+                    const isSpot = job.key === "spot-polish";
+                    const priceRow = leafKey && !isSpot ? rimPrices?.[leafKey] : undefined;
+                    const displayUnit = isSpot
+                      ? spotPrice?.found && leafKey
+                        ? spotPrice.unitCost * (parseInt(spotQty, 10) || 1)
+                        : undefined
+                      : priceRow?.found
+                        ? applyRimModifier(priceRow.unitCost)
+                        : undefined;
                     return (
                       <div key={job.key}>
                         <div
@@ -851,13 +910,12 @@ export function QuoteGeneratorSheet({
                             <span className="font-rubik text-sm leading-[18px] text-body">
                               {job.label}
                             </span>
-                            {priceRow?.found ? (
+                            {displayUnit != null ? (
                               <span className="ml-auto font-rubik text-sm font-semibold text-body">
                                 $
-                                {(applyRimModifier(priceRow.unitCost) / 100).toLocaleString(
-                                  "en-US",
-                                  { minimumFractionDigits: 2 },
-                                )}
+                                {(displayUnit / 100).toLocaleString("en-US", {
+                                  minimumFractionDigits: 2,
+                                })}
                               </span>
                             ) : isChecked && leafKey && rimSize ? (
                               <span className="ml-auto font-rubik text-xs text-red">
@@ -893,6 +951,22 @@ export function QuoteGeneratorSheet({
                                 ))}
                               </SelectPopup>
                             </Select>
+                            {isSpot && leafKey && (
+                              <div className="mt-1 flex flex-col gap-1">
+                                <label className="font-rubik text-xs leading-3.5 text-label">
+                                  How many rims?
+                                </label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={spotQty}
+                                  onChange={(e) =>
+                                    setSpotQty(e.target.value.replace(/\D/g, "") || "1")
+                                  }
+                                  className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none"
+                                />
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1057,7 +1131,7 @@ export function QuoteGeneratorSheet({
                             <SelectValue placeholder="Select rim size" />
                           </SelectTrigger>
                           <SelectPopup>
-                            {Array.from({ length: 16 }, (_, i) => i + 13).map((size) => (
+                            {Array.from({ length: 17 }, (_, i) => i + 10).map((size) => (
                               <SelectOption key={size} value={String(size)}>
                                 {size}"
                               </SelectOption>
@@ -1072,29 +1146,24 @@ export function QuoteGeneratorSheet({
                       </div>
                     )}
                   </powderCoatingForm.Field>
-                  <powderCoatingForm.Field name="colorCoat">
+                  <powderCoatingForm.Field name="scope">
                     {(field) => (
                       <div className="flex flex-1 flex-col gap-1">
-                        <label className="font-rubik text-xs leading-3.5 text-label">
-                          Color Coat:
-                        </label>
+                        <label className="font-rubik text-xs leading-3.5 text-label">Coating:</label>
                         <Select
-                          value={pcSelects.colorCoat || null}
+                          value={pcSelects.scope || null}
                           onValueChange={(v) => {
                             const val = v as string;
-                            setPcSelects((prev) => ({ ...prev, colorCoat: val }));
+                            setPcSelects((prev) => ({ ...prev, scope: val }));
                             field.handleChange(val);
                           }}
                         >
                           <SelectTrigger error={field.state.meta.errors.length > 0}>
-                            <SelectValue placeholder="Select color" />
+                            <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectPopup>
-                            {POWDER_COATING_COLORS.map((color) => (
-                              <SelectOption key={color} value={color}>
-                                {color}
-                              </SelectOption>
-                            ))}
+                            <SelectOption value="set">Per Set of 4 Rims</SelectOption>
+                            <SelectOption value="rim">Per Rim</SelectOption>
                           </SelectPopup>
                         </Select>
                         {field.state.meta.errors.length > 0 && (
@@ -1106,6 +1175,110 @@ export function QuoteGeneratorSheet({
                     )}
                   </powderCoatingForm.Field>
                 </div>
+
+                <powderCoatingForm.Field name="colorCount">
+                  {(field) => (
+                    <div className="flex flex-col gap-1">
+                      <label className="font-rubik text-xs leading-3.5 text-label">
+                        Number of colors:
+                      </label>
+                      <Select
+                        value={pcSelects.colorCount || null}
+                        onValueChange={(v) => {
+                          const val = v as string;
+                          setPcSelects((prev) => ({ ...prev, colorCount: val }));
+                          field.handleChange(val);
+                          setPcColors((prev) => prev.slice(0, parseInt(val, 10) || 0));
+                        }}
+                      >
+                        <SelectTrigger error={field.state.meta.errors.length > 0}>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectPopup>
+                          <SelectOption value="1">1 Color</SelectOption>
+                          <SelectOption value="2">2 Colors</SelectOption>
+                        </SelectPopup>
+                      </Select>
+                    </div>
+                  )}
+                </powderCoatingForm.Field>
+
+                {pcSelects.colorCount && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-rubik text-xs leading-3.5 text-label">
+                      Select color{parseInt(pcSelects.colorCount, 10) > 1 ? "s" : ""}:
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {(powderColors ?? []).map((color) => {
+                        const selected = pcColors.includes(color.name);
+                        const max = parseInt(pcSelects.colorCount, 10) || 1;
+                        return (
+                          <button
+                            key={color.id}
+                            type="button"
+                            onClick={() =>
+                              setPcColors((prev) => {
+                                if (prev.includes(color.name)) {
+                                  return prev.filter((c) => c !== color.name);
+                                }
+                                if (prev.length >= max) {
+                                  return max === 1 ? [color.name] : prev;
+                                }
+                                return [...prev, color.name];
+                              })
+                            }
+                            className={cn(
+                              "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 font-rubik text-xs text-body",
+                              selected ? "border-blue bg-blue/5" : "border-field-line bg-white",
+                            )}
+                          >
+                            <span
+                              className="size-3 rounded-full border border-field-line"
+                              style={{ background: color.hex ?? "transparent" }}
+                            />
+                            {color.name}
+                            {selected && <Check className="size-3 text-blue" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {pcColors.length !== (parseInt(pcSelects.colorCount, 10) || 0) && (
+                      <p className="font-rubik text-xs text-red">
+                        Select {pcSelects.colorCount} color
+                        {parseInt(pcSelects.colorCount, 10) > 1 ? "s" : ""}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {pcSelects.scope === "rim" && (
+                  <div className="flex flex-col gap-1">
+                    <label className="font-rubik text-xs leading-3.5 text-label">
+                      How many rims?
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={pcQty}
+                      onChange={(e) => setPcQty(e.target.value.replace(/\D/g, "") || "1")}
+                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none"
+                    />
+                  </div>
+                )}
+
+                {powderPrice?.found && (
+                  <div className="flex items-center justify-between rounded-lg bg-page px-3 py-2">
+                    <span className="font-rubik text-xs text-label">Price</span>
+                    <span className="font-rubik text-sm font-semibold text-body">
+                      $
+                      {(
+                        (pcSelects.scope === "rim"
+                          ? powderPrice.unitCost * (parseInt(pcQty, 10) || 1)
+                          : powderPrice.unitCost) / 100
+                      ).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )}
 
                 <powderCoatingForm.Field name="comments">
                   {(field) => (
@@ -1453,6 +1626,10 @@ export function QuoteGeneratorSheet({
                 if (tab === "rims") {
                   const selectedRoots = rimJobList.filter((j) => checkedJobs[j.key]);
                   const total = selectedRoots.reduce((sum, root) => {
+                    if (root.key === "spot-polish") {
+                      const base = spotPrice?.found ? spotPrice.unitCost : 0;
+                      return sum + base * (parseInt(spotQty, 10) || 1);
+                    }
                     const leafKey = root.children.length ? jobSubTypes[root.key] : root.key;
                     const base = leafKey ? (rimPrices?.[leafKey]?.unitCost ?? 0) : 0;
                     return sum + applyRimModifier(base);
@@ -1489,9 +1666,12 @@ export function QuoteGeneratorSheet({
                   });
                 }
                 if (tab === "powder-coating") {
-                  return (
-                    (powderCoatingPrices?.["powder-coating"]?.unitCost ?? 0) / 100
-                  ).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  const base = powderPrice?.unitCost ?? 0;
+                  const total = pcSelects.scope === "rim" ? base * (parseInt(pcQty, 10) || 1) : base;
+                  return (total / 100).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  });
                 }
                 return ((editItem?.unitCost ?? 0) / 100).toLocaleString("en-US", {
                   minimumFractionDigits: 2,
