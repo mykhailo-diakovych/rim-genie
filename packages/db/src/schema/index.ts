@@ -8,3 +8,4 @@ export * from "./job";
 export * from "./loyalty";
 export * from "./manage";
 export * from "./notification";
+export * from "./pricing";

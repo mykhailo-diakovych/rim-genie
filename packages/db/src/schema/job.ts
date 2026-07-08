@@ -30,6 +30,7 @@ export const job = pgTable(
     }),
     status: jobStatusEnum("status").default("pending").notNull(),
     acceptedAt: timestamp("accepted_at"),
+    startedAt: timestamp("started_at"),
     completedAt: timestamp("completed_at"),
     dueDate: timestamp("due_date"),
     isOvernight: boolean("is_overnight").default(false).notNull(),
