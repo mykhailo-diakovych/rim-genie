@@ -9,7 +9,13 @@ import type { JobTypeSection } from "@rim-genie/db/schema";
 import { JobTypeModal, SECTION_LABELS } from "@/components/manage/job-type-modal";
 import type { JobTypeRow } from "@/components/manage/job-type-modal";
 import { Button } from "@/components/ui/button";
-import { Select, SelectOption, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectOption,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { client, orpc } from "@/utils/orpc";
 
 export function JobTypesTab() {
@@ -45,7 +51,10 @@ export function JobTypesTab() {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <div className="w-56">
-          <Select value={section} onValueChange={(val) => setSection((val ?? "rims") as JobTypeSection)}>
+          <Select
+            value={section}
+            onValueChange={(val) => setSection((val ?? "rims") as JobTypeSection)}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -102,16 +111,22 @@ export function JobTypesTab() {
             {rows.map((row) => (
               <tr key={row.id} className="border-b border-field-line last:border-b-0">
                 <td className="px-3 py-2.5 text-body">
-                  <span className={row.parentId ? "pl-4 text-label" : "font-medium"}>{row.label}</span>
+                  <span className={row.parentId ? "pl-4 text-label" : "font-medium"}>
+                    {row.label}
+                  </span>
                   {row.config?.hasSubType && (
-                    <span className="ml-2 rounded bg-blue/10 px-1.5 py-0.5 text-xs text-blue">group</span>
+                    <span className="ml-2 rounded bg-blue/10 px-1.5 py-0.5 text-xs text-blue">
+                      group
+                    </span>
                   )}
                 </td>
                 <td className="px-3 py-2.5 text-label">{row.key}</td>
                 <td className="px-3 py-2.5 text-label">
                   {row.parentId ? (labelById.get(row.parentId) ?? "—") : "—"}
                 </td>
-                <td className="px-3 py-2.5 text-center text-label">{row.isActive ? "Yes" : "No"}</td>
+                <td className="px-3 py-2.5 text-center text-label">
+                  {row.isActive ? "Yes" : "No"}
+                </td>
                 <td className="px-3 py-2.5">
                   <div className="flex justify-end gap-1">
                     <Button size="sm" variant="ghost" onClick={() => setEditRow(row as JobTypeRow)}>

@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { type JobGroup } from "./types";
+import { formatHours } from "./use-jobs";
 
 export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
+  const hoursLabel = formatHours(group.hoursSpent);
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <Button variant="outline" className="self-start" onClick={onBack}>
@@ -22,6 +24,12 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
             <span className="text-label">Job ID:</span>
             <span className="font-medium text-body">{group.invoiceNumber}</span>
           </div>
+          {hoursLabel && (
+            <div className="flex items-baseline gap-1 font-rubik text-sm leading-4.5">
+              <span className="text-label">Total hours:</span>
+              <span className="font-medium text-body">{hoursLabel}</span>
+            </div>
+          )}
         </div>
         <ReverseJobDialog
           customer={group.customer}

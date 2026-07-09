@@ -16,7 +16,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectOption, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectOption,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { orpc } from "@/utils/orpc";
 
 export const SECTION_LABELS: Record<JobTypeSection, string> = {

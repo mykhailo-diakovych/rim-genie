@@ -1,8 +1,8 @@
 import { Effect } from "effect";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
-import { invoice, job } from "@rim-genie/db/schema";
+import { invoice, job, payment } from "@rim-genie/db/schema";
 
 import {
   InvoiceNotFound,
@@ -12,6 +12,7 @@ import {
   JobAlreadyCompleted,
   JobsAlreadyCreated,
   JobCannotBeReversed,
+  JobHasOutstandingBalance,
 } from "./errors";
 
 export function sendToTechnician(invoiceId: string) {
@@ -76,6 +77,7 @@ export function acceptJob(jobId: string, technicianId: string) {
           technicianId,
           status: "accepted",
           acceptedAt: new Date(),
+          startedAt: new Date(),
         })
         .where(eq(job.id, jobId))
         .returning(),
@@ -166,6 +168,25 @@ export function markAsPickedUp(jobId: string) {
       return yield* Effect.fail(new JobNotFound({ id: jobId }));
     }
 
+    if (found.invoiceId) {
+      const [inv] = yield* Effect.tryPromise(() =>
+        db.select({ total: invoice.total }).from(invoice).where(eq(invoice.id, found.invoiceId)),
+      );
+
+      if (inv) {
+        const [paidRow] = yield* Effect.tryPromise(() =>
+          db
+            .select({ paid: sum(payment.amount) })
+            .from(payment)
+            .where(eq(payment.invoiceId, found.invoiceId)),
+        );
+        const balance = inv.total - Number(paidRow?.paid ?? 0);
+        if (balance > 0) {
+          return yield* Effect.fail(new JobHasOutstandingBalance({ jobId, balance }));
+        }
+      }
+    }
+
     const [updated] = yield* Effect.tryPromise(() =>
       db
         .update(job)
@@ -235,6 +256,7 @@ export function reverseJob(jobId: string, reason: string) {
           status: "pending",
           technicianId: null,
           acceptedAt: null,
+          startedAt: null,
           completedAt: null,
           specialNotes: notes,
         })

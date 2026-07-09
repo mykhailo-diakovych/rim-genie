@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { formatCents } from "@/lib/format-currency";
 import { client, orpc } from "@/utils/orpc";
 
 import type { ApiJob } from "./types";
@@ -56,6 +57,7 @@ function NoteDialogContent({
   disabled,
   confirmLabel,
   onConfirm,
+  warning,
 }: {
   job: ApiJob;
   title: string;
@@ -66,6 +68,7 @@ function NoteDialogContent({
   disabled: boolean;
   confirmLabel: string;
   onConfirm: () => void;
+  warning?: React.ReactNode;
 }) {
   return (
     <DialogContent className="max-w-[340px]">
@@ -81,6 +84,12 @@ function NoteDialogContent({
             <span className="text-body">{job.invoice.invoiceNumber}</span>
           </div>
         </div>
+
+        {warning && (
+          <div className="rounded-md border border-red/30 bg-red/5 p-2 font-rubik text-xs leading-4.5 text-red">
+            {warning}
+          </div>
+        )}
 
         <div className="flex flex-col gap-1">
           <label className="font-rubik text-xs leading-3.5 text-label">Notes/Comments:</label>
@@ -108,6 +117,10 @@ export function JobActionDialog({ job, action, trigger }: JobActionDialogProps) 
   const queryClient = useQueryClient();
 
   const { title, color } = ACTION_CONFIG[action];
+
+  const paid = job.invoice.payments.reduce((sum, p) => sum + p.amount, 0);
+  const balance = job.invoice.total - paid;
+  const pickupBlocked = action === "pickup" && balance > 0;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -153,9 +166,17 @@ export function JobActionDialog({ job, action, trigger }: JobActionDialogProps) 
         notes={notes}
         setNotes={setNotes}
         isPending={mutation.isPending}
-        disabled={mutation.isPending}
+        disabled={mutation.isPending || pickupBlocked}
         confirmLabel={title}
         onConfirm={() => mutation.mutate()}
+        warning={
+          pickupBlocked ? (
+            <>
+              Outstanding balance of {formatCents(balance)}. The customer must pay the final balance
+              before pickup.
+            </>
+          ) : undefined
+        }
       />
     </Dialog>
   );

@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { CompleteJobDialog } from "./complete-job-dialog";
 import { type JobGroup } from "./types";
 import { UploadProofsDialog } from "./upload-proofs-dialog";
-import { getGroupAction } from "./use-jobs";
+import { formatStartedAt, getGroupAction } from "./use-jobs";
 
 export function JobCard({ group, onView }: { group: JobGroup; onView: () => void }) {
   const action = getGroupAction(group);
+  const startedLabel = formatStartedAt(group.startedAt);
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center">
@@ -29,6 +30,13 @@ export function JobCard({ group, onView }: { group: JobGroup; onView: () => void
           <span className="size-1 rounded-full bg-ghost" />
           <span className="text-label">Date:</span>
           <span className="text-body">{group.date}</span>
+          {startedLabel && (
+            <>
+              <span className="size-1 rounded-full bg-ghost" />
+              <span className="text-label">Started:</span>
+              <span className="text-body">{startedLabel}</span>
+            </>
+          )}
         </div>
       </div>
 

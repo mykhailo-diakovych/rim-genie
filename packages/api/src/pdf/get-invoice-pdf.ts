@@ -34,6 +34,7 @@ export async function getInvoicePdf(
     discount: invoiceRow.discount,
     tax: invoiceRow.tax,
     total: invoiceRow.total,
+    status: invoiceRow.status,
     notes: invoiceRow.notes,
     items: invoiceRow.items.map((item) => ({
       id: item.id,

@@ -493,11 +493,13 @@ export function QuoteGeneratorSheet({
       const tireSelected = tireLeaves
         .filter((t) => checkedServices[t.key])
         .map((t) => ({ key: t.key, label: t.label, isTire: true }));
-      const brakeSelected = BRAKE_SERVICE_TYPES.filter((s) => checkedServices[s.value]).map((s) => ({
-        key: s.value,
-        label: s.label,
-        isTire: false,
-      }));
+      const brakeSelected = BRAKE_SERVICE_TYPES.filter((s) => checkedServices[s.value]).map(
+        (s) => ({
+          key: s.value,
+          label: s.label,
+          isTire: false,
+        }),
+      );
       const selectedServices = [...tireSelected, ...brakeSelected];
       if (selectedServices.length === 0) {
         setServiceTypeError("Select at least one service type");
@@ -887,7 +889,6 @@ export function QuoteGeneratorSheet({
                     </div>
                   )}
                 </rimForm.Field>
-
               </form>
 
               {/* Job Types */}
@@ -1163,7 +1164,9 @@ export function QuoteGeneratorSheet({
                   <powderCoatingForm.Field name="scope">
                     {(field) => (
                       <div className="flex flex-1 flex-col gap-1">
-                        <label className="font-rubik text-xs leading-3.5 text-label">Coating:</label>
+                        <label className="font-rubik text-xs leading-3.5 text-label">
+                          Coating:
+                        </label>
                         <Select
                           value={pcSelects.scope || null}
                           onValueChange={(v) => {
@@ -1557,7 +1560,10 @@ export function QuoteGeneratorSheet({
                                     <Select
                                       value={unit || null}
                                       onValueChange={(v) =>
-                                        setBrakeUnit((p) => ({ ...p, [svc.value]: (v as string) ?? "" }))
+                                        setBrakeUnit((p) => ({
+                                          ...p,
+                                          [svc.value]: (v as string) ?? "",
+                                        }))
                                       }
                                     >
                                       <SelectTrigger>
@@ -1575,10 +1581,17 @@ export function QuoteGeneratorSheet({
                                     </label>
                                     <Select
                                       value={
-                                        removal === undefined ? null : removal ? "include" : "without"
+                                        removal === undefined
+                                          ? null
+                                          : removal
+                                            ? "include"
+                                            : "without"
                                       }
                                       onValueChange={(v) =>
-                                        setBrakeRemoval((p) => ({ ...p, [svc.value]: v === "include" }))
+                                        setBrakeRemoval((p) => ({
+                                          ...p,
+                                          [svc.value]: v === "include",
+                                        }))
                                       }
                                     >
                                       <SelectTrigger>
@@ -1690,7 +1703,8 @@ export function QuoteGeneratorSheet({
                 }
                 if (tab === "powder-coating") {
                   const base = powderPrice?.unitCost ?? 0;
-                  const total = pcSelects.scope === "rim" ? base * (parseInt(pcQty, 10) || 1) : base;
+                  const total =
+                    pcSelects.scope === "rim" ? base * (parseInt(pcQty, 10) || 1) : base;
                   return (total / 100).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,

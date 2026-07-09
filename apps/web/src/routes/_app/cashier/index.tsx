@@ -9,8 +9,9 @@ import { formatCents } from "@/lib/format-currency";
 import {
   DateRangeFilter,
   getDateFrom,
+  getDateTo,
+  parseDateRange,
   type DateRange,
-  DATE_RANGES,
 } from "@/components/ui/date-range-filter";
 import {
   Dialog,
@@ -37,9 +38,7 @@ const TAB_LABELS: Record<InvoiceTab, string> = {
 export const Route = createFileRoute("/_app/cashier/")({
   validateSearch: (search: Record<string, unknown>): { tab: InvoiceTab; dateRange: DateRange } => ({
     tab: TAB_VALUES.includes(search.tab as InvoiceTab) ? (search.tab as InvoiceTab) : "unpaid",
-    dateRange: DATE_RANGES.includes(search.dateRange as DateRange)
-      ? (search.dateRange as DateRange)
-      : "30d",
+    dateRange: parseDateRange(search.dateRange, "30d"),
   }),
   head: () => ({
     meta: [{ title: "Rim-Genie | Cashier" }],
@@ -174,20 +173,21 @@ function CashierPage() {
   const queryClient = useQueryClient();
 
   const dateFrom = getDateFrom(dateRange);
+  const dateTo = getDateTo(dateRange);
 
   const unpaidQuery = useQuery(
     orpc.cashier.invoices.list.queryOptions({
-      input: { status: "unpaid", dateFrom },
+      input: { status: "unpaid", dateFrom, dateTo },
     }),
   );
   const partiallyQuery = useQuery(
     orpc.cashier.invoices.list.queryOptions({
-      input: { status: "partially_paid", dateFrom },
+      input: { status: "partially_paid", dateFrom, dateTo },
     }),
   );
   const paidQuery = useQuery(
     orpc.cashier.invoices.list.queryOptions({
-      input: { status: "paid", dateFrom },
+      input: { status: "paid", dateFrom, dateTo },
     }),
   );
 

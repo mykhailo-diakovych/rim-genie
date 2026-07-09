@@ -9,7 +9,12 @@ import type { UserRole } from "@rim-genie/db/schema";
 import { CustomerCard, CustomerCardSkeleton } from "@/components/customers/customer-card";
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { Button } from "@/components/ui/button";
-import { DateRangeFilter, getDateFrom, type DateRange } from "@/components/ui/date-range-filter";
+import {
+  DateRangeFilter,
+  getDateFrom,
+  getDateTo,
+  type DateRange,
+} from "@/components/ui/date-range-filter";
 import { authClient } from "@/lib/auth-client";
 import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
@@ -47,9 +52,10 @@ function CustomersPage() {
 
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const dateFrom = getDateFrom(dateRange);
+  const dateTo = getDateTo(dateRange);
 
   const { data: customers, isLoading } = useQuery(
-    orpc.floor.customers.list.queryOptions({ input: { dateFrom } }),
+    orpc.floor.customers.list.queryOptions({ input: { dateFrom, dateTo } }),
   );
   const { data: loyaltyConfig } = useQuery(orpc.loyalty.config.get.queryOptions());
 

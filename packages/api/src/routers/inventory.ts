@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, desc, eq, gte, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, ne, sql } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { inventoryRecord, invoice, job } from "@rim-genie/db/schema";
@@ -22,11 +22,18 @@ export type InventoryTab = z.infer<typeof tabSchema>;
 export const inventoryRouter = {
   jobs: {
     list: inventoryClerkProcedure
-      .input(z.object({ tab: tabSchema, dateFrom: z.string().optional() }))
+      .input(
+        z.object({
+          tab: tabSchema,
+          dateFrom: z.string().optional(),
+          dateTo: z.string().optional(),
+        }),
+      )
       .handler(async ({ input }) => {
-        const dateFilter = input.dateFrom
-          ? gte(job.createdAt, new Date(input.dateFrom))
-          : undefined;
+        const dateFilter = and(
+          input.dateFrom ? gte(job.createdAt, new Date(input.dateFrom)) : undefined,
+          input.dateTo ? lte(job.createdAt, new Date(input.dateTo)) : undefined,
+        );
 
         if (input.tab === "outstandingBalance") {
           const rows = await db
@@ -77,11 +84,12 @@ export const inventoryRouter = {
       }),
 
     counts: inventoryClerkProcedure
-      .input(z.object({ dateFrom: z.string().optional() }))
+      .input(z.object({ dateFrom: z.string().optional(), dateTo: z.string().optional() }))
       .handler(async ({ input }) => {
-        const dateFilter = input.dateFrom
-          ? gte(job.createdAt, new Date(input.dateFrom))
-          : undefined;
+        const dateFilter = and(
+          input.dateFrom ? gte(job.createdAt, new Date(input.dateFrom)) : undefined,
+          input.dateTo ? lte(job.createdAt, new Date(input.dateTo)) : undefined,
+        );
 
         const [overnightResult, readyResult, missingResult, pickedUpResult, outstandingResult] =
           await Promise.all([

@@ -204,30 +204,21 @@ export const catalogRouter = {
             message: `A job type with key "${fields.key}" already exists`,
           });
         }
-        const [row] = await db
-          .update(jobType)
-          .set(fields)
-          .where(eq(jobType.id, id))
-          .returning();
+        const [row] = await db.update(jobType).set(fields).where(eq(jobType.id, id)).returning();
         return row!;
       }),
 
     // Cascades to child sub-types and any exclusion rows via FK ON DELETE CASCADE.
-    delete: adminProcedure
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input }) => {
-        await db.delete(jobType).where(eq(jobType.id, input.id));
-        return { success: true as const };
-      }),
+    delete: adminProcedure.input(z.object({ id: z.string().min(1) })).handler(async ({ input }) => {
+      await db.delete(jobType).where(eq(jobType.id, input.id));
+      return { success: true as const };
+    }),
   },
 
   // ─── Mutual exclusivity (R11) ─────────────────────────────────────────────
   exclusions: {
     list: protectedProcedure.handler(async () => {
-      return db
-        .select()
-        .from(jobTypeExclusion)
-        .orderBy(asc(jobTypeExclusion.createdAt));
+      return db.select().from(jobTypeExclusion).orderBy(asc(jobTypeExclusion.createdAt));
     }),
 
     create: adminProcedure
@@ -267,19 +258,19 @@ export const catalogRouter = {
         return row!;
       }),
 
-    delete: adminProcedure
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input }) => {
-        await db.delete(jobTypeExclusion).where(eq(jobTypeExclusion.id, input.id));
-        return { success: true as const };
-      }),
+    delete: adminProcedure.input(z.object({ id: z.string().min(1) })).handler(async ({ input }) => {
+      await db.delete(jobTypeExclusion).where(eq(jobTypeExclusion.id, input.id));
+      return { success: true as const };
+    }),
   },
 
   // ─── Vehicle sizes (R4) ───────────────────────────────────────────────────
   vehicleSizes: {
     list: protectedProcedure
       .input(
-        z.object({ includeInactive: z.boolean().default(false) }).default({ includeInactive: false }),
+        z
+          .object({ includeInactive: z.boolean().default(false) })
+          .default({ includeInactive: false }),
       )
       .handler(async ({ input }) => {
         return db
@@ -306,19 +297,19 @@ export const catalogRouter = {
         return row!;
       }),
 
-    delete: adminProcedure
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input }) => {
-        await db.delete(vehicleSize).where(eq(vehicleSize.id, input.id));
-        return { success: true as const };
-      }),
+    delete: adminProcedure.input(z.object({ id: z.string().min(1) })).handler(async ({ input }) => {
+      await db.delete(vehicleSize).where(eq(vehicleSize.id, input.id));
+      return { success: true as const };
+    }),
   },
 
   // ─── Powder-coat colors (R7) ──────────────────────────────────────────────
   colors: {
     list: protectedProcedure
       .input(
-        z.object({ includeInactive: z.boolean().default(false) }).default({ includeInactive: false }),
+        z
+          .object({ includeInactive: z.boolean().default(false) })
+          .default({ includeInactive: false }),
       )
       .handler(async ({ input }) => {
         return db
@@ -345,12 +336,10 @@ export const catalogRouter = {
         return row!;
       }),
 
-    delete: adminProcedure
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input }) => {
-        await db.delete(powderCoatColor).where(eq(powderCoatColor.id, input.id));
-        return { success: true as const };
-      }),
+    delete: adminProcedure.input(z.object({ id: z.string().min(1) })).handler(async ({ input }) => {
+      await db.delete(powderCoatColor).where(eq(powderCoatColor.id, input.id));
+      return { success: true as const };
+    }),
   },
 
   // ─── Brake / skimming prices — by vehicle size (R5) ───────────────────────
@@ -402,7 +391,8 @@ export const catalogRouter = {
         .limit(1);
       if (existing.length > 0) {
         throw new ORPCError("CONFLICT", {
-          message: "A brake price for this vehicle size / unit / removal combination already exists",
+          message:
+            "A brake price for this vehicle size / unit / removal combination already exists",
         });
       }
       const [row] = await db.insert(brakeServicePrice).values(input).returning();
@@ -421,12 +411,10 @@ export const catalogRouter = {
         return row!;
       }),
 
-    delete: adminProcedure
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input }) => {
-        await db.delete(brakeServicePrice).where(eq(brakeServicePrice.id, input.id));
-        return { success: true as const };
-      }),
+    delete: adminProcedure.input(z.object({ id: z.string().min(1) })).handler(async ({ input }) => {
+      await db.delete(brakeServicePrice).where(eq(brakeServicePrice.id, input.id));
+      return { success: true as const };
+    }),
 
     lookup: protectedProcedure
       .input(
@@ -507,12 +495,10 @@ export const catalogRouter = {
         return row!;
       }),
 
-    delete: adminProcedure
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input }) => {
-        await db.delete(powderCoatPrice).where(eq(powderCoatPrice.id, input.id));
-        return { success: true as const };
-      }),
+    delete: adminProcedure.input(z.object({ id: z.string().min(1) })).handler(async ({ input }) => {
+      await db.delete(powderCoatPrice).where(eq(powderCoatPrice.id, input.id));
+      return { success: true as const };
+    }),
 
     lookup: protectedProcedure
       .input(
@@ -580,12 +566,10 @@ export const catalogRouter = {
         return row!;
       }),
 
-    delete: adminProcedure
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input }) => {
-        await db.delete(spotPolishPrice).where(eq(spotPolishPrice.id, input.id));
-        return { success: true as const };
-      }),
+    delete: adminProcedure.input(z.object({ id: z.string().min(1) })).handler(async ({ input }) => {
+      await db.delete(spotPolishPrice).where(eq(spotPolishPrice.id, input.id));
+      return { success: true as const };
+    }),
 
     lookup: protectedProcedure
       .input(

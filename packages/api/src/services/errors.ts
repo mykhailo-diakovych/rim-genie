@@ -50,6 +50,11 @@ export class JobCannotBeReversed extends Data.TaggedError("JobCannotBeReversed")
   jobId: string;
 }> {}
 
+export class JobHasOutstandingBalance extends Data.TaggedError("JobHasOutstandingBalance")<{
+  jobId: string;
+  balance: number;
+}> {}
+
 export class EODAlreadyExists extends Data.TaggedError("EODAlreadyExists")<{
   recordDate: string;
 }> {}

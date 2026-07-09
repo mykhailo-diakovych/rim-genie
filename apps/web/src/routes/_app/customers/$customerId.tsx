@@ -893,6 +893,7 @@ interface JobRow {
   completedAt: Date | string | null;
   createdAt: Date | string;
   invoiceItem: { description: string | null } | null;
+  technician: { name: string } | null;
 }
 
 function JobsTable({ jobs }: { jobs: JobRow[] }) {
@@ -909,7 +910,7 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
   return (
     <>
       <div className="w-full overflow-x-auto">
-        <table className="w-full min-w-[600px] font-rubik text-xs">
+        <table className="w-full min-w-[720px] font-rubik text-xs">
           <thead>
             <tr className="text-left text-label">
               <th className="h-8 w-[144px] border-t border-l border-field-line px-2 py-1.5 font-normal">
@@ -917,6 +918,9 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
               </th>
               <th className="h-8 w-[104px] border-t border-l border-field-line px-2 py-1.5 font-normal">
                 Job #
+              </th>
+              <th className="h-8 w-[140px] border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Technician
               </th>
               <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
                 Description
@@ -931,7 +935,7 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
             {jobs.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="border border-field-line px-2 py-6 text-center text-sm text-label"
                 >
                   No jobs yet
@@ -962,6 +966,11 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
                     >
                       {job.id.slice(0, 7).toUpperCase()}
                     </button>
+                  </td>
+                  <td
+                    className={`h-12 w-[140px] border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
+                  >
+                    {job.technician?.name ?? "—"}
                   </td>
                   <td
                     className={`h-12 border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}

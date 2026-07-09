@@ -49,8 +49,13 @@ export function VehicleSizesTab() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (input: { id: string; name: string; key: string; sortOrder: number; isActive: boolean }) =>
-      client.catalog.vehicleSizes.update(input),
+    mutationFn: (input: {
+      id: string;
+      name: string;
+      key: string;
+      sortOrder: number;
+      isActive: boolean;
+    }) => client.catalog.vehicleSizes.update(input),
     onSuccess: async () => {
       await invalidate();
       setEditId(null);

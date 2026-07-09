@@ -7,7 +7,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { DateRangeFilter, getDateFrom, type DateRange } from "@/components/ui/date-range-filter";
+import {
+  DateRangeFilter,
+  getDateFrom,
+  getDateTo,
+  type DateRange,
+} from "@/components/ui/date-range-filter";
 import {
   Dialog,
   DialogClose,
@@ -137,10 +142,11 @@ function FloorPage() {
   const [showNewQuote, setShowNewQuote] = useState(false);
 
   const dateFrom = getDateFrom(dateRange);
+  const dateTo = getDateTo(dateRange);
 
   const quotesQuery = useQuery(
     orpc.floor.quotes.list.queryOptions({
-      input: { search: search.trim() || undefined, dateFrom },
+      input: { search: search.trim() || undefined, dateFrom, dateTo },
     }),
   );
 

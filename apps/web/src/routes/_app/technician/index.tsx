@@ -18,7 +18,7 @@ const TAB_VALUES = TAB_CONFIG.map((t) => t.value);
 
 export const Route = createFileRoute("/_app/technician/")({
   validateSearch: (search: Record<string, unknown>): { tab: TabValue } => ({
-    tab: TAB_VALUES.includes(search.tab as TabValue) ? (search.tab as TabValue) : "new",
+    tab: TAB_VALUES.includes(search.tab as TabValue) ? (search.tab as TabValue) : "assign",
   }),
   beforeLoad: requireRoles(["admin", "technician"]),
   head: () => ({
@@ -42,7 +42,6 @@ function TechnicianPage() {
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
 
   const tabCounts: Record<TabValue, number> = {
-    new: 0,
     assign: assign.length,
     "in-progress": inProgress.length,
     completed: completed.length,
@@ -187,10 +186,6 @@ function TechnicianPage() {
               <p className="font-rubik text-xs leading-3.5 text-label">No jobs to assign.</p>
             )}
           </div>
-        )}
-
-        {!isLoading && activeTab === "new" && (
-          <p className="pt-3 font-rubik text-xs leading-3.5 text-label">No new jobs.</p>
         )}
 
         {!isLoading && activeTab === "completed" && (

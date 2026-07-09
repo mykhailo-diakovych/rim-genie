@@ -74,7 +74,7 @@ function QuoteEditorPage() {
 
   const quoteQuery = useQuery(orpc.floor.quotes.get.queryOptions({ input: { id: quoteId } }));
   const quote = quoteQuery.data;
-  const isReadOnly = quote?.status === "completed";
+  const isReadOnly = quote?.status === "completed" && !isAdmin;
 
   const { data: pendingDiscount } = useQuery(
     orpc.discount.pendingForQuote.queryOptions({ input: { quoteId } }),
@@ -217,10 +217,7 @@ function QuoteEditorPage() {
     updateQuote.mutate(
       { id: quoteId, comments },
       {
-        onSuccess: () => {
-          const hasItems = (quote?.items?.length ?? 0) > 0;
-          toast.success(hasItems ? "Quote saved and sent to cashier" : "Quote saved");
-        },
+        onSuccess: () => toast.success("Quote saved"),
       },
     );
   }

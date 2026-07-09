@@ -96,16 +96,16 @@ async function seedCatalog() {
   // 2. Vehicle sizes → key→id map (needed by brake prices)
   const vsRows = await db
     .insert(vehicleSize)
-    .values(
-      data.vehicleSizes.map((v) => ({ name: v.name, key: v.key, sortOrder: v.sortOrder })),
-    )
+    .values(data.vehicleSizes.map((v) => ({ name: v.name, key: v.key, sortOrder: v.sortOrder })))
     .returning({ id: vehicleSize.id, key: vehicleSize.key });
   const vsIdByKey = new Map(vsRows.map((r) => [r.key, r.id]));
 
   // 3. Powder-coat colors
-  await db.insert(powderCoatColor).values(
-    data.powderCoatColors.map((c) => ({ name: c.name, key: c.key, sortOrder: c.sortOrder })),
-  );
+  await db
+    .insert(powderCoatColor)
+    .values(
+      data.powderCoatColors.map((c) => ({ name: c.name, key: c.key, sortOrder: c.sortOrder })),
+    );
 
   // 4. Job types — groups with their sub-types, generics standalone
   const sectionOrder = new Map<JobTypeSection, number>();
@@ -206,7 +206,9 @@ async function seedCatalog() {
   console.log(`  job types:          ${jobTypeCount}`);
   console.log(`  vehicle sizes:      ${data.vehicleSizes.length}`);
   console.log(`  powder-coat colors: ${data.powderCoatColors.length}`);
-  console.log(`  service prices:     ${rimTireRows.length + weldingRows.length} (rim/tire + welding)`);
+  console.log(
+    `  service prices:     ${rimTireRows.length + weldingRows.length} (rim/tire + welding)`,
+  );
   console.log(`  brake prices:       ${data.brakeServicePrices.length}`);
   console.log(`  powder prices:      ${data.powderCoatPrices.length}`);
   console.log(`  spot prices:        ${data.spotPolishPrices.length}`);

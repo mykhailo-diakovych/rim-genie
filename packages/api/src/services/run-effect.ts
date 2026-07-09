@@ -29,6 +29,11 @@ const TAG_MAP: Record<
   },
   JobNotAccepted: { code: "BAD_REQUEST", message: "This job has not been accepted yet" },
   JobCannotBeReversed: { code: "BAD_REQUEST", message: "This job cannot be reversed" },
+  JobHasOutstandingBalance: {
+    code: "BAD_REQUEST",
+    message:
+      "This job cannot be picked up while there is an outstanding balance. Collect the final payment first.",
+  },
   EODAlreadyExists: { code: "CONFLICT", message: "An EOD record already exists for this date" },
   SODAlreadyExists: { code: "CONFLICT", message: "An SOD record already exists for this date" },
   QuoteHasNoItems: {

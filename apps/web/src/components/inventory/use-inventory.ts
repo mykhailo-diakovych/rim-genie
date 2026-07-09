@@ -4,16 +4,16 @@ import { orpc } from "@/utils/orpc";
 
 import type { TabValue } from "./types";
 
-export function useInventoryJobs(tab: TabValue, dateFrom?: string) {
+export function useInventoryJobs(tab: TabValue, dateFrom?: string, dateTo?: string) {
   return useQuery(
     orpc.inventory.jobs.list.queryOptions({
-      input: { tab, dateFrom },
+      input: { tab, dateFrom, dateTo },
     }),
   );
 }
 
-export function useInventoryCounts(dateFrom?: string) {
-  return useQuery(orpc.inventory.jobs.counts.queryOptions({ input: { dateFrom } }));
+export function useInventoryCounts(dateFrom?: string, dateTo?: string) {
+  return useQuery(orpc.inventory.jobs.counts.queryOptions({ input: { dateFrom, dateTo } }));
 }
 
 export function useInventoryRecords(filters?: { type?: "eod" | "sod"; hasDiscrepancy?: boolean }) {

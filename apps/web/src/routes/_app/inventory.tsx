@@ -5,7 +5,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { InventoryJobCard } from "@/components/inventory/inventory-job-card";
 import { TAB_CONFIG, type TabValue } from "@/components/inventory/types";
 import { useInventoryCounts, useInventoryJobs } from "@/components/inventory/use-inventory";
-import { DateRangeFilter, getDateFrom, type DateRange } from "@/components/ui/date-range-filter";
+import {
+  DateRangeFilter,
+  getDateFrom,
+  getDateTo,
+  type DateRange,
+} from "@/components/ui/date-range-filter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { requireRoles } from "@/lib/route-permissions";
@@ -22,7 +27,8 @@ function InventoryPage() {
   const [activeTab, setActiveTab] = useState<TabValue>("overnight");
   const [dateRange, setDateRange] = useState<DateRange>("30d");
   const dateFrom = getDateFrom(dateRange);
-  const { data: counts } = useInventoryCounts(dateFrom);
+  const dateTo = getDateTo(dateRange);
+  const { data: counts } = useInventoryCounts(dateFrom, dateTo);
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
@@ -44,7 +50,7 @@ function InventoryPage() {
         </TabsList>
         {TAB_CONFIG.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>
-            <InventoryJobList tab={tab.value} dateFrom={dateFrom} />
+            <InventoryJobList tab={tab.value} dateFrom={dateFrom} dateTo={dateTo} />
           </TabsContent>
         ))}
       </Tabs>
@@ -65,8 +71,16 @@ function TabCounter({ count, active }: { count: number; active: boolean }) {
   );
 }
 
-function InventoryJobList({ tab, dateFrom }: { tab: TabValue; dateFrom?: string }) {
-  const { data: jobs, isLoading } = useInventoryJobs(tab, dateFrom);
+function InventoryJobList({
+  tab,
+  dateFrom,
+  dateTo,
+}: {
+  tab: TabValue;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
+  const { data: jobs, isLoading } = useInventoryJobs(tab, dateFrom, dateTo);
 
   if (isLoading) {
     return (

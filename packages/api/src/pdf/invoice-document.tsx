@@ -28,6 +28,18 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: "#1a1a1a",
   },
+  titleBlock: {
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  statusBadge: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: "#fff",
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
   divider: {
     height: 1,
     backgroundColor: "#e5e5e5",
@@ -236,6 +248,7 @@ export type InvoiceData = {
   discount: number;
   tax: number;
   total: number;
+  status: string;
   notes: string | null;
   items: Array<{
     id: string;
@@ -276,6 +289,12 @@ const paymentModeLabels: Record<string, string> = {
   cheque: "Cheque",
 };
 
+const statusMeta: Record<string, { label: string; color: string }> = {
+  paid: { label: "Paid", color: "#21b84e" },
+  partially_paid: { label: "Partially Paid", color: "#f59e0b" },
+  unpaid: { label: "Unpaid", color: "#ef4444" },
+};
+
 function resolveLogoPath(): string {
   const candidates = [
     path.resolve(process.cwd(), "apps/web/public/logo.png"),
@@ -296,6 +315,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
   const logoPath = resolveLogoPath();
   const totalPaid = data.payments.reduce((sum, p) => sum + p.amount, 0);
   const balance = data.total - totalPaid;
+  const status = statusMeta[data.status] ?? { label: data.status, color: "#999" };
 
   return (
     <Document title={`Invoice #${data.invoiceNumber}`}>
@@ -303,7 +323,12 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
         {/* Header */}
         <View style={styles.header}>
           <Image src={logoPath} style={styles.logo} />
-          <Text style={styles.title}>Invoice</Text>
+          <View style={styles.titleBlock}>
+            <Text style={styles.title}>Invoice</Text>
+            <Text style={[styles.statusBadge, { backgroundColor: status.color }]}>
+              {status.label}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.divider} />

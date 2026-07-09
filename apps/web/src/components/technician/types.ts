@@ -8,11 +8,12 @@ export type JobGroup = {
   customer: string;
   date: string;
   assignee: string | null;
+  startedAt: string | null;
+  hoursSpent: number | null;
   jobs: ApiJob[];
 };
 
 export const TAB_CONFIG = [
-  { value: "new", label: "New" },
   { value: "assign", label: "Assign" },
   { value: "in-progress", label: "In Progress" },
   { value: "completed", label: "Completed" },

@@ -20,7 +20,8 @@ export function ColorsTab() {
   const { data: rows, isLoading } = useQuery(
     orpc.catalog.colors.list.queryOptions({ input: { includeInactive: true } }),
   );
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: orpc.catalog.colors.list.key() });
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: orpc.catalog.colors.list.key() });
 
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");

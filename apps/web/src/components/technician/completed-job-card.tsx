@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { type JobGroup } from "./types";
+import { formatHours, formatStartedAt } from "./use-jobs";
 
 export function CompletedJobCard({ group, onView }: { group: JobGroup; onView: () => void }) {
+  const startedLabel = formatStartedAt(group.startedAt);
+  const hoursLabel = formatHours(group.hoursSpent);
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center">
       <div className="flex flex-1 flex-col gap-1">
@@ -25,6 +28,20 @@ export function CompletedJobCard({ group, onView }: { group: JobGroup; onView: (
           <span className="size-1 rounded-full bg-ghost" />
           <span className="text-label">Date:</span>
           <span className="text-body">{group.date}</span>
+          {startedLabel && (
+            <>
+              <span className="size-1 rounded-full bg-ghost" />
+              <span className="text-label">Started:</span>
+              <span className="text-body">{startedLabel}</span>
+            </>
+          )}
+          {hoursLabel && (
+            <>
+              <span className="size-1 rounded-full bg-ghost" />
+              <span className="text-label">Total:</span>
+              <span className="text-body">{hoursLabel}</span>
+            </>
+          )}
         </div>
       </div>
 

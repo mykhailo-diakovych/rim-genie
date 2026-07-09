@@ -6,7 +6,6 @@ import { quote, invoice, invoiceItem, payment, job } from "@rim-genie/db/schema"
 
 import {
   QuoteNotFound,
-  QuoteAlreadyConverted,
   QuoteHasNoItems,
   InvoiceNotFound,
   InvoiceHasPayments,
@@ -15,76 +14,14 @@ import {
 
 export function createFromQuote(quoteId: string, userId: string) {
   return Effect.gen(function* () {
-    const found = yield* Effect.tryPromise(() =>
-      db.query.quote.findFirst({
-        where: eq(quote.id, quoteId),
-        with: {
-          customer: true,
-          items: { orderBy: (i, { asc }) => [asc(i.sortOrder)] },
-          invoice: true,
-        },
-      }),
+    // Ensure the invoice mirror reflects the latest quote items (creating it on the
+    // first conversion, re-syncing it otherwise), then finalize the quote. Idempotent:
+    // safe to call whether or not an invoice already exists.
+    const inv = yield* syncInvoiceFromQuote(quoteId, userId);
+    yield* Effect.tryPromise(() =>
+      db.update(quote).set({ status: "completed" }).where(eq(quote.id, quoteId)),
     );
-
-    if (!found) {
-      return yield* Effect.fail(new QuoteNotFound({ id: quoteId }));
-    }
-
-    if (found.invoice) {
-      return yield* Effect.fail(new QuoteAlreadyConverted({ quoteId }));
-    }
-
-    const subtotal = found.items.reduce(
-      (sum, i) => sum + (i.inches ? i.inches * i.unitCost : i.quantity * i.unitCost),
-      0,
-    );
-    const discountAmount = found.discountAmount;
-    const total = subtotal - discountAmount;
-
-    const result = yield* Effect.tryPromise(() =>
-      db.transaction(async (tx) => {
-        const [inv] = await tx
-          .insert(invoice)
-          .values({
-            quoteId,
-            customerId: found.customerId,
-            status: "unpaid",
-            subtotal,
-            discount: discountAmount,
-            tax: 0,
-            total,
-            createdById: userId,
-          })
-          .returning();
-
-        if (found.items.length > 0) {
-          await tx.insert(invoiceItem).values(
-            found.items.map((item) => ({
-              invoiceId: inv!.id,
-              itemType: item.itemType,
-              vehicleSize: item.vehicleSize,
-              sideOfVehicle: item.sideOfVehicle,
-              damageLevel: item.damageLevel,
-              vehicleType: item.vehicleType,
-              rimMaterial: item.rimMaterial,
-              quantity: item.quantity,
-              unitCost: item.unitCost,
-              inches: item.inches,
-              jobTypes: item.jobTypes,
-              description: item.description,
-              comments: item.comments,
-              sortOrder: item.sortOrder,
-            })),
-          );
-        }
-
-        await tx.update(quote).set({ status: "completed" }).where(eq(quote.id, quoteId));
-
-        return inv!;
-      }),
-    );
-
-    return result;
+    return inv;
   });
 }
 
@@ -152,8 +89,6 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
             })),
           );
 
-          await tx.update(quote).set({ status: "completed" }).where(eq(quote.id, quoteId));
-
           return inv!;
         }),
       );
@@ -200,8 +135,6 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
           .set({ subtotal, discount: discountAmount, total, status })
           .where(eq(invoice.id, invoiceId))
           .returning();
-
-        await tx.update(quote).set({ status: "completed" }).where(eq(quote.id, quoteId));
 
         return inv!;
       }),

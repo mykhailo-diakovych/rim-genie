@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { type DateRange, getDateFrom } from "@/components/ui/date-range-filter";
+import { type DateRange, getDateFrom, getDateTo } from "@/components/ui/date-range-filter";
 import { orpc } from "@/utils/orpc";
 
 import type { ApiJob, JobGroup } from "./types";
@@ -26,6 +26,8 @@ function groupJobsByInvoice(jobs: ApiJob[]): JobGroup[] {
           hour12: true,
         }),
         assignee: job.technician?.name ?? null,
+        startedAt: null,
+        hoursSpent: null,
         jobs: [],
       };
       map.set(job.invoiceId, group);
@@ -36,6 +38,22 @@ function groupJobsByInvoice(jobs: ApiJob[]): JobGroup[] {
     }
   }
 
+  for (const group of map.values()) {
+    const starts = group.jobs
+      .map((j) => j.startedAt ?? j.acceptedAt)
+      .filter((d): d is NonNullable<typeof d> => Boolean(d))
+      .map((d) => new Date(d).getTime());
+    const ends = group.jobs
+      .map((j) => j.completedAt)
+      .filter((d): d is NonNullable<typeof d> => Boolean(d))
+      .map((d) => new Date(d).getTime());
+    const start = starts.length > 0 ? Math.min(...starts) : null;
+    const end = ends.length > 0 ? Math.max(...ends) : null;
+    group.startedAt = start !== null ? new Date(start).toISOString() : null;
+    group.hoursSpent =
+      start !== null && end !== null ? Math.max(0, (end - start) / 3_600_000) : null;
+  }
+
   return Array.from(map.values());
 }
 
@@ -43,12 +61,39 @@ export function getGroupAction(group: JobGroup): "proofs" | "done" {
   return group.jobs.some((j) => j.status === "accepted") ? "proofs" : "done";
 }
 
+export function formatStartedAt(iso: string | null): string | null {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+export function formatHours(hours: number | null): string | null {
+  if (hours === null) return null;
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  return `${hours.toFixed(1)}h`;
+}
+
 function filterGroupsByDateRange(groups: JobGroup[], dateRange: DateRange): JobGroup[] {
   const dateFrom = getDateFrom(dateRange);
-  if (!dateFrom) return groups;
+  const dateTo = getDateTo(dateRange);
+  if (!dateFrom && !dateTo) return groups;
 
-  const from = new Date(dateFrom);
-  return groups.filter((group) => group.jobs.some((job) => new Date(job.createdAt) >= from));
+  const from = dateFrom ? new Date(dateFrom) : null;
+  const to = dateTo ? new Date(dateTo) : null;
+  return groups.filter((group) =>
+    group.jobs.some((job) => {
+      const created = new Date(job.createdAt);
+      if (from && created < from) return false;
+      if (to && created > to) return false;
+      return true;
+    }),
+  );
 }
 
 interface UseJobsParams {

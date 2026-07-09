@@ -101,10 +101,7 @@ export const jobTypeExclusion = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    unique("job_type_exclusion_pair_unique").on(
-      table.jobTypeAId,
-      table.jobTypeBId,
-    ),
+    unique("job_type_exclusion_pair_unique").on(table.jobTypeAId, table.jobTypeBId),
     index("job_type_exclusion_a_idx").on(table.jobTypeAId),
     index("job_type_exclusion_b_idx").on(table.jobTypeBId),
   ],
@@ -239,10 +236,7 @@ export const spotPolishPrice = pgTable(
       .notNull(),
   },
   (table) => [
-    unique("spot_polish_price_combo_unique").on(
-      table.jobTypeKey,
-      table.sizeBucket,
-    ),
+    unique("spot_polish_price_combo_unique").on(table.jobTypeKey, table.sizeBucket),
     index("spot_polish_price_jobtype_idx").on(table.jobTypeKey),
   ],
 );
@@ -262,12 +256,9 @@ export const vehicleSizeRelations = relations(vehicleSize, ({ many }) => ({
   brakePrices: many(brakeServicePrice),
 }));
 
-export const brakeServicePriceRelations = relations(
-  brakeServicePrice,
-  ({ one }) => ({
-    vehicleSize: one(vehicleSize, {
-      fields: [brakeServicePrice.vehicleSizeId],
-      references: [vehicleSize.id],
-    }),
+export const brakeServicePriceRelations = relations(brakeServicePrice, ({ one }) => ({
+  vehicleSize: one(vehicleSize, {
+    fields: [brakeServicePrice.vehicleSizeId],
+    references: [vehicleSize.id],
   }),
-);
+}));

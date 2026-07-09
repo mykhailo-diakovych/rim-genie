@@ -189,10 +189,15 @@ export const floorRouter = {
       }),
 
     list: requireRole("admin", "floorManager", "cashier")
-      .input(z.object({ dateFrom: z.string().optional() }).optional())
+      .input(
+        z.object({ dateFrom: z.string().optional(), dateTo: z.string().optional() }).optional(),
+      )
       .handler(async ({ input }) => {
         const dateFilter = input?.dateFrom
           ? gte(customer.createdAt, new Date(input.dateFrom))
+          : undefined;
+        const dateToFilter = input?.dateTo
+          ? lte(customer.createdAt, new Date(input.dateTo))
           : undefined;
 
         return db
@@ -214,7 +219,7 @@ export const floorRouter = {
           .leftJoin(quote, eq(quote.customerId, customer.id))
           .leftJoin(quoteItem, eq(quoteItem.quoteId, quote.id))
           .leftJoin(invoice, eq(invoice.customerId, customer.id))
-          .where(and(isNull(customer.deletedAt), dateFilter))
+          .where(and(isNull(customer.deletedAt), dateFilter, dateToFilter))
           .groupBy(customer.id)
           .orderBy(desc(customer.createdAt));
       }),
@@ -234,7 +239,10 @@ export const floorRouter = {
           invoices: {
             with: {
               jobs: {
-                with: { invoiceItem: true },
+                with: {
+                  invoiceItem: true,
+                  technician: { columns: { id: true, name: true } },
+                },
               },
             },
           },
@@ -313,7 +321,13 @@ export const floorRouter = {
   quotes: {
     list: protectedProcedure
       .input(
-        z.object({ search: z.string().optional(), dateFrom: z.string().optional() }).optional(),
+        z
+          .object({
+            search: z.string().optional(),
+            dateFrom: z.string().optional(),
+            dateTo: z.string().optional(),
+          })
+          .optional(),
       )
       .handler(async ({ input, context }) => {
         const search = input?.search?.trim();
@@ -329,6 +343,9 @@ export const floorRouter = {
         const dateFilter = input?.dateFrom
           ? gte(quote.createdAt, new Date(input.dateFrom))
           : undefined;
+        const dateToFilter = input?.dateTo
+          ? lte(quote.createdAt, new Date(input.dateTo))
+          : undefined;
 
         if (search && search.length > 0) {
           const pattern = `%${search}%`;
@@ -341,6 +358,7 @@ export const floorRouter = {
               and(
                 locationFilter,
                 dateFilter,
+                dateToFilter,
                 or(
                   sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
                   sql`${quote.quoteNumber}::text ILIKE ${pattern}`,
@@ -366,7 +384,7 @@ export const floorRouter = {
         }
 
         return db.query.quote.findMany({
-          where: and(locationFilter, dateFilter),
+          where: and(locationFilter, dateFilter, dateToFilter),
           orderBy: (q, { desc }) => [desc(q.createdAt)],
           with: {
             customer: true,
