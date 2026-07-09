@@ -66,8 +66,6 @@ export interface QuoteGeneratorSheetData {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const WELDING_MATERIAL_TYPES = ["Aluminium", "Steel", "Stainless Steel", "Cast Iron"];
-
 const BRAKE_SERVICE_TYPES = [
   { value: "disc-rotor-skimming", label: "Disc Rotor Skimming", quantityLabel: "How many pairs?" },
   { value: "brake-drum-skimming", label: "Brake Drum Skimming", quantityLabel: "How many pairs?" },
@@ -221,7 +219,10 @@ export function QuoteGeneratorSheet({
   );
   const { data: pricingConfig } = useQuery(orpc.catalog.config.get.queryOptions());
 
+  const { data: jobExclusions } = useQuery(orpc.catalog.exclusions.list.queryOptions());
+
   const rimJobList = (rimGroups ?? []).map((root) => ({
+    id: root.id,
     key: root.key,
     label: root.label,
     children: root.children.map((c) => ({ key: c.key, label: c.label })),
@@ -229,6 +230,21 @@ export function QuoteGeneratorSheet({
   const rimLeafKeys = rimJobList.flatMap((j) =>
     j.children.length ? j.children.map((c) => c.key) : [j.key],
   );
+
+  // Mutually-exclusive job pairs from the DB (RIM-3 K1): key → conflicting keys.
+  const conflictsByKey = new Map<string, Set<string>>();
+  {
+    const keyById = new Map(rimJobList.map((j) => [j.id, j.key]));
+    for (const ex of jobExclusions ?? []) {
+      const ka = keyById.get(ex.jobTypeAId);
+      const kb = keyById.get(ex.jobTypeBId);
+      if (!ka || !kb) continue;
+      if (!conflictsByKey.has(ka)) conflictsByKey.set(ka, new Set());
+      if (!conflictsByKey.has(kb)) conflictsByKey.set(kb, new Set());
+      conflictsByKey.get(ka)!.add(kb);
+      conflictsByKey.get(kb)!.add(ka);
+    }
+  }
 
   const applyRimModifier = (base: number) => {
     let p = base;
@@ -266,11 +282,12 @@ export function QuoteGeneratorSheet({
     enabled: !!(spotLeafKey && spotBucket),
   });
 
+  const { data: weldingMaterials } = useQuery(orpc.catalog.weldingMaterials.list.queryOptions());
   const { data: weldingPrices } = useQuery(
     orpc.floor.pricing.lookup.queryOptions({
       input: {
         category: "welding" as const,
-        jobTypes: ["aluminium", "steel", "stainless-steel", "cast-iron"],
+        jobTypes: (weldingMaterials ?? []).map((m) => m.key),
       },
     }),
   );
@@ -278,6 +295,8 @@ export function QuoteGeneratorSheet({
   const { data: powderColors } = useQuery(
     orpc.catalog.colors.list.queryOptions({ input: { includeInactive: false } }),
   );
+  const { data: powderRanges } = useQuery(orpc.catalog.powderPrices.ranges.queryOptions());
+  // rimSize holds a "min-max" range string; parseInt yields the min for the lookup.
   const pcSize = pcSelects.rimSize ? parseInt(pcSelects.rimSize, 10) : undefined;
   const pcColorCount = pcSelects.colorCount ? parseInt(pcSelects.colorCount, 10) : undefined;
   const { data: powderPrice, isFetching: powderPriceFetching } = useQuery({
@@ -665,7 +684,19 @@ export function QuoteGeneratorSheet({
   }, [editItem?.id]);
 
   function toggleRimJob(key: string, checked: boolean) {
-    setCheckedJobs((prev) => ({ ...prev, [key]: checked }));
+    const conflicts = checked ? conflictsByKey.get(key) : undefined;
+    setCheckedJobs((prev) => {
+      const next = { ...prev, [key]: checked };
+      if (conflicts) for (const other of conflicts) next[other] = false;
+      return next;
+    });
+    if (conflicts) {
+      setJobSubTypes((prev) => {
+        const next = { ...prev };
+        for (const other of conflicts) delete next[other];
+        return next;
+      });
+    }
     if (checked) setJobTypeError(null);
   }
 
@@ -927,7 +958,7 @@ export function QuoteGeneratorSheet({
                               {job.label}
                             </span>
                             {displayUnit != null ? (
-                              <span className="ml-auto font-rubik text-sm font-semibold text-body">
+                              <span className="ml-auto font-rubik text-base font-semibold text-body">
                                 $
                                 {(displayUnit / 100).toLocaleString("en-US", {
                                   minimumFractionDigits: 2,
@@ -973,6 +1004,14 @@ export function QuoteGeneratorSheet({
                             </Select>
                             {isSpot && leafKey && (
                               <div className="mt-1 flex flex-col gap-1">
+                                {rimSize != null && (
+                                  <span className="font-rubik text-xs text-label">
+                                    Rim size band:{" "}
+                                    <span className="font-medium text-body">
+                                      {rimSize >= 21 ? '21" and above' : '20" and under'}
+                                    </span>
+                                  </span>
+                                )}
                                 <label className="font-rubik text-xs leading-3.5 text-label">
                                   How many rims?
                                 </label>
@@ -1048,9 +1087,9 @@ export function QuoteGeneratorSheet({
                           <SelectValue placeholder="Select material" />
                         </SelectTrigger>
                         <SelectPopup>
-                          {WELDING_MATERIAL_TYPES.map((mt) => (
-                            <SelectOption key={mt} value={mt}>
-                              {mt}
+                          {(weldingMaterials ?? []).map((mt) => (
+                            <SelectOption key={mt.key} value={mt.label}>
+                              {mt.label}
                             </SelectOption>
                           ))}
                         </SelectPopup>
@@ -1151,9 +1190,12 @@ export function QuoteGeneratorSheet({
                             <SelectValue placeholder="Select rim size" />
                           </SelectTrigger>
                           <SelectPopup>
-                            {Array.from({ length: 17 }, (_, i) => i + 10).map((size) => (
-                              <SelectOption key={size} value={String(size)}>
-                                {size}"
+                            {(powderRanges ?? []).map((r) => (
+                              <SelectOption
+                                key={`${r.minSize}-${r.maxSize}`}
+                                value={`${r.minSize}-${r.maxSize}`}
+                              >
+                                {r.minSize}-{r.maxSize}"
                               </SelectOption>
                             ))}
                           </SelectPopup>
@@ -1291,7 +1333,7 @@ export function QuoteGeneratorSheet({
                 {powderPrice?.found ? (
                   <div className="flex items-center justify-between rounded-lg bg-page px-3 py-2">
                     <span className="font-rubik text-xs text-label">Price</span>
-                    <span className="font-rubik text-sm font-semibold text-body">
+                    <span className="font-rubik text-base font-semibold text-body">
                       $
                       {(
                         (pcSelects.scope === "rim"
@@ -1460,7 +1502,7 @@ export function QuoteGeneratorSheet({
                                   {svc.label}
                                 </span>
                                 {tirePrices?.[svc.key]?.found ? (
-                                  <span className="ml-auto font-rubik text-sm font-semibold text-body">
+                                  <span className="ml-auto font-rubik text-base font-semibold text-body">
                                     $
                                     {(tirePrices[svc.key]!.unitCost / 100).toLocaleString("en-US", {
                                       minimumFractionDigits: 2,
@@ -1557,7 +1599,7 @@ export function QuoteGeneratorSheet({
                                   {svc.label}
                                 </span>
                                 {priceReady && brakeUnitCost > 0 ? (
-                                  <span className="ml-auto font-rubik text-sm font-semibold text-body">
+                                  <span className="ml-auto font-rubik text-base font-semibold text-body">
                                     $
                                     {((brakeUnitCost * qty) / 100).toLocaleString("en-US", {
                                       minimumFractionDigits: 2,

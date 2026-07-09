@@ -11,6 +11,7 @@ import {
   brakeServicePrice,
   powderCoatPrice,
   spotPolishPrice,
+  servicePrice,
   serviceCategoryEnum,
   jobTypeSectionEnum,
   brakeUnitEnum,
@@ -523,6 +524,15 @@ export const catalogRouter = {
           .limit(1);
         return { unitCost: row?.unitCost ?? 0, found: !!row };
       }),
+
+    // Distinct rim-size ranges for the powder-coating selector (RIM-3 F1) — the
+    // selector is driven by the price table instead of hardcoded inches.
+    ranges: protectedProcedure.handler(async () => {
+      return db
+        .selectDistinct({ minSize: powderCoatPrice.minSize, maxSize: powderCoatPrice.maxSize })
+        .from(powderCoatPrice)
+        .orderBy(asc(powderCoatPrice.minSize));
+    }),
   },
 
   // ─── Spot-polish prices — job type × size bucket (R8) ────────────────────
@@ -593,5 +603,24 @@ export const catalogRouter = {
         const unitCost = row?.unitCost ?? 0;
         return { unitCost, total: unitCost * input.quantity, found: !!row };
       }),
+  },
+
+  // ─── Welding materials — distinct materials priced per inch (RIM-3 A1) ────
+  // Sourced from the welding price rows so the Other Welding tab is DB-driven.
+  weldingMaterials: {
+    list: protectedProcedure.handler(async () => {
+      const rows = await db
+        .selectDistinct({ key: servicePrice.jobType })
+        .from(servicePrice)
+        .where(eq(servicePrice.category, "welding"))
+        .orderBy(asc(servicePrice.jobType));
+      return rows.map((r) => ({
+        key: r.key,
+        label: r.key
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" "),
+      }));
+    }),
   },
 };

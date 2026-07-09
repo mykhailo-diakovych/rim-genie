@@ -68,7 +68,7 @@ export function SignatureModal({ open, onOpenChange, onSign }: SignatureModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px]">
+      <DialogContent className="sm:max-w-[900px]">
         <DialogHeader>
           <DialogTitle>Add Signature</DialogTitle>
         </DialogHeader>
@@ -82,28 +82,29 @@ export function SignatureModal({ open, onOpenChange, onSign }: SignatureModalPro
           </p>
         </div>
 
-        <div className="flex flex-col gap-6 px-3 py-3">
-          <div className="flex flex-col gap-2">
-            <span className="font-rubik text-sm leading-4.5 font-medium text-body">
-              {DISCLAIMER_TITLE}
-            </span>
-            <div className="flex max-h-[280px] flex-col gap-2 overflow-y-auto rounded-md border border-field-line bg-page p-3">
-              {DISCLAIMER_PARAGRAPHS.map((paragraph, i) => (
-                <p key={i} className="font-rubik text-sm leading-5 text-body">
-                  {paragraph}
-                </p>
-              ))}
+        <div className="flex flex-col gap-4 px-3 py-3">
+          <div className="flex flex-col gap-6 md:flex-row md:items-stretch">
+            {/* Disclaimer — shown to the left of the signature widget (RIM-3) */}
+            <div className="flex flex-1 flex-col gap-1">
+              <span className="font-rubik text-sm leading-4.5 text-body">{DISCLAIMER_TITLE}</span>
+              <div className="flex max-h-[280px] flex-col gap-2 overflow-y-auto rounded-md border border-field-line bg-page p-3">
+                {DISCLAIMER_PARAGRAPHS.map((paragraph, i) => (
+                  <p key={i} className="font-rubik text-sm leading-5 text-body">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="font-rubik text-xs leading-3.5 text-label">
-              Signature inside the field:
-            </label>
-            <canvas
-              ref={canvasRef}
-              className="h-[200px] w-full rounded-md border border-field-line bg-white"
-            />
+            <div className="flex flex-1 flex-col gap-1">
+              <label className="font-rubik text-sm leading-4.5 text-body">
+                Signature inside the field:
+              </label>
+              <canvas
+                ref={canvasRef}
+                className="h-[280px] w-full rounded-md border border-field-line bg-white"
+              />
+            </div>
           </div>
 
           <DialogFooter className="p-0">

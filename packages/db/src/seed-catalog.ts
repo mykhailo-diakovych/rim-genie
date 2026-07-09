@@ -2,9 +2,12 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { and, inArray, isNull } from "drizzle-orm";
+
 import { db } from "./index";
 import {
   jobType,
+  jobTypeExclusion,
   pricingConfig,
   vehicleSize,
   powderCoatColor,
@@ -72,10 +75,40 @@ const KEY_FIXES: Record<string, string> = {
 };
 const fixKey = (k: string) => KEY_FIXES[k] ?? k;
 
+// Mutually-exclusive job-type pairs (RIM-3 K1). Kept idempotent and run on every
+// seed — including already-seeded databases — so the rule is guaranteed to exist.
+const EXCLUSION_PAIRS: [string, string][] = [["platinum-resurfacing", "spot-polish"]];
+
+async function ensureExclusions() {
+  for (const [keyA, keyB] of EXCLUSION_PAIRS) {
+    const rows = await db
+      .select({ id: jobType.id, key: jobType.key })
+      .from(jobType)
+      .where(and(inArray(jobType.key, [keyA, keyB]), isNull(jobType.parentId)));
+    const idByKey = new Map(rows.map((r) => [r.key, r.id]));
+    const a = idByKey.get(keyA);
+    const b = idByKey.get(keyB);
+    if (!a || !b) {
+      console.warn(`  exclusion skipped — job types not found: ${keyA} / ${keyB}`);
+      continue;
+    }
+    // Normalize order so the unique index treats mirrored pairs as one.
+    const [jobTypeAId, jobTypeBId] = [a, b].sort();
+    await db
+      .insert(jobTypeExclusion)
+      .values({ jobTypeAId: jobTypeAId!, jobTypeBId: jobTypeBId! })
+      .onConflictDoNothing({
+        target: [jobTypeExclusion.jobTypeAId, jobTypeExclusion.jobTypeBId],
+      });
+  }
+}
+
 async function seedCatalog() {
   const existing = await db.select({ id: jobType.id }).from(jobType).limit(1);
   if (existing.length > 0) {
-    console.log("Catalog already seeded (job_type is non-empty), skipping.");
+    console.log("Catalog already seeded (job_type is non-empty), skipping bulk insert.");
+    await ensureExclusions();
+    console.log("Ensured mutual-exclusivity rules.");
     return;
   }
 
@@ -201,6 +234,9 @@ async function seedCatalog() {
       unitCost: s.unitCostCents,
     })),
   );
+
+  // 9. Mutual-exclusivity rules
+  await ensureExclusions();
 
   console.log("Catalog seed complete:");
   console.log(`  job types:          ${jobTypeCount}`);
