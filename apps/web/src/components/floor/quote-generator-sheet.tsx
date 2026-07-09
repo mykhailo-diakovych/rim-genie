@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Info, Plus, X } from "lucide-react";
+import { Check, Info, Loader2, Plus, X } from "lucide-react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Radio } from "@base-ui/react/radio";
@@ -241,7 +241,7 @@ export function QuoteGeneratorSheet({
     return p;
   };
 
-  const { data: rimPrices } = useQuery(
+  const { data: rimPrices, isFetching: rimPricesFetching } = useQuery(
     orpc.floor.pricing.lookup.queryOptions({
       input: {
         category: "rim" as const,
@@ -256,7 +256,7 @@ export function QuoteGeneratorSheet({
   // Spot polish is a Rims group priced by size bucket × qty (its own price table).
   const spotBucket = rimSize != null ? (rimSize >= 21 ? "ge21" : "le20") : undefined;
   const spotLeafKey = jobSubTypes["spot-polish"];
-  const { data: spotPrice } = useQuery({
+  const { data: spotPrice, isFetching: spotPriceFetching } = useQuery({
     ...orpc.catalog.spotPrices.lookup.queryOptions({
       input: {
         jobTypeKey: spotLeafKey ?? "",
@@ -280,7 +280,7 @@ export function QuoteGeneratorSheet({
   );
   const pcSize = pcSelects.rimSize ? parseInt(pcSelects.rimSize, 10) : undefined;
   const pcColorCount = pcSelects.colorCount ? parseInt(pcSelects.colorCount, 10) : undefined;
-  const { data: powderPrice } = useQuery({
+  const { data: powderPrice, isFetching: powderPriceFetching } = useQuery({
     ...orpc.catalog.powderPrices.lookup.queryOptions({
       input: {
         size: pcSize ?? 1,
@@ -300,7 +300,7 @@ export function QuoteGeneratorSheet({
       : [{ key: root.key, label: root.label }],
   );
   const tireSize = generalSelects.tireSize ? parseInt(generalSelects.tireSize, 10) : undefined;
-  const { data: tirePrices } = useQuery(
+  const { data: tirePrices, isFetching: tirePricesFetching } = useQuery(
     orpc.floor.pricing.lookup.queryOptions({
       input: {
         category: "general" as const,
@@ -313,7 +313,7 @@ export function QuoteGeneratorSheet({
   const { data: vehicleSizes } = useQuery(
     orpc.catalog.vehicleSizes.list.queryOptions({ input: { includeInactive: false } }),
   );
-  const { data: brakeCombos } = useQuery({
+  const { data: brakeCombos, isFetching: brakeCombosFetching } = useQuery({
     ...orpc.catalog.brakePrices.byVehicleSize.queryOptions({
       input: { vehicleSizeName: generalSelects.vehicleSize || "" },
     }),
@@ -901,6 +901,7 @@ export function QuoteGeneratorSheet({
                     const isChecked = !!checkedJobs[job.key];
                     const leafKey = job.children.length ? jobSubTypes[job.key] : job.key;
                     const isSpot = job.key === "spot-polish";
+                    const priceLoading = isSpot ? spotPriceFetching : rimPricesFetching;
                     const priceRow = leafKey && !isSpot ? rimPrices?.[leafKey] : undefined;
                     const displayUnit = isSpot
                       ? spotPrice?.found && leafKey
@@ -933,9 +934,13 @@ export function QuoteGeneratorSheet({
                                 })}
                               </span>
                             ) : isChecked && leafKey && rimSize ? (
-                              <span className="ml-auto font-rubik text-xs text-red">
-                                No price set
-                              </span>
+                              priceLoading ? (
+                                <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-label" />
+                              ) : (
+                                <span className="ml-auto font-rubik text-xs text-red">
+                                  No price set
+                                </span>
+                              )
                             ) : null}
                           </div>
                         </div>
@@ -1283,7 +1288,7 @@ export function QuoteGeneratorSheet({
                   </div>
                 )}
 
-                {powderPrice?.found && (
+                {powderPrice?.found ? (
                   <div className="flex items-center justify-between rounded-lg bg-page px-3 py-2">
                     <span className="font-rubik text-xs text-label">Price</span>
                     <span className="font-rubik text-sm font-semibold text-body">
@@ -1295,7 +1300,12 @@ export function QuoteGeneratorSheet({
                       ).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                )}
+                ) : powderPriceFetching ? (
+                  <div className="flex items-center justify-between rounded-lg bg-page px-3 py-2">
+                    <span className="font-rubik text-xs text-label">Price</span>
+                    <Loader2 className="size-4 shrink-0 animate-spin text-label" />
+                  </div>
+                ) : null}
 
                 <powderCoatingForm.Field name="comments">
                   {(field) => (
@@ -1457,9 +1467,13 @@ export function QuoteGeneratorSheet({
                                     })}
                                   </span>
                                 ) : isChecked && tireSize ? (
-                                  <span className="ml-auto font-rubik text-xs text-red">
-                                    No price set
-                                  </span>
+                                  tirePricesFetching ? (
+                                    <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-label" />
+                                  ) : (
+                                    <span className="ml-auto font-rubik text-xs text-red">
+                                      No price set
+                                    </span>
+                                  )
                                 ) : null}
                               </div>
                               {isChecked && (
@@ -1549,6 +1563,8 @@ export function QuoteGeneratorSheet({
                                       minimumFractionDigits: 2,
                                     })}
                                   </span>
+                                ) : priceReady && brakeCombosFetching ? (
+                                  <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-label" />
                                 ) : null}
                               </div>
                               {isChecked && (
