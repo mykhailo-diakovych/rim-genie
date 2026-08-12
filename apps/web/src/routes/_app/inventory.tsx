@@ -1,4 +1,3 @@
-import { useState } from "react";
 
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -10,7 +9,9 @@ import {
   getDateFrom,
   getDateTo,
   type DateRange,
+  parseDateRange,
 } from "@/components/ui/date-range-filter";
+import { usePersistedState } from "@/lib/use-persisted-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { requireRoles } from "@/lib/route-permissions";
@@ -24,8 +25,16 @@ export const Route = createFileRoute("/_app/inventory")({
 });
 
 function InventoryPage() {
-  const [activeTab, setActiveTab] = useState<TabValue>("overnight");
-  const [dateRange, setDateRange] = useState<DateRange>("30d");
+  const [activeTab, setActiveTab] = usePersistedState<TabValue>(
+    "inventory.tab",
+    "overnight",
+    (v) => (TAB_CONFIG.some((t) => t.value === v) ? (v as TabValue) : null),
+  );
+  const [dateRange, setDateRange] = usePersistedState<DateRange>(
+    "inventory.dateRange",
+    "30d",
+    (v) => parseDateRange(v, "30d"),
+  );
   const dateFrom = getDateFrom(dateRange);
   const dateTo = getDateTo(dateRange);
   const { data: counts } = useInventoryCounts(dateFrom, dateTo);

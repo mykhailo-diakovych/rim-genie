@@ -1,4 +1,3 @@
-import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -8,7 +7,13 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { LatestInvoices } from "@/components/dashboard/latest-invoices";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { TeamActivityTable } from "@/components/dashboard/team-activity-table";
-import { DateRangeFilter, getDateFrom, type DateRange } from "@/components/ui/date-range-filter";
+import {
+  DateRangeFilter,
+  getDateFrom,
+  parseDateRange,
+  type DateRange,
+} from "@/components/ui/date-range-filter";
+import { usePersistedState } from "@/lib/use-persisted-state";
 import { IconInvoice, IconJobs, IconNight, IconRevenue } from "@/components/ui/nav-icons";
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
@@ -28,7 +33,11 @@ const METRIC_CONFIG = {
 } as const;
 
 function RouteComponent() {
-  const [dateRange, setDateRange] = useState<DateRange>("today");
+  const [dateRange, setDateRange] = usePersistedState<DateRange>(
+    "dashboard.dateRange",
+    "today",
+    (v) => parseDateRange(v, "today"),
+  );
   const dateFrom = getDateFrom(dateRange);
 
   const input = { dateFrom };

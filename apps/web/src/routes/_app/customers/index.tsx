@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Eye, Plus, RotateCcw } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 
 import type { UserRole } from "@rim-genie/db/schema";
@@ -14,7 +13,9 @@ import {
   getDateFrom,
   getDateTo,
   type DateRange,
+  parseDateRange,
 } from "@/components/ui/date-range-filter";
+import { usePersistedState } from "@/lib/use-persisted-state";
 import { authClient } from "@/lib/auth-client";
 import { requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
@@ -50,7 +51,11 @@ function CustomersPage() {
   const canEdit = !!userRole && CAN_EDIT_ROLES.includes(userRole);
   const isAdmin = userRole === "admin";
 
-  const [dateRange, setDateRange] = useState<DateRange>("all");
+  const [dateRange, setDateRange] = usePersistedState<DateRange>(
+    "customers.dateRange",
+    "all",
+    (v) => parseDateRange(v, "all"),
+  );
   const dateFrom = getDateFrom(dateRange);
   const dateTo = getDateTo(dateRange);
 

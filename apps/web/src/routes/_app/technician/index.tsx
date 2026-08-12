@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
-import type { DateRange } from "@/components/ui/date-range-filter";
+import { parseDateRange, type DateRange } from "@/components/ui/date-range-filter";
+import { usePersistedState } from "@/lib/use-persisted-state";
 import { requireRoles } from "@/lib/route-permissions";
 import { cn } from "@/lib/utils";
 import { AssignJobCard } from "@/components/technician/assign-job-card";
@@ -30,8 +31,16 @@ export const Route = createFileRoute("/_app/technician/")({
 function TechnicianPage() {
   const { tab: activeTab } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const [dateRange, setDateRange] = useState<DateRange>("all");
-  const [technicianId, setTechnicianId] = useState("");
+  const [dateRange, setDateRange] = usePersistedState<DateRange>(
+    "technician.dateRange",
+    "all",
+    (v) => parseDateRange(v, "all"),
+  );
+  const [technicianId, setTechnicianId] = usePersistedState<string>(
+    "technician.technicianId",
+    "",
+    (v) => (typeof v === "string" ? v : null),
+  );
   const { data: technicians } = useQuery(orpc.technician.technicians.list.queryOptions({}));
   const { assign, inProgress, completed, isLoading } = useJobs({
     dateRange,
