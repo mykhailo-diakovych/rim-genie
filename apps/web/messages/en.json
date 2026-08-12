@@ -134,7 +134,7 @@
   "customers_toast_created": "Customer created successfully",
   "customers_toast_updated": "Customer updated successfully",
 
-  "manage_title": "List of Services",
+  "manage_title": "Service Management",
   "manage_btn_add_service": "Add New Service",
   "manage_tab_rim": "Rim Service",
   "manage_tab_general": "General Service",
