@@ -76,8 +76,6 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
 
   const [section, setSection] = useState<JobTypeSection>(defaultSection);
   const [label, setLabel] = useState("");
-  const [key, setKey] = useState("");
-  const [keyTouched, setKeyTouched] = useState(false);
   const [parentId, setParentId] = useState("");
   const [hasSubType, setHasSubType] = useState(false);
   const [description, setDescription] = useState("");
@@ -89,8 +87,6 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
     if (jobType) {
       setSection(jobType.section);
       setLabel(jobType.label);
-      setKey(jobType.key);
-      setKeyTouched(true);
       setParentId(jobType.parentId ?? "");
       setHasSubType(jobType.config?.hasSubType ?? false);
       setDescription(jobType.description ?? "");
@@ -99,8 +95,6 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
     } else {
       setSection(defaultSection);
       setLabel("");
-      setKey("");
-      setKeyTouched(false);
       setParentId("");
       setHasSubType(false);
       setDescription("");
@@ -144,7 +138,7 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
   });
 
   const isPending = create.isPending || update.isPending;
-  const effectiveKey = keyTouched ? key : slug(label);
+  const effectiveKey = isEdit ? jobType.key : slug(label);
 
   const handleSubmit = () => {
     if (!label.trim() || !effectiveKey) return;
@@ -211,22 +205,6 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
                 placeholder="e.g. Bend Fix"
                 className="flex h-9 w-full rounded-md border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none placeholder:text-ghost"
               />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <Label>Key</Label>
-              <input
-                value={effectiveKey}
-                onChange={(e) => {
-                  setKeyTouched(true);
-                  setKey(e.target.value);
-                }}
-                placeholder="auto from label"
-                className="flex h-9 w-full rounded-md border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none placeholder:text-ghost"
-              />
-              <span className="font-rubik text-xs text-label">
-                Stable identifier used to link pricing. Avoid changing it after prices exist.
-              </span>
             </div>
 
             <div className="flex flex-col gap-1">
