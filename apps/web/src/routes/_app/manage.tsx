@@ -495,6 +495,17 @@ function LocationsTab() {
   );
 }
 
+function TabGroupLabel({ label }: { label: string }) {
+  return (
+    <span
+      aria-hidden
+      className="w-full pt-1 font-rubik text-xs leading-4 tracking-wide text-label uppercase"
+    >
+      {label}
+    </span>
+  );
+}
+
 function ManagePage() {
   const { tab: activeTab } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
@@ -509,17 +520,20 @@ function ManagePage() {
         value={activeTab}
         onValueChange={(val) => navigate({ search: { tab: val as ManageTab } })}
       >
-        <TabsList>
+        <TabsList className="flex-wrap gap-x-1 border-b-0">
+          <TabGroupLabel label="Services" />
           {SERVICE_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label()}
             </TabsTrigger>
           ))}
-          <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="job-types">Job Types</TabsTrigger>
-          <TabsTrigger value="pricing-config">Pricing Config</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="vehicle-sizes">Vehicle Sizes</TabsTrigger>
           <TabsTrigger value="colors">Colors</TabsTrigger>
+
+          <TabGroupLabel label="Business Settings" />
+          <TabsTrigger value="pricing-config">Pricing Config</TabsTrigger>
           <TabsTrigger value="loyalty">{m.loyalty_tab()}</TabsTrigger>
           <TabsTrigger value="locations">Locations</TabsTrigger>
         </TabsList>
