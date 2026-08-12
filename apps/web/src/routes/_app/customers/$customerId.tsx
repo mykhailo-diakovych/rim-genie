@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { Button } from "@/components/ui/button";
+import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import {
   Dialog,
   DialogClose,
@@ -449,12 +450,12 @@ function CustomerProfilePage() {
 
   return (
     <div className="flex flex-1 flex-col gap-3 p-3 sm:p-5">
-      <div>
+      <StickyActionBar>
         <Button variant="outline" nativeButton={false} render={<Link to="/customers" />}>
           <ChevronLeft />
           Back to list
         </Button>
-      </div>
+      </StickyActionBar>
 
       <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
         {isLoading ? (

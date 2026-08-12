@@ -32,6 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { SignatureModal } from "@/components/terms/signature-modal";
 import { authClient } from "@/lib/auth-client";
 import { formatCents, formatDollars } from "@/lib/format-currency";
@@ -256,7 +257,7 @@ function QuoteEditorPage() {
     <>
       <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
         {/* Action bar */}
-        <div className="flex flex-wrap items-center justify-between gap-y-2">
+        <StickyActionBar className="justify-between gap-y-2">
           <Button variant="outline" nativeButton={false} render={<Link to="/floor" />}>
             <ArrowLeft />
             Back to list
@@ -298,7 +299,7 @@ function QuoteEditorPage() {
               isAdmin={isAdmin}
             />
           </div>
-        </div>
+        </StickyActionBar>
 
         {/* Invoice card */}
         <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card">

@@ -17,6 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { formatCents } from "@/lib/format-currency";
 import {
   Dialog,
@@ -207,7 +208,7 @@ function InvoiceDetailPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
-      <div className="flex flex-wrap items-center gap-2 print:hidden">
+      <StickyActionBar className="print:hidden">
         <Button
           variant="outline"
           nativeButton={false}
@@ -244,7 +245,7 @@ function InvoiceDetailPage() {
             isDeleting={deleteInvoice.isPending}
           />
         </div>
-      </div>
+      </StickyActionBar>
 
       {hasJobs && jobStatusCounts && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-page px-3 py-2 font-rubik text-xs text-body print:hidden">

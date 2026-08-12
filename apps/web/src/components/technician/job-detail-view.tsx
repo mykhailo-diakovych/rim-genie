@@ -15,6 +15,7 @@ function ReverseIcon() {
 }
 
 import { Button } from "@/components/ui/button";
+import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { cn } from "@/lib/utils";
 
 import { ReverseJobDialog } from "./reverse-job-dialog";
@@ -37,10 +38,12 @@ function formatJobStatus(status: ApiJob["status"]) {
 export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
-      <Button variant="outline" className="self-start" onClick={onBack}>
-        <ChevronLeft />
-        Back to list
-      </Button>
+      <StickyActionBar>
+        <Button variant="outline" onClick={onBack}>
+          <ChevronLeft />
+          Back to list
+        </Button>
+      </StickyActionBar>
 
       <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white px-4 py-3 shadow-card sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-baseline gap-3">

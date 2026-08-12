@@ -1,6 +1,7 @@
 import { ChevronLeft, SquareCheckBig } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 
 import { AcceptJobDialog } from "./accept-job-dialog";
 import { type JobGroup } from "./types";
@@ -8,10 +9,12 @@ import { type JobGroup } from "./types";
 export function AssignDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
-      <Button variant="outline" className="self-start" onClick={onBack}>
-        <ChevronLeft />
-        Back to list
-      </Button>
+      <StickyActionBar>
+        <Button variant="outline" onClick={onBack}>
+          <ChevronLeft />
+          Back to list
+        </Button>
+      </StickyActionBar>
 
       <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white px-4 py-3 shadow-card sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-baseline gap-3">
