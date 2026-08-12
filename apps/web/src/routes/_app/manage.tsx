@@ -63,13 +63,8 @@ const SERVICE_TABS: { value: ServiceType; label: () => string }[] = [
   { value: "general", label: () => m.manage_tab_general() },
 ];
 
-interface ServicesTabProps {
-  type: ServiceType;
-  addOpen: boolean;
-  onAddOpenChange: (open: boolean) => void;
-}
-
-function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
+function ServicesTab({ type }: { type: ServiceType }) {
+  const [addOpen, setAddOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchInput, setSearchInput] = useState("");
@@ -107,15 +102,22 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
   return (
     <>
       <div className="flex flex-col gap-3">
-        <div className="relative w-full sm:w-80">
-          <input
-            type="text"
-            placeholder={m.manage_search_placeholder()}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-field-line bg-white px-3 py-2.5 pr-9 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
-          />
-          <Search className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ghost" />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-full sm:w-80">
+            <input
+              type="text"
+              placeholder={m.manage_search_placeholder()}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-field-line bg-white px-3 py-2.5 pr-9 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
+            />
+            <Search className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ghost" />
+          </div>
+
+          <Button className="sm:ml-auto" onClick={() => setAddOpen(true)}>
+            <Plus />
+            {m.manage_btn_add_service()}
+          </Button>
         </div>
 
         <div className="overflow-hidden rounded-lg border border-field-line bg-white">
@@ -152,7 +154,7 @@ function ServicesTab({ type, addOpen, onAddOpenChange }: ServicesTabProps) {
         </div>
       </div>
 
-      <ServiceModal open={addOpen} onOpenChange={onAddOpenChange} serviceType={type} />
+      <ServiceModal open={addOpen} onOpenChange={setAddOpen} serviceType={type} />
 
       <ServiceModal
         open={!!editService}
@@ -496,23 +498,12 @@ function LocationsTab() {
 function ManagePage() {
   const { tab: activeTab } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const [addOpen, setAddOpen] = useState(false);
-
-  const isServiceTab = activeTab === "rim" || activeTab === "general";
 
   return (
     <div className="flex flex-col gap-5 p-3 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
-          {m.manage_title()}
-        </h1>
-        {isServiceTab && (
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus />
-            {m.manage_btn_add_service()}
-          </Button>
-        )}
-      </div>
+      <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
+        {m.manage_title()}
+      </h1>
 
       <Tabs
         value={activeTab}
@@ -535,11 +526,7 @@ function ManagePage() {
 
         {SERVICE_TABS.map((tab) => (
           <TabsContent key={tab.value} value={tab.value} className="pt-3">
-            <ServicesTab
-              type={tab.value}
-              addOpen={activeTab === tab.value && addOpen}
-              onAddOpenChange={(open) => setAddOpen(open)}
-            />
+            <ServicesTab type={tab.value} />
           </TabsContent>
         ))}
 
