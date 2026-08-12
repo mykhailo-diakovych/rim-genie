@@ -322,6 +322,19 @@ function QuoteEditorPage() {
           {/* Row 2: Reason for visit + Customer info */}
           {quote && (
             <div className="flex items-center gap-4">
+              <div className="flex w-[200px] shrink-0 flex-col gap-1">
+                <div className="flex items-center gap-1.5 font-rubik text-sm leading-[18px]">
+                  <User className="size-4 shrink-0 text-ghost" />
+                  <span className="font-medium text-body">{quote.customer?.name}</span>
+                </div>
+                <div className="flex items-center gap-1.5 font-rubik text-sm leading-[18px] text-body">
+                  <Phone className="size-4 shrink-0 text-ghost" />
+                  <span>{quote.customer?.phone}</span>
+                </div>
+              </div>
+
+              <div className="hidden w-px self-stretch bg-field-line sm:block" />
+
               <div className="flex flex-1 items-center gap-4 font-rubik">
                 <label
                   htmlFor="customer-reason"
@@ -337,19 +350,6 @@ function QuoteEditorPage() {
                   disabled={isReadOnly}
                   className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 py-1 text-sm leading-[18px] text-body transition-colors outline-none placeholder:text-ghost hover:border-field-line focus:border-blue disabled:cursor-not-allowed disabled:opacity-50"
                 />
-              </div>
-
-              <div className="hidden w-px self-stretch bg-field-line sm:block" />
-
-              <div className="flex w-[200px] shrink-0 flex-col items-end gap-1">
-                <div className="flex items-center gap-1.5 font-rubik text-sm leading-[18px]">
-                  <User className="size-4 shrink-0 text-ghost" />
-                  <span className="font-medium text-body">{quote.customer?.name}</span>
-                </div>
-                <div className="flex items-center gap-1.5 font-rubik text-sm leading-[18px] text-body">
-                  <Phone className="size-4 shrink-0 text-ghost" />
-                  <span>{quote.customer?.phone}</span>
-                </div>
               </div>
             </div>
           )}
