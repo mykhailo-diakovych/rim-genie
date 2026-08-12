@@ -404,7 +404,7 @@ function QuoteEditorPage() {
                       <>
                         {/* Full Diagnostic Consent row */}
                         {quote && (
-                          <tr className="border-t border-field-line align-top">
+                          <tr className="border-b border-field-line align-top">
                             <td className="border-l border-field-line px-2 py-2 text-sm text-body">
                               1
                             </td>
