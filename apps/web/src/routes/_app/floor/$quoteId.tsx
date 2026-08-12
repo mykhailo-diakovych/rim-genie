@@ -68,6 +68,8 @@ function QuoteEditorPage() {
   const [editingConsent, setEditingConsent] = useState(false);
   const [comments, setComments] = useState("");
   const [commentsSynced, setCommentsSynced] = useState(false);
+  const [customerReason, setCustomerReason] = useState("");
+  const [reasonSynced, setReasonSynced] = useState(false);
 
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
@@ -84,6 +86,11 @@ function QuoteEditorPage() {
   if (quote && !commentsSynced) {
     setComments(quote.comments ?? "");
     setCommentsSynced(true);
+  }
+
+  if (quote && !reasonSynced) {
+    setCustomerReason(quote.customerReason ?? "");
+    setReasonSynced(true);
   }
 
   const invalidateQuote = () =>
@@ -215,7 +222,7 @@ function QuoteEditorPage() {
 
   function handleSave() {
     updateQuote.mutate(
-      { id: quoteId, comments },
+      { id: quoteId, comments, customerReason },
       {
         onSuccess: () => toast.success("Quote saved"),
       },
@@ -305,10 +312,20 @@ function QuoteEditorPage() {
           {quote && (
             <div className="flex items-center gap-4">
               <div className="flex flex-1 items-center gap-4 font-rubik">
-                <span className="shrink-0 text-xs leading-3.5 text-label">Reason for visit:</span>
-                <span className="text-sm leading-[18px] text-body">
-                  {quote.customerReason || "—"}
-                </span>
+                <label
+                  htmlFor="customer-reason"
+                  className="shrink-0 text-xs leading-3.5 text-label"
+                >
+                  Reason for visit:
+                </label>
+                <input
+                  id="customer-reason"
+                  value={customerReason}
+                  onChange={(e) => setCustomerReason(e.target.value)}
+                  placeholder="Enter reason"
+                  disabled={isReadOnly}
+                  className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 py-1 text-sm leading-[18px] text-body transition-colors outline-none placeholder:text-ghost hover:border-field-line focus:border-blue disabled:cursor-not-allowed disabled:opacity-50"
+                />
               </div>
 
               <div className="hidden w-px self-stretch bg-field-line sm:block" />
