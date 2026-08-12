@@ -25,12 +25,12 @@ export function TeamActivityTable({ rows }: TeamActivityTableProps) {
               {m.col_technician()}
             </span>
           </div>
-          <div className="flex h-[32px] w-[80px] items-center border-t border-l border-field-line px-[8px] py-[7px]">
+          <div className="flex h-[32px] w-23 items-center border-t border-l border-field-line px-[8px] py-[7px]">
             <span className="min-w-0 flex-1 font-rubik text-xs leading-3.5 font-normal whitespace-pre-wrap text-label">
               {m.col_active_jobs()}
             </span>
           </div>
-          <div className="flex h-[32px] w-[80px] items-center border-t border-r border-l border-field-line px-[8px] py-[7px]">
+          <div className="flex h-[32px] w-23 items-center border-t border-r border-l border-field-line px-[8px] py-[7px]">
             <span className="min-w-0 flex-1 font-rubik text-xs leading-3.5 font-normal whitespace-pre-wrap text-label">
               {m.col_completed_today()}
             </span>
@@ -47,14 +47,14 @@ export function TeamActivityTable({ rows }: TeamActivityTableProps) {
               </span>
             </div>
             <div
-              className={`border-t border-l ${idx === lastIdx ? "border-b" : ""} flex h-[32px] w-[80px] items-center border-field-line p-[8px]`}
+              className={`border-t border-l ${idx === lastIdx ? "border-b" : ""} flex h-[32px] w-23 items-center border-field-line p-[8px]`}
             >
               <span className="font-rubik text-xs leading-3.5 font-normal text-body">
                 {row.activeJobs}
               </span>
             </div>
             <div
-              className={`border-t border-r border-l ${idx === lastIdx ? "border-b" : ""} flex h-[32px] w-[80px] items-center border-field-line p-[8px]`}
+              className={`border-t border-r border-l ${idx === lastIdx ? "border-b" : ""} flex h-[32px] w-23 items-center border-field-line p-[8px]`}
             >
               <span className="font-rubik text-xs leading-3.5 font-normal text-body">
                 {row.completedToday}
