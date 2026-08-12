@@ -7,13 +7,14 @@ import { orpc } from "@/utils/orpc";
 
 import type { ApiJob, JobGroup } from "./types";
 
-function groupJobsByInvoice(jobs: ApiJob[]): JobGroup[] {
+function groupJobsByInvoice(jobs: ApiJob[], totalsByInvoice: Map<string, number>): JobGroup[] {
   const map = new Map<string, JobGroup>();
 
   for (const job of jobs) {
     let group = map.get(job.invoiceId);
     if (!group) {
       group = {
+        totalJobs: totalsByInvoice.get(job.invoiceId) ?? 0,
         invoiceId: job.invoiceId,
         invoiceNumber: job.invoice.invoiceNumber,
         customer: job.invoice.customer.name,
@@ -124,6 +125,12 @@ export function useJobs(params?: UseJobsParams) {
     const inProgressJobs: ApiJob[] = [];
     const completedJobs: ApiJob[] = [];
 
+
+    const totalsByInvoice = new Map<string, number>();
+    for (const job of data) {
+      totalsByInvoice.set(job.invoiceId, (totalsByInvoice.get(job.invoiceId) ?? 0) + 1);
+    }
+
     for (const job of data) {
       if (job.status === "completed") {
         completedJobs.push(job);
@@ -135,9 +142,15 @@ export function useJobs(params?: UseJobsParams) {
     }
 
     return {
-      assign: filterGroupsByDateRange(groupJobsByInvoice(assignJobs), dateRange),
-      inProgress: filterGroupsByDateRange(groupJobsByInvoice(inProgressJobs), dateRange),
-      completed: filterGroupsByDateRange(groupJobsByInvoice(completedJobs), dateRange),
+      assign: filterGroupsByDateRange(groupJobsByInvoice(assignJobs, totalsByInvoice), dateRange),
+      inProgress: filterGroupsByDateRange(
+        groupJobsByInvoice(inProgressJobs, totalsByInvoice),
+        dateRange,
+      ),
+      completed: filterGroupsByDateRange(
+        groupJobsByInvoice(completedJobs, totalsByInvoice),
+        dateRange,
+      ),
     };
   }, [data, dateRange]);
 
