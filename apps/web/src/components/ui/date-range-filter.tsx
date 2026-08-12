@@ -20,10 +20,15 @@ export function isCustomRange(range: DateRange): range is CustomRange {
   return typeof range === "object" && range !== null;
 }
 
+function parseLocalDate(value: string): Date {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year!, month! - 1, day!);
+}
+
 export function getDateFrom(range: DateRange): string | undefined {
   if (isCustomRange(range)) {
     if (!range.from) return undefined;
-    const d = new Date(range.from);
+    const d = parseLocalDate(range.from);
     d.setHours(0, 0, 0, 0);
     return d.toISOString();
   }
@@ -42,7 +47,7 @@ export function getDateFrom(range: DateRange): string | undefined {
 
 export function getDateTo(range: DateRange): string | undefined {
   if (!isCustomRange(range) || !range.to) return undefined;
-  const d = new Date(range.to);
+  const d = parseLocalDate(range.to);
   d.setHours(23, 59, 59, 999);
   return d.toISOString();
 }
@@ -63,6 +68,21 @@ export function parseDateRange(value: unknown, fallback: DateRange): DateRange {
   return fallback;
 }
 
+
+function toDateInputValue(d: Date): string {
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+// Switching to "Custom range" pre-fills the last 30 days 
+function defaultCustomRange(): CustomRange {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - 30);
+  return { from: toDateInputValue(from), to: toDateInputValue(to) };
+}
+
 interface DateRangeFilterProps {
   value: DateRange;
   onChange: (value: DateRange) => void;
@@ -75,7 +95,7 @@ export function DateRangeFilter({ value, onChange }: DateRangeFilterProps) {
         value={isCustomRange(value) ? "custom" : value}
         onValueChange={(v) => {
           if (v === "custom") {
-            if (!isCustomRange(value)) onChange({ from: null, to: null });
+            if (!isCustomRange(value)) onChange(defaultCustomRange());
           } else {
             onChange(v as DatePreset);
           }
