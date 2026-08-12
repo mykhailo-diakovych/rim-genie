@@ -112,7 +112,7 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
   // Candidate parents = top-level job types in the selected section (excluding self).
   const { data: sectionRows } = useQuery({
     ...orpc.catalog.jobTypes.list.queryOptions({
-      input: { section, page: 1, pageSize: 200 },
+      input: { section, page: 1, pageSize: 100 },
     }),
     enabled: open,
   });

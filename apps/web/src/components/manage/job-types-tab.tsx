@@ -25,7 +25,7 @@ export function JobTypesTab() {
   const [editRow, setEditRow] = useState<JobTypeRow | null>(null);
 
   const { data, isLoading } = useQuery(
-    orpc.catalog.jobTypes.list.queryOptions({ input: { section, page: 1, pageSize: 200 } }),
+    orpc.catalog.jobTypes.list.queryOptions({ input: { section, page: 1, pageSize: 100 } }),
   );
   const rows = useMemo(() => data?.items ?? [], [data]);
   const labelById = useMemo(() => new Map(rows.map((r) => [r.id, r.label])), [rows]);
