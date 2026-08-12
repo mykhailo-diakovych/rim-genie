@@ -184,7 +184,7 @@ export const catalogRouter = {
         .limit(1);
       if (clash.length > 0) {
         throw new ORPCError("CONFLICT", {
-          message: `A job type with key "${input.key}" already exists`,
+          message: "Another job type with this name already exists. Please choose a different name.",
         });
       }
       const [row] = await db.insert(jobType).values(input).returning();
@@ -202,7 +202,8 @@ export const catalogRouter = {
           .limit(1);
         if (clash.length > 0) {
           throw new ORPCError("CONFLICT", {
-            message: `A job type with key "${fields.key}" already exists`,
+            message:
+              "Another job type with this name already exists. Please choose a different name.",
           });
         }
         const [row] = await db.update(jobType).set(fields).where(eq(jobType.id, id)).returning();
