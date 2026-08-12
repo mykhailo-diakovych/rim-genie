@@ -18,7 +18,7 @@ function TooltipContent({
 }: TooltipPrimitive.Popup.Props & { sideOffset?: number }) {
   return (
     <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Positioner sideOffset={sideOffset}>
+      <TooltipPrimitive.Positioner className="z-50 outline-none" sideOffset={sideOffset}>
         <TooltipPrimitive.Popup
           className={cn(
             "max-w-56 rounded-md bg-body px-2 py-1.5 font-rubik text-xs leading-4 text-white shadow-dialog",
