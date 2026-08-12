@@ -1,5 +1,5 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import path from "path";
+import { resolveLogoPath } from "./logo";
 import { formatCents } from "../lib/format-currency";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   logo: {
-    width: 80,
+    width: 33,
     height: 32,
     objectFit: "contain",
   },
@@ -253,21 +253,6 @@ function fmtDate(d: Date | string | null | undefined): string {
 
 // ─── Logo path (resolved relative to CWD at render time) ─────────────────────
 
-function resolveLogoPath(): string {
-  const candidates = [
-    path.resolve(process.cwd(), "apps/web/public/logo.png"),
-    path.resolve(process.cwd(), "public/logo.png"),
-  ];
-  for (const p of candidates) {
-    try {
-      const { existsSync } = require("fs") as typeof import("fs");
-      if (existsSync(p)) return p;
-    } catch {
-      // ignore
-    }
-  }
-  return candidates[0] ?? "";
-}
 
 // ─── Document ─────────────────────────────────────────────────────────────────
 
@@ -279,7 +264,7 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Image src={logoPath} style={styles.logo} />
+          {logoPath && <Image src={logoPath} style={styles.logo} />}
           <Text style={styles.quoteTitle}>Quote #{data.quoteNumber}</Text>
         </View>
 
