@@ -31,6 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SignatureModal } from "@/components/terms/signature-modal";
 import { authClient } from "@/lib/auth-client";
 import { formatCents, formatDollars } from "@/lib/format-currency";
@@ -263,13 +264,22 @@ function QuoteEditorPage() {
 
           <div className="flex items-center gap-2">
             {!isReadOnly && (
-              <Button
-                onClick={() => setSendToCashierConfirm(true)}
-                disabled={!isSigned || sendToCashier.isPending}
-              >
-                <SendHorizonal />
-                Send to Cashier
-              </Button>
+              <Tooltip>
+                <TooltipTrigger delay={200} render={<span />}>
+                  <Button
+                    onClick={() => setSendToCashierConfirm(true)}
+                    disabled={!isSigned || sendToCashier.isPending}
+                  >
+                    <SendHorizonal />
+                    Send to Cashier
+                  </Button>
+                </TooltipTrigger>
+                {!isSigned && (
+                  <TooltipContent>
+                    The customer must sign the disclaimer before the quote can go to the cashier.
+                  </TooltipContent>
+                )}
+              </Tooltip>
             )}
             <Button
               color="success"
