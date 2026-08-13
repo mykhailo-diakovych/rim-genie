@@ -94,8 +94,8 @@ function DiscountApprovalPage() {
   return (
     <div className="flex flex-1 items-start justify-center p-3 sm:p-5">
       <div className="w-full max-w-lg">
-        {/* Header */}
-        <div className="mb-4 flex items-center gap-3">
+        {/* Header — sticks so the way back survives scrolling a long request */}
+        <div className="sticky top-0 z-10 mb-4 flex items-center gap-3 bg-white py-2">
           <Button
             nativeButton={false}
             render={<Link to="/dashboard" />}

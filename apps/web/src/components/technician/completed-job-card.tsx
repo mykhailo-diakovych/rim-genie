@@ -3,6 +3,7 @@ import { Eye, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { ReverseJobDialog } from "./reverse-job-dialog";
+import { PartialInvoiceNote } from "./partial-invoice-note";
 import { type JobGroup } from "./types";
 import { formatHours, formatStartedAt } from "./use-jobs";
 
@@ -12,10 +13,11 @@ export function CompletedJobCard({ group, onView }: { group: JobGroup; onView: (
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center">
       <div className="flex flex-1 flex-col gap-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {group.customer}
           </span>
+          <PartialInvoiceNote group={group} />
           {group.assignee && (
             <span className="rounded-[4px] bg-[#32cbfa] px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white">
               {group.assignee}

@@ -466,6 +466,7 @@ export const floorRouter = {
         z.object({
           id: z.string(),
           comments: z.string().optional(),
+          customerReason: z.string().optional(),
           jobRack: z.string().optional(),
           discountPercent: z.number().int().min(0).max(100).optional(),
           fullDiagnosticConsent: z.boolean().optional(),

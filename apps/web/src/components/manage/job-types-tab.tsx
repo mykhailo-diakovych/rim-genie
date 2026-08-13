@@ -25,7 +25,7 @@ export function JobTypesTab() {
   const [editRow, setEditRow] = useState<JobTypeRow | null>(null);
 
   const { data, isLoading } = useQuery(
-    orpc.catalog.jobTypes.list.queryOptions({ input: { section, page: 1, pageSize: 200 } }),
+    orpc.catalog.jobTypes.list.queryOptions({ input: { section, page: 1, pageSize: 100 } }),
   );
   const rows = useMemo(() => data?.items ?? [], [data]);
   const labelById = useMemo(() => new Map(rows.map((r) => [r.id, r.label])), [rows]);
@@ -78,7 +78,6 @@ export function JobTypesTab() {
           <thead>
             <tr className="border-b border-field-line text-left text-xs text-label">
               <th className="px-3 py-2 font-normal">Label</th>
-              <th className="px-3 py-2 font-normal">Key</th>
               <th className="px-3 py-2 font-normal">Parent</th>
               <th className="w-24 px-3 py-2 text-center font-normal">Active</th>
               <th className="w-32 px-3 py-2 font-normal" />
@@ -92,9 +91,6 @@ export function JobTypesTab() {
                     <div className="h-4 w-32 rounded bg-page" />
                   </td>
                   <td className="px-3 py-2.5">
-                    <div className="h-4 w-28 rounded bg-page" />
-                  </td>
-                  <td className="px-3 py-2.5">
                     <div className="h-4 w-24 rounded bg-page" />
                   </td>
                   <td className="px-3 py-2.5" />
@@ -103,7 +99,7 @@ export function JobTypesTab() {
               ))}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-label">
+                <td colSpan={4} className="px-3 py-6 text-center text-label">
                   No job types in {SECTION_LABELS[section]} yet.
                 </td>
               </tr>
@@ -120,7 +116,6 @@ export function JobTypesTab() {
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2.5 text-label">{row.key}</td>
                 <td className="px-3 py-2.5 text-label">
                   {row.parentId ? (labelById.get(row.parentId) ?? "—") : "—"}
                 </td>

@@ -3,15 +3,19 @@ import { Eye, SquareCheckBig } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { AcceptJobDialog } from "./accept-job-dialog";
+import { PartialInvoiceNote } from "./partial-invoice-note";
 import { type JobGroup } from "./types";
 
 export function AssignJobCard({ group, onView }: { group: JobGroup; onView: () => void }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center">
       <div className="flex flex-1 flex-col gap-1">
-        <span className="font-rubik text-sm leading-4.5 font-medium text-body">
-          {group.customer}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-rubik text-sm leading-4.5 font-medium text-body">
+            {group.customer}
+          </span>
+          <PartialInvoiceNote group={group} />
+        </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-rubik text-xs leading-3.5">
           <span className="text-label">Job ID:</span>
           <span className="text-body">{group.invoiceNumber}</span>

@@ -1,5 +1,5 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import path from "path";
+import { resolveLogoPath } from "./logo";
 import { formatCents } from "../lib/format-currency";
 
 const styles = StyleSheet.create({
@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   logo: {
-    width: 80,
+    width: 33,
     height: 32,
     objectFit: "contain",
   },
@@ -295,21 +295,6 @@ const statusMeta: Record<string, { label: string; color: string }> = {
   unpaid: { label: "Unpaid", color: "#ef4444" },
 };
 
-function resolveLogoPath(): string {
-  const candidates = [
-    path.resolve(process.cwd(), "apps/web/public/logo.png"),
-    path.resolve(process.cwd(), "public/logo.png"),
-  ];
-  for (const p of candidates) {
-    try {
-      const { existsSync } = require("fs") as typeof import("fs");
-      if (existsSync(p)) return p;
-    } catch {
-      // ignore
-    }
-  }
-  return candidates[0] ?? "";
-}
 
 export function InvoiceDocument({ data }: { data: InvoiceData }) {
   const logoPath = resolveLogoPath();
@@ -322,7 +307,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Image src={logoPath} style={styles.logo} />
+          {logoPath && <Image src={logoPath} style={styles.logo} />}
           <View style={styles.titleBlock}>
             <Text style={styles.title}>Invoice</Text>
             <Text style={[styles.statusBadge, { backgroundColor: status.color }]}>

@@ -11,8 +11,10 @@ import {
   DateRangeFilter,
   getDateFrom,
   getDateTo,
+  parseDateRange,
   type DateRange,
 } from "@/components/ui/date-range-filter";
+import { usePersistedState } from "@/lib/use-persisted-state";
 import {
   Dialog,
   DialogClose,
@@ -137,7 +139,9 @@ function FloorPage() {
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
   const [search, setSearch] = useState("");
-  const [dateRange, setDateRange] = useState<DateRange>("30d");
+  const [dateRange, setDateRange] = usePersistedState<DateRange>("floor.dateRange", "30d", (v) =>
+    parseDateRange(v, "30d"),
+  );
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showNewQuote, setShowNewQuote] = useState(false);
 

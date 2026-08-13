@@ -1,5 +1,5 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import path from "path";
+import { resolveLogoPath } from "./logo";
 
 const styles = StyleSheet.create({
   page: {
@@ -17,7 +17,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 12,
   },
-  logo: { width: 80, height: 32, objectFit: "contain" },
+  logo: { width: 33, height: 32, objectFit: "contain" },
   title: { fontSize: 18, fontFamily: "Helvetica-Bold", color: "#1a1a1a" },
   subtitle: { fontSize: 11, color: "#888", marginTop: 2 },
   divider: { height: 1, backgroundColor: "#e5e5e5", marginBottom: 12 },
@@ -168,21 +168,6 @@ const MODE_LABELS: Record<string, string> = {
   cheque: "Cheque",
 };
 
-function resolveLogoPath(): string {
-  const candidates = [
-    path.resolve(process.cwd(), "apps/web/public/logo.png"),
-    path.resolve(process.cwd(), "public/logo.png"),
-  ];
-  for (const p of candidates) {
-    try {
-      const { existsSync } = require("fs") as typeof import("fs");
-      if (existsSync(p)) return p;
-    } catch {
-      // ignore
-    }
-  }
-  return candidates[0] ?? "";
-}
 
 export function DailyReportDocument({ data }: { data: DailyReportData }) {
   const logoPath = resolveLogoPath();
@@ -193,7 +178,7 @@ export function DailyReportDocument({ data }: { data: DailyReportData }) {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Image src={logoPath} style={styles.logo} />
+            {logoPath && <Image src={logoPath} style={styles.logo} />}
           </View>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={styles.title}>Daily Report</Text>

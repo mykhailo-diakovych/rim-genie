@@ -31,6 +31,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { SignatureModal } from "@/components/terms/signature-modal";
 import { authClient } from "@/lib/auth-client";
 import { formatCents, formatDollars } from "@/lib/format-currency";
@@ -68,6 +70,8 @@ function QuoteEditorPage() {
   const [editingConsent, setEditingConsent] = useState(false);
   const [comments, setComments] = useState("");
   const [commentsSynced, setCommentsSynced] = useState(false);
+  const [customerReason, setCustomerReason] = useState("");
+  const [reasonSynced, setReasonSynced] = useState(false);
 
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
@@ -84,6 +88,11 @@ function QuoteEditorPage() {
   if (quote && !commentsSynced) {
     setComments(quote.comments ?? "");
     setCommentsSynced(true);
+  }
+
+  if (quote && !reasonSynced) {
+    setCustomerReason(quote.customerReason ?? "");
+    setReasonSynced(true);
   }
 
   const invalidateQuote = () =>
@@ -215,7 +224,7 @@ function QuoteEditorPage() {
 
   function handleSave() {
     updateQuote.mutate(
-      { id: quoteId, comments },
+      { id: quoteId, comments, customerReason },
       {
         onSuccess: () => toast.success("Quote saved"),
       },
@@ -248,7 +257,7 @@ function QuoteEditorPage() {
     <>
       <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
         {/* Action bar */}
-        <div className="flex flex-wrap items-center justify-between gap-y-2">
+        <StickyActionBar className="justify-between gap-y-2">
           <Button variant="outline" nativeButton={false} render={<Link to="/floor" />}>
             <ArrowLeft />
             Back to list
@@ -256,13 +265,22 @@ function QuoteEditorPage() {
 
           <div className="flex items-center gap-2">
             {!isReadOnly && (
-              <Button
-                onClick={() => setSendToCashierConfirm(true)}
-                disabled={!isSigned || sendToCashier.isPending}
-              >
-                <SendHorizonal />
-                Send to Cashier
-              </Button>
+              <Tooltip>
+                <TooltipTrigger delay={200} render={<span />}>
+                  <Button
+                    onClick={() => setSendToCashierConfirm(true)}
+                    disabled={!isSigned || sendToCashier.isPending}
+                  >
+                    <SendHorizonal />
+                    Send to Cashier
+                  </Button>
+                </TooltipTrigger>
+                {!isSigned && (
+                  <TooltipContent>
+                    The customer must sign the disclaimer before the quote can go to the cashier.
+                  </TooltipContent>
+                )}
+              </Tooltip>
             )}
             <Button
               color="success"
@@ -281,7 +299,7 @@ function QuoteEditorPage() {
               isAdmin={isAdmin}
             />
           </div>
-        </div>
+        </StickyActionBar>
 
         {/* Invoice card */}
         <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card">
@@ -304,16 +322,7 @@ function QuoteEditorPage() {
           {/* Row 2: Reason for visit + Customer info */}
           {quote && (
             <div className="flex items-center gap-4">
-              <div className="flex flex-1 items-center gap-4 font-rubik">
-                <span className="shrink-0 text-xs leading-3.5 text-label">Reason for visit:</span>
-                <span className="text-sm leading-[18px] text-body">
-                  {quote.customerReason || "—"}
-                </span>
-              </div>
-
-              <div className="hidden w-px self-stretch bg-field-line sm:block" />
-
-              <div className="flex w-[200px] shrink-0 flex-col items-end gap-1">
+              <div className="flex w-[200px] shrink-0 flex-col gap-1">
                 <div className="flex items-center gap-1.5 font-rubik text-sm leading-[18px]">
                   <User className="size-4 shrink-0 text-ghost" />
                   <span className="font-medium text-body">{quote.customer?.name}</span>
@@ -322,6 +331,25 @@ function QuoteEditorPage() {
                   <Phone className="size-4 shrink-0 text-ghost" />
                   <span>{quote.customer?.phone}</span>
                 </div>
+              </div>
+
+              <div className="hidden w-px self-stretch bg-field-line sm:block" />
+
+              <div className="flex flex-1 items-center gap-4 font-rubik">
+                <label
+                  htmlFor="customer-reason"
+                  className="shrink-0 text-xs leading-3.5 text-label"
+                >
+                  Reason for visit:
+                </label>
+                <input
+                  id="customer-reason"
+                  value={customerReason}
+                  onChange={(e) => setCustomerReason(e.target.value)}
+                  placeholder="Enter reason"
+                  disabled={isReadOnly}
+                  className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 py-1 text-sm leading-[18px] text-body transition-colors outline-none placeholder:text-ghost hover:border-field-line focus:border-blue disabled:cursor-not-allowed disabled:opacity-50"
+                />
               </div>
             </div>
           )}
@@ -404,7 +432,7 @@ function QuoteEditorPage() {
                       <>
                         {/* Full Diagnostic Consent row */}
                         {quote && (
-                          <tr className="border-t border-field-line align-top">
+                          <tr className="border-b border-field-line align-top">
                             <td className="border-l border-field-line px-2 py-2 text-sm text-body">
                               1
                             </td>

@@ -25,16 +25,14 @@ export function VehicleSizesTab() {
 
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editKey, setEditKey] = useState("");
   const [addMode, setAddMode] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newKey, setNewKey] = useState("");
 
   const createMutation = useMutation({
     mutationFn: () =>
       client.catalog.vehicleSizes.create({
         name: newName,
-        key: newKey.trim() || slug(newName),
+        key: slug(newName),
         sortOrder: rows?.length ?? 0,
         isActive: true,
       }),
@@ -42,7 +40,6 @@ export function VehicleSizesTab() {
       await invalidate();
       setAddMode(false);
       setNewName("");
-      setNewKey("");
       toast.success("Vehicle size added");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -80,7 +77,6 @@ export function VehicleSizesTab() {
           <thead>
             <tr className="border-b border-field-line text-left text-xs text-label">
               <th className="px-3 py-2 font-normal">Name</th>
-              <th className="px-3 py-2 font-normal">Key</th>
               <th className="w-20 px-3 py-2 text-center font-normal">Active</th>
               <th className="w-32 px-3 py-2 font-normal" />
             </tr>
@@ -91,9 +87,6 @@ export function VehicleSizesTab() {
                 <tr key={i} className="animate-pulse border-b border-field-line last:border-b-0">
                   <td className="px-3 py-2.5">
                     <div className="h-4 w-28 rounded bg-page" />
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <div className="h-4 w-24 rounded bg-page" />
                   </td>
                   <td className="px-3 py-2.5" />
                   <td className="px-3 py-2.5" />
@@ -116,24 +109,17 @@ export function VehicleSizesTab() {
                       className="w-full rounded border border-field-line px-2 py-1.5 text-sm text-body focus:border-blue focus:outline-none"
                     />
                   </td>
-                  <td className="px-3 py-2">
-                    <input
-                      value={editKey}
-                      onChange={(e) => setEditKey(e.target.value)}
-                      className="w-full rounded border border-field-line px-2 py-1.5 text-sm text-body focus:border-blue focus:outline-none"
-                    />
-                  </td>
                   <td className="px-3 py-2" />
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1">
                       <Button
                         size="sm"
-                        disabled={updateMutation.isPending || !editName || !editKey}
+                        disabled={updateMutation.isPending || !editName}
                         onClick={() =>
                           updateMutation.mutate({
                             id: row.id,
                             name: editName,
-                            key: editKey,
+                            key: row.key,
                             sortOrder: row.sortOrder,
                             isActive: row.isActive,
                           })
@@ -150,7 +136,6 @@ export function VehicleSizesTab() {
               ) : (
                 <tr key={row.id} className="border-b border-field-line last:border-b-0">
                   <td className="px-3 py-2.5 font-medium text-body">{row.name}</td>
-                  <td className="px-3 py-2.5 text-label">{row.key}</td>
                   <td className="px-3 py-2.5">
                     <div className="flex justify-center">
                       <Checkbox
@@ -175,7 +160,6 @@ export function VehicleSizesTab() {
                         onClick={() => {
                           setEditId(row.id);
                           setEditName(row.name);
-                          setEditKey(row.key);
                         }}
                       >
                         <Pencil />
@@ -204,14 +188,6 @@ export function VehicleSizesTab() {
                     className="w-full rounded border border-field-line px-2 py-1.5 text-sm text-body placeholder:text-ghost focus:border-blue focus:outline-none"
                   />
                 </td>
-                <td className="px-3 py-2">
-                  <input
-                    value={newKey}
-                    onChange={(e) => setNewKey(e.target.value)}
-                    placeholder={newName ? slug(newName) : "auto from name"}
-                    className="w-full rounded border border-field-line px-2 py-1.5 text-sm text-body placeholder:text-ghost focus:border-blue focus:outline-none"
-                  />
-                </td>
                 <td className="px-3 py-2" />
                 <td className="px-3 py-2">
                   <div className="flex justify-end gap-1">
@@ -228,7 +204,6 @@ export function VehicleSizesTab() {
                       onClick={() => {
                         setAddMode(false);
                         setNewName("");
-                        setNewKey("");
                       }}
                     >
                       Cancel

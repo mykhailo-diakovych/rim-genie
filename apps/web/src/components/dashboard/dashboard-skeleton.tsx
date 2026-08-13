@@ -53,10 +53,10 @@ export function DashboardSkeleton() {
               <div className="flex h-[32px] flex-1 items-center border-t border-l border-field-line px-2">
                 <Skeleton className="h-3 w-16 rounded-[3px]" />
               </div>
-              <div className="flex h-[32px] w-[80px] items-center border-t border-l border-field-line px-2">
+              <div className="flex h-[32px] w-23 items-center border-t border-l border-field-line px-2">
                 <Skeleton className="h-3 w-10 rounded-[3px]" />
               </div>
-              <div className="flex h-[32px] w-[80px] items-center border-t border-r border-l border-field-line px-2">
+              <div className="flex h-[32px] w-23 items-center border-t border-r border-l border-field-line px-2">
                 <Skeleton className="h-3 w-12 rounded-[3px]" />
               </div>
             </div>
@@ -69,12 +69,12 @@ export function DashboardSkeleton() {
                   <Skeleton className="h-3 w-28 rounded-[3px]" />
                 </div>
                 <div
-                  className={`border-t border-l ${i === 4 ? "border-b" : ""} flex h-[32px] w-[80px] items-center border-field-line px-2`}
+                  className={`border-t border-l ${i === 4 ? "border-b" : ""} flex h-[32px] w-23 items-center border-field-line px-2`}
                 >
                   <Skeleton className="h-3 w-4 rounded-[3px]" />
                 </div>
                 <div
-                  className={`border-t border-r border-l ${i === 4 ? "border-b" : ""} flex h-[32px] w-[80px] items-center border-field-line px-2`}
+                  className={`border-t border-r border-l ${i === 4 ? "border-b" : ""} flex h-[32px] w-23 items-center border-field-line px-2`}
                 >
                   <Skeleton className="h-3 w-4 rounded-[3px]" />
                 </div>

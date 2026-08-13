@@ -11,6 +11,7 @@ export type JobGroup = {
   startedAt: string | null;
   hoursSpent: number | null;
   jobs: ApiJob[];
+  totalJobs: number;
 };
 
 export const TAB_CONFIG = [

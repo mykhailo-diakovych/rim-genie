@@ -85,8 +85,10 @@ export function AcceptJobDialog({
         });
       }
     },
-    onSuccess: async () => {
+    onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: orpc.technician.jobs.list.key() });
+    },
+    onSuccess: () => {
       toast.success("Job accepted");
       resetForm();
       setOpen(false);

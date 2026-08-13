@@ -26,7 +26,7 @@ function AppLayout() {
       <div className="flex flex-1 overflow-hidden">
         {!hideSidebar && <AppSidebar className="hidden md:flex" />}
         <main className="flex flex-1 flex-col overflow-y-auto">
-          {!hideSidebar && <AppSidebar horizontal className="md:hidden" />}
+          {!hideSidebar && <AppSidebar horizontal className="sticky top-0 z-20 md:hidden" />}
           <Outlet />
         </main>
       </div>
