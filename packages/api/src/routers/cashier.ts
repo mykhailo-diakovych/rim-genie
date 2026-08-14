@@ -117,7 +117,12 @@ export const cashierRouter = {
           },
           jobs: true,
           quote: {
-            with: { excludedServices: true },
+            with: {
+              items: {
+                where: (i, { eq }) => eq(i.isExcluded, true),
+                orderBy: (i, { asc }) => [asc(i.sortOrder)],
+              },
+            },
           },
         },
       });

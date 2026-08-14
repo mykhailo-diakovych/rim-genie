@@ -4546,37 +4546,44 @@
     {
       "name": "Black",
       "key": "black",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "hex": "#000000"
     },
     {
       "name": "White",
       "key": "white",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "hex": "#FFFFFF"
     },
     {
       "name": "Silver",
       "key": "silver",
-      "sortOrder": 3
+      "sortOrder": 3,
+      "hex": "#C0C0C0"
     },
     {
       "name": "Gold",
       "key": "gold",
-      "sortOrder": 4
+      "sortOrder": 4,
+      "hex": "#FFD700"
     },
     {
       "name": "Red",
       "key": "red",
-      "sortOrder": 5
+      "sortOrder": 5,
+      "hex": "#FF0000"
     },
     {
       "name": "Blue",
       "key": "blue",
-      "sortOrder": 6
+      "sortOrder": 6,
+      "hex": "#0000FF"
     },
     {
       "name": "Grey",
       "key": "grey",
-      "sortOrder": 7
+      "sortOrder": 7,
+      "hex": "#808080"
     }
   ],
   "spotPolishPrices": [

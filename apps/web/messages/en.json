@@ -135,8 +135,8 @@
   "customers_toast_updated": "Customer updated successfully",
 
   "manage_title": "Service Management",
+  "manage_subtitle": "Manage services, pricing, and business configuration.",
   "manage_btn_add_service": "Add New Service",
-  "manage_tab_rim": "Rim Service",
   "manage_tab_general": "General Service",
   "manage_search_placeholder": "Search...",
   "manage_col_service_name": "Service Name",

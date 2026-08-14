@@ -8,7 +8,6 @@ import {
   customer,
   quote,
   quoteItem,
-  quoteExcludedService,
   termsSignature,
   invoice,
   loyaltyConfig,
@@ -35,7 +34,6 @@ import {
   inArray,
   isNull,
   lte,
-  notInArray,
   or,
   sql,
 } from "drizzle-orm";
@@ -403,7 +401,6 @@ export const floorRouter = {
           items: {
             orderBy: (i, { asc }) => [asc(i.sortOrder)],
           },
-          excludedServices: true,
           invoice: true,
         },
       });
@@ -665,151 +662,29 @@ export const floorRouter = {
         const item = existing[0];
         if (!item) return { success: true as const };
 
-        await db.insert(quoteExcludedService).values({
-          quoteId: item.quoteId,
-          name: item.description || item.itemType,
-          price: item.unitCost,
-        });
-
         await db.delete(quoteItem).where(eq(quoteItem.id, input.id));
         await recalcQuoteTotal(item.quoteId);
 
         return { success: true as const };
       }),
 
-    addExcludedService: protectedProcedure
-      .input(
-        z.object({
-          quoteId: z.string(),
-          name: z.string().min(1),
-          price: z.number().int().min(0).default(0),
-          serviceId: z.string().optional(),
-        }),
-      )
+    // Moves a line between "Services to Be Conducted" and "Services Excluded". The row itself
+    // never moves tables, so jobTypes, quantity, sizes and comments all survive the round trip.
+    setItemExcluded: protectedProcedure
+      .input(z.object({ id: z.string(), excluded: z.boolean() }))
       .handler(async ({ input }) => {
         const rows = await db
-          .insert(quoteExcludedService)
-          .values({
-            quoteId: input.quoteId,
-            name: input.name,
-            price: input.price,
-            serviceId: input.serviceId,
-          })
-          .returning();
-        return rows[0]!;
-      }),
-
-    removeExcludedService: protectedProcedure
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input }) => {
-        await db.delete(quoteExcludedService).where(eq(quoteExcludedService.id, input.id));
-        return { success: true as const };
-      }),
-
-    promoteExcludedService: protectedProcedure
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input }) => {
-        const excluded = await db
-          .select()
-          .from(quoteExcludedService)
-          .where(eq(quoteExcludedService.id, input.id));
-
-        if (!excluded[0]) throw new Error("Excluded service not found");
-
-        const svc = excluded[0];
-
-        let itemType: string = "rim";
-        if (svc.serviceId) {
-          const linkedService = await db
-            .select({ type: service.type })
-            .from(service)
-            .where(eq(service.id, svc.serviceId))
-            .limit(1);
-          if (linkedService[0]) {
-            itemType = linkedService[0].type;
-          }
-        }
-
-        const existing = await db
-          .select({ sortOrder: quoteItem.sortOrder })
-          .from(quoteItem)
-          .where(eq(quoteItem.quoteId, svc.quoteId))
-          .orderBy(sql`${quoteItem.sortOrder} desc`)
-          .limit(1);
-
-        const sortOrder = (existing[0]?.sortOrder ?? -1) + 1;
-
-        await db.insert(quoteItem).values({
-          quoteId: svc.quoteId,
-          itemType,
-          description: svc.name,
-          unitCost: svc.price,
-          quantity: 1,
-          sortOrder,
-        });
-
-        await db.delete(quoteExcludedService).where(eq(quoteExcludedService.id, input.id));
-        await recalcQuoteTotal(svc.quoteId);
-
-        return { success: true as const };
-      }),
-
-    availableServicesForExclusion: protectedProcedure
-      .input(z.object({ quoteId: z.string() }))
-      .handler(async ({ input }) => {
-        const alreadyExcluded = await db
-          .select({ serviceId: quoteExcludedService.serviceId })
-          .from(quoteExcludedService)
-          .where(
-            and(
-              eq(quoteExcludedService.quoteId, input.quoteId),
-              sql`${quoteExcludedService.serviceId} IS NOT NULL`,
-            ),
-          );
-
-        const excludedIds = alreadyExcluded
-          .map((r) => r.serviceId)
-          .filter((id): id is string => id !== null);
-
-        if (excludedIds.length > 0) {
-          return db
-            .select()
-            .from(service)
-            .where(notInArray(service.id, excludedIds))
-            .orderBy(asc(service.name));
-        }
-
-        return db.select().from(service).orderBy(asc(service.name));
-      }),
-
-    addExcludedServicesFromCatalog: protectedProcedure
-      .input(
-        z.object({
-          quoteId: z.string(),
-          serviceIds: z.array(z.string()).min(1),
-        }),
-      )
-      .handler(async ({ input }) => {
-        const services = await db
-          .select()
-          .from(service)
-          .where(inArray(service.id, input.serviceIds));
-
-        if (services.length === 0) throw new Error("No services found");
-
-        const rows = await db
-          .insert(quoteExcludedService)
-          .values(
-            services.map((s) => ({
-              quoteId: input.quoteId,
-              serviceId: s.id,
-              name: s.name,
-              price: s.unitCost,
-            })),
-          )
+          .update(quoteItem)
+          .set({ isExcluded: input.excluded })
+          .where(eq(quoteItem.id, input.id))
           .returning();
 
-        return rows;
+        const item = rows[0];
+        if (!item) throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
+
+        await recalcQuoteTotal(item.quoteId);
+
+        return item;
       }),
 
     send: floorManagerProcedure

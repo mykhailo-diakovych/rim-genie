@@ -74,6 +74,11 @@ const styles = StyleSheet.create({
     color: "#888",
     marginBottom: 2,
   },
+  customerBlock: {
+    width: 140,
+    flexDirection: "column",
+    gap: 2,
+  },
   customerName: {
     fontSize: 12,
     fontFamily: "Helvetica-Bold",
@@ -273,15 +278,15 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
         {/* Reason for visit + Customer info */}
         {data.customer && (
           <View style={styles.customerRow}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
-              <Text style={styles.metaLabel}>Reason for visit:</Text>
-              <Text style={styles.metaValue}>{data.customerReason || "—"}</Text>
-            </View>
-            <View style={{ alignItems: "flex-end" }}>
+            <View style={styles.customerBlock}>
               <Text style={styles.customerName}>{data.customer.name}</Text>
               {data.customer.phone && (
                 <Text style={styles.customerDetail}>{data.customer.phone}</Text>
               )}
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
+              <Text style={styles.metaLabel}>Reason for visit:</Text>
+              <Text style={styles.metaValue}>{data.customerReason || "—"}</Text>
             </View>
           </View>
         )}

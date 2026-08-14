@@ -23,16 +23,16 @@ const navItem = tv({
   slots: {
     root: "flex cursor-pointer items-center transition-colors",
     icon: "shrink-0 size-6",
-    label: "font-rubik text-xs leading-4.5 font-normal",
+    label: "font-rubik text-xs leading-4.5 font-normal whitespace-nowrap",
   },
   variants: {
     orientation: {
       vertical: {
-        root: "relative flex-col justify-center gap-1 py-2 w-full",
+        root: "relative flex-col justify-center gap-1 py-2 px-1.5 w-full",
         label: "text-center",
       },
       horizontal: {
-        root: "flex-col items-center justify-center gap-1 py-2 px-2 min-w-[72px]",
+        root: "flex-col items-center justify-center gap-1 py-2 px-2 min-w-18",
         label: "text-center",
       },
     },
@@ -135,7 +135,9 @@ export function AppSidebar({ horizontal = false, className }: AppSidebarProps) {
   return (
     <nav
       className={cn(
-        "flex w-20 shrink-0 flex-col overflow-y-auto border-r border-card-line bg-white",
+        // overflow-y-auto alone would compute overflow-x to `auto` too, so a label wider than the
+        // rail produces a horizontal scrollbar. Pin the x axis shut and size the rail to fit.
+        "flex w-24 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-card-line bg-white",
         className,
       )}
     >

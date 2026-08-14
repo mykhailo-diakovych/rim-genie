@@ -18,9 +18,6 @@ import { orpc } from "@/utils/orpc";
 const TAB_VALUES = TAB_CONFIG.map((t) => t.value);
 
 export const Route = createFileRoute("/_app/technician/")({
-  validateSearch: (search: Record<string, unknown>): { tab: TabValue } => ({
-    tab: TAB_VALUES.includes(search.tab as TabValue) ? (search.tab as TabValue) : "assign",
-  }),
   beforeLoad: requireRoles(["admin", "technician"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Technician" }],
@@ -29,7 +26,9 @@ export const Route = createFileRoute("/_app/technician/")({
 });
 
 function TechnicianPage() {
-  const { tab: activeTab } = Route.useSearch();
+  const [activeTab, setActiveTab] = usePersistedState<TabValue>("technician.tab", "assign", (v) =>
+    TAB_VALUES.includes(v as TabValue) ? (v as TabValue) : null,
+  );
   const navigate = useNavigate({ from: Route.fullPath });
   const [dateRange, setDateRange] = usePersistedState<DateRange>(
     "technician.dateRange",
@@ -71,7 +70,7 @@ function TechnicianPage() {
   }, [activeTab, tabCounts.assign, tabCounts["in-progress"], tabCounts.completed]);
 
   function handleTabChange(tab: TabValue) {
-    void navigate({ search: { tab } });
+    setActiveTab(tab);
     measureIndicator(tab);
   }
 

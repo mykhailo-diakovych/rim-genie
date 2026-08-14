@@ -14,11 +14,13 @@ export async function getQuotePdf(
       items: {
         orderBy: (i, { asc }) => [asc(i.sortOrder)],
       },
-      excludedServices: true,
     },
   });
 
   if (!quoteRow) return null;
+
+  const includedItems = quoteRow.items.filter((i) => !i.isExcluded);
+  const excludedItems = quoteRow.items.filter((i) => i.isExcluded);
 
   const buffer = await renderQuotePdf({
     quoteNumber: quoteRow.quoteNumber,
@@ -37,7 +39,7 @@ export async function getQuotePdf(
     discountPercent: quoteRow.discountPercent,
     discountAmount: quoteRow.discountAmount,
     total: quoteRow.total,
-    items: quoteRow.items.map((item) => ({
+    items: includedItems.map((item) => ({
       id: item.id,
       description: item.description,
       comments: item.comments,
@@ -45,10 +47,10 @@ export async function getQuotePdf(
       unitCost: item.unitCost,
       inches: item.inches,
     })),
-    excludedServices: quoteRow.excludedServices.map((es) => ({
-      id: es.id,
-      name: es.name,
-      price: es.price,
+    excludedServices: excludedItems.map((item) => ({
+      id: item.id,
+      name: item.description ?? item.itemType,
+      price: item.inches ? item.inches * item.unitCost : item.quantity * item.unitCost,
     })),
   });
 

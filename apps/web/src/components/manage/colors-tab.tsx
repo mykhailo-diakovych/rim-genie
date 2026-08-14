@@ -15,6 +15,21 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
+const DEFAULT_HEX = "#000000";
+
+// Staff pick a colour visually; the hex is an implementation detail they never type or read.
+function ColorPicker({ value, onChange }: { value: string; onChange: (hex: string) => void }) {
+  return (
+    <input
+      type="color"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label="Pick color"
+      className="size-7 cursor-pointer rounded-full border border-field-line bg-white p-0.5"
+    />
+  );
+}
+
 export function ColorsTab() {
   const queryClient = useQueryClient();
   const { data: rows, isLoading } = useQuery(
@@ -29,14 +44,14 @@ export function ColorsTab() {
   const [editHex, setEditHex] = useState("");
   const [addMode, setAddMode] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newHex, setNewHex] = useState("");
+  const [newHex, setNewHex] = useState(DEFAULT_HEX);
 
   const createMutation = useMutation({
     mutationFn: () =>
       client.catalog.colors.create({
         name: newName,
         key: slug(newName),
-        hex: newHex.trim() || null,
+        hex: newHex,
         sortOrder: rows?.length ?? 0,
         isActive: true,
       }),
@@ -44,7 +59,7 @@ export function ColorsTab() {
       await invalidate();
       setAddMode(false);
       setNewName("");
-      setNewHex("");
+      setNewHex(DEFAULT_HEX);
       toast.success("Color added");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -82,9 +97,8 @@ export function ColorsTab() {
         <table className="w-full font-rubik text-sm">
           <thead>
             <tr className="border-b border-field-line text-left text-xs text-label">
-              <th className="w-12 px-3 py-2 font-normal" />
+              <th className="w-16 px-3 py-2 font-normal">Color</th>
               <th className="px-3 py-2 font-normal">Name</th>
-              <th className="px-3 py-2 font-normal">Hex</th>
               <th className="w-20 px-3 py-2 text-center font-normal">Active</th>
               <th className="w-32 px-3 py-2 font-normal" />
             </tr>
@@ -99,16 +113,13 @@ export function ColorsTab() {
                   <td className="px-3 py-2.5">
                     <div className="h-4 w-24 rounded bg-page" />
                   </td>
-                  <td className="px-3 py-2.5">
-                    <div className="h-4 w-16 rounded bg-page" />
-                  </td>
                   <td className="px-3 py-2.5" />
                   <td className="px-3 py-2.5" />
                 </tr>
               ))}
             {!isLoading && (!rows || rows.length === 0) && !addMode && (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-label">
+                <td colSpan={4} className="px-3 py-6 text-center text-label">
                   No colors yet. Add your first one.
                 </td>
               </tr>
@@ -117,24 +128,13 @@ export function ColorsTab() {
               editId === row.id ? (
                 <tr key={row.id} className="border-b border-field-line bg-blue/5">
                   <td className="px-3 py-2">
-                    <span
-                      className="block size-5 rounded-full border border-field-line"
-                      style={{ background: editHex || "transparent" }}
-                    />
+                    <ColorPicker value={editHex} onChange={setEditHex} />
                   </td>
                   <td className="px-3 py-2">
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       className="w-full rounded border border-field-line px-2 py-1.5 text-sm text-body focus:border-blue focus:outline-none"
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      value={editHex}
-                      onChange={(e) => setEditHex(e.target.value)}
-                      placeholder="#000000"
-                      className="w-full rounded border border-field-line px-2 py-1.5 text-sm text-body placeholder:text-ghost focus:border-blue focus:outline-none"
                     />
                   </td>
                   <td className="px-3 py-2" />
@@ -148,7 +148,7 @@ export function ColorsTab() {
                             id: row.id,
                             name: editName,
                             key: editKey,
-                            hex: editHex.trim() || null,
+                            hex: editHex,
                             sortOrder: row.sortOrder,
                             isActive: row.isActive,
                           })
@@ -171,7 +171,6 @@ export function ColorsTab() {
                     />
                   </td>
                   <td className="px-3 py-2.5 font-medium text-body">{row.name}</td>
-                  <td className="px-3 py-2.5 text-label">{row.hex ?? "—"}</td>
                   <td className="px-3 py-2.5">
                     <div className="flex justify-center">
                       <Checkbox
@@ -198,7 +197,7 @@ export function ColorsTab() {
                           setEditId(row.id);
                           setEditName(row.name);
                           setEditKey(row.key);
-                          setEditHex(row.hex ?? "");
+                          setEditHex(row.hex ?? DEFAULT_HEX);
                         }}
                       >
                         <Pencil />
@@ -220,24 +219,13 @@ export function ColorsTab() {
             {addMode && (
               <tr className="border-b border-field-line bg-blue/5">
                 <td className="px-3 py-2">
-                  <span
-                    className="block size-5 rounded-full border border-field-line"
-                    style={{ background: newHex || "transparent" }}
-                  />
+                  <ColorPicker value={newHex} onChange={setNewHex} />
                 </td>
                 <td className="px-3 py-2">
                   <input
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="e.g. Gunmetal"
-                    className="w-full rounded border border-field-line px-2 py-1.5 text-sm text-body placeholder:text-ghost focus:border-blue focus:outline-none"
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  <input
-                    value={newHex}
-                    onChange={(e) => setNewHex(e.target.value)}
-                    placeholder="#000000 (optional)"
                     className="w-full rounded border border-field-line px-2 py-1.5 text-sm text-body placeholder:text-ghost focus:border-blue focus:outline-none"
                   />
                 </td>

@@ -42,11 +42,15 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
       return yield* Effect.fail(new QuoteNotFound({ id: quoteId }));
     }
 
-    if (found.items.length === 0) {
+    // Excluded lines were recommended and declined: they stay on the quote for the record but
+    // never become invoice items, jobs, or part of any total.
+    const billableItems = found.items.filter((i) => !i.isExcluded);
+
+    if (billableItems.length === 0) {
       return yield* Effect.fail(new QuoteHasNoItems({ quoteId }));
     }
 
-    const subtotal = found.items.reduce(
+    const subtotal = billableItems.reduce(
       (s, i) => s + (i.inches ? i.inches * i.unitCost : i.quantity * i.unitCost),
       0,
     );
@@ -71,7 +75,7 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
             .returning();
 
           await tx.insert(invoiceItem).values(
-            found.items.map((item) => ({
+            billableItems.map((item) => ({
               invoiceId: inv!.id,
               itemType: item.itemType,
               vehicleSize: item.vehicleSize,
@@ -104,7 +108,7 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
         await tx.delete(invoiceItem).where(eq(invoiceItem.invoiceId, invoiceId));
 
         await tx.insert(invoiceItem).values(
-          found.items.map((item) => ({
+          billableItems.map((item) => ({
             invoiceId,
             itemType: item.itemType,
             vehicleSize: item.vehicleSize,

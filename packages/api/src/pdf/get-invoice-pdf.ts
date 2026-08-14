@@ -19,7 +19,12 @@ export async function getInvoicePdf(
         with: { receivedBy: true },
       },
       quote: {
-        with: { excludedServices: true },
+        with: {
+          items: {
+            where: (i, { eq }) => eq(i.isExcluded, true),
+            orderBy: (i, { asc }) => [asc(i.sortOrder)],
+          },
+        },
       },
     },
   });
@@ -43,10 +48,10 @@ export async function getInvoicePdf(
       quantity: item.quantity,
       unitCost: item.unitCost,
     })),
-    excludedServices: (invoiceRow.quote?.excludedServices ?? []).map((es) => ({
-      id: es.id,
-      name: es.name,
-      price: es.price,
+    excludedServices: (invoiceRow.quote?.items ?? []).map((item) => ({
+      id: item.id,
+      name: item.description ?? item.itemType,
+      price: item.inches ? item.inches * item.unitCost : item.quantity * item.unitCost,
     })),
     payments: invoiceRow.payments.map((p) => ({
       id: p.id,

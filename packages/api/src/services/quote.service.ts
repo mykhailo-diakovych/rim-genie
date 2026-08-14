@@ -1,4 +1,4 @@
-import { eq, sum, sql } from "drizzle-orm";
+import { and, eq, sum, sql } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { quote, quoteItem } from "@rim-genie/db/schema";
@@ -11,7 +11,7 @@ export async function recalcQuoteTotal(quoteId: string): Promise<void> {
       ),
     })
     .from(quoteItem)
-    .where(eq(quoteItem.quoteId, quoteId));
+    .where(and(eq(quoteItem.quoteId, quoteId), eq(quoteItem.isExcluded, false)));
 
   const subtotal = Number(result[0]?.total ?? 0);
 

@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { requireRoles } from "@/lib/route-permissions";
+import { usePersistedState } from "@/lib/use-persisted-state";
 import { AssignDetailView } from "@/components/technician/assign-detail-view";
 import { CompletedDetailView } from "@/components/technician/completed-detail-view";
 import { JobDetailView } from "@/components/technician/job-detail-view";
@@ -29,6 +30,9 @@ function TechnicianDetailPage() {
   const { invoiceId } = Route.useParams();
   const { source } = Route.useSearch();
   const navigate = useNavigate();
+  const [, setListTab] = usePersistedState<TabValue>("technician.tab", "assign", (v) =>
+    VALID_SOURCES.includes(v as Source) ? (v as TabValue) : null,
+  );
   const { assign, inProgress, completed } = useJobs();
 
   const group = useMemo(() => {
@@ -36,11 +40,12 @@ function TechnicianDetailPage() {
     return sourceMap[source].find((g) => g.invoiceId === invoiceId) ?? null;
   }, [source, assign, inProgress, completed, invoiceId]);
 
-  const onBack = () =>
-    void navigate({
-      to: "/technician",
-      search: { tab: source as TabValue },
-    });
+  // The list tab now lives in localStorage rather than the URL, so returning to the tab the user
+  // came from means writing it back before navigating.
+  const onBack = () => {
+    setListTab(source as TabValue);
+    void navigate({ to: "/technician" });
+  };
 
   if (!group) {
     return (

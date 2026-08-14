@@ -55,7 +55,7 @@ type PriceList = {
     colorCount: number;
     unitCostCents: number;
   }[];
-  powderCoatColors: { name: string; key: string; sortOrder: number }[];
+  powderCoatColors: { name: string; key: string; sortOrder: number; hex?: string | null }[];
   spotPolishPrices: { typeKey: string; sizeBucket: SpotPolishSize; unitCostCents: number }[];
 };
 
@@ -137,7 +137,12 @@ async function seedCatalog() {
   await db
     .insert(powderCoatColor)
     .values(
-      data.powderCoatColors.map((c) => ({ name: c.name, key: c.key, sortOrder: c.sortOrder })),
+      data.powderCoatColors.map((c) => ({
+        name: c.name,
+        key: c.key,
+        sortOrder: c.sortOrder,
+        hex: c.hex ?? null,
+      })),
     );
 
   // 4. Job types — groups with their sub-types, generics standalone

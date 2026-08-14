@@ -20,11 +20,12 @@ import { ServicesPagination } from "@/components/manage/services-pagination";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireRoles } from "@/lib/route-permissions";
+import { usePersistedState } from "@/lib/use-persisted-state";
 import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
 
 type ManageTab =
-  | ServiceType
+  | "general"
   | "pricing"
   | "job-types"
   | "pricing-config"
@@ -37,7 +38,6 @@ export const Route = createFileRoute("/_app/manage")({
   validateSearch: (search: Record<string, unknown>): { tab: ManageTab } => ({
     tab: (
       [
-        "rim",
         "general",
         "pricing",
         "job-types",
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_app/manage")({
       ] as const
     ).includes(search.tab as ManageTab)
       ? (search.tab as ManageTab)
-      : "rim",
+      : "general",
   }),
   beforeLoad: requireRoles(["admin"]),
   head: () => ({
@@ -58,15 +58,12 @@ export const Route = createFileRoute("/_app/manage")({
   component: ManagePage,
 });
 
-const SERVICE_TABS: { value: ServiceType; label: () => string }[] = [
-  { value: "rim", label: () => m.manage_tab_rim() },
-  { value: "general", label: () => m.manage_tab_general() },
-];
-
 function ServicesTab({ type }: { type: ServiceType }) {
   const [addOpen, setAddOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = usePersistedState<number>("manage.servicesPageSize", 10, (v) =>
+    typeof v === "number" && Number.isInteger(v) && v > 0 ? v : null,
+  );
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [editService, setEditService] = useState<ServiceRow | null>(null);
@@ -499,7 +496,7 @@ function TabGroupLabel({ label }: { label: string }) {
   return (
     <span
       aria-hidden
-      className="w-full pt-1 font-rubik text-xs leading-4 tracking-wide text-label uppercase"
+      className="px-3 pt-4 pb-1 font-rubik text-xs leading-4 tracking-wide text-label uppercase first:pt-0"
     >
       {label}
     </span>
@@ -512,25 +509,26 @@ function ManagePage() {
 
   return (
     <div className="flex flex-col gap-5 p-3 sm:p-5">
-      <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
-        {m.manage_title()}
-      </h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
+          {m.manage_title()}
+        </h1>
+        <p className="font-rubik text-sm leading-4.5 text-label">{m.manage_subtitle()}</p>
+      </div>
 
       <Tabs
+        orientation="vertical"
         value={activeTab}
         onValueChange={(val) => navigate({ search: { tab: val as ManageTab } })}
+        className="flex flex-col gap-4 lg:flex-row lg:gap-6"
       >
-        <TabsList className="flex-wrap gap-x-1 border-b-0">
+        <TabsList className="shrink-0 lg:w-56">
           <TabGroupLabel label="Services" />
-          {SERVICE_TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label()}
-            </TabsTrigger>
-          ))}
+          <TabsTrigger value="general">{m.manage_tab_general()}</TabsTrigger>
           <TabsTrigger value="job-types">Job Types</TabsTrigger>
-          <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="vehicle-sizes">Vehicle Sizes</TabsTrigger>
           <TabsTrigger value="colors">Colors</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
 
           <TabGroupLabel label="Business Settings" />
           <TabsTrigger value="pricing-config">Pricing Config</TabsTrigger>
@@ -538,39 +536,39 @@ function ManagePage() {
           <TabsTrigger value="locations">Locations</TabsTrigger>
         </TabsList>
 
-        {SERVICE_TABS.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value} className="pt-3">
-            <ServicesTab type={tab.value} />
+        <div className="min-w-0 flex-1">
+          <TabsContent value="general">
+            <ServicesTab type="general" />
           </TabsContent>
-        ))}
 
-        <TabsContent value="pricing" className="pt-3">
-          <PricingTab />
-        </TabsContent>
+          <TabsContent value="job-types">
+            <JobTypesTab />
+          </TabsContent>
 
-        <TabsContent value="job-types" className="pt-3">
-          <JobTypesTab />
-        </TabsContent>
+          <TabsContent value="vehicle-sizes">
+            <VehicleSizesTab />
+          </TabsContent>
 
-        <TabsContent value="pricing-config" className="pt-3">
-          <PricingConfigTab />
-        </TabsContent>
+          <TabsContent value="colors">
+            <ColorsTab />
+          </TabsContent>
 
-        <TabsContent value="vehicle-sizes" className="pt-3">
-          <VehicleSizesTab />
-        </TabsContent>
+          <TabsContent value="pricing">
+            <PricingTab />
+          </TabsContent>
 
-        <TabsContent value="colors" className="pt-3">
-          <ColorsTab />
-        </TabsContent>
+          <TabsContent value="pricing-config">
+            <PricingConfigTab />
+          </TabsContent>
 
-        <TabsContent value="loyalty" className="pt-3">
-          <LoyaltyTab />
-        </TabsContent>
+          <TabsContent value="loyalty">
+            <LoyaltyTab />
+          </TabsContent>
 
-        <TabsContent value="locations" className="pt-3">
-          <LocationsTab />
-        </TabsContent>
+          <TabsContent value="locations">
+            <LocationsTab />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

@@ -4,6 +4,8 @@ import {
   ArrowLeft,
   Building2,
   ChevronDown,
+  CornerDownLeft,
+  CornerDownRight,
   FileCheck,
   FileSignature,
   Mail,
@@ -79,6 +81,8 @@ function QuoteEditorPage() {
   const quoteQuery = useQuery(orpc.floor.quotes.get.queryOptions({ input: { id: quoteId } }));
   const quote = quoteQuery.data;
   const isReadOnly = quote?.status === "completed" && !isAdmin;
+  const includedItems = (quote?.items ?? []).filter((i) => !i.isExcluded);
+  const excludedItems = (quote?.items ?? []).filter((i) => i.isExcluded);
 
   const { data: pendingDiscount } = useQuery(
     orpc.discount.pendingForQuote.queryOptions({ input: { quoteId } }),
@@ -115,6 +119,14 @@ function QuoteEditorPage() {
       setRemoveConfirm(null);
     },
     onError: (err) => toast.error(`Failed to remove item: ${err.message}`),
+  });
+
+  const setItemExcluded = useMutation({
+    ...orpc.floor.quotes.setItemExcluded.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateQuote();
+    },
+    onError: (err) => toast.error(`Failed to move service: ${err.message}`),
   });
 
   const updateItem = useMutation({
@@ -472,18 +484,25 @@ function QuoteEditorPage() {
                             </td>
                           </tr>
                         )}
-                        {(quote?.items ?? []).map((item, idx) => (
+                        {includedItems.map((item, idx) => (
                           <ItemRow
                             key={item.id}
                             item={item}
                             index={idx + 1}
                             onRemove={() => setRemoveConfirm(item.id)}
+                            onExclude={() =>
+                              setItemExcluded.mutate({ id: item.id, excluded: true })
+                            }
                             onEdit={() => {
                               setEditingItem(item);
                               setSheetOpen(true);
                             }}
                             isRemoving={
                               removeItem.isPending && removeItem.variables?.id === item.id
+                            }
+                            isExcluding={
+                              setItemExcluded.isPending &&
+                              setItemExcluded.variables?.id === item.id
                             }
                             isReadOnly={isReadOnly}
                           />
@@ -516,8 +535,11 @@ function QuoteEditorPage() {
             {/* Services Excluded */}
             {quote && (
               <ServicesExcluded
-                services={quote.excludedServices}
-                onChanged={invalidateQuote}
+                items={excludedItems}
+                onInclude={(id) => setItemExcluded.mutate({ id, excluded: false })}
+                pendingId={
+                  setItemExcluded.isPending ? setItemExcluded.variables?.id : undefined
+                }
                 isReadOnly={isReadOnly}
               />
             )}
@@ -918,22 +940,23 @@ function QuoteEditorPage() {
 // ─── Services Excluded ────────────────────────────────────────────────────────
 
 function ServicesExcluded({
-  services,
-  onChanged,
+  items,
+  onInclude,
+  pendingId,
   isReadOnly,
 }: {
-  services: { id: string; name: string; price: number }[];
-  onChanged: () => Promise<void>;
+  items: {
+    id: string;
+    itemType: string;
+    description: string | null;
+    quantity: number;
+    unitCost: number;
+    inches: number | null;
+  }[];
+  onInclude: (id: string) => void;
+  pendingId?: string;
   isReadOnly?: boolean;
 }) {
-  const promote = useMutation({
-    ...orpc.floor.quotes.promoteExcludedService.mutationOptions(),
-    onSuccess: async () => {
-      await onChanged();
-    },
-    onError: (err) => toast.error(`Failed to add service: ${err.message}`),
-  });
-
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-0.5">
@@ -943,28 +966,37 @@ function ServicesExcluded({
           client
         </span>
       </div>
-      {services.length === 0 ? (
+      {items.length === 0 ? (
         <p className="font-rubik text-xs text-ghost">No excluded services</p>
       ) : (
         <div className="flex flex-col gap-1">
-          {services.map((svc) => (
-            <div key={svc.id} className="flex items-center gap-2 rounded-lg bg-page px-2 py-1">
-              <div className="flex flex-1 items-baseline gap-2 font-rubik">
-                <span className="text-sm leading-[18px] text-body">{svc.name}</span>
-                <span className="text-xs leading-3.5 text-label">({formatCents(svc.price)})</span>
+          {items.map((item) => {
+            const lineTotal = item.inches
+              ? item.inches * item.unitCost
+              : item.quantity * item.unitCost;
+            return (
+              <div key={item.id} className="flex items-center gap-2 rounded-lg bg-page px-2 py-1">
+                <div className="flex flex-1 items-baseline gap-2 font-rubik">
+                  <span className="text-sm leading-[18px] text-body">
+                    {item.description ?? item.itemType}
+                  </span>
+                  <span className="text-xs leading-3.5 text-label">
+                    ({formatCents(lineTotal)})
+                  </span>
+                </div>
+                {!isReadOnly && (
+                  <Button
+                    variant="outline"
+                    onClick={() => onInclude(item.id)}
+                    disabled={pendingId === item.id}
+                  >
+                    <CornerDownLeft />
+                    Move to Services
+                  </Button>
+                )}
               </div>
-              {!isReadOnly && (
-                <Button
-                  variant="outline"
-                  onClick={() => promote.mutate({ id: svc.id })}
-                  disabled={promote.isPending}
-                >
-                  <Plus />
-                  Add
-                </Button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -1073,8 +1105,10 @@ function ItemRow({
   item,
   index,
   onRemove,
+  onExclude,
   onEdit,
   isRemoving,
+  isExcluding,
   isReadOnly,
 }: {
   item: {
@@ -1087,8 +1121,10 @@ function ItemRow({
   };
   index: number;
   onRemove: () => void;
+  onExclude: () => void;
   onEdit: () => void;
   isRemoving: boolean;
+  isExcluding: boolean;
   isReadOnly?: boolean;
 }) {
   const rowTotal = item.inches
@@ -1122,6 +1158,15 @@ function ItemRow({
             <Button className="w-full" variant="outline" onClick={onEdit}>
               <Pencil className="size-3.5" />
               Edit
+            </Button>
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={onExclude}
+              disabled={isExcluding}
+            >
+              <CornerDownRight className="size-3.5" />
+              Exclude
             </Button>
             <Button
               className="w-full"

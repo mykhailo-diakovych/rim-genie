@@ -49,7 +49,7 @@ export function LatestInvoices({ invoices }: LatestInvoicesProps) {
         <Button
           nativeButton={false}
           variant="ghost"
-          render={<Link to="/cashier" search={{ tab: "unpaid", dateRange: "30d" }} />}
+          render={<Link to="/cashier" />}
           className="flex items-center gap-0.5 text-xs text-label"
         >
           View all

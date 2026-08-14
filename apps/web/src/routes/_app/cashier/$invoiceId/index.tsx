@@ -212,7 +212,7 @@ function InvoiceDetailPage() {
         <Button
           variant="outline"
           nativeButton={false}
-          render={<Link to="/cashier" search={{ tab: "unpaid", dateRange: "30d" }} />}
+          render={<Link to="/cashier" />}
         >
           <ChevronLeft />
           Back to list
@@ -414,7 +414,7 @@ function InvoiceDetailPage() {
           </div>
         )}
 
-        {(inv?.quote?.excludedServices?.length ?? 0) > 0 && (
+        {(inv?.quote?.items?.length ?? 0) > 0 && (
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-0.5 font-rubik">
               <span className="text-sm text-body">Services Excluded:</span>
@@ -437,10 +437,10 @@ function InvoiceDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {inv?.quote?.excludedServices?.map((es, idx) => (
+                  {inv?.quote?.items?.map((item, idx) => (
                     <tr
-                      key={es.id}
-                      className={`border-t border-field-line ${idx === (inv.quote?.excludedServices?.length ?? 0) - 1 ? "border-b" : ""}`}
+                      key={item.id}
+                      className={`border-t border-field-line ${idx === (inv.quote?.items?.length ?? 0) - 1 ? "border-b" : ""}`}
                     >
                       <td className="border-l border-field-line px-2 py-1.5 text-xs text-body">
                         {idx + 1}
@@ -450,11 +450,17 @@ function InvoiceDetailPage() {
                           <span className="shrink-0 rounded-full bg-ghost px-1.5 py-0.5 font-rubik text-[8px] leading-normal text-white">
                             NOT INCLUDED
                           </span>
-                          <span className="text-xs text-body">{es.name}</span>
+                          <span className="text-xs text-body">
+                            {item.description ?? item.itemType}
+                          </span>
                         </div>
                       </td>
                       <td className="border-r border-l border-field-line px-2 py-1.5 text-xs text-body">
-                        {formatCents(es.price)}
+                        {formatCents(
+                          item.inches
+                            ? item.inches * item.unitCost
+                            : item.quantity * item.unitCost,
+                        )}
                       </td>
                     </tr>
                   ))}

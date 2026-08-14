@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { IconPay } from "@/components/ui/nav-icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { usePersistedState } from "@/lib/use-persisted-state";
 import { cn } from "@/lib/utils";
 import { orpc } from "@/utils/orpc";
 
@@ -36,10 +37,6 @@ const TAB_LABELS: Record<InvoiceTab, string> = {
 };
 
 export const Route = createFileRoute("/_app/cashier/")({
-  validateSearch: (search: Record<string, unknown>): { tab: InvoiceTab; dateRange: DateRange } => ({
-    tab: TAB_VALUES.includes(search.tab as InvoiceTab) ? (search.tab as InvoiceTab) : "unpaid",
-    dateRange: parseDateRange(search.dateRange, "30d"),
-  }),
   head: () => ({
     meta: [{ title: "Rim-Genie | Cashier" }],
   }),
@@ -168,7 +165,14 @@ function InvoiceCard({
 }
 
 function CashierPage() {
-  const { tab, dateRange } = Route.useSearch();
+  const [tab, setTab] = usePersistedState<InvoiceTab>("cashier.tab", "unpaid", (v) =>
+    TAB_VALUES.includes(v as InvoiceTab) ? (v as InvoiceTab) : null,
+  );
+  const [dateRange, setDateRange] = usePersistedState<DateRange>(
+    "cashier.dateRange",
+    "30d",
+    (v) => parseDateRange(v, "30d"),
+  );
   const navigate = useNavigate({ from: Route.fullPath });
   const queryClient = useQueryClient();
 
@@ -222,15 +226,13 @@ function CashierPage() {
         </h1>
         <DateRangeFilter
           value={dateRange}
-          onChange={(v) => navigate({ search: (prev) => ({ ...prev, dateRange: v }) })}
+          onChange={setDateRange}
         />
       </div>
 
       <Tabs
         value={tab}
-        onValueChange={(value) => {
-          navigate({ search: (prev) => ({ ...prev, tab: value as InvoiceTab }) });
-        }}
+        onValueChange={(value) => setTab(value as InvoiceTab)}
       >
         <TabsList>
           {TAB_VALUES.map((value) => (

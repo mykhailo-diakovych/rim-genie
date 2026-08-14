@@ -14,7 +14,7 @@ import {
 
 import { user } from "./auth";
 import { invoice } from "./invoice";
-import { service, quoteVehicleTypeEnum, rimMaterialEnum } from "./manage";
+import { quoteVehicleTypeEnum, rimMaterialEnum } from "./manage";
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
 
@@ -130,6 +130,9 @@ export const quoteItem = pgTable("quote_item", {
   jobTypes: jsonb("job_types").$type<JobTypeEntry[]>().default([]).notNull(),
   description: text("description"),
   comments: text("comments"),
+  // Recommended but declined by the client: still printed on the quote as NOT INCLUDED,
+  // still priced for the client's reference, but kept out of every total.
+  isExcluded: boolean("is_excluded").default(false).notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -161,23 +164,6 @@ export const termsSignature = pgTable(
   (table) => [unique("terms_signature_quoteId_unique").on(table.quoteId)],
 );
 
-export const quoteExcludedService = pgTable("quote_excluded_service", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  quoteId: text("quote_id")
-    .notNull()
-    .references(() => quote.id, { onDelete: "cascade" }),
-  serviceId: text("service_id").references(() => service.id, { onDelete: "set null" }),
-  name: text("name").notNull(),
-  price: integer("price").default(0).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
-
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const customerRelations = relations(customer, ({ many }) => ({
@@ -195,7 +181,6 @@ export const quoteRelations = relations(quote, ({ one, many }) => ({
     references: [user.id],
   }),
   items: many(quoteItem),
-  excludedServices: many(quoteExcludedService),
   invoice: one(invoice, {
     fields: [quote.id],
     references: [invoice.quoteId],
@@ -210,17 +195,6 @@ export const quoteItemRelations = relations(quoteItem, ({ one }) => ({
   quote: one(quote, {
     fields: [quoteItem.quoteId],
     references: [quote.id],
-  }),
-}));
-
-export const quoteExcludedServiceRelations = relations(quoteExcludedService, ({ one }) => ({
-  quote: one(quote, {
-    fields: [quoteExcludedService.quoteId],
-    references: [quote.id],
-  }),
-  service: one(service, {
-    fields: [quoteExcludedService.serviceId],
-    references: [service.id],
   }),
 }));
 
