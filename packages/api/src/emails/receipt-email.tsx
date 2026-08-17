@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { EmailLayout, styles } from "./email-layout";
+import { EmailLayout, Row, TotalRow, styles } from "./email-layout";
 import { formatCents } from "../lib/format-currency";
 
 function formatPaymentMode(mode: string) {
@@ -14,7 +14,6 @@ function formatPaymentMode(mode: string) {
 }
 
 export type ReceiptEmailProps = {
-  baseUrl: string;
   customerName: string;
   invoiceNumber: number;
   items: { description: string | null; quantity: number; unitCost: number }[];
@@ -46,7 +45,6 @@ const tdStyle = {
 } as const;
 
 function ReceiptEmail({
-  baseUrl,
   customerName,
   invoiceNumber,
   items,
@@ -59,7 +57,7 @@ function ReceiptEmail({
   balance,
 }: ReceiptEmailProps): ReactElement {
   return (
-    <EmailLayout baseUrl={baseUrl}>
+    <EmailLayout>
       <p style={styles.greeting}>Hi {customerName},</p>
       <p style={styles.subtitle}>Here is your payment receipt for Invoice #{invoiceNumber}.</p>
 
@@ -91,27 +89,11 @@ function ReceiptEmail({
         </table>
 
         <div style={styles.cardBody}>
-          <div style={styles.row}>
-            <span>Subtotal</span>
-            <span>{formatCents(subtotal)}</span>
-          </div>
-          {discount > 0 && (
-            <div style={styles.row}>
-              <span>Discount</span>
-              <span>-{formatCents(discount)}</span>
-            </div>
-          )}
-          {tax > 0 && (
-            <div style={styles.row}>
-              <span>Tax</span>
-              <span>+{formatCents(tax)}</span>
-            </div>
-          )}
+          <Row label="Subtotal" value={formatCents(subtotal)} />
+          {discount > 0 && <Row label="Discount" value={`-${formatCents(discount)}`} />}
+          {tax > 0 && <Row label="Tax" value={`+${formatCents(tax)}`} />}
         </div>
-        <div style={styles.totalRow}>
-          <span>Total</span>
-          <span>{formatCents(total)}</span>
-        </div>
+        <TotalRow label="Total" value={formatCents(total)} />
       </div>
 
       {payments.length > 0 && (
@@ -119,26 +101,17 @@ function ReceiptEmail({
           <div style={styles.cardHeader}>Payments</div>
           <div style={styles.cardBody}>
             {payments.map((p, i) => (
-              <div key={i} style={styles.row}>
-                <span>
-                  {formatPaymentMode(p.mode)} —{" "}
-                  {new Date(p.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric",
-                  })}
-                </span>
-                <span>{formatCents(p.amount)}</span>
-              </div>
+              <Row
+                key={i}
+                label={`${formatPaymentMode(p.mode)} — ${new Date(p.createdAt).toLocaleDateString(
+                  "en-US",
+                  { month: "short", day: "2-digit", year: "numeric" },
+                )}`}
+                value={formatCents(p.amount)}
+              />
             ))}
-            <div style={{ ...styles.row, fontWeight: 600 }}>
-              <span>Total Paid</span>
-              <span>{formatCents(totalPaid)}</span>
-            </div>
-            <div style={{ ...styles.row, borderBottom: "none", fontWeight: 600 }}>
-              <span>Balance Due</span>
-              <span>{formatCents(balance)}</span>
-            </div>
+            <Row label="Total Paid" value={formatCents(totalPaid)} bold />
+            <Row label="Balance Due" value={formatCents(balance)} bold noBorder />
           </div>
         </div>
       )}

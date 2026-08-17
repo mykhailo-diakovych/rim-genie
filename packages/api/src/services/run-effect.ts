@@ -73,6 +73,12 @@ const TAG_MAP: Record<
   },
 };
 
+// Failures caused by an external provider carry the provider's own explanation.
+// Collapsing those to a fixed string ("Failed to send SMS") leaves the operator
+// with nothing to act on — whether it was an unapproved sender ID, no credit or a
+// bad number is exactly the part they need.
+const TAGS_WITH_REASON = new Set(["EmailSendFailed", "SmsSendFailed"]);
+
 export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): Promise<A> {
   const exit = await Effect.runPromiseExit(effect);
 
@@ -82,8 +88,15 @@ export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): 
   if (Option.isSome(failure)) {
     const error = failure.value;
     const mapped = TAG_MAP[error._tag];
+    const base = mapped?.message ?? "Something went wrong";
+    const reason = (error as { reason?: unknown }).reason;
+    const message =
+      TAGS_WITH_REASON.has(error._tag) && typeof reason === "string" && reason.trim()
+        ? `${base}: ${reason}`
+        : base;
+
     throw new ORPCError(mapped?.code ?? "INTERNAL_SERVER_ERROR", {
-      message: mapped?.message ?? "Something went wrong",
+      message,
       data: { ...error },
     });
   }

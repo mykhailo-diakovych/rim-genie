@@ -1,9 +1,8 @@
 import type { ReactElement } from "react";
-import { EmailLayout, styles } from "./email-layout";
+import { EmailLayout, Row, TotalRow, styles } from "./email-layout";
 import { formatCents } from "../lib/format-currency";
 
 export type PaymentReminderEmailProps = {
-  baseUrl: string;
   customerName: string;
   invoiceNumber: number;
   total: number;
@@ -15,14 +14,13 @@ export function createPaymentReminderEmail(props: PaymentReminderEmailProps): Re
 }
 
 function PaymentReminderEmail({
-  baseUrl,
   customerName,
   invoiceNumber,
   total,
   balance,
 }: PaymentReminderEmailProps): ReactElement {
   return (
-    <EmailLayout baseUrl={baseUrl}>
+    <EmailLayout>
       <p style={styles.greeting}>Hi {customerName},</p>
       <p style={styles.subtitle}>
         This is a friendly reminder that you have an outstanding balance on your invoice.
@@ -31,24 +29,10 @@ function PaymentReminderEmail({
       <div style={styles.card}>
         <div style={styles.cardHeader}>Invoice Details</div>
         <div style={styles.cardBody}>
-          <div style={styles.row}>
-            <span>Invoice #</span>
-            <span style={{ fontWeight: 600 }}>{invoiceNumber}</span>
-          </div>
-          <div style={styles.row}>
-            <span>Total</span>
-            <span>{formatCents(total)}</span>
-          </div>
+          <Row label="Invoice #" value={<strong>{invoiceNumber}</strong>} />
+          <Row label="Total" value={formatCents(total)} noBorder />
         </div>
-        <div
-          style={{
-            ...styles.totalRow,
-            backgroundColor: "#dc2626",
-          }}
-        >
-          <span>Balance Due</span>
-          <span>{formatCents(balance)}</span>
-        </div>
+        <TotalRow label="Balance Due" value={formatCents(balance)} background="#dc2626" />
       </div>
 
       <div

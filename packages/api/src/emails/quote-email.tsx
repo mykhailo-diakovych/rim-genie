@@ -1,9 +1,8 @@
 import type { ReactElement } from "react";
-import { EmailLayout, styles } from "./email-layout";
+import { EmailLayout, Row, TotalRow, styles } from "./email-layout";
 import { formatCents } from "../lib/format-currency";
 
 export type QuoteEmailProps = {
-  baseUrl: string;
   customerName: string;
   quoteNumber: number;
   subtotal: number;
@@ -18,7 +17,6 @@ export function createQuoteEmail(props: QuoteEmailProps): ReactElement {
 }
 
 function QuoteEmail({
-  baseUrl,
   customerName,
   quoteNumber,
   subtotal,
@@ -28,7 +26,7 @@ function QuoteEmail({
   hasAttachment,
 }: QuoteEmailProps): ReactElement {
   return (
-    <EmailLayout baseUrl={baseUrl}>
+    <EmailLayout>
       <p style={styles.greeting}>Hi {customerName},</p>
       <p style={styles.subtitle}>
         Thank you for choosing Rim Genie. Please find your quote details below.
@@ -37,25 +35,17 @@ function QuoteEmail({
       <div style={styles.card}>
         <div style={styles.cardHeader}>Quote Summary</div>
         <div style={styles.cardBody}>
-          <div style={styles.row}>
-            <span>Quote #</span>
-            <span style={{ fontWeight: 600 }}>{quoteNumber}</span>
-          </div>
-          <div style={styles.row}>
-            <span>Subtotal</span>
-            <span>{formatCents(subtotal)}</span>
-          </div>
+          <Row label="Quote #" value={<strong>{quoteNumber}</strong>} />
+          <Row label="Subtotal" value={formatCents(subtotal)} noBorder={discountPercent <= 0} />
           {discountPercent > 0 && (
-            <div style={styles.row}>
-              <span>Discount ({discountPercent}%)</span>
-              <span>-{formatCents(discountAmount)}</span>
-            </div>
+            <Row
+              label={`Discount (${discountPercent}%)`}
+              value={`-${formatCents(discountAmount)}`}
+              noBorder
+            />
           )}
         </div>
-        <div style={styles.totalRow}>
-          <span>Total</span>
-          <span>{formatCents(total)}</span>
-        </div>
+        <TotalRow label="Total" value={formatCents(total)} />
       </div>
 
       {hasAttachment && (

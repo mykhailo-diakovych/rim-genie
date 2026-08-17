@@ -1,8 +1,7 @@
 import type { ReactElement } from "react";
-import { EmailLayout, styles } from "./email-layout";
+import { EmailLayout, Row, styles } from "./email-layout";
 
 export type JobCompletedEmailProps = {
-  baseUrl: string;
   customerName: string;
   jobDescription: string;
   invoiceNumber: number;
@@ -13,13 +12,12 @@ export function createJobCompletedEmail(props: JobCompletedEmailProps): ReactEle
 }
 
 function JobCompletedEmail({
-  baseUrl,
   customerName,
   jobDescription,
   invoiceNumber,
 }: JobCompletedEmailProps): ReactElement {
   return (
-    <EmailLayout baseUrl={baseUrl}>
+    <EmailLayout>
       <p style={styles.greeting}>Hi {customerName},</p>
       <p style={styles.subtitle}>Great news! Your rim repair is complete and ready for pickup.</p>
 
@@ -35,14 +33,16 @@ function JobCompletedEmail({
         <p style={{ margin: "0 0 12px 0", fontWeight: 600, fontSize: "15px", color: "#166534" }}>
           Job Complete
         </p>
-        <div style={{ ...styles.row, borderBottom: "1px solid #bbf7d0" }}>
-          <span style={{ color: "#4b5563" }}>Invoice #</span>
-          <span style={{ fontWeight: 600 }}>{invoiceNumber}</span>
-        </div>
-        <div style={{ ...styles.row, borderBottom: "none" }}>
-          <span style={{ color: "#4b5563" }}>Description</span>
-          <span style={{ fontWeight: 500 }}>{jobDescription}</span>
-        </div>
+        <Row
+          label={<span style={{ color: "#4b5563" }}>Invoice #</span>}
+          value={<strong>{invoiceNumber}</strong>}
+          borderColor="#bbf7d0"
+        />
+        <Row
+          label={<span style={{ color: "#4b5563" }}>Description</span>}
+          value={jobDescription}
+          noBorder
+        />
       </div>
 
       <div style={styles.card}>

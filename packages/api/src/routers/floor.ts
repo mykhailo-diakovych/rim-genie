@@ -3,7 +3,6 @@ import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 
 import { db } from "@rim-genie/db";
-import { env } from "@rim-genie/env/server";
 import {
   customer,
   quote,
@@ -728,7 +727,6 @@ export const floorRouter = {
                 to: cust.email,
                 subject: `Your Rim Genie Quote #${quoteRow.quoteNumber}`,
                 react: createQuoteEmail({
-                  baseUrl: env.BETTER_AUTH_URL,
                   customerName: cust.name,
                   quoteNumber: quoteRow.quoteNumber,
                   subtotal: quoteRow.subtotal,

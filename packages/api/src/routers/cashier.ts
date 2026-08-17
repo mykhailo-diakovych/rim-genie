@@ -3,7 +3,6 @@ import { z } from "zod";
 import { and, eq, gte, ilike, isNull, lte, or, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
-import { env } from "@rim-genie/env/server";
 import { customer, invoice, payment } from "@rim-genie/db/schema";
 
 import { cashierProcedure } from "../index";
@@ -183,7 +182,6 @@ export const cashierRouter = {
                 to: cust.email,
                 subject: `Your Rim Genie Receipt — Invoice #${inv.invoiceNumber}`,
                 react: createReceiptEmail({
-                  baseUrl: env.BETTER_AUTH_URL,
                   customerName: cust.name,
                   invoiceNumber: inv.invoiceNumber,
                   items: inv.items,
@@ -240,7 +238,6 @@ export const cashierRouter = {
                 to: cust.email,
                 subject: `Payment Reminder — Invoice #${inv.invoiceNumber}`,
                 react: createPaymentReminderEmail({
-                  baseUrl: env.BETTER_AUTH_URL,
                   customerName: cust.name,
                   invoiceNumber: inv.invoiceNumber,
                   total: inv.total,
