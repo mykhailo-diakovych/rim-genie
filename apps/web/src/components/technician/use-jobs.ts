@@ -62,6 +62,19 @@ export function getGroupAction(group: JobGroup): "proofs" | "done" {
   return group.jobs.some((j) => j.status === "accepted") ? "proofs" : "done";
 }
 
+/**
+ * A job a technician can mark finished: picked up but not yet done. `in_progress`
+ * is in the enum but nothing in the app writes it, so `accepted` is the state real
+ * work sits in — gating completion on `in_progress` alone made it unreachable.
+ */
+export function isCompletable(job: ApiJob): boolean {
+  return job.status === "accepted" || job.status === "in_progress";
+}
+
+export function canCompleteGroup(group: JobGroup): boolean {
+  return group.jobs.some(isCompletable);
+}
+
 export function formatStartedAt(iso: string | null): string | null {
   if (!iso) return null;
   return new Date(iso).toLocaleDateString("en-US", {

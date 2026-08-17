@@ -19,12 +19,26 @@ import { client, orpc } from "@/utils/orpc";
 import { DialogCustomerRow } from "./dialog-shared";
 import { type JobGroup } from "./types";
 
-export function CompleteJobDialog({ group }: { group: JobGroup }) {
+export function CompleteJobDialog({
+  group,
+  jobIds,
+}: {
+  group: JobGroup;
+  /** Restrict completion to these jobs. Omit to complete every unfinished job in
+   *  the group — the list card completes the whole invoice, the detail view a row. */
+  jobIds?: string[];
+}) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [techCode, setTechCode] = useState("");
   const queryClient = useQueryClient();
-  const technicianId = group.jobs[0]?.technician?.id;
+
+  const targets = group.jobs.filter(
+    (j) => j.status !== "completed" && (!jobIds || jobIds.includes(j.id)),
+  );
+  // Verify against the technician actually assigned to the work being completed,
+  // not whoever happens to be first in the group.
+  const technicianId = targets[0]?.technician?.id ?? group.jobs[0]?.technician?.id;
 
   const completeMutation = useMutation({
     mutationFn: async () => {
@@ -37,8 +51,7 @@ export function CompleteJobDialog({ group }: { group: JobGroup }) {
       });
       if (!valid) throw new Error("Invalid technician code");
 
-      const incomplete = group.jobs.filter((j) => j.status !== "completed");
-      for (const j of incomplete) {
+      for (const j of targets) {
         if (notes.trim()) {
           await client.technician.jobs.addNote({ jobId: j.id, specialNotes: notes });
         }

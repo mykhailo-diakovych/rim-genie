@@ -6,7 +6,7 @@ import { CompleteJobDialog } from "./complete-job-dialog";
 import { PartialInvoiceNote } from "./partial-invoice-note";
 import { type JobGroup } from "./types";
 import { UploadProofsDialog } from "./upload-proofs-dialog";
-import { formatStartedAt, getGroupAction } from "./use-jobs";
+import { canCompleteGroup, formatStartedAt, getGroupAction } from "./use-jobs";
 
 export function JobCard({ group, onView }: { group: JobGroup; onView: () => void }) {
   const action = getGroupAction(group);
@@ -48,11 +48,11 @@ export function JobCard({ group, onView }: { group: JobGroup; onView: () => void
           View
         </Button>
 
-        {action === "done" ? (
-          <CompleteJobDialog group={group} />
-        ) : (
-          <UploadProofsDialog group={group} />
-        )}
+        {/* Proofs keeps its existing condition; Complete is no longer the *alternative*
+            to it. The two were mutually exclusive, so any group with an accepted job —
+            the normal state — could never be completed from here. */}
+        {action === "proofs" && <UploadProofsDialog group={group} />}
+        {canCompleteGroup(group) && <CompleteJobDialog group={group} />}
       </div>
     </div>
   );
