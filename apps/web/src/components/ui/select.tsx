@@ -39,6 +39,9 @@ function SelectValue({
     <SelectPrimitive.Value
       className={cn("min-w-0 flex-1 truncate text-left text-body capitalize", className)}
       placeholder={<span className="text-ghost">{placeholder}</span>}
+      // `children` may be a (value) => ReactNode formatter. Selects whose values are
+      // raw enum keys must pass one — otherwise the closed trigger prints the key
+      // itself, which `capitalize` then dresses up as e.g. "Powder_coating".
       {...props}
     />
   );

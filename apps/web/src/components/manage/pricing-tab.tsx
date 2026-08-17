@@ -70,8 +70,13 @@ export function PricingTab() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data, isLoading } = useQuery(
-    orpc.manage.pricing.list.queryOptions({
+  // Powder-coat prices are keyed by size range × scope × colour count, so they live
+  // in their own table rather than `service_price`. Selecting that category here used
+  // to query `service_price` and always come back empty.
+  const isPowderCoat = category === "powder_coating";
+
+  const { data, isLoading } = useQuery({
+    ...orpc.manage.pricing.list.queryOptions({
       input: {
         category: category || undefined,
         page,
@@ -79,7 +84,13 @@ export function PricingTab() {
         search,
       },
     }),
-  );
+    enabled: !isPowderCoat,
+  });
+
+  const { data: powderRows, isLoading: powderLoading } = useQuery({
+    ...orpc.catalog.powderPrices.list.queryOptions(),
+    enabled: isPowderCoat,
+  });
 
   const deleteMutation = useMutation({
     ...orpc.manage.pricing.delete.mutationOptions(),
@@ -91,8 +102,24 @@ export function PricingTab() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const items = data?.items ?? [];
-  const total = data?.total ?? 0;
+  // Presented through the same columns: scope + colour count read as the "job type",
+  // and the size range column already exists.
+  const powderAsRows = (powderRows ?? []).map((p) => ({
+    id: p.id,
+    category: "powder_coating" as ServiceCategory,
+    jobType:
+      `${p.scope === "set" ? "Per Set" : "Per Rim"} — ${p.colorCount} ` +
+      `${p.colorCount === 1 ? "colour" : "colours"}`,
+    vehicleType: null as string | null,
+    rimMaterial: null as string | null,
+    minSize: p.minSize,
+    maxSize: p.maxSize,
+    unitCost: p.unitCost,
+  }));
+
+  const items = isPowderCoat ? powderAsRows : (data?.items ?? []);
+  const total = isPowderCoat ? powderAsRows.length : (data?.total ?? 0);
+  const loading = isPowderCoat ? powderLoading : isLoading;
 
   return (
     <>
@@ -107,7 +134,11 @@ export function PricingTab() {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="All categories" />
+                <SelectValue placeholder="All categories">
+                  {(val: string | null) =>
+                    val ? (CATEGORY_LABELS[val as ServiceCategory] ?? val) : "All categories"
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectPopup>
                 <SelectOption value="">All categories</SelectOption>
@@ -131,10 +162,12 @@ export function PricingTab() {
             <Search className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ghost" />
           </div>
 
-          <Button className="ml-auto" onClick={() => setAddOpen(true)}>
-            <Plus />
-            Add Price
-          </Button>
+          {!isPowderCoat && (
+            <Button className="ml-auto" onClick={() => setAddOpen(true)}>
+              <Plus />
+              Add Price
+            </Button>
+          )}
         </div>
 
         <div className="overflow-hidden rounded-lg border border-field-line bg-white">
@@ -162,7 +195,7 @@ export function PricingTab() {
                 <div className="h-8 w-[168px]" />
               </div>
 
-              {isLoading ? (
+              {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex border-b border-field-line">
                     <div className="flex w-28 items-center border-r border-field-line p-2">
@@ -233,50 +266,57 @@ export function PricingTab() {
                       </span>
                     </div>
                     <div className="flex items-center justify-end gap-2 self-stretch p-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-18"
-                        onClick={() =>
-                          setEditPrice({
-                            id: item.id,
-                            category: item.category as ServiceCategory,
-                            jobType: item.jobType,
-                            vehicleType: item.vehicleType,
-                            rimMaterial: item.rimMaterial,
-                            minSize: item.minSize,
-                            maxSize: item.maxSize,
-                            unitCost: item.unitCost,
-                          })
-                        }
-                      >
-                        <IconEdit />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        color="destructive"
-                        size="sm"
-                        className="w-18"
-                        onClick={() =>
-                          setDeleteConfirm({
-                            id: item.id,
-                            category: item.category as ServiceCategory,
-                            jobType: item.jobType,
-                            vehicleType: item.vehicleType,
-                            rimMaterial: item.rimMaterial,
-                            minSize: item.minSize,
-                            maxSize: item.maxSize,
-                            unitCost: item.unitCost,
-                          })
-                        }
-                        disabled={
-                          deleteMutation.isPending && deleteMutation.variables?.id === item.id
-                        }
-                      >
-                        <IconDelete />
-                        Delete
-                      </Button>
+                      {/* Powder-coat prices use a different shape (size range x scope x
+                          colour count) than this modal edits, so they are read-only here
+                          until a dedicated editor exists. */}
+                      {!isPowderCoat && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-18"
+                            onClick={() =>
+                              setEditPrice({
+                                id: item.id,
+                                category: item.category as ServiceCategory,
+                                jobType: item.jobType,
+                                vehicleType: item.vehicleType,
+                                rimMaterial: item.rimMaterial,
+                                minSize: item.minSize,
+                                maxSize: item.maxSize,
+                                unitCost: item.unitCost,
+                              })
+                            }
+                          >
+                            <IconEdit />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            color="destructive"
+                            size="sm"
+                            className="w-18"
+                            onClick={() =>
+                              setDeleteConfirm({
+                                id: item.id,
+                                category: item.category as ServiceCategory,
+                                jobType: item.jobType,
+                                vehicleType: item.vehicleType,
+                                rimMaterial: item.rimMaterial,
+                                minSize: item.minSize,
+                                maxSize: item.maxSize,
+                                unitCost: item.unitCost,
+                              })
+                            }
+                            disabled={
+                              deleteMutation.isPending && deleteMutation.variables?.id === item.id
+                            }
+                          >
+                            <IconDelete />
+                            Delete
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))
