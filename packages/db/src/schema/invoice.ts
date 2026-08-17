@@ -14,6 +14,7 @@ import {
 import type { JobTypeEntry } from "./floor";
 import { customer, quote } from "./floor";
 import { user } from "./auth";
+import { location } from "./location";
 import { quoteVehicleTypeEnum, rimMaterialEnum } from "./manage";
 import { job } from "./job";
 
@@ -53,6 +54,8 @@ export const invoice = pgTable(
     createdById: text("created_by_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
+    // Inherited from the originating quote — see the note on `quote.locationId`.
+    locationId: text("location_id").references(() => location.id, { onDelete: "restrict" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -64,6 +67,7 @@ export const invoice = pgTable(
     index("invoice_customerId_idx").on(table.customerId),
     index("invoice_createdById_idx").on(table.createdById),
     index("invoice_status_idx").on(table.status),
+    index("invoice_locationId_idx").on(table.locationId),
   ],
 );
 
@@ -133,6 +137,10 @@ export const invoiceRelations = relations(invoice, ({ one, many }) => ({
   createdBy: one(user, {
     fields: [invoice.createdById],
     references: [user.id],
+  }),
+  location: one(location, {
+    fields: [invoice.locationId],
+    references: [location.id],
   }),
   items: many(invoiceItem),
   payments: many(payment),

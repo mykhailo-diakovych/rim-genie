@@ -23,13 +23,17 @@ export const Route = createFileRoute("/_app/cashier/$invoiceId/checkout")({
   component: CheckoutPage,
 });
 
+// Every row but the last is a COUNT of notes, multiplied by its face value.
+// Coins is the odd one out: it is a straight cash AMOUNT, decimals included, so
+// it is parsed and rendered differently. Conflating the two is what silently
+// discarded the cents on every cash payment.
 const CASH_DENOMINATIONS = [
-  { value: 5000, label: "5,000 notes" },
-  { value: 1000, label: "1,000 notes" },
-  { value: 500, label: "500 notes" },
-  { value: 100, label: "100 notes" },
-  { value: 50, label: "50 notes" },
-  { value: 0, label: "Coins" },
+  { value: 5000, label: "5,000 notes", isAmount: false },
+  { value: 1000, label: "1,000 notes", isAmount: false },
+  { value: 500, label: "500 notes", isAmount: false },
+  { value: 100, label: "100 notes", isAmount: false },
+  { value: 50, label: "50 notes", isAmount: false },
+  { value: 0, label: "Coins", isAmount: true },
 ] as const;
 
 type PaymentMethod = "cash" | "credit" | "debit" | "cheque" | "bank";
@@ -105,11 +109,14 @@ function CashContent({
             <input
               type="number"
               min="0"
+              step={denom.isAmount ? "0.01" : "1"}
               value={counts[denom.value] ?? ""}
               onChange={(e) => onChange(denom.value, e.target.value)}
               className="h-9 w-[120px] rounded-md border border-field-line bg-white p-2 font-rubik text-xs text-body outline-none placeholder:text-ghost"
             />
-            <span className="font-rubik text-sm font-medium text-body">× {denom.label}</span>
+            <span className="font-rubik text-sm font-medium text-body">
+              {denom.isAmount ? denom.label : `× ${denom.label}`}
+            </span>
           </div>
         ))}
       </div>
@@ -171,7 +178,6 @@ function CheckoutPage() {
   const inv = invoiceQuery.data;
   const totalPaid = inv?.payments?.reduce((sum, p) => sum + p.amount, 0) ?? 0;
   const balanceCents = (inv?.total ?? 0) - totalPaid;
-  const balanceDollars = balanceCents / 100;
 
   const [expanded, setExpanded] = useState<PaymentMethod | null>("cash");
   const [cashCounts, setCashCounts] = useState<Record<number, string>>({});
@@ -194,19 +200,31 @@ function CheckoutPage() {
   );
 
   const cashTotal = CASH_DENOMINATIONS.reduce((sum, denom) => {
-    const count = parseInt(cashCounts[denom.value] || "0", 10);
-    if (isNaN(count) || count < 0) return sum;
-    if (denom.value === 0) return sum + count;
-    return sum + count * denom.value;
+    const raw = cashCounts[denom.value] || "0";
+    if (denom.isAmount) {
+      const amount = parseFloat(raw);
+      return isNaN(amount) || amount < 0 ? sum : sum + amount;
+    }
+    const count = parseInt(raw, 10);
+    return isNaN(count) || count < 0 ? sum : sum + count * denom.value;
   }, 0);
 
   const creditTotal = parseFloat(creditAmount) || 0;
   const debitTotal = parseFloat(debitAmount) || 0;
   const chequeTotal = parseFloat(chequeAmount) || 0;
   const bankTotal = parseFloat(bankAmount) || 0;
-  const grandTotal = cashTotal + creditTotal + debitTotal + chequeTotal + bankTotal;
-  const totalDue = grandTotal - balanceDollars;
-  const isOverpaying = grandTotal > balanceDollars;
+
+  // Settle up in integer cents, rounding each tender the same way `handleConfirm`
+  // does. Comparing dollar floats meant an exact payment could land on
+  // 8177.600000000001 > 8177.60, flagging an overpayment and disabling Confirm.
+  const grandTotalCents = [cashTotal, creditTotal, debitTotal, chequeTotal, bankTotal].reduce(
+    (sum, amount) => sum + Math.round(amount * 100),
+    0,
+  );
+  const totalDueCents = grandTotalCents - balanceCents;
+  const grandTotal = grandTotalCents / 100;
+  const totalDue = totalDueCents / 100;
+  const isOverpaying = grandTotalCents > balanceCents;
 
   const paymentEntries = [
     { mode: "cash" as const, amount: cashTotal, reference: undefined as string | undefined },
@@ -428,7 +446,9 @@ function CheckoutPage() {
         <Button
           color="success"
           onClick={handleConfirm}
-          disabled={paymentEntries.length === 0 || isSubmitting || grandTotal <= 0 || isOverpaying}
+          disabled={
+            paymentEntries.length === 0 || isSubmitting || grandTotalCents <= 0 || isOverpaying
+          }
         >
           Confirm Payment
         </Button>

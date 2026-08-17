@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { z } from "zod";
-import { and, eq, gte, ilike, inArray, lte, or, sql, sum } from "drizzle-orm";
+import { and, eq, gte, ilike, isNull, lte, or, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { env } from "@rim-genie/env/server";
-import { customer, invoice, payment, user } from "@rim-genie/db/schema";
+import { customer, invoice, payment } from "@rim-genie/db/schema";
 
 import { cashierProcedure } from "../index";
 import * as InvoiceService from "../services/invoice.service";
@@ -35,12 +35,11 @@ export const cashierRouter = {
         const locId = context.locationId;
 
         if (locId) {
-          conditions.push(
-            inArray(
-              invoice.createdById,
-              db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
-            ),
-          );
+          // Match the branch recorded on the invoice itself. Rows predating that
+          // column stay visible everywhere rather than vanishing — a record shown at
+          // the wrong branch is a nuisance, one shown at no branch is the bug this
+          // replaces.
+          conditions.push(or(eq(invoice.locationId, locId), isNull(invoice.locationId))!);
         }
 
         if (input.status) {

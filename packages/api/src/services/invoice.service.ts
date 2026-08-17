@@ -71,6 +71,9 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
               tax: 0,
               total,
               createdById: userId,
+              // The branch that took the work in, carried over from the quote so the
+              // invoice never has to re-derive it from the creator's profile.
+              locationId: found.locationId,
             })
             .returning();
 

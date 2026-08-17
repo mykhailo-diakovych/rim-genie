@@ -14,6 +14,7 @@ import {
 
 import { user } from "./auth";
 import { invoice } from "./invoice";
+import { location } from "./location";
 import { quoteVehicleTypeEnum, rimMaterialEnum } from "./manage";
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
@@ -86,6 +87,11 @@ export const quote = pgTable(
     createdById: text("created_by_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
+    // Where the work was actually taken in, stamped from the session at creation.
+    // Previously the branch was inferred from the creator's *profile* location, which
+    // is a mutable, single-valued field — so a quote raised by anyone assigned to more
+    // than one branch became invisible at every branch but their primary one.
+    locationId: text("location_id").references(() => location.id, { onDelete: "restrict" }),
     status: quoteStatusEnum("status").default("draft").notNull(),
     jobRack: text("job_rack"),
     comments: text("comments"),
@@ -108,6 +114,7 @@ export const quote = pgTable(
     index("quote_customerId_idx").on(table.customerId),
     index("quote_createdById_idx").on(table.createdById),
     index("quote_status_idx").on(table.status),
+    index("quote_locationId_idx").on(table.locationId),
   ],
 );
 
@@ -179,6 +186,10 @@ export const quoteRelations = relations(quote, ({ one, many }) => ({
   createdBy: one(user, {
     fields: [quote.createdById],
     references: [user.id],
+  }),
+  location: one(location, {
+    fields: [quote.locationId],
+    references: [location.id],
   }),
   items: many(quoteItem),
   invoice: one(invoice, {

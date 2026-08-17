@@ -16,6 +16,12 @@ const employeeIdField = z
   .max(30)
   .regex(/^[a-zA-Z0-9_.]+$/);
 
+// Better Auth's username plugin lowercases on write and looks up with the same
+// normalizer, but we set `username` with a direct db write (createUser does not
+// take it), so we have to normalize here or sign-in silently fails to match.
+// `displayUsername` keeps whatever casing the admin typed.
+const normalizeUsername = (employeeId: string) => employeeId.toLowerCase();
+
 const createEmployeeSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
@@ -23,7 +29,9 @@ const createEmployeeSchema = z.object({
   employeeId: employeeIdField,
   pin: pinField,
   role: z.enum(userRoleEnum.enumValues),
-  locationIds: z.array(z.string().min(1)).optional().default([]),
+  // Sign-in rejects any non-admin without a `userLocation` row, so an employee
+  // created with no location is permanently locked out.
+  locationIds: z.array(z.string().min(1)).min(1),
 });
 
 const updateEmployeeSchema = z.object({
@@ -33,7 +41,9 @@ const updateEmployeeSchema = z.object({
   email: z.email(),
   employeeId: employeeIdField,
   role: z.enum(userRoleEnum.enumValues),
-  locationIds: z.array(z.string().min(1)).optional(),
+  // Optional on update (omit to leave assignments untouched), but never empty —
+  // clearing every location would lock the employee out.
+  locationIds: z.array(z.string().min(1)).min(1).optional(),
 });
 
 async function setUserLocations(userId: string, locationIds: string[]) {
@@ -93,10 +103,12 @@ export const employeesRouter = {
   }),
 
   create: adminProcedure.input(createEmployeeSchema).handler(async ({ input }) => {
+    const normalizedUsername = normalizeUsername(input.employeeId);
+
     const existingUsername = await db
       .select({ id: user.id })
       .from(user)
-      .where(eq(user.username, input.employeeId));
+      .where(eq(user.username, normalizedUsername));
     if (existingUsername.length > 0) {
       throw new ORPCError("CONFLICT", { message: "A user with this Employee ID already exists" });
     }
@@ -111,14 +123,17 @@ export const employeesRouter = {
         },
       });
 
-      await db.update(user).set({ username: input.employeeId }).where(eq(user.id, created.user.id));
+      await db
+        .update(user)
+        .set({ username: normalizedUsername, displayUsername: input.employeeId })
+        .where(eq(user.id, created.user.id));
       await setUserLocations(created.user.id, input.locationIds);
 
       return {
         ...created,
         user: {
           ...created.user,
-          username: input.employeeId,
+          username: normalizedUsername,
           locationIds: input.locationIds,
         },
       };
@@ -141,10 +156,12 @@ export const employeesRouter = {
       throw new ORPCError("CONFLICT", { message: "A user with this email already exists" });
     }
 
+    const normalizedUsername = normalizeUsername(input.employeeId);
+
     const existingUsername = await db
       .select({ id: user.id })
       .from(user)
-      .where(and(eq(user.username, input.employeeId), ne(user.id, input.id)));
+      .where(and(eq(user.username, normalizedUsername), ne(user.id, input.id)));
     if (existingUsername.length > 0) {
       throw new ORPCError("CONFLICT", { message: "A user with this Employee ID already exists" });
     }
@@ -154,7 +171,8 @@ export const employeesRouter = {
       .set({
         name: `${input.firstName} ${input.lastName}`,
         email: input.email,
-        username: input.employeeId,
+        username: normalizedUsername,
+        displayUsername: input.employeeId,
         role: input.role,
       })
       .where(eq(user.id, input.id))

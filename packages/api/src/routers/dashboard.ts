@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, count, desc, eq, gte, inArray, isNull, lt, ne, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { customer, inventoryRecord, invoice, job, payment, user } from "@rim-genie/db/schema";
@@ -238,12 +238,8 @@ export const dashboardRouter = {
 
     const conditions = [gte(invoice.createdAt, start)];
     if (locId) {
-      conditions.push(
-        inArray(
-          invoice.createdById,
-          db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
-        ),
-      );
+      // Same fix as the cashier list — filter on the invoice's own branch.
+      conditions.push(or(eq(invoice.locationId, locId), isNull(invoice.locationId))!);
     }
 
     const rows = await db

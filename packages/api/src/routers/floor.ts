@@ -21,7 +21,6 @@ import {
   rimMaterialEnum,
   brakeUnitEnum,
   powderCoatScopeEnum,
-  user,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
 import {
@@ -331,11 +330,11 @@ export const floorRouter = {
         const search = input?.search?.trim();
         const locId = context.locationId;
 
+        // Match the branch recorded on the quote itself, not the creator's profile
+        // location — see the note on `quote.locationId`. Unstamped legacy rows stay
+        // visible everywhere rather than disappearing.
         const locationFilter = locId
-          ? inArray(
-              quote.createdById,
-              db.select({ id: user.id }).from(user).where(eq(user.locationId, locId)),
-            )
+          ? or(eq(quote.locationId, locId), isNull(quote.locationId))
           : undefined;
 
         const dateFilter = input?.dateFrom
@@ -447,6 +446,7 @@ export const floorRouter = {
           .values({
             customerId: input.customerId,
             createdById: context.session.user.id,
+            locationId: context.locationId,
             status: "draft",
             discountPercent,
             vipDiscountPercent,

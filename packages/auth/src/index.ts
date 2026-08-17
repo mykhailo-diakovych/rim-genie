@@ -23,9 +23,20 @@ async function assertUserCanUseLocation(userId: string, role: string | null, loc
     columns: { userId: true },
   });
 
-  if (!assignment) {
-    throw new APIError("FORBIDDEN", { message: "You are not assigned to this location" });
-  }
+  if (assignment) return;
+
+  // No assignments at all is an account-setup fault, not a wrong-branch mistake.
+  // Separating the two makes a locked-out new hire diagnosable from the message.
+  const anyAssignment = await db.query.userLocation.findFirst({
+    where: (ul, { eq }) => eq(ul.userId, userId),
+    columns: { userId: true },
+  });
+
+  throw new APIError("FORBIDDEN", {
+    message: anyAssignment
+      ? "You are not assigned to this location"
+      : "Your account has no location assigned. Ask an administrator to assign one.",
+  });
 }
 
 export const auth = betterAuth({

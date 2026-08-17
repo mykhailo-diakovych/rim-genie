@@ -55,7 +55,9 @@ const baseFieldsSchema = z.object({
     .max(30)
     .regex(/^[a-zA-Z0-9_.]+$/, m.validation_employee_id_required()),
   role: z.enum(userRoleEnum.enumValues, { message: m.employees_validation_role_required() }),
-  locationIds: z.array(z.string().min(1)),
+  // At least one: the sign-in hook rejects any non-admin with no `userLocation` row,
+  // so an employee created without a location can never log in.
+  locationIds: z.array(z.string().min(1)).min(1, m.employees_validation_location_required()),
 });
 
 const createEmployeeSchema = baseFieldsSchema.extend({
@@ -380,6 +382,10 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
               </form.Field>
             )}
 
+            {locations && locations.length === 0 && (
+              <p className="font-rubik text-xs text-red">{m.employees_no_locations_warning()}</p>
+            )}
+
             {locations && locations.length > 0 && (
               <form.Field name="locationIds">
                 {(field) => {
@@ -393,6 +399,7 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
                       : selectedNames.length === 1
                         ? selectedNames[0]
                         : m.location_count({ count: selectedNames.length });
+                  const hasError = field.state.meta.errors.length > 0;
                   return (
                     <div className="flex flex-col gap-1">
                       <Label>{m.label_location()}</Label>
@@ -403,7 +410,7 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
                               type="button"
                               className={cn(
                                 "flex h-9 w-full items-center justify-between rounded-md border bg-white px-2 font-rubik text-xs leading-3.5 outline-none",
-                                "border-field-line",
+                                hasError ? "border-red/50" : "border-field-line",
                               )}
                             />
                           }
@@ -444,6 +451,11 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
                           })}
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      {hasError && (
+                        <p className="font-rubik text-xs text-red">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
                     </div>
                   );
                 }}

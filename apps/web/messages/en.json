@@ -92,6 +92,8 @@
   "employees_validation_email_required": "Email is required",
   "employees_validation_email_invalid": "Invalid email address",
   "employees_validation_role_required": "Role is required",
+  "employees_validation_location_required": "Assign at least one location — staff cannot sign in without one",
+  "employees_no_locations_warning": "No locations exist yet. Create one under Business Settings → Locations first, otherwise this employee will not be able to sign in.",
   "employees_btn_deactivate": "Deactivate",
   "employees_btn_activate": "Activate",
   "employees_btn_delete": "Delete",
