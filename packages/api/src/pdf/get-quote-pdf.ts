@@ -11,6 +11,7 @@ export async function getQuotePdf(
     where: eq(quote.id, quoteId),
     with: {
       customer: true,
+      createdBy: { columns: { name: true } },
       items: {
         orderBy: (i, { asc }) => [asc(i.sortOrder)],
       },
@@ -27,6 +28,7 @@ export async function getQuotePdf(
     createdAt: quoteRow.createdAt,
     customerReason: quoteRow.customerReason,
     fullDiagnosticConsent: quoteRow.fullDiagnosticConsent,
+    preparedByName: quoteRow.createdBy?.name ?? null,
     customer: quoteRow.customer
       ? {
           name: quoteRow.customer.name,

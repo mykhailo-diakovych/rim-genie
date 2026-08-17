@@ -11,6 +11,7 @@ export async function getInvoicePdf(
     where: eq(invoice.id, invoiceId),
     with: {
       customer: true,
+      createdBy: { columns: { name: true } },
       items: {
         orderBy: (i, { asc }) => [asc(i.sortOrder)],
       },
@@ -20,6 +21,7 @@ export async function getInvoicePdf(
       },
       quote: {
         with: {
+          createdBy: { columns: { name: true } },
           items: {
             where: (i, { eq }) => eq(i.isExcluded, true),
             orderBy: (i, { asc }) => [asc(i.sortOrder)],
@@ -41,6 +43,10 @@ export async function getInvoicePdf(
     total: invoiceRow.total,
     status: invoiceRow.status,
     notes: invoiceRow.notes,
+    // The person who prepared the *quote*, so the customer sees the same name on
+    // the invoice as on the quote it came from. The invoice's own createdBy is
+    // whoever converted it to an invoice, which is a different question.
+    preparedByName: invoiceRow.quote?.createdBy?.name ?? invoiceRow.createdBy?.name ?? null,
     items: invoiceRow.items.map((item) => ({
       id: item.id,
       description: item.description,

@@ -592,6 +592,7 @@ interface QuoteRow {
   total: number;
   status: QuoteStatus;
   createdAt: Date | string;
+  createdBy?: { id: string; name: string } | null;
   items: { id: string; description: string | null; quantity: number; jobTypes: unknown[] }[];
 }
 
@@ -641,6 +642,9 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
                 Date
               </th>
               <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Prepared By
+              </th>
+              <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
                 Quote #
               </th>
               <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
@@ -656,7 +660,7 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
             {quotes.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="border border-field-line px-2 py-6 text-center text-sm text-label"
                 >
                   No quotes yet
@@ -672,6 +676,11 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
                     className={`border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
                   >
                     {formatDate(q.createdAt)}
+                  </td>
+                  <td
+                    className={`border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
+                  >
+                    {q.createdBy?.name ?? "—"}
                   </td>
                   <td
                     className={`border-t border-l border-field-line p-2 text-sm leading-4.5 ${borderB}`}

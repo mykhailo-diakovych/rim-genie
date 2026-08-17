@@ -228,6 +228,7 @@ export const floorRouter = {
           quotes: {
             orderBy: (q, { desc }) => [desc(q.createdAt)],
             with: {
+              createdBy: { columns: { id: true, name: true } },
               items: {
                 orderBy: (i, { asc }) => [asc(i.sortOrder)],
               },
@@ -374,6 +375,7 @@ export const floorRouter = {
             orderBy: (q, { desc }) => [desc(q.createdAt)],
             with: {
               customer: true,
+              createdBy: { columns: { id: true, name: true } },
               items: true,
               invoice: true,
             },
@@ -385,6 +387,7 @@ export const floorRouter = {
           orderBy: (q, { desc }) => [desc(q.createdAt)],
           with: {
             customer: true,
+            createdBy: { columns: { id: true, name: true } },
             items: true,
             invoice: true,
           },
@@ -396,7 +399,9 @@ export const floorRouter = {
         where: eq(quote.id, input.id),
         with: {
           customer: true,
-          createdBy: true,
+          // Name only — the whole user row would put emails and roles on the wire
+          // for something the UI renders as a single line of text.
+          createdBy: { columns: { id: true, name: true } },
           items: {
             orderBy: (i, { asc }) => [asc(i.sortOrder)],
           },

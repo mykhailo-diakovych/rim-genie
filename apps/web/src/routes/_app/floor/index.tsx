@@ -43,6 +43,7 @@ type QuoteListItem = {
   status: string;
   jobRack: string | null;
   customer: { name: string };
+  createdBy?: { id: string; name: string } | null;
 };
 
 function QuoteCard({
@@ -76,6 +77,9 @@ function QuoteCard({
           <span className="size-1 rounded-full bg-ghost" />
           <span className="text-label">Job Rack:</span>
           <span className="text-body">{quote.jobRack ?? "—"}</span>
+          <span className="size-1 rounded-full bg-ghost" />
+          <span className="text-label">Prepared By:</span>
+          <span className="text-body">{quote.createdBy?.name ?? "—"}</span>
         </div>
       </div>
 

@@ -224,6 +224,7 @@ export type QuoteData = {
   createdAt: Date | string | null;
   customerReason: string | null;
   fullDiagnosticConsent: boolean;
+  preparedByName: string | null;
   customer: { name: string; phone: string | null; email: string | null } | null;
   comments: string | null;
   subtotal: number;
@@ -299,6 +300,10 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
             <View style={styles.metaBlock}>
               <Text style={styles.metaLabel}>Quote Date</Text>
               <Text style={styles.metaValue}>{fmtDate(data.createdAt)}</Text>
+            </View>
+            <View style={styles.metaBlock}>
+              <Text style={styles.metaLabel}>Prepared By</Text>
+              <Text style={styles.metaValue}>{data.preparedByName || "—"}</Text>
             </View>
           </View>
           <View style={styles.addressBlock}>

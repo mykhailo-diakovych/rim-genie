@@ -619,6 +619,16 @@ function QuoteEditorPage() {
 
           <div className="h-px bg-field-line" />
 
+          {/* Prepared By — the staff member who raised the quote, read back from the
+              record rather than the current session so it stays correct for whoever
+              opens it later. */}
+          <div className="flex flex-col gap-1">
+            <span className="font-rubik text-xs leading-3.5 text-label">Prepared By:</span>
+            <span className="font-rubik text-sm leading-4.5 text-body">
+              {quote?.createdBy?.name ?? (quoteQuery.isLoading ? "" : "—")}
+            </span>
+          </div>
+
           {/* Footer: Share Quote + Totals */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             {/* Share Quote */}

@@ -250,6 +250,7 @@ export type InvoiceData = {
   total: number;
   status: string;
   notes: string | null;
+  preparedByName: string | null;
   items: Array<{
     id: string;
     description: string | null;
@@ -328,6 +329,10 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
             <View style={styles.metaBlock}>
               <Text style={styles.metaLabel}>Date:</Text>
               <Text style={styles.metaValue}>{fmtDate(data.createdAt)}</Text>
+            </View>
+            <View style={styles.metaBlock}>
+              <Text style={styles.metaLabel}>Prepared By:</Text>
+              <Text style={styles.metaValue}>{data.preparedByName || "—"}</Text>
             </View>
           </View>
           {data.customer && (
