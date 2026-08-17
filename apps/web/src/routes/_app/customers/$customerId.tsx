@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import {
   Dialog,
@@ -65,25 +66,6 @@ function formatBirthday(day: number | null, month: number | null) {
 type CustomerDetail = Awaited<ReturnType<AppRouterClient["floor"]["customers"]["getById"]>>;
 type QuoteStatus = NonNullable<CustomerDetail>["quotes"][number]["status"];
 type JobStatus = NonNullable<CustomerDetail>["invoices"][number]["jobs"][number]["status"];
-
-const STATUS_BG: Record<QuoteStatus | JobStatus, string> = {
-  draft: "bg-ghost",
-  pending: "bg-blue",
-  accepted: "bg-blue",
-  in_progress: "bg-badge-orange",
-  completed: "bg-green",
-};
-
-function StatusBadge({ status }: { status: QuoteStatus | JobStatus }) {
-  const label = status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  return (
-    <span
-      className={`inline-flex items-center justify-center rounded ${STATUS_BG[status]} px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white`}
-    >
-      {label}
-    </span>
-  );
-}
 
 function IconSendQuote({ className }: { className?: string }) {
   return (

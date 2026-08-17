@@ -513,17 +513,20 @@ function QuoteEditorPage() {
                     {!isReadOnly && (
                       <tr className="border-b border-field-line">
                         <td colSpan={6} className="border-r border-l border-field-line px-2 py-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingItem(null);
-                              setSheetOpen(true);
-                            }}
-                            className="flex items-center gap-1.5 rounded-md font-rubik text-sm leading-4.5 text-blue transition-opacity hover:opacity-70"
-                          >
-                            <Plus className="size-4" />
-                            Add Job
-                          </button>
+                          {/* Primary and centered: this is the main action on the
+                              screen and has to be an easy target on a tablet. */}
+                          <div className="flex justify-center">
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                setEditingItem(null);
+                                setSheetOpen(true);
+                              }}
+                            >
+                              <Plus />
+                              Add Job
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     )}

@@ -1,4 +1,3 @@
-
 import { createFileRoute } from "@tanstack/react-router";
 
 import { InventoryJobCard } from "@/components/inventory/inventory-job-card";
@@ -25,10 +24,8 @@ export const Route = createFileRoute("/_app/inventory")({
 });
 
 function InventoryPage() {
-  const [activeTab, setActiveTab] = usePersistedState<TabValue>(
-    "inventory.tab",
-    "overnight",
-    (v) => (TAB_CONFIG.some((t) => t.value === v) ? (v as TabValue) : null),
+  const [activeTab, setActiveTab] = usePersistedState<TabValue>("inventory.tab", "overnight", (v) =>
+    TAB_CONFIG.some((t) => t.value === v) ? (v as TabValue) : null,
   );
   const [dateRange, setDateRange] = usePersistedState<DateRange>(
     "inventory.dateRange",
@@ -40,23 +37,33 @@ function InventoryPage() {
   const { data: counts } = useInventoryCounts(dateFrom, dateTo);
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">Inventory</h1>
-        </div>
-        <DateRangeFilter value={dateRange} onChange={setDateRange} />
-      </div>
-
+    <div className="flex flex-1 flex-col p-3 sm:p-5">
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as TabValue)}>
-        <TabsList className="overflow-x-auto">
-          {TAB_CONFIG.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value} className="shrink-0 gap-1.5">
-              {tab.label}
-              {counts && <TabCounter count={counts[tab.value]} active={activeTab === tab.value} />}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        {/* Title, date filter and tabs travel together and stay put while the list
+            below scrolls, so switching tab never means scrolling back to the top.
+            The negative margins let the background bleed over the page padding,
+            otherwise rows show through the gap as they pass underneath. */}
+        <div className="z-10 -mx-3 -mt-3 flex flex-col gap-5 bg-background px-3 pt-3 pb-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 md:sticky md:top-0">
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-1">
+              <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
+                Inventory
+              </h1>
+            </div>
+            <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          </div>
+
+          <TabsList className="overflow-x-auto">
+            {TAB_CONFIG.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="shrink-0 gap-1.5">
+                {tab.label}
+                {counts && (
+                  <TabCounter count={counts[tab.value]} active={activeTab === tab.value} />
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
         {TAB_CONFIG.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>
             <InventoryJobList tab={tab.value} dateFrom={dateFrom} dateTo={dateTo} />

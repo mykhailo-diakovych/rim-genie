@@ -168,10 +168,8 @@ function CashierPage() {
   const [tab, setTab] = usePersistedState<InvoiceTab>("cashier.tab", "unpaid", (v) =>
     TAB_VALUES.includes(v as InvoiceTab) ? (v as InvoiceTab) : null,
   );
-  const [dateRange, setDateRange] = usePersistedState<DateRange>(
-    "cashier.dateRange",
-    "30d",
-    (v) => parseDateRange(v, "30d"),
+  const [dateRange, setDateRange] = usePersistedState<DateRange>("cashier.dateRange", "30d", (v) =>
+    parseDateRange(v, "30d"),
   );
   const navigate = useNavigate({ from: Route.fullPath });
   const queryClient = useQueryClient();
@@ -219,29 +217,26 @@ function CashierPage() {
   });
 
   return (
-    <div className="flex flex-col gap-4 px-3 pt-4 pb-5 sm:px-5">
-      <div className="flex items-center justify-between">
-        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
-          List of Invoices
-        </h1>
-        <DateRangeFilter
-          value={dateRange}
-          onChange={setDateRange}
-        />
-      </div>
+    <div className="flex flex-col px-3 pt-4 pb-5 sm:px-5">
+      <Tabs value={tab} onValueChange={(value) => setTab(value as InvoiceTab)}>
+        {/* Header + tabs pinned so switching status never means scrolling back up. */}
+        <div className="z-10 -mx-3 -mt-4 flex flex-col gap-4 bg-background px-3 pt-4 pb-3 sm:-mx-5 sm:px-5 md:sticky md:top-0">
+          <div className="flex items-center justify-between">
+            <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
+              List of Invoices
+            </h1>
+            <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          </div>
 
-      <Tabs
-        value={tab}
-        onValueChange={(value) => setTab(value as InvoiceTab)}
-      >
-        <TabsList>
-          {TAB_VALUES.map((value) => (
-            <TabsTrigger key={value} value={value} className="gap-1.5">
-              {TAB_LABELS[value]}
-              <TabCounter count={counts[value]} active={tab === value} />
-            </TabsTrigger>
-          ))}
-        </TabsList>
+          <TabsList>
+            {TAB_VALUES.map((value) => (
+              <TabsTrigger key={value} value={value} className="gap-1.5">
+                {TAB_LABELS[value]}
+                <TabCounter count={counts[value]} active={tab === value} />
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         {TAB_VALUES.map((value) => (
           <TabsContent key={value} value={value}>

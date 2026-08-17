@@ -522,7 +522,9 @@ function ManagePage() {
         onValueChange={(val) => navigate({ search: { tab: val as ManageTab } })}
         className="flex flex-col gap-4 lg:flex-row lg:gap-6"
       >
-        <TabsList className="shrink-0 lg:w-56">
+        {/* Pinned so a long tab (Pricing runs to many rows) scrolls its content
+            without carrying the section nav off-screen with it. */}
+        <TabsList className="shrink-0 lg:sticky lg:top-0 lg:w-56 lg:self-start">
           <TabGroupLabel label="Services" />
           <TabsTrigger value="general">{m.manage_tab_general()}</TabsTrigger>
           <TabsTrigger value="job-types">Job Types</TabsTrigger>

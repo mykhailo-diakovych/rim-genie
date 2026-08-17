@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   DateRangeFilter,
   getDateFrom,
@@ -32,26 +33,6 @@ export const Route = createFileRoute("/_app/floor/")({
   }),
   component: FloorPage,
 });
-
-// ─── Status Badge ─────────────────────────────────────────────────────────────
-
-const STATUS_BG: Record<string, string> = {
-  draft: "bg-ghost",
-  pending: "bg-blue",
-  in_progress: "bg-badge-orange",
-  completed: "bg-green",
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const label = status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  return (
-    <span
-      className={`inline-flex items-center justify-center rounded ${STATUS_BG[status] ?? "bg-ghost"} px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white`}
-    >
-      {label}
-    </span>
-  );
-}
 
 // ─── Quote Card ───────────────────────────────────────────────────────────────
 

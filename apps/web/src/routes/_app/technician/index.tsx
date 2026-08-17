@@ -75,20 +75,21 @@ function TechnicianPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Jobs</h1>
+    <div className="flex flex-1 flex-col p-3 sm:p-5">
+      {/* Header + tab bar pinned so switching tab never means scrolling back up. */}
+      <div className="z-10 -mx-3 -mt-3 flex flex-col gap-5 bg-background px-3 pt-3 pb-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 md:sticky md:top-0">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Jobs</h1>
 
-        <FilterRow
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          technicians={technicians}
-          technicianId={technicianId}
-          onTechnicianIdChange={setTechnicianId}
-        />
-      </div>
+          <FilterRow
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            technicians={technicians}
+            technicianId={technicianId}
+            onTechnicianIdChange={setTechnicianId}
+          />
+        </div>
 
-      <div>
         {/* Animated tab bar */}
         <div ref={listRef} className="relative flex border-b border-field-line">
           {TAB_CONFIG.map((tab) => {
@@ -127,7 +128,9 @@ function TechnicianPage() {
             />
           )}
         </div>
+      </div>
 
+      <div>
         {isLoading && (
           <div className="flex flex-col gap-2 pt-3">
             {Array.from({ length: 3 }, (_, i) => (

@@ -113,11 +113,15 @@ const generalSchema = z.object({
 export function FloorCheckbox({
   checked,
   onCheckedChange,
+  label,
+  className,
 }: {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
+  label?: string;
+  className?: string;
 }) {
-  return (
+  const box = (
     <CheckboxPrimitive.Root
       checked={checked}
       onCheckedChange={onCheckedChange}
@@ -127,6 +131,17 @@ export function FloorCheckbox({
         <Check className="size-3" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
+  );
+
+  if (label == null) return box;
+
+  // Pass the label through rather than sitting it in a sibling <span>: wrapping both
+  // in a <label> makes the text a hit target too, instead of just the 20px box.
+  return (
+    <label className={cn("flex cursor-pointer items-center gap-1.5", className)}>
+      {box}
+      <span className="font-rubik text-sm leading-[18px] text-body">{label}</span>
+    </label>
   );
 }
 
@@ -953,10 +968,9 @@ export function QuoteGeneratorSheet({
                             <FloorCheckbox
                               checked={isChecked}
                               onCheckedChange={(c) => toggleRimJob(job.key, !!c)}
+                              label={job.label}
+                              className="flex-1"
                             />
-                            <span className="font-rubik text-sm leading-[18px] text-body">
-                              {job.label}
-                            </span>
                             {displayUnit != null ? (
                               <span className="ml-auto font-rubik text-base font-semibold text-body">
                                 $
@@ -1497,10 +1511,9 @@ export function QuoteGeneratorSheet({
                                       });
                                     }
                                   }}
+                                  label={svc.label}
+                                  className="flex-1"
                                 />
-                                <span className="font-rubik text-sm leading-[18px] text-body">
-                                  {svc.label}
-                                </span>
                                 {tirePrices?.[svc.key]?.found ? (
                                   <span className="ml-auto font-rubik text-base font-semibold text-body">
                                     $
@@ -1594,10 +1607,9 @@ export function QuoteGeneratorSheet({
                                     setCheckedServices((prev) => ({ ...prev, [svc.value]: !!c }));
                                     if (c) setServiceTypeError(null);
                                   }}
+                                  label={svc.label}
+                                  className="flex-1"
                                 />
-                                <span className="font-rubik text-sm leading-[18px] text-body">
-                                  {svc.label}
-                                </span>
                                 {priceReady && brakeUnitCost > 0 ? (
                                   <span className="ml-auto font-rubik text-base font-semibold text-body">
                                     $
