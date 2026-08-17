@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SetPinRouteImport } from './routes/set-pin'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
@@ -38,6 +39,11 @@ import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$qu
 import { Route as ApiInvoicesInvoiceIdPdfRouteImport } from './routes/api/invoices/$invoiceId/pdf'
 import { Route as AppCashierInvoiceIdCheckoutRouteImport } from './routes/_app/cashier/$invoiceId/checkout'
 
+const SetPinRoute = SetPinRouteImport.update({
+  id: '/set-pin',
+  path: '/set-pin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
@@ -182,6 +188,7 @@ const AppCashierInvoiceIdCheckoutRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/set-pin': typeof SetPinRoute
   '/cashier': typeof AppCashierRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
+  '/set-pin': typeof SetPinRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/inventory': typeof AppInventoryRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
+  '/set-pin': typeof SetPinRoute
   '/_app/cashier': typeof AppCashierRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/set-pin'
     | '/cashier'
     | '/dashboard'
     | '/employees'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/set-pin'
     | '/dashboard'
     | '/employees'
     | '/inventory'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_auth'
+    | '/set-pin'
     | '/_app/cashier'
     | '/_app/dashboard'
     | '/_app/employees'
@@ -353,6 +365,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  SetPinRoute: typeof SetPinRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiInvoicesInvoiceIdPdfRoute: typeof ApiInvoicesInvoiceIdPdfRoute
@@ -362,6 +375,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/set-pin': {
+      id: '/set-pin'
+      path: '/set-pin'
+      fullPath: '/set-pin'
+      preLoaderRoute: typeof SetPinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_auth': {
       id: '/_auth'
       path: ''
@@ -651,6 +671,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  SetPinRoute: SetPinRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiInvoicesInvoiceIdPdfRoute: ApiInvoicesInvoiceIdPdfRoute,

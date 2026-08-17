@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Power, Trash2 } from "lucide-react";
+import { Mail, Plus, Power, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -102,6 +102,12 @@ function EmployeeActions({ employee }: { employee: EmployeeCardData }) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const resendInvite = useMutation({
+    mutationFn: () => orpc.employees.resendInvite.call({ userId: employee.id }),
+    onSuccess: () => toast.success(m.employees_toast_invite_sent({ email: employee.email })),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const isDeactivated = employee.banned === true;
 
   if (isDeactivated) {
@@ -153,6 +159,16 @@ function EmployeeActions({ employee }: { employee: EmployeeCardData }) {
           </Button>
         }
       />
+      <Button
+        variant="outline"
+        onClick={() => resendInvite.mutate()}
+        disabled={resendInvite.isPending}
+      >
+        <Mail />
+        {resendInvite.isPending
+          ? m.employees_btn_sending_invite()
+          : m.employees_btn_resend_invite()}
+      </Button>
       <Button variant="outline" color="destructive" onClick={() => setDeactivateOpen(true)}>
         <Power />
         {m.employees_btn_deactivate()}

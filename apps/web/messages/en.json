@@ -95,6 +95,9 @@
   "employees_validation_location_required": "Assign at least one location — staff cannot sign in without one",
   "employees_no_locations_warning": "No locations exist yet. Create one under Business Settings → Locations first, otherwise this employee will not be able to sign in.",
   "employees_btn_deactivate": "Deactivate",
+  "employees_btn_resend_invite": "Resend invite",
+  "employees_btn_sending_invite": "Sending...",
+  "employees_toast_invite_sent": "Invite sent to {email}",
   "employees_btn_activate": "Activate",
   "employees_btn_delete": "Delete",
   "employees_badge_deactivated": "Deactivated",
@@ -135,7 +138,6 @@
   "customers_validation_last_name_required": "Last name is required",
   "customers_toast_created": "Customer created successfully",
   "customers_toast_updated": "Customer updated successfully",
-
   "manage_title": "Service Management",
   "manage_subtitle": "Manage services, pricing, and business configuration.",
   "manage_btn_add_service": "Add New Service",
@@ -173,7 +175,6 @@
   "manage_pagination_show": "Show",
   "manage_pagination_of": "of",
   "manage_pagination_entries": "entries",
-
   "loyalty_title": "Loyalty Program",
   "loyalty_stats_title": "Loyalty Stats",
   "loyalty_purchases": "Purchases",
@@ -190,7 +191,6 @@
   "loyalty_reward_percent": "Reward Discount %",
   "loyalty_reward_percent_desc": "Discount percentage for loyal customers",
   "loyalty_toast_updated": "Loyalty config updated",
-
   "search_placeholder": "Search customers, quotes, invoices…",
   "search_group_customers": "Customers",
   "search_group_quotes": "Quotes",
