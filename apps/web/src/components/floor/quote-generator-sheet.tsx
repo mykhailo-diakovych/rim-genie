@@ -205,9 +205,12 @@ export function QuoteGeneratorSheet({
     material: "",
   });
 
-  // Welding tab selects
+  // Welding tab selects. The length is mirrored here (as the material already was)
+  // because the running total lives outside the form's render prop and cannot read
+  // field state directly.
   const [weldingSelects, setWeldingSelects] = useState({
     materialType: "",
+    lengthOfWeld: "",
   });
 
   // Powder coating tab selects
@@ -446,7 +449,8 @@ export function QuoteGeneratorSheet({
 
       const weldingJobType = value.materialType.toLowerCase().replace(/\s+/g, "-");
       const perInch = weldingPrices?.[weldingJobType]?.unitCost ?? 0;
-      const weldingUnitCost = perInch > 0 ? perInch * inches : (editItem?.unitCost ?? 0);
+      // Per-inch rate — `inches` is the multiplier, applied server-side.
+      const weldingUnitCost = perInch > 0 ? perInch : (editItem?.unitCost ?? 0);
 
       const data: QuoteGeneratorSheetData = {
         vehicleSize: null,
@@ -624,7 +628,7 @@ export function QuoteGeneratorSheet({
     if (editItem.itemType === "welding") {
       setTab("other-welding");
       const mt = editItem.sideOfVehicle ?? "";
-      setWeldingSelects({ materialType: mt });
+      setWeldingSelects({ materialType: mt, lengthOfWeld: String(editItem.inches ?? "") });
       weldingForm.reset({
         materialType: mt,
         lengthOfWeld: String(editItem.inches ?? ""),
@@ -728,7 +732,7 @@ export function QuoteGeneratorSheet({
     setGeneralComments("");
     setSpotQty("1");
     setRimSelects({ rimSize: "", vehicleType: "", material: "" });
-    setWeldingSelects({ materialType: "" });
+    setWeldingSelects({ materialType: "", lengthOfWeld: "" });
     setPcSelects({ rimSize: "", scope: "", colorCount: "" });
     setPcColors([]);
     setPcQty("1");
@@ -1128,7 +1132,13 @@ export function QuoteGeneratorSheet({
                         min="1"
                         value={field.state.value}
                         onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
+                        onChange={(e) => {
+                          field.handleChange(e.target.value);
+                          setWeldingSelects((prev) => ({
+                            ...prev,
+                            lengthOfWeld: e.target.value,
+                          }));
+                        }}
                         placeholder="Enter length"
                         className={cn(
                           "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
@@ -1764,9 +1774,14 @@ export function QuoteGeneratorSheet({
                     maximumFractionDigits: 2,
                   });
                 }
-                if (tab === "welding") {
+                // The tab is "other-welding" everywhere else in this file; this branch
+                // compared against "welding", never matched, and fell through to the
+                // editItem fallback — which is why a new weld always read $0.00.
+                if (tab === "other-welding") {
                   const wjt = weldingSelects.materialType.toLowerCase().replace(/\s+/g, "-");
-                  return ((weldingPrices?.[wjt]?.unitCost ?? 0) / 100).toLocaleString("en-US", {
+                  const perInch = weldingPrices?.[wjt]?.unitCost ?? 0;
+                  const inches = parseInt(weldingSelects.lengthOfWeld, 10) || 0;
+                  return ((perInch * inches) / 100).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   });

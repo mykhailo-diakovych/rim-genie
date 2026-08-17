@@ -693,7 +693,9 @@ export const floorRouter = {
       }),
 
     send: floorManagerProcedure
-      .input(z.object({ quoteId: z.string() }))
+      // `channel` lets the sender override the customer's stored preference — e.g.
+      // their preferred channel has no address on file. Omitted, the preference wins.
+      .input(z.object({ quoteId: z.string(), channel: z.enum(["email", "sms"]).optional() }))
       .handler(async ({ input }) => {
         return runEffect(
           Effect.gen(function* () {
@@ -707,9 +709,10 @@ export const floorRouter = {
             if (!quoteRow) return yield* Effect.fail(new QuoteNotFound({ id: input.quoteId }));
 
             const cust = quoteRow.customer;
-            const pref = cust?.communicationPreference ?? "sms";
+            const channel =
+              input.channel ?? (cust?.communicationPreference === "email" ? "email" : "sms");
 
-            if (pref === "email") {
+            if (channel === "email") {
               if (!cust?.email) {
                 return yield* Effect.fail(
                   new CustomerHasNoEmail({ customerId: quoteRow.customerId }),

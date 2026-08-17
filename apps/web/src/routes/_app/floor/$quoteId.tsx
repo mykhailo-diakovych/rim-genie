@@ -40,6 +40,7 @@ import { authClient } from "@/lib/auth-client";
 import { formatCents, formatDollars } from "@/lib/format-currency";
 import { client, orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
+import { SendQuoteDialog } from "@/components/floor/send-quote-dialog";
 import type {
   QuoteGeneratorSheetData,
   QuoteGeneratorEditItem,
@@ -195,14 +196,6 @@ function QuoteEditorPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const sendQuote = useMutation({
-    ...orpc.floor.quotes.send.mutationOptions(),
-    onSuccess: () => {
-      toast.success("Quote sent to customer");
-      setSendQuoteConfirm(false);
-    },
-    onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
-  });
 
   const sendToCashier = useMutation({
     ...orpc.floor.quotes.sendToCashier.mutationOptions(),
@@ -600,11 +593,7 @@ function QuoteEditorPage() {
                   Sign Disclaimer
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={() => setSendQuoteConfirm(true)}
-                disabled={sendQuote.isPending}
-              >
+              <Button variant="outline" onClick={() => setSendQuoteConfirm(true)}>
                 <Send />
                 Send Quote
               </Button>
@@ -859,40 +848,11 @@ function QuoteEditorPage() {
         onSign={(dataUrl) => signDisclaimer.mutate({ quoteId, signatureDataUrl: dataUrl })}
       />
 
-      {/* Send Quote Confirmation */}
-      <Dialog open={sendQuoteConfirm} onOpenChange={setSendQuoteConfirm}>
-        <DialogContent>
-          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-blue/10 bg-blue/20">
-                <Send className="size-6 text-blue" />
-              </div>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <DialogTitle>Send Quote to Customer?</DialogTitle>
-                <DialogDescription>
-                  You are about to send the quote to customer via email, click Send.
-                </DialogDescription>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose
-                render={
-                  <Button variant="ghost" type="button">
-                    Cancel
-                  </Button>
-                }
-              />
-              <Button
-                className="w-32"
-                onClick={() => sendQuote.mutate({ quoteId })}
-                disabled={sendQuote.isPending}
-              >
-                Send Quote
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SendQuoteDialog
+        quoteId={sendQuoteConfirm ? quoteId : null}
+        customer={quote?.customer}
+        onClose={() => setSendQuoteConfirm(false)}
+      />
 
       {/* Send to Cashier Confirmation */}
       <Dialog open={sendToCashierConfirm} onOpenChange={setSendToCashierConfirm}>

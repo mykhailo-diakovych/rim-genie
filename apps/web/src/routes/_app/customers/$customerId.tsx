@@ -7,6 +7,10 @@ import { toast } from "sonner";
 
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { NewQuoteSheet } from "@/components/floor/new-quote-sheet";
+import {
+  SendQuoteDialog,
+  type SendQuoteCustomer,
+} from "@/components/floor/send-quote-dialog";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
@@ -546,7 +550,7 @@ function CustomerProfilePage() {
           </Button>
         </div>
 
-        <QuotesTable quotes={latestQuotes} />
+        <QuotesTable quotes={latestQuotes} customer={customer} />
       </div>
 
       <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
@@ -596,7 +600,13 @@ interface QuoteRow {
   items: { id: string; description: string | null; quantity: number; jobTypes: unknown[] }[];
 }
 
-function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
+function QuotesTable({
+  quotes,
+  customer,
+}: {
+  quotes: QuoteRow[];
+  customer: SendQuoteCustomer | null | undefined;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
@@ -613,14 +623,6 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
     }),
   );
 
-  const sendQuote = useMutation({
-    ...orpc.floor.quotes.send.mutationOptions(),
-    onSuccess: () => {
-      toast.success("Quote sent to customer");
-      setSendQuoteId(null);
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
 
   const sendToCashier = useMutation({
     ...orpc.floor.quotes.sendToCashier.mutationOptions(),
@@ -757,40 +759,11 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
         </table>
       </div>
 
-      {/* Send Quote Confirmation */}
-      <Dialog
-        open={!!sendQuoteId}
-        onOpenChange={(open) => {
-          if (!open) setSendQuoteId(null);
-        }}
-      >
-        <DialogContent>
-          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <DialogTitle>Send Quote to Customer?</DialogTitle>
-              <DialogDescription>
-                You are about to send the quote to customer via email, click Send.
-              </DialogDescription>
-            </div>
-            <DialogFooter>
-              <DialogClose
-                render={
-                  <Button variant="ghost" type="button">
-                    Cancel
-                  </Button>
-                }
-              />
-              <Button
-                className="w-32"
-                onClick={() => sendQuoteId && sendQuote.mutate({ quoteId: sendQuoteId })}
-                disabled={sendQuote.isPending}
-              >
-                Send Quote
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SendQuoteDialog
+        quoteId={sendQuoteId}
+        customer={customer}
+        onClose={() => setSendQuoteId(null)}
+      />
 
       {/* To Cashier Confirmation */}
       <Dialog

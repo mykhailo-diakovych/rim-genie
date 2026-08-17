@@ -220,9 +220,10 @@ export async function computeItemPrice(params: ComputeItemPriceParams): Promise<
   if (category === "welding") {
     const materialJobType = params.jobTypes[0]?.subType?.toLowerCase().replace(/\s+/g, "-");
     if (!materialJobType) return 0;
-    const perInch = await lookupPrice({ category, jobType: materialJobType });
-    if (perInch == null) return 0;
-    return perInch * (params.inches ?? 0);
+    // Return the per-inch rate, not the line total. Every consumer multiplies by
+    // `inches` (see recalcQuoteTotal and the invoice subtotal), so returning
+    // perInch * inches here applied the length twice and squared the price.
+    return (await lookupPrice({ category, jobType: materialJobType })) ?? 0;
   }
 
   if (category === "powder_coating") {
