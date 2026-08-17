@@ -45,7 +45,21 @@ import type {
   QuoteGeneratorEditItem,
 } from "@/components/floor/quote-generator-sheet";
 
+// Where the user opened this quote from, so Back returns there instead of always
+// dumping them on the quote list. A closed set rather than a free-form URL: the
+// customer path is rebuilt from the quote's own customerId, so nothing
+// navigable comes out of the query string.
+const QUOTE_ORIGINS = ["floor", "customer"] as const;
+type QuoteOrigin = (typeof QUOTE_ORIGINS)[number];
+
 export const Route = createFileRoute("/_app/floor/$quoteId")({
+  // Optional: links that don't care (global search, redirects) omit it and get the
+  // quote list, which is the old behaviour.
+  validateSearch: (search: Record<string, unknown>): { from?: QuoteOrigin } => ({
+    from: QUOTE_ORIGINS.includes(search.from as QuoteOrigin)
+      ? (search.from as QuoteOrigin)
+      : undefined,
+  }),
   head: () => ({
     meta: [{ title: "Rim-Genie | Quote" }],
   }),
@@ -62,6 +76,7 @@ function Skeleton({ className }: { className?: string }) {
 
 function QuoteEditorPage() {
   const { quoteId } = Route.useParams();
+  const { from } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -270,10 +285,23 @@ function QuoteEditorPage() {
       <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
         {/* Action bar */}
         <StickyActionBar className="justify-between gap-y-2">
-          <Button variant="outline" nativeButton={false} render={<Link to="/floor" />}>
-            <ArrowLeft />
-            Back to list
-          </Button>
+          {from === "customer" && quote?.customerId ? (
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={
+                <Link to="/customers/$customerId" params={{ customerId: quote.customerId }} />
+              }
+            >
+              <ArrowLeft />
+              Back to customer
+            </Button>
+          ) : (
+            <Button variant="outline" nativeButton={false} render={<Link to="/floor" />}>
+              <ArrowLeft />
+              Back to list
+            </Button>
+          )}
 
           <div className="flex items-center gap-2">
             {!isReadOnly && (

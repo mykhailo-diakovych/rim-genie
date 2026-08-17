@@ -13,20 +13,33 @@ import { AddNewClientDialog } from "./add-new-client-dialog";
 interface NewQuoteSheetProps {
   open: boolean;
   onClose: () => void;
+  /**
+   * Pre-selected customer. When set, the lookup is replaced by a fixed row — the
+   * quote can only be for this customer. Used when starting from a customer
+   * profile, so that route goes through this same sheet and collects the reason
+   * for visit and diagnostic consent like every other entry point.
+   */
+  customer?: { id: string; name: string };
 }
 
-export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
+export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const lockedCustomerId = customer?.id ?? null;
+
   const [query, setQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(lockedCustomerId);
   const [customerReason, setCustomerReason] = useState("");
   const [fullDiagnosticConsent, setFullDiagnosticConsent] = useState(false);
+
+  useEffect(() => {
+    setSelectedCustomerId(lockedCustomerId);
+  }, [lockedCustomerId]);
 
   const searchQuery = useQuery({
     ...orpc.floor.customers.search.queryOptions({ input: { query } }),
@@ -37,7 +50,12 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
     ...orpc.floor.quotes.create.mutationOptions(),
     onSuccess: async (q) => {
       await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
-      void navigate({ to: "/floor/$quoteId", params: { quoteId: q.id } });
+      void navigate({
+        to: "/floor/$quoteId",
+        params: { quoteId: q.id },
+        // Remember the entry point so Back returns there, not to the quote list.
+        search: { from: customer ? "customer" : "floor" },
+      });
       handleClose();
     },
     onError: (err) => {
@@ -78,7 +96,7 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
     setQuery("");
     setShowDropdown(false);
     setShowAddClient(false);
-    setSelectedCustomerId(null);
+    setSelectedCustomerId(lockedCustomerId);
     setCustomerReason("");
     setFullDiagnosticConsent(false);
     onClose();
@@ -135,7 +153,19 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
 
         {/* Scrollable content */}
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 pt-4 pb-10">
-          {/* Client Lookup row */}
+          {/* Customer is fixed when the quote was started from their profile —
+              show who it is for rather than a lookup that can only have one answer. */}
+          {customer ? (
+            <div className="flex flex-col gap-1">
+              <span className="font-rubik text-xs leading-3.5 text-label">Customer:</span>
+              <div className="flex h-9 items-center rounded-lg border border-field-line bg-page px-2">
+                <span className="truncate font-rubik text-xs leading-3.5 font-medium text-body">
+                  {customer.name}
+                </span>
+              </div>
+            </div>
+          ) : (
+          /* Client Lookup row */
           <div className="flex flex-col gap-2">
             {/* Select input */}
             <div className="relative flex flex-col gap-1">
@@ -219,6 +249,7 @@ export function NewQuoteSheet({ open, onClose }: NewQuoteSheetProps) {
               </button>
             </div>
           </div>
+          )}
 
           {/* Customer's reason for today's visit */}
           <div className="flex flex-col gap-1">

@@ -6,6 +6,7 @@ import { Award, ChevronLeft, Mail, Pencil, Percent, Phone, Plus, Trash2 } from "
 import { toast } from "sonner";
 
 import { CustomerModal } from "@/components/customers/customer-modal";
+import { NewQuoteSheet } from "@/components/floor/new-quote-sheet";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
@@ -397,8 +398,6 @@ function RequestDiscountDialog({
 
 function CustomerProfilePage() {
   const { customerId } = Route.useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
@@ -411,16 +410,10 @@ function CustomerProfilePage() {
     orpc.discount.pendingForCustomer.queryOptions({ input: { customerId } }),
   );
 
-  const createQuoteMutation = useMutation({
-    mutationFn: () => client.floor.quotes.create({ customerId }),
-    onSuccess: (newQuote) => {
-      void queryClient.invalidateQueries({
-        queryKey: orpc.floor.customers.getById.key({ input: { id: customerId } }),
-      });
-      void navigate({ to: "/floor/$quoteId", params: { quoteId: newQuote.id } });
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
+  // Quotes started here go through NewQuoteSheet like every other entry point, so
+  // the reason for visit and diagnostic consent are always collected. Creating the
+  // quote straight from this button skipped both.
+  const [showNewQuote, setShowNewQuote] = useState(false);
 
   const quotes = customer?.quotes ?? [];
   const latestQuotes = quotes.slice(0, 10);
@@ -547,12 +540,9 @@ function CustomerProfilePage() {
       <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
         <div className="flex items-center justify-between">
           <h2 className="font-rubik text-base leading-5 font-medium text-body">Latest Quotes</h2>
-          <Button
-            disabled={createQuoteMutation.isPending}
-            onClick={() => createQuoteMutation.mutate()}
-          >
+          <Button disabled={!customer} onClick={() => setShowNewQuote(true)}>
             <Plus />
-            {createQuoteMutation.isPending ? "Creating..." : "Add Quote"}
+            Add Quote
           </Button>
         </div>
 
@@ -563,6 +553,14 @@ function CustomerProfilePage() {
         <h2 className="font-rubik text-base leading-5 font-medium text-body">Latest Jobs</h2>
         <JobsTable jobs={latestJobs} />
       </div>
+
+      {customer && (
+        <NewQuoteSheet
+          open={showNewQuote}
+          onClose={() => setShowNewQuote(false)}
+          customer={{ id: customer.id, name: customer.name }}
+        />
+      )}
     </div>
   );
 }
@@ -681,7 +679,11 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
                     <button
                       type="button"
                       onClick={() =>
-                        void navigate({ to: "/floor/$quoteId", params: { quoteId: q.id } })
+                        void navigate({
+                          to: "/floor/$quoteId",
+                          params: { quoteId: q.id },
+                          search: { from: "customer" },
+                        })
                       }
                       className="cursor-pointer text-blue underline"
                     >
@@ -722,7 +724,11 @@ function QuotesTable({ quotes }: { quotes: QuoteRow[] }) {
                           size="sm"
                           variant="outline"
                           onClick={() =>
-                            void navigate({ to: "/floor/$quoteId", params: { quoteId: q.id } })
+                            void navigate({
+                          to: "/floor/$quoteId",
+                          params: { quoteId: q.id },
+                          search: { from: "customer" },
+                        })
                           }
                         >
                           <Pencil />
@@ -943,7 +949,11 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
                     <button
                       type="button"
                       onClick={() =>
-                        void navigate({ to: "/floor/$quoteId", params: { quoteId: job.quoteId } })
+                        void navigate({
+                          to: "/floor/$quoteId",
+                          params: { quoteId: job.quoteId },
+                          search: { from: "customer" },
+                        })
                       }
                       className="cursor-pointer text-blue underline"
                     >
