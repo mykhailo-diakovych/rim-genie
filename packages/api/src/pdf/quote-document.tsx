@@ -1,5 +1,8 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { resolveLogoPath } from "./logo";
+import type { JobTypeEntry } from "@rim-genie/db/schema";
+import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
+
+import { LOGO_DATA_URI } from "./logo";
 import { formatCents } from "../lib/format-currency";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -109,7 +112,7 @@ const styles = StyleSheet.create({
   },
   colNum: { width: 28 },
   colDesc: { flex: 1 },
-  colQty: { width: 40, textAlign: "center" },
+  colQty: { width: 96, textAlign: "center" },
   colUnit: { width: 64, textAlign: "right" },
   colTotal: { width: 64, textAlign: "right" },
   headerCell: {
@@ -238,6 +241,8 @@ export type QuoteData = {
     quantity: number;
     unitCost: number;
     inches: number | null;
+    itemType: string;
+    jobTypes: JobTypeEntry[];
   }>;
   excludedServices: Array<{
     id: string;
@@ -257,20 +262,15 @@ function fmtDate(d: Date | string | null | undefined): string {
   });
 }
 
-// ─── Logo path (resolved relative to CWD at render time) ─────────────────────
-
-
 // ─── Document ─────────────────────────────────────────────────────────────────
 
 export function QuoteDocument({ data }: { data: QuoteData }) {
-  const logoPath = resolveLogoPath();
-
   return (
     <Document title={`Quote #${data.quoteNumber}`}>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          {logoPath && <Image src={logoPath} style={styles.logo} />}
+          <Image src={LOGO_DATA_URI} style={styles.logo} />
           <Text style={styles.quoteTitle}>Quote #{data.quoteNumber}</Text>
         </View>
 
@@ -341,9 +341,7 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
 
           {/* Item rows */}
           {data.items.map((item, idx) => {
-            const rowTotal = item.inches
-              ? item.inches * item.unitCost
-              : item.quantity * item.unitCost;
+            const rowTotal = lineTotalCents(item);
             return (
               <View style={styles.tableRow} key={item.id}>
                 <Text style={[styles.cell, styles.colNum]}>{idx + 2}</Text>
@@ -353,9 +351,7 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
                     <Text style={styles.itemComments}>Comments: {item.comments}</Text>
                   )}
                 </View>
-                <Text style={[styles.cell, styles.colQty]}>
-                  {item.inches ? `${item.inches}"` : item.quantity}
-                </Text>
+                <Text style={[styles.cell, styles.colQty]}>{lineQuantityLabel(item)}</Text>
                 <Text style={[styles.cell, styles.colUnit]}>{formatCents(item.unitCost)}</Text>
                 <Text style={[styles.cell, styles.colTotal]}>{formatCents(rowTotal)}</Text>
               </View>
@@ -421,9 +417,11 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
               <Text style={styles.subtotalLabel}>Subtotal:</Text>
               <Text style={styles.subtotalValue}>{formatCents(data.subtotal)}</Text>
             </View>
-            {data.discountPercent > 0 && (
+            {data.discountAmount > 0 && (
               <View style={styles.subtotalRow}>
-                <Text style={styles.subtotalLabel}>Discount ({data.discountPercent}%):</Text>
+                <Text style={styles.subtotalLabel}>
+                  {data.discountPercent > 0 ? `Discount (${data.discountPercent}%):` : "Discount:"}
+                </Text>
                 <Text style={styles.subtotalValue}>-{formatCents(data.discountAmount)}</Text>
               </View>
             )}

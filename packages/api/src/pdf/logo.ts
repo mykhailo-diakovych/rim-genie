@@ -1,16 +1,12 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
+import { LOGO_PNG_BASE64 } from "./logo-data.generated";
 
-const CANDIDATES = [
-  path.resolve(process.cwd(), "public/logo.png"),
-  path.resolve(process.cwd(), "apps/web/public/logo.png"),
-  path.resolve(process.cwd(), "../../apps/web/public/logo.png"),
-];
+// Bytes embedded in the bundle (via scripts/generate-logo-data.ts) — no runtime fs/cwd dependency.
 
-let cached: string | null | undefined;
+export const LOGO_DATA_URI = `data:image/png;base64,${LOGO_PNG_BASE64}`;
 
-export function resolveLogoPath(): string | null {
-  if (cached !== undefined) return cached;
-  cached = CANDIDATES.find(existsSync) ?? null;
-  return cached;
+let cachedBuffer: Buffer | undefined;
+
+export function getLogoBuffer(): Buffer {
+  cachedBuffer ??= Buffer.from(LOGO_PNG_BASE64, "base64");
+  return cachedBuffer;
 }

@@ -1,5 +1,8 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { resolveLogoPath } from "./logo";
+import type { JobTypeEntry } from "@rim-genie/db/schema";
+import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
+
+import { LOGO_DATA_URI } from "./logo";
 import { formatCents } from "../lib/format-currency";
 
 const styles = StyleSheet.create({
@@ -115,7 +118,7 @@ const styles = StyleSheet.create({
   },
   colNum: { width: 28 },
   colDesc: { flex: 1 },
-  colQty: { width: 40, textAlign: "center" },
+  colQty: { width: 96, textAlign: "center" },
   colUnit: { width: 64, textAlign: "right" },
   colTotal: { width: 64, textAlign: "right" },
   headerCell: {
@@ -257,6 +260,9 @@ export type InvoiceData = {
     comments: string | null;
     quantity: number;
     unitCost: number;
+    inches: number | null;
+    itemType: string;
+    jobTypes: JobTypeEntry[];
   }>;
   excludedServices: Array<{
     id: string;
@@ -296,9 +302,7 @@ const statusMeta: Record<string, { label: string; color: string }> = {
   unpaid: { label: "Unpaid", color: "#ef4444" },
 };
 
-
 export function InvoiceDocument({ data }: { data: InvoiceData }) {
-  const logoPath = resolveLogoPath();
   const totalPaid = data.payments.reduce((sum, p) => sum + p.amount, 0);
   const balance = data.total - totalPaid;
   const status = statusMeta[data.status] ?? { label: data.status, color: "#999" };
@@ -308,7 +312,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          {logoPath && <Image src={logoPath} style={styles.logo} />}
+          <Image src={LOGO_DATA_URI} style={styles.logo} />
           <View style={styles.titleBlock}>
             <Text style={styles.title}>Invoice</Text>
             <Text style={[styles.statusBadge, { backgroundColor: status.color }]}>
@@ -382,10 +386,10 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
                   <Text style={styles.itemComments}>Comments: {item.comments}</Text>
                 )}
               </View>
-              <Text style={[styles.cell, styles.colQty]}>{item.quantity}</Text>
+              <Text style={[styles.cell, styles.colQty]}>{lineQuantityLabel(item)}</Text>
               <Text style={[styles.cell, styles.colUnit]}>{formatCents(item.unitCost)}</Text>
               <Text style={[styles.cell, styles.colTotal]}>
-                {formatCents(item.quantity * item.unitCost)}
+                {formatCents(lineTotalCents(item))}
               </Text>
             </View>
           ))}
