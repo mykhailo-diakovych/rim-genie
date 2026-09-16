@@ -154,7 +154,7 @@ function InvoiceCard({
           variant="outline"
           color="destructive"
           onClick={onDelete}
-          disabled={isDeleting || invoice.status === "unpaid"}
+          disabled={isDeleting || invoice.status !== "unpaid"}
         >
           <Trash2 />
           Delete
