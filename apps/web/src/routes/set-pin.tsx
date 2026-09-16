@@ -120,17 +120,11 @@ function SetPinPage() {
         <div className="flex flex-col gap-1">
           <Label>Confirm PIN</Label>
           <PinInput value={confirmPin} onChange={setConfirmPin} />
-          {mismatch && (
-            <p className="font-rubik text-xs text-red">Both PINs must match.</p>
-          )}
+          {mismatch && <p className="font-rubik text-xs text-red">Both PINs must match.</p>}
         </div>
       </div>
 
-      <Button
-        fullWidth
-        disabled={!canSubmit}
-        onClick={() => setPinMutation.mutate({ token, pin })}
-      >
+      <Button fullWidth disabled={!canSubmit} onClick={() => setPinMutation.mutate({ token, pin })}>
         {setPinMutation.isPending ? "Saving..." : "Set my PIN"}
       </Button>
 

@@ -15,7 +15,7 @@ export function JobCard({ group, onView }: { group: JobGroup; onView: () => void
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center">
       <div className="flex flex-1 flex-col gap-1">
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex flex-wrap items-center gap-4">
           <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {group.customer}
           </span>

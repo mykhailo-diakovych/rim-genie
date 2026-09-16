@@ -7,10 +7,7 @@ import { toast } from "sonner";
 
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { NewQuoteSheet } from "@/components/floor/new-quote-sheet";
-import {
-  SendQuoteDialog,
-  type SendQuoteCustomer,
-} from "@/components/floor/send-quote-dialog";
+import { SendQuoteDialog, type SendQuoteCustomer } from "@/components/floor/send-quote-dialog";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
@@ -623,7 +620,6 @@ function QuotesTable({
     }),
   );
 
-
   const sendToCashier = useMutation({
     ...orpc.floor.quotes.sendToCashier.mutationOptions(),
     onSuccess: async () => {
@@ -736,10 +732,10 @@ function QuotesTable({
                           variant="outline"
                           onClick={() =>
                             void navigate({
-                          to: "/floor/$quoteId",
-                          params: { quoteId: q.id },
-                          search: { from: "customer" },
-                        })
+                              to: "/floor/$quoteId",
+                              params: { quoteId: q.id },
+                              search: { from: "customer" },
+                            })
                           }
                         >
                           <Pencil />

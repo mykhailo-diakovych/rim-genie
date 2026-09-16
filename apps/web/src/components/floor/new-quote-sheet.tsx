@@ -165,90 +165,92 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
               </div>
             </div>
           ) : (
-          /* Client Lookup row */
-          <div className="flex flex-col gap-2">
-            {/* Select input */}
-            <div className="relative flex flex-col gap-1">
-              <label className="font-rubik text-xs leading-3.5 text-label">Customer Lookup:</label>
-              <div className="relative">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setQuery(val);
-                    if (selectedCustomerId) {
-                      setSelectedCustomerId(null);
-                    }
-                    setShowDropdown(val.length >= 2);
-                  }}
-                  onFocus={() => {
-                    if (query.length >= 2 && !selectedCustomerId) setShowDropdown(true);
-                  }}
-                  className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
-                />
-                <Search className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-ghost" />
+            /* Client Lookup row */
+            <div className="flex flex-col gap-2">
+              {/* Select input */}
+              <div className="relative flex flex-col gap-1">
+                <label className="font-rubik text-xs leading-3.5 text-label">
+                  Customer Lookup:
+                </label>
+                <div className="relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQuery(val);
+                      if (selectedCustomerId) {
+                        setSelectedCustomerId(null);
+                      }
+                      setShowDropdown(val.length >= 2);
+                    }}
+                    onFocus={() => {
+                      if (query.length >= 2 && !selectedCustomerId) setShowDropdown(true);
+                    }}
+                    className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
+                  />
+                  <Search className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-ghost" />
+                </div>
+
+                {/* Dropdown */}
+                {showDropdown && hasSearched && (
+                  <div
+                    ref={dropdownRef}
+                    className="absolute top-full left-0 z-10 mt-1 flex max-h-48 w-full flex-col overflow-y-auto rounded-lg border border-field-line bg-white shadow-card"
+                  >
+                    {searchQuery.isLoading && (
+                      <div className="flex items-center justify-center py-3">
+                        <div className="size-4 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+                      </div>
+                    )}
+                    {customers.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => handleSelectCustomer(c.id, c.name)}
+                        className="flex items-center gap-2 px-2 py-2 text-left transition-colors hover:bg-page"
+                      >
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <div className="flex items-center gap-1">
+                            <span className="truncate font-rubik text-xs font-medium text-body">
+                              {c.name}
+                            </span>
+                            {c.isVip && (
+                              <Star className="size-3 shrink-0 fill-yellow-400 text-yellow-400" />
+                            )}
+                          </div>
+                          <span className="font-rubik text-xs text-label">{c.phone}</span>
+                        </div>
+                      </button>
+                    ))}
+                    {noResults && (
+                      <div className="px-2 py-3 text-center font-rubik text-xs text-label">
+                        No customers found
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Dropdown */}
-              {showDropdown && hasSearched && (
-                <div
-                  ref={dropdownRef}
-                  className="absolute top-full left-0 z-10 mt-1 flex max-h-48 w-full flex-col overflow-y-auto rounded-lg border border-field-line bg-white shadow-card"
+              {/* "Didn't find the customer?" row */}
+              <div className="flex items-center gap-2">
+                <span className="font-rubik text-xs leading-3.5 text-black">
+                  Didn't find the customer?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddClient(true);
+                    setShowDropdown(false);
+                  }}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-lg"
                 >
-                  {searchQuery.isLoading && (
-                    <div className="flex items-center justify-center py-3">
-                      <div className="size-4 animate-spin rounded-full border-2 border-blue border-t-transparent" />
-                    </div>
-                  )}
-                  {customers.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => handleSelectCustomer(c.id, c.name)}
-                      className="flex items-center gap-2 px-2 py-2 text-left transition-colors hover:bg-page"
-                    >
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <div className="flex items-center gap-1">
-                          <span className="truncate font-rubik text-xs font-medium text-body">
-                            {c.name}
-                          </span>
-                          {c.isVip && (
-                            <Star className="size-3 shrink-0 fill-yellow-400 text-yellow-400" />
-                          )}
-                        </div>
-                        <span className="font-rubik text-xs text-label">{c.phone}</span>
-                      </div>
-                    </button>
-                  ))}
-                  {noResults && (
-                    <div className="px-2 py-3 text-center font-rubik text-xs text-label">
-                      No customers found
-                    </div>
-                  )}
-                </div>
-              )}
+                  <Plus className="size-4 text-blue" />
+                  <span className="font-rubik text-xs leading-3.5 text-blue">Add New Customer</span>
+                </button>
+              </div>
             </div>
-
-            {/* "Didn't find the customer?" row */}
-            <div className="flex items-center gap-2">
-              <span className="font-rubik text-xs leading-3.5 text-black">
-                Didn't find the customer?
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddClient(true);
-                  setShowDropdown(false);
-                }}
-                className="flex cursor-pointer items-center gap-1.5 rounded-lg"
-              >
-                <Plus className="size-4 text-blue" />
-                <span className="font-rubik text-xs leading-3.5 text-blue">Add New Customer</span>
-              </button>
-            </div>
-          </div>
           )}
 
           {/* Customer's reason for today's visit */}

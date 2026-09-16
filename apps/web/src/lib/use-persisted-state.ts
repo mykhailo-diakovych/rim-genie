@@ -17,7 +17,7 @@ export function usePersistedState<T>(
     try {
       raw = window.localStorage.getItem(PREFIX + key);
     } catch {
-      return; 
+      return;
     }
     if (raw === null) return;
     try {

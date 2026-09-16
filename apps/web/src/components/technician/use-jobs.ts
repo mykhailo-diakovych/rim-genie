@@ -138,7 +138,6 @@ export function useJobs(params?: UseJobsParams) {
     const inProgressJobs: ApiJob[] = [];
     const completedJobs: ApiJob[] = [];
 
-
     const totalsByInvoice = new Map<string, number>();
     for (const job of data) {
       totalsByInvoice.set(job.invoiceId, (totalsByInvoice.get(job.invoiceId) ?? 0) + 1);

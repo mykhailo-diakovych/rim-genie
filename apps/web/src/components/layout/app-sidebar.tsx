@@ -137,7 +137,7 @@ export function AppSidebar({ horizontal = false, className }: AppSidebarProps) {
       className={cn(
         // overflow-y-auto alone would compute overflow-x to `auto` too, so a label wider than the
         // rail produces a horizontal scrollbar. Pin the x axis shut and size the rail to fit.
-        "flex w-24 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-card-line bg-white",
+        "flex w-24 shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-card-line bg-white",
         className,
       )}
     >
