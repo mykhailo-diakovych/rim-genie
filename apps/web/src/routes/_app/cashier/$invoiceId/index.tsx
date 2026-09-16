@@ -16,9 +16,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
+
 import { Button } from "@/components/ui/button";
+import { LinePriceCell } from "@/components/pricing/line-price-cell";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { formatCents } from "@/lib/format-currency";
+import { useCanAdjustPrices } from "@/lib/use-can-adjust-prices";
 import {
   Dialog,
   DialogClose,
@@ -156,6 +160,8 @@ function InvoiceDetailPage() {
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const canAdjustPrices = useCanAdjustPrices();
+
   const invoiceQuery = useQuery(
     orpc.cashier.invoices.get.queryOptions({ input: { id: invoiceId } }),
   );
@@ -172,6 +178,30 @@ function InvoiceDetailPage() {
       queryKey: orpc.cashier.invoices.list.key(),
     });
   };
+
+  // Edits go through the floor procedure so quote and invoice stay in sync.
+  const invalidatePricing = async () => {
+    await invalidateInvoice();
+    await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
+  };
+
+  const setItemPrice = useMutation({
+    ...orpc.floor.quotes.setItemPrice.mutationOptions(),
+    onSuccess: async () => {
+      await invalidatePricing();
+      toast.success("Price updated");
+    },
+    onError: (err: Error) => toast.error(`Failed to update price: ${err.message}`),
+  });
+
+  const clearItemPrice = useMutation({
+    ...orpc.floor.quotes.clearItemPrice.mutationOptions(),
+    onSuccess: async () => {
+      await invalidatePricing();
+      toast.success("Generated price restored");
+    },
+    onError: (err: Error) => toast.error(`Failed to restore price: ${err.message}`),
+  });
 
   const deleteInvoice = useMutation({
     ...orpc.cashier.invoices.delete.mutationOptions(),
@@ -209,11 +239,7 @@ function InvoiceDetailPage() {
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <StickyActionBar className="print:hidden">
-        <Button
-          variant="outline"
-          nativeButton={false}
-          render={<Link to="/cashier" />}
-        >
+        <Button variant="outline" nativeButton={false} render={<Link to="/cashier" />}>
           <ChevronLeft />
           Back to list
         </Button>
@@ -392,13 +418,28 @@ function InvoiceDetailPage() {
                       </div>
                     </td>
                     <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                      {item.quantity}
+                      {lineQuantityLabel(item)}
                     </td>
                     <td className="border-l border-field-line px-2 py-2 text-sm text-body">
                       {formatCents(item.unitCost)}
                     </td>
-                    <td className="border-r border-l border-field-line px-2 py-2 text-sm text-body">
-                      {formatCents(item.quantity * item.unitCost)}
+                    <td className="border-r border-l border-field-line px-2 py-2">
+                      <LinePriceCell
+                        totalCents={lineTotalCents(item)}
+                        priceOverridden={item.priceOverridden}
+                        // Read-only for older invoices with no quote-item link.
+                        canEdit={canAdjustPrices && !!item.quoteItemId}
+                        isSaving={
+                          (setItemPrice.isPending &&
+                            setItemPrice.variables?.itemId === item.quoteItemId) ||
+                          (clearItemPrice.isPending &&
+                            clearItemPrice.variables?.itemId === item.quoteItemId)
+                        }
+                        onSave={(totalCents) =>
+                          setItemPrice.mutate({ itemId: item.quoteItemId!, totalCents })
+                        }
+                        onReset={() => clearItemPrice.mutate({ itemId: item.quoteItemId! })}
+                      />
                     </td>
                   </tr>
                 ))
@@ -447,7 +488,7 @@ function InvoiceDetailPage() {
                       </td>
                       <td className="border-l border-field-line px-2 py-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="shrink-0 rounded-full bg-ghost px-1.5 py-0.5 font-rubik text-[8px] leading-normal text-white">
+                          <span className="shrink-0 rounded-full bg-ghost px-1.5 py-0.5 font-rubik text-[10px] leading-normal text-white">
                             NOT INCLUDED
                           </span>
                           <span className="text-xs text-body">
@@ -456,11 +497,7 @@ function InvoiceDetailPage() {
                         </div>
                       </td>
                       <td className="border-r border-l border-field-line px-2 py-1.5 text-xs text-body">
-                        {formatCents(
-                          item.inches
-                            ? item.inches * item.unitCost
-                            : item.quantity * item.unitCost,
-                        )}
+                        {formatCents(lineTotalCents(item))}
                       </td>
                     </tr>
                   ))}

@@ -169,7 +169,7 @@ export function approve(input: {
       yield* Effect.tryPromise(() =>
         db
           .update(quote)
-          .set({ discountPercent: finalPercent })
+          .set({ discountType: "percent", discountPercent: finalPercent, discountFixedCents: 0 })
           .where(eq(quote.id, request.quoteId!)),
       );
       yield* Effect.tryPromise(() => recalcQuoteTotal(request.quoteId!));

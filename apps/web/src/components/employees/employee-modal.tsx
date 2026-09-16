@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import type { DialogTriggerProps } from "@base-ui/react";
+import { isPlaceholderEmail } from "@rim-genie/db/employee-email";
 import type { UserRole } from "@rim-genie/db/schema";
 import { userRoleEnum } from "@rim-genie/db/schema";
 
@@ -19,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectOption, SelectPopup, SelectTrigger } from "@/components/ui/select";
@@ -47,14 +49,16 @@ const baseFieldsSchema = z.object({
   lastName: z.string().min(1, m.employees_validation_last_name_required()),
   email: z
     .string()
-    .min(1, m.employees_validation_email_required())
-    .email(m.employees_validation_email_invalid()),
+    .refine((value) => value.trim() === "" || z.email().safeParse(value.trim()).success, {
+      message: m.employees_validation_email_invalid(),
+    }),
   employeeId: z
     .string()
     .min(3, m.validation_employee_id_required())
     .max(30)
     .regex(/^[a-zA-Z0-9_.]+$/, m.validation_employee_id_required()),
   role: z.enum(userRoleEnum.enumValues, { message: m.employees_validation_role_required() }),
+  canAdjustPrices: z.boolean(),
   // At least one: the sign-in hook rejects any non-admin with no `userLocation` row,
   // so an employee created without a location can never log in.
   locationIds: z.array(z.string().min(1)).min(1, m.employees_validation_location_required()),
@@ -86,9 +90,11 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
 
   const createEmployee = useMutation({
     ...orpc.employees.create.mutationOptions(),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: orpc.employees.key() });
-      toast.success(m.employees_toast_created());
+      toast.success(
+        result.hasEmail ? m.employees_toast_created() : m.employees_toast_created_no_email(),
+      );
       form.reset();
       setOpen(false);
     },
@@ -114,9 +120,10 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
   const initial = employee
     ? {
         ...splitName(employee.name),
-        email: employee.email,
+        email: isPlaceholderEmail(employee.email) ? "" : employee.email,
         employeeId: employee.username ?? "",
         role: employee.role ?? ("" as string),
+        canAdjustPrices: employee.canAdjustPrices ?? false,
         pin: "",
         locationIds: (
           (employee as EmployeeCardData & { locations?: { id: string }[] }).locations ?? []
@@ -128,6 +135,7 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
         email: "",
         employeeId: "",
         role: "" as string,
+        canAdjustPrices: false,
         pin: "",
         locationIds: [] as string[],
       };
@@ -135,24 +143,27 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
   const form = useForm({
     defaultValues: initial,
     onSubmit: ({ value }) => {
+      const email = value.email.trim() === "" ? undefined : value.email.trim();
       if (isEdit) {
         updateEmployee.mutate({
           id: employee.id,
           firstName: value.firstName,
           lastName: value.lastName,
-          email: value.email,
+          email,
           employeeId: value.employeeId,
           role: value.role as UserRole,
+          canAdjustPrices: value.canAdjustPrices,
           locationIds: value.locationIds,
         });
       } else {
         createEmployee.mutate({
           firstName: value.firstName,
           lastName: value.lastName,
-          email: value.email,
+          email,
           employeeId: value.employeeId,
           pin: value.pin,
           role: value.role as UserRole,
+          canAdjustPrices: value.canAdjustPrices,
           locationIds: value.locationIds,
         });
       }
@@ -276,7 +287,7 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
               <form.Field name="email">
                 {(field) => (
                   <div className="flex flex-1 flex-col gap-1">
-                    <Label htmlFor={field.name}>{m.label_email()}</Label>
+                    <Label htmlFor={field.name}>{m.employees_label_email_optional()}</Label>
                     <Input
                       id={field.name}
                       name={field.name}
@@ -461,6 +472,26 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
                 }}
               </form.Field>
             )}
+
+            <form.Field name="canAdjustPrices">
+              {(field) => (
+                <label className="flex cursor-pointer items-start gap-2">
+                  <Checkbox
+                    className="mt-0.5"
+                    checked={field.state.value}
+                    onCheckedChange={(checked) => field.handleChange(checked === true)}
+                  />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="font-rubik text-xs text-body">
+                      {m.employees_label_can_adjust_prices()}
+                    </span>
+                    <span className="font-rubik text-xs text-label">
+                      {m.employees_hint_can_adjust_prices()}
+                    </span>
+                  </span>
+                </label>
+              )}
+            </form.Field>
           </div>
 
           <DialogFooter className="p-0">

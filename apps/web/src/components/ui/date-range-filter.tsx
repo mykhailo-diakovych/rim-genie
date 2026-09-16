@@ -68,14 +68,12 @@ export function parseDateRange(value: unknown, fallback: DateRange): DateRange {
   return fallback;
 }
 
-
 function toDateInputValue(d: Date): string {
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${month}-${day}`;
 }
 
-// Switching to "Custom range" pre-fills the last 30 days 
 function defaultCustomRange(): CustomRange {
   const to = new Date();
   const from = new Date();

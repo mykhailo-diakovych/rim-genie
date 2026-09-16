@@ -1,5 +1,8 @@
 import { ORPCError, os } from "@orpc/server";
+import { eq } from "drizzle-orm";
 
+import { db } from "@rim-genie/db";
+import { user } from "@rim-genie/db/schema";
 import type { UserRole } from "@rim-genie/db/schema";
 import type { Context } from "./context";
 
@@ -29,6 +32,27 @@ export const requireRole = (...roles: UserRole[]) =>
     }
     return next({ context });
   });
+
+// canAdjustPrices is re-read from the DB (not the session) so revocation is immediate.
+export const priceAdjustProcedure = protectedProcedure.use(async ({ context, next }) => {
+  if ((context.session.user.role as UserRole | null | undefined) === "admin") {
+    return next({ context });
+  }
+
+  const [row] = await db
+    .select({ canAdjustPrices: user.canAdjustPrices })
+    .from(user)
+    .where(eq(user.id, context.session.user.id))
+    .limit(1);
+
+  if (!row?.canAdjustPrices) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "You are not permitted to adjust prices",
+    });
+  }
+
+  return next({ context });
+});
 
 export const adminProcedure = requireRole("admin");
 export const floorManagerProcedure = requireRole("admin", "floorManager");

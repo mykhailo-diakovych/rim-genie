@@ -1,6 +1,6 @@
 {
-  "id": "7ba25a4e-9a63-41a7-a9ea-f8238c329734",
-  "prevId": "f15f99a5-e4e0-4630-b4d0-a7f5c9e53e13",
+  "id": "d095ebcb-98ad-43bf-8f8e-27eb609d3706",
+  "prevId": "7ba25a4e-9a63-41a7-a9ea-f8238c329734",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1015,6 +1015,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "tire_size": {
+          "name": "tire_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "job_types": {
           "name": "job_types",
           "type": "jsonb",
@@ -1743,6 +1749,12 @@
         },
         "inches": {
           "name": "inches",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tire_size": {
+          "name": "tire_size",
           "type": "integer",
           "primaryKey": false,
           "notNull": false

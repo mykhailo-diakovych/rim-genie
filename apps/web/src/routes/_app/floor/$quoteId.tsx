@@ -23,6 +23,10 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import type { JobTypeEntry } from "@rim-genie/db/schema";
+import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
+import { DISCOUNT_CAP_PERCENT, exceedsDiscountCap } from "@rim-genie/db/discount";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,8 +40,15 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { SignatureModal } from "@/components/terms/signature-modal";
+import { LinePriceCell } from "@/components/pricing/line-price-cell";
 import { authClient } from "@/lib/auth-client";
-import { formatCents, formatDollars } from "@/lib/format-currency";
+import { useCanAdjustPrices } from "@/lib/use-can-adjust-prices";
+import {
+  centsToInputValue,
+  formatCents,
+  formatDollars,
+  parseDollarsToCents,
+} from "@/lib/format-currency";
 import { client, orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
 import { SendQuoteDialog } from "@/components/floor/send-quote-dialog";
@@ -93,6 +104,7 @@ function QuoteEditorPage() {
 
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
+  const canAdjustPrices = useCanAdjustPrices();
 
   const quoteQuery = useQuery(orpc.floor.quotes.get.queryOptions({ input: { id: quoteId } }));
   const quote = quoteQuery.data;
@@ -153,6 +165,24 @@ function QuoteEditorPage() {
     onError: (err) => toast.error(`Failed to update item: ${err.message}`),
   });
 
+  const setItemPrice = useMutation({
+    ...orpc.floor.quotes.setItemPrice.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateQuote();
+      toast.success("Price updated");
+    },
+    onError: (err) => toast.error(`Failed to update price: ${err.message}`),
+  });
+
+  const clearItemPrice = useMutation({
+    ...orpc.floor.quotes.clearItemPrice.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateQuote();
+      toast.success("Generated price restored");
+    },
+    onError: (err) => toast.error(`Failed to restore price: ${err.message}`),
+  });
+
   const updateQuote = useMutation({
     ...orpc.floor.quotes.update.mutationOptions(),
     onSuccess: async () => {
@@ -196,7 +226,6 @@ function QuoteEditorPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-
   const sendToCashier = useMutation({
     ...orpc.floor.quotes.sendToCashier.mutationOptions(),
     onSuccess: async () => {
@@ -220,26 +249,40 @@ function QuoteEditorPage() {
       quantity: data.quantity,
       unitCost: data.unitCost,
       inches: data.inches,
+      tireSize: data.tireSize,
       jobTypes: data.jobTypes,
       description: data.description || undefined,
     });
   }
 
   function handleEditItem(itemId: string, data: QuoteGeneratorSheetData) {
-    updateItem.mutate({
-      id: itemId,
-      itemType: data.itemType ?? "rim",
-      vehicleSize: data.vehicleSize ?? undefined,
-      sideOfVehicle: data.sideOfVehicle ?? undefined,
-      damageLevel: data.damageLevel ?? undefined,
-      vehicleType: data.vehicleType ?? undefined,
-      rimMaterial: data.rimMaterial ?? undefined,
-      quantity: data.quantity,
-      unitCost: data.unitCost,
-      inches: data.inches ?? null,
-      jobTypes: data.jobTypes,
-      description: data.description || undefined,
-    });
+    // Reworking the service re-prices it, retiring any hand-typed price.
+    const wasOverridden = (quote?.items ?? []).find((i) => i.id === itemId)?.priceOverridden;
+
+    updateItem.mutate(
+      {
+        id: itemId,
+        itemType: data.itemType ?? "rim",
+        vehicleSize: data.vehicleSize ?? undefined,
+        sideOfVehicle: data.sideOfVehicle ?? undefined,
+        damageLevel: data.damageLevel ?? undefined,
+        vehicleType: data.vehicleType ?? undefined,
+        rimMaterial: data.rimMaterial ?? undefined,
+        quantity: data.quantity,
+        unitCost: data.unitCost,
+        inches: data.inches ?? null,
+        tireSize: data.tireSize ?? null,
+        jobTypes: data.jobTypes,
+        description: data.description || undefined,
+      },
+      {
+        onSuccess: () => {
+          if (wasOverridden) {
+            toast.info("The manual price was replaced — this service was re-priced.");
+          }
+        },
+      },
+    );
   }
 
   function handleSave() {
@@ -252,17 +295,108 @@ function QuoteEditorPage() {
   }
 
   const [discountStr, setDiscountStr] = useState("");
-  const [lastDiscountPercent, setLastDiscountPercent] = useState<number | null>(null);
+  const [discountMode, setDiscountMode] = useState<"percent" | "fixed">("percent");
+  const [lastDiscountKey, setLastDiscountKey] = useState<string | null>(null);
 
-  if (quote && quote.discountPercent !== lastDiscountPercent) {
-    setDiscountStr(String(quote.discountPercent ?? 0));
-    setLastDiscountPercent(quote.discountPercent ?? 0);
-  }
-
-  const subtotal = (quote?.subtotal ?? quote?.total ?? 0) / 100;
+  const subtotalCents = quote?.subtotal ?? quote?.total ?? 0;
+  const subtotal = subtotalCents / 100;
   const discountAmount = (quote?.discountAmount ?? 0) / 100;
   const total = (quote?.total ?? 0) / 100;
   const discountPercent = quote?.discountPercent ?? 0;
+  const quoteDiscountType = quote?.discountType ?? "percent";
+  const quoteDiscountFixedCents = quote?.discountFixedCents ?? 0;
+
+  const discountKey = quote
+    ? `${quoteDiscountType}:${discountPercent}:${quoteDiscountFixedCents}`
+    : null;
+
+  function discountInputValue(): string {
+    return quoteDiscountType === "fixed"
+      ? centsToInputValue(quoteDiscountFixedCents)
+      : String(discountPercent);
+  }
+
+  if (quote && discountKey !== lastDiscountKey) {
+    setDiscountMode(quoteDiscountType);
+    setDiscountStr(discountInputValue());
+    setLastDiscountKey(discountKey);
+  }
+
+  function resetDiscountInput() {
+    setDiscountMode(quoteDiscountType);
+    setDiscountStr(discountInputValue());
+  }
+
+  function confirmOverCap(label: string): boolean {
+    return window.confirm(
+      `${label} exceeds the ${DISCOUNT_CAP_PERCENT}% discount limit for this quote. Apply it anyway?`,
+    );
+  }
+
+  function commitDiscount() {
+    if (!quote) return;
+
+    if (discountMode === "fixed") {
+      const cents = parseDollarsToCents(discountStr);
+      if (cents === null) {
+        resetDiscountInput();
+        return;
+      }
+      if (quoteDiscountType === "fixed" && cents === quoteDiscountFixedCents) return;
+      const overCap = exceedsDiscountCap(subtotalCents, {
+        discountType: "fixed",
+        discountPercent: 0,
+        discountFixedCents: cents,
+      });
+      if (overCap && !confirmOverCap(formatCents(cents))) {
+        resetDiscountInput();
+        return;
+      }
+      updateQuote.mutate({
+        id: quoteId,
+        discountType: "fixed",
+        discountFixedCents: cents,
+        discountPercent: 0,
+      });
+      return;
+    }
+
+    const val = parseInt(discountStr, 10);
+    if (isNaN(val) || val < 0 || val > 100) {
+      resetDiscountInput();
+      return;
+    }
+    if (quoteDiscountType === "percent" && val === discountPercent) return;
+
+    if (isAdmin) {
+      if (val > DISCOUNT_CAP_PERCENT && !confirmOverCap(`${val}%`)) {
+        resetDiscountInput();
+        return;
+      }
+      updateQuote.mutate({
+        id: quoteId,
+        discountType: "percent",
+        discountPercent: val,
+        discountFixedCents: 0,
+      });
+      return;
+    }
+
+    client.discount
+      .requestQuoteDiscount({ quoteId, requestedPercent: val })
+      .then(() => {
+        toast.success(
+          val > DISCOUNT_CAP_PERCENT
+            ? `Discounts above ${DISCOUNT_CAP_PERCENT}% need an admin — request sent for approval`
+            : "Discount request sent for admin approval",
+        );
+        void queryClient.invalidateQueries({
+          queryKey: orpc.discount.pendingForQuote.key({ input: { quoteId } }),
+        });
+      })
+      .catch((err: Error) => toast.error(err.message));
+    resetDiscountInput();
+  }
 
   const formatDate = (d: Date | string | null | undefined) => {
     if (!d) return "—";
@@ -518,13 +652,23 @@ function QuoteEditorPage() {
                               setEditingItem(item);
                               setSheetOpen(true);
                             }}
+                            onSetPrice={(totalCents) =>
+                              setItemPrice.mutate({ itemId: item.id, totalCents })
+                            }
+                            onResetPrice={() => clearItemPrice.mutate({ itemId: item.id })}
                             isRemoving={
                               removeItem.isPending && removeItem.variables?.id === item.id
                             }
                             isExcluding={
-                              setItemExcluded.isPending &&
-                              setItemExcluded.variables?.id === item.id
+                              setItemExcluded.isPending && setItemExcluded.variables?.id === item.id
                             }
+                            isPricing={
+                              (setItemPrice.isPending &&
+                                setItemPrice.variables?.itemId === item.id) ||
+                              (clearItemPrice.isPending &&
+                                clearItemPrice.variables?.itemId === item.id)
+                            }
+                            canAdjustPrices={canAdjustPrices}
                             isReadOnly={isReadOnly}
                           />
                         ))}
@@ -561,9 +705,7 @@ function QuoteEditorPage() {
               <ServicesExcluded
                 items={excludedItems}
                 onInclude={(id) => setItemExcluded.mutate({ id, excluded: false })}
-                pendingId={
-                  setItemExcluded.isPending ? setItemExcluded.variables?.id : undefined
-                }
+                pendingId={setItemExcluded.isPending ? setItemExcluded.variables?.id : undefined}
                 isReadOnly={isReadOnly}
               />
             )}
@@ -665,39 +807,45 @@ function QuoteEditorPage() {
                 </div>
               )}
               <div className="flex items-center justify-end gap-3 px-3 font-rubik text-sm leading-5">
-                <span className="text-label">Discount:</span>
+                <span className="text-label">Discount (this quote only):</span>
                 <div className="flex items-center gap-1">
+                  {isAdmin && (
+                    <div className="mr-1 flex items-center rounded-md border border-toggle-line bg-white p-0.5">
+                      {(["percent", "fixed"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          disabled={isReadOnly || !!pendingDiscount}
+                          onClick={() => {
+                            if (mode === discountMode) return;
+                            setDiscountMode(mode);
+                            setDiscountStr(
+                              mode === "fixed"
+                                ? centsToInputValue(quoteDiscountFixedCents)
+                                : String(discountPercent),
+                            );
+                          }}
+                          className={`rounded-sm px-2 py-0.5 font-rubik text-xs leading-4 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                            discountMode === mode ? "bg-blue text-white" : "text-label"
+                          }`}
+                        >
+                          {mode === "percent" ? "%" : "$"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {discountMode === "fixed" && <span className="text-label">$</span>}
                   <input
                     type="text"
                     value={discountStr}
                     onChange={(e) => setDiscountStr(e.target.value)}
-                    onBlur={() => {
-                      const val = parseInt(discountStr, 10);
-                      if (!isNaN(val) && val >= 0 && val <= 100 && val !== discountPercent) {
-                        if (isAdmin) {
-                          updateQuote.mutate({ id: quoteId, discountPercent: val });
-                        } else {
-                          client.discount
-                            .requestQuoteDiscount({ quoteId, requestedPercent: val })
-                            .then(() => {
-                              toast.success("Discount request sent for admin approval");
-                              void queryClient.invalidateQueries({
-                                queryKey: orpc.discount.pendingForQuote.key({
-                                  input: { quoteId },
-                                }),
-                              });
-                            })
-                            .catch((err: Error) => toast.error(err.message));
-                          setDiscountStr(String(discountPercent));
-                        }
-                      } else {
-                        setDiscountStr(String(discountPercent));
-                      }
-                    }}
+                    onBlur={commitDiscount}
                     disabled={isReadOnly || !!pendingDiscount}
-                    className="w-10 rounded border border-transparent bg-transparent px-1 py-0.5 text-right font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`rounded border border-transparent bg-transparent px-1 py-0.5 text-right font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line disabled:cursor-not-allowed disabled:opacity-50 ${
+                      discountMode === "fixed" ? "w-16" : "w-10"
+                    }`}
                   />
-                  <span className="text-label">%</span>
+                  {discountMode === "percent" && <span className="text-label">%</span>}
                   {discountAmount > 0 && (
                     <span className="text-body">(-{formatDollars(discountAmount)})</span>
                   )}
@@ -972,18 +1120,14 @@ function ServicesExcluded({
       ) : (
         <div className="flex flex-col gap-1">
           {items.map((item) => {
-            const lineTotal = item.inches
-              ? item.inches * item.unitCost
-              : item.quantity * item.unitCost;
+            const lineTotal = lineTotalCents(item);
             return (
               <div key={item.id} className="flex items-center gap-2 rounded-lg bg-page px-2 py-1">
                 <div className="flex flex-1 items-baseline gap-2 font-rubik">
                   <span className="text-sm leading-[18px] text-body">
                     {item.description ?? item.itemType}
                   </span>
-                  <span className="text-xs leading-3.5 text-label">
-                    ({formatCents(lineTotal)})
-                  </span>
+                  <span className="text-xs leading-3.5 text-label">({formatCents(lineTotal)})</span>
                 </div>
                 {!isReadOnly && (
                   <Button
@@ -1108,29 +1252,38 @@ function ItemRow({
   onRemove,
   onExclude,
   onEdit,
+  onSetPrice,
+  onResetPrice,
   isRemoving,
   isExcluding,
+  isPricing,
+  canAdjustPrices,
   isReadOnly,
 }: {
   item: {
     id: string;
     description: string | null;
     comments: string | null;
+    itemType: string;
     quantity: number;
     unitCost: number;
     inches: number | null;
+    priceOverridden: boolean;
+    jobTypes: JobTypeEntry[];
   };
   index: number;
   onRemove: () => void;
   onExclude: () => void;
   onEdit: () => void;
+  onSetPrice: (totalCents: number) => void;
+  onResetPrice: () => void;
   isRemoving: boolean;
   isExcluding: boolean;
+  isPricing: boolean;
+  canAdjustPrices: boolean;
   isReadOnly?: boolean;
 }) {
-  const rowTotal = item.inches
-    ? (item.inches * item.unitCost) / 100
-    : (item.quantity * item.unitCost) / 100;
+  const rowTotal = lineTotalCents(item);
 
   return (
     <tr className="border-b border-field-line align-top">
@@ -1145,13 +1298,20 @@ function ItemRow({
         </div>
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-        {item.inches || item.quantity || 1}
+        {lineQuantityLabel(item)}
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
         {formatCents(item.unitCost)}
       </td>
-      <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-        {formatDollars(rowTotal)}
+      <td className="border-l border-field-line px-2 py-2">
+        <LinePriceCell
+          totalCents={rowTotal}
+          priceOverridden={item.priceOverridden}
+          canEdit={canAdjustPrices && !isReadOnly}
+          isSaving={isPricing}
+          onSave={onSetPrice}
+          onReset={onResetPrice}
+        />
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
         {!isReadOnly && (
@@ -1160,12 +1320,7 @@ function ItemRow({
               <Pencil className="size-3.5" />
               Edit
             </Button>
-            <Button
-              className="w-full"
-              variant="outline"
-              onClick={onExclude}
-              disabled={isExcluding}
-            >
+            <Button className="w-full" variant="outline" onClick={onExclude} disabled={isExcluding}>
               <CornerDownRight className="size-3.5" />
               Exclude
             </Button>

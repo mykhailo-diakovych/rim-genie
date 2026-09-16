@@ -1,5 +1,5 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { resolveLogoPath } from "./logo";
+import { LOGO_DATA_URI } from "./logo";
 
 const styles = StyleSheet.create({
   page: {
@@ -168,17 +168,14 @@ const MODE_LABELS: Record<string, string> = {
   cheque: "Cheque",
 };
 
-
 export function DailyReportDocument({ data }: { data: DailyReportData }) {
-  const logoPath = resolveLogoPath();
-
   return (
     <Document title={`Daily Report — ${fmtDate(data.date)}`}>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <View>
-            {logoPath && <Image src={logoPath} style={styles.logo} />}
+            <Image src={LOGO_DATA_URI} style={styles.logo} />
           </View>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={styles.title}>Daily Report</Text>

@@ -32,6 +32,8 @@ export const user = pgTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
   locationId: text("location_id"),
+  // Lets a non-admin type line prices by hand; admins ignore this flag.
+  canAdjustPrices: boolean("can_adjust_prices").default(false).notNull(),
 });
 
 export type User = InferSelectModel<typeof user>;

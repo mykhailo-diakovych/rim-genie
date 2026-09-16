@@ -36,10 +36,10 @@ function QuoteEmail({
         <div style={styles.cardHeader}>Quote Summary</div>
         <div style={styles.cardBody}>
           <Row label="Quote #" value={<strong>{quoteNumber}</strong>} />
-          <Row label="Subtotal" value={formatCents(subtotal)} noBorder={discountPercent <= 0} />
-          {discountPercent > 0 && (
+          <Row label="Subtotal" value={formatCents(subtotal)} noBorder={discountAmount <= 0} />
+          {discountAmount > 0 && (
             <Row
-              label={`Discount (${discountPercent}%)`}
+              label={discountPercent > 0 ? `Discount (${discountPercent}%)` : "Discount"}
               value={`-${formatCents(discountAmount)}`}
               noBorder
             />

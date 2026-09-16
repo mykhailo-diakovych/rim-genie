@@ -181,7 +181,7 @@ interface ComputeItemPriceParams {
   rimMaterial?: string | null;
   vehicleSize?: string | null;
   rimSize?: number | null;
-  inches?: number | null;
+  tireSize?: number | null;
 }
 
 export async function computeItemPrice(params: ComputeItemPriceParams): Promise<number> {
@@ -197,9 +197,11 @@ export async function computeItemPrice(params: ComputeItemPriceParams): Promise<
     const isTruck = params.vehicleType === "truck";
     let total = 0;
     for (const jt of params.jobTypes) {
+      // A line can carry several occurrences of the same repair, priced per occurrence.
+      const qty = jt.input ? parseInt(jt.input, 10) || 1 : 1;
       const base = await lookupPrice({ category, jobType: jt.type, size });
       if (base != null) {
-        total += applyRimModifiers(base, { isSteel, isTruck, ...config });
+        total += applyRimModifiers(base, { isSteel, isTruck, ...config }) * qty;
         continue;
       }
       // Spot polish (priced by size bucket × qty) lives in the Rims section.
@@ -209,7 +211,6 @@ export async function computeItemPrice(params: ComputeItemPriceParams): Promise<
           sizeBucket: spotSizeBucket(size),
         });
         if (spot != null) {
-          const qty = jt.input ? parseInt(jt.input, 10) || 1 : 1;
           total += spot * qty;
         }
       }
@@ -237,9 +238,8 @@ export async function computeItemPrice(params: ComputeItemPriceParams): Promise<
   }
 
   if (category === "general") {
-    // Tire service is priced by rim/tire size (rides in `inches`);
-    // brake service is priced by vehicle size + single/pair + removal.
-    const tireSize = params.inches ?? size;
+    // Tire/brake service pricing; neither multiplies the line by the diameter.
+    const tireSize = params.tireSize ?? size;
     let total = 0;
     for (const jt of params.jobTypes) {
       const qty = jt.input ? parseInt(jt.input, 10) || 1 : 1;

@@ -1,7 +1,8 @@
 import { Effect } from "effect";
-import { eq, sql, sum } from "drizzle-orm";
+import { and, eq, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
+import { lineTotalCents } from "@rim-genie/db/line-item";
 import { quote, invoice, invoiceItem, payment, job } from "@rim-genie/db/schema";
 
 import {
@@ -50,10 +51,7 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
       return yield* Effect.fail(new QuoteHasNoItems({ quoteId }));
     }
 
-    const subtotal = billableItems.reduce(
-      (s, i) => s + (i.inches ? i.inches * i.unitCost : i.quantity * i.unitCost),
-      0,
-    );
+    const subtotal = billableItems.reduce((s, i) => s + lineTotalCents(i), 0);
     const discountAmount = found.discountAmount;
     const total = subtotal - discountAmount;
 
@@ -80,6 +78,7 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
           await tx.insert(invoiceItem).values(
             billableItems.map((item) => ({
               invoiceId: inv!.id,
+              quoteItemId: item.id,
               itemType: item.itemType,
               vehicleSize: item.vehicleSize,
               sideOfVehicle: item.sideOfVehicle,
@@ -89,9 +88,11 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
               quantity: item.quantity,
               unitCost: item.unitCost,
               inches: item.inches,
+              tireSize: item.tireSize,
               jobTypes: item.jobTypes,
               description: item.description,
               comments: item.comments,
+              priceOverridden: item.priceOverridden,
               sortOrder: item.sortOrder,
             })),
           );
@@ -113,6 +114,7 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
         await tx.insert(invoiceItem).values(
           billableItems.map((item) => ({
             invoiceId,
+            quoteItemId: item.id,
             itemType: item.itemType,
             vehicleSize: item.vehicleSize,
             sideOfVehicle: item.sideOfVehicle,
@@ -122,9 +124,11 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
             quantity: item.quantity,
             unitCost: item.unitCost,
             inches: item.inches,
+            tireSize: item.tireSize,
             jobTypes: item.jobTypes,
             description: item.description,
             comments: item.comments,
+            priceOverridden: item.priceOverridden,
             sortOrder: item.sortOrder,
           })),
         );
@@ -149,6 +153,79 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
 
     return result;
   });
+}
+
+// Surgical alternative to syncInvoiceFromQuote: touches only the one row and the invoice
+// totals, avoiding a full re-sync that would recreate jobs and overwrite the cashier's discount.
+export async function mirrorQuoteItemPrice(
+  quoteItemId: string,
+  unitCost: number,
+  priceOverridden: boolean,
+  previousQuoteDiscount: number,
+): Promise<void> {
+  const [row] = await db
+    .select({ invoiceId: invoiceItem.invoiceId, quoteId: invoice.quoteId })
+    .from(invoiceItem)
+    .innerJoin(invoice, eq(invoice.id, invoiceItem.invoiceId))
+    .where(eq(invoiceItem.quoteItemId, quoteItemId))
+    .limit(1);
+
+  if (!row) return;
+
+  await db
+    .update(invoiceItem)
+    .set({ unitCost, priceOverridden })
+    .where(eq(invoiceItem.quoteItemId, quoteItemId));
+
+  // Follows the quote discount only while it still equals the previous quote-derived value;
+  // a cashier-typed discount survives.
+  const [q] = await db
+    .select({ discountAmount: quote.discountAmount })
+    .from(quote)
+    .where(eq(quote.id, row.quoteId));
+
+  if (q) {
+    await db
+      .update(invoice)
+      .set({ discount: q.discountAmount })
+      .where(and(eq(invoice.id, row.invoiceId), eq(invoice.discount, previousQuoteDiscount)));
+  }
+
+  await recalcInvoiceTotals(row.invoiceId);
+}
+
+export async function recalcInvoiceTotals(invoiceId: string): Promise<void> {
+  const items = await db
+    .select({
+      itemType: invoiceItem.itemType,
+      quantity: invoiceItem.quantity,
+      unitCost: invoiceItem.unitCost,
+      inches: invoiceItem.inches,
+      priceOverridden: invoiceItem.priceOverridden,
+    })
+    .from(invoiceItem)
+    .where(eq(invoiceItem.invoiceId, invoiceId));
+
+  const subtotal = items.reduce((sum, item) => sum + lineTotalCents(item), 0);
+
+  const [found] = await db
+    .select({ discount: invoice.discount, tax: invoice.tax })
+    .from(invoice)
+    .where(eq(invoice.id, invoiceId));
+
+  if (!found) return;
+
+  const total = subtotal - found.discount + found.tax;
+
+  const [paymentResult] = await db
+    .select({ paid: sum(payment.amount) })
+    .from(payment)
+    .where(eq(payment.invoiceId, invoiceId));
+
+  const paid = Number(paymentResult?.paid ?? 0);
+  const status = paid >= total && total > 0 ? "paid" : paid > 0 ? "partially_paid" : "unpaid";
+
+  await db.update(invoice).set({ subtotal, total, status }).where(eq(invoice.id, invoiceId));
 }
 
 export function updateInvoice(

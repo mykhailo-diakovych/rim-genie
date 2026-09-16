@@ -22,21 +22,15 @@ import {
   powderCoatScopeEnum,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gte,
-  ilike,
-  inArray,
-  isNull,
-  lte,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 
-import { adminProcedure, floorManagerProcedure, protectedProcedure, requireRole } from "../index";
+import {
+  adminProcedure,
+  floorManagerProcedure,
+  priceAdjustProcedure,
+  protectedProcedure,
+  requireRole,
+} from "../index";
 import * as DiscountService from "../services/discount.service";
 import * as InvoiceService from "../services/invoice.service";
 import * as EmailService from "../services/email.service";
@@ -53,6 +47,26 @@ import { computeItemPrice } from "../services/pricing.service";
 import { recalcQuoteTotal } from "../services/quote.service";
 import { getQuotePdf } from "../pdf/get-quote-pdf";
 import { createQuoteEmail } from "../emails/quote-email";
+
+async function quoteDiscountAmount(quoteId: string): Promise<number> {
+  const [row] = await db
+    .select({ discountAmount: quote.discountAmount })
+    .from(quote)
+    .where(eq(quote.id, quoteId));
+  return row?.discountAmount ?? 0;
+}
+
+// Touching any of these is a composition change, which retires a manual price.
+const PRICING_INPUT_FIELDS = [
+  "itemType",
+  "jobTypes",
+  "vehicleType",
+  "rimMaterial",
+  "vehicleSize",
+  "inches",
+  "tireSize",
+  "quantity",
+] as const;
 
 const jobTypeEntrySchema = z.object({
   // Dynamic job-type key (from the catalog `job_type` table). Kept as a free
@@ -470,16 +484,32 @@ export const floorRouter = {
           customerReason: z.string().optional(),
           jobRack: z.string().optional(),
           discountPercent: z.number().int().min(0).max(100).optional(),
+          discountType: z.enum(["percent", "fixed"]).optional(),
+          discountFixedCents: z.number().int().min(0).optional(),
           fullDiagnosticConsent: z.boolean().optional(),
         }),
       )
       .handler(async ({ input, context }) => {
-        const { id, discountPercent, ...fields } = input;
+        const { id, discountPercent, discountType, discountFixedCents, ...fields } = input;
         const isAdmin = context.session.user.role === "admin";
+        const touchesDiscount =
+          discountPercent !== undefined ||
+          discountType !== undefined ||
+          discountFixedCents !== undefined;
+
+        // Fixed-dollar discounts skip the (percent-only) approval flow, so admin-only.
+        if (!isAdmin && (discountType === "fixed" || discountFixedCents !== undefined)) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "Fixed-dollar discounts require an admin. Request a percentage instead.",
+          });
+        }
 
         const updateFields: Record<string, unknown> = { ...fields };
-        if (discountPercent !== undefined && isAdmin) {
-          updateFields.discountPercent = discountPercent;
+        if (isAdmin) {
+          if (discountPercent !== undefined) updateFields.discountPercent = discountPercent;
+          if (discountType !== undefined) updateFields.discountType = discountType;
+          if (discountFixedCents !== undefined)
+            updateFields.discountFixedCents = discountFixedCents;
         }
 
         const rows = await db
@@ -488,7 +518,7 @@ export const floorRouter = {
           .where(eq(quote.id, id))
           .returning();
 
-        if (discountPercent !== undefined && isAdmin) {
+        if (touchesDiscount && isAdmin) {
           await recalcQuoteTotal(id);
         }
 
@@ -549,6 +579,7 @@ export const floorRouter = {
           quantity: z.number().int().min(1).default(1),
           unitCost: z.number().int().min(0).default(0),
           inches: z.number().int().min(1).optional(),
+          tireSize: z.number().int().min(1).optional(),
           jobTypes: z.array(jobTypeEntrySchema).default([]),
           description: z.string().optional(),
         }),
@@ -563,13 +594,16 @@ export const floorRouter = {
 
         const sortOrder = (existing[0]?.sortOrder ?? -1) + 1;
 
+        // inches is welding-only; dropped for other item types to avoid a silent price multiply.
+        const inches = input.itemType === "welding" ? (input.inches ?? null) : null;
+
         const computedPrice = await computeItemPrice({
           itemType: input.itemType,
           jobTypes: input.jobTypes,
           vehicleType: input.vehicleType,
           rimMaterial: input.rimMaterial,
           vehicleSize: input.vehicleSize,
-          inches: input.inches,
+          tireSize: input.tireSize,
         });
         const unitCost = computedPrice > 0 ? computedPrice : input.unitCost;
 
@@ -585,7 +619,8 @@ export const floorRouter = {
             rimMaterial: input.rimMaterial ?? null,
             quantity: input.quantity,
             unitCost,
-            inches: input.inches,
+            inches,
+            tireSize: input.tireSize ?? null,
             jobTypes: input.jobTypes as JobTypeEntry[],
             description: input.description,
             sortOrder,
@@ -609,6 +644,7 @@ export const floorRouter = {
           quantity: z.number().int().min(1).optional(),
           unitCost: z.number().int().min(0).optional(),
           inches: z.number().int().min(1).nullable().optional(),
+          tireSize: z.number().int().min(1).nullable().optional(),
           jobTypes: z.array(jobTypeEntrySchema).optional(),
           description: z.string().optional(),
           comments: z.string().optional(),
@@ -631,7 +667,11 @@ export const floorRouter = {
         const mergedRimMaterial =
           fields.rimMaterial !== undefined ? fields.rimMaterial : current.rimMaterial;
         const mergedVehicleSize = fields.vehicleSize ?? current.vehicleSize;
-        const mergedInches = fields.inches !== undefined ? fields.inches : current.inches;
+        const rawInches = fields.inches !== undefined ? fields.inches : current.inches;
+        // inches is welding-only (see addItem).
+        const mergedInches = mergedItemType === "welding" ? rawInches : null;
+        const mergedTireSize =
+          fields.tireSize !== undefined ? fields.tireSize : (current.tireSize ?? null);
 
         const computedPrice = await computeItemPrice({
           itemType: mergedItemType,
@@ -639,12 +679,26 @@ export const floorRouter = {
           vehicleType: mergedVehicleType,
           rimMaterial: mergedRimMaterial,
           vehicleSize: mergedVehicleSize,
-          inches: mergedInches,
+          tireSize: mergedTireSize,
         });
 
+        // A composition change (see PRICING_INPUT_FIELDS) retires a manual price.
+        const compositionChanged = PRICING_INPUT_FIELDS.some(
+          (field) => fields[field] !== undefined,
+        );
+        const keepOverride = current.priceOverridden && !compositionChanged;
+
         const updateFields = { ...fields } as Partial<typeof quoteItem.$inferInsert>;
-        if (computedPrice > 0) {
-          updateFields.unitCost = computedPrice;
+        updateFields.inches = mergedInches;
+        updateFields.tireSize = mergedTireSize;
+
+        if (keepOverride) {
+          delete updateFields.unitCost;
+        } else {
+          updateFields.priceOverridden = false;
+          if (computedPrice > 0) {
+            updateFields.unitCost = computedPrice;
+          }
         }
 
         const rows = await db
@@ -653,9 +707,105 @@ export const floorRouter = {
           .where(eq(quoteItem.id, id))
           .returning();
 
+        const prevDiscount = await quoteDiscountAmount(current.quoteId);
         await recalcQuoteTotal(current.quoteId);
 
+        const updated = rows[0]!;
+        if (
+          updated.unitCost !== current.unitCost ||
+          updated.priceOverridden !== current.priceOverridden
+        ) {
+          await InvoiceService.mirrorQuoteItemPrice(
+            updated.id,
+            updated.unitCost,
+            updated.priceOverridden,
+            prevDiscount,
+          );
+        }
+
+        return updated;
+      }),
+
+    // Hand-typed whole-line total in cents; gated server-side, not just in the UI.
+    setItemPrice: priceAdjustProcedure
+      .input(
+        z.object({
+          itemId: z.string(),
+          totalCents: z.number().int().min(0).max(100_000_000),
+        }),
+      )
+      .handler(async ({ input }) => {
+        const existing = await db
+          .select()
+          .from(quoteItem)
+          .where(eq(quoteItem.id, input.itemId))
+          .limit(1);
+
+        const current = existing[0];
+        if (!current) {
+          throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
+        }
+
+        const quantity = current.quantity > 0 ? current.quantity : 1;
+        const unitCost = Math.round(input.totalCents / quantity);
+
+        const rows = await db
+          .update(quoteItem)
+          .set({ unitCost, priceOverridden: true })
+          .where(eq(quoteItem.id, input.itemId))
+          .returning();
+
+        const prevDiscount = await quoteDiscountAmount(current.quoteId);
+        await recalcQuoteTotal(current.quoteId);
+        await InvoiceService.mirrorQuoteItemPrice(input.itemId, unitCost, true, prevDiscount);
+
         return rows[0]!;
+      }),
+
+    clearItemPrice: priceAdjustProcedure
+      .input(z.object({ itemId: z.string() }))
+      .handler(async ({ input }) => {
+        const existing = await db
+          .select()
+          .from(quoteItem)
+          .where(eq(quoteItem.id, input.itemId))
+          .limit(1);
+
+        const current = existing[0];
+        if (!current) {
+          throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
+        }
+
+        const computedPrice = await computeItemPrice({
+          itemType: current.itemType,
+          jobTypes: current.jobTypes as { type: string; subType?: string; input?: string }[],
+          vehicleType: current.vehicleType,
+          rimMaterial: current.rimMaterial,
+          vehicleSize: current.vehicleSize,
+          tireSize: current.tireSize,
+        });
+
+        const rows = await db
+          .update(quoteItem)
+          .set({
+            priceOverridden: false,
+            ...(computedPrice > 0 ? { unitCost: computedPrice } : {}),
+          })
+          .where(eq(quoteItem.id, input.itemId))
+          .returning();
+
+        const prevDiscount = await quoteDiscountAmount(current.quoteId);
+        await recalcQuoteTotal(current.quoteId);
+
+        const updated = rows[0]!;
+        await InvoiceService.mirrorQuoteItemPrice(
+          updated.id,
+          updated.unitCost,
+          false,
+          prevDiscount,
+        );
+
+        return updated;
       }),
 
     removeItem: protectedProcedure

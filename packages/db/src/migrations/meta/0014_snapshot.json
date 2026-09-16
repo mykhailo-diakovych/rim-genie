@@ -1,6 +1,6 @@
 {
-  "id": "7ba25a4e-9a63-41a7-a9ea-f8238c329734",
-  "prevId": "f15f99a5-e4e0-4630-b4d0-a7f5c9e53e13",
+  "id": "8f3a7c9c-2fbe-427c-804c-445a7c5ed400",
+  "prevId": "d095ebcb-98ad-43bf-8f8e-27eb609d3706",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -314,6 +314,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "can_adjust_prices": {
+          "name": "can_adjust_prices",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},
@@ -1015,6 +1022,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "tire_size": {
+          "name": "tire_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "job_types": {
           "name": "job_types",
           "type": "jsonb",
@@ -1036,6 +1049,13 @@
         },
         "is_excluded": {
           "name": "is_excluded",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "price_overridden": {
+          "name": "price_overridden",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -1688,6 +1708,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "quote_item_id": {
+          "name": "quote_item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "item_type": {
           "name": "item_type",
           "type": "text",
@@ -1747,6 +1773,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "tire_size": {
+          "name": "tire_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "job_types": {
           "name": "job_types",
           "type": "jsonb",
@@ -1765,6 +1797,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "price_overridden": {
+          "name": "price_overridden",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "sort_order": {
           "name": "sort_order",
@@ -1803,6 +1842,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "invoiceItem_quoteItemId_idx": {
+          "name": "invoiceItem_quoteItemId_idx",
+          "columns": [
+            {
+              "expression": "quote_item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1813,6 +1867,15 @@
           "columnsFrom": ["invoice_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "invoice_item_quote_item_id_quote_item_id_fk": {
+          "name": "invoice_item_quote_item_id_quote_item_id_fk",
+          "tableFrom": "invoice_item",
+          "tableTo": "quote_item",
+          "columnsFrom": ["quote_item_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },

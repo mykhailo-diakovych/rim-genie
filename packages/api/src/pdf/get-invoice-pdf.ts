@@ -1,4 +1,5 @@
 import { db } from "@rim-genie/db";
+import { lineTotalCents } from "@rim-genie/db/line-item";
 import { invoice } from "@rim-genie/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -53,11 +54,15 @@ export async function getInvoicePdf(
       comments: item.comments,
       quantity: item.quantity,
       unitCost: item.unitCost,
+      inches: item.inches,
+      itemType: item.itemType,
+      jobTypes: item.jobTypes,
+      priceOverridden: item.priceOverridden,
     })),
     excludedServices: (invoiceRow.quote?.items ?? []).map((item) => ({
       id: item.id,
       name: item.description ?? item.itemType,
-      price: item.inches ? item.inches * item.unitCost : item.quantity * item.unitCost,
+      price: lineTotalCents(item),
     })),
     payments: invoiceRow.payments.map((p) => ({
       id: p.id,

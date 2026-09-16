@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-
 import { Effect } from "effect";
 import { Resend } from "resend";
 import type { ReactElement } from "react";
@@ -7,27 +5,14 @@ import type { ReactElement } from "react";
 import { env } from "@rim-genie/env/server";
 
 import { LOGO_CID } from "../emails/email-layout";
-import { resolveLogoPath } from "../pdf/logo";
+import { getLogoBuffer } from "../pdf/logo";
 import { EmailSendFailed } from "./errors";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
-// The layout always renders the logo, so attach it here rather than asking every
-// caller to remember. Read once — the file does not change at runtime.
-let logoAttachment: { filename: string; content: Buffer; contentId: string } | null | undefined;
-
+// The layout always renders the logo, so it is attached centrally for every send.
 function getLogoAttachment() {
-  if (logoAttachment !== undefined) return logoAttachment;
-  const path = resolveLogoPath();
-  try {
-    logoAttachment = path
-      ? { filename: "logo.png", content: readFileSync(path), contentId: LOGO_CID }
-      : null;
-  } catch {
-    // A missing logo must not stop the email going out.
-    logoAttachment = null;
-  }
-  return logoAttachment;
+  return { filename: "logo.png", content: getLogoBuffer(), contentId: LOGO_CID };
 }
 
 export function send(input: {
@@ -48,7 +33,7 @@ export function send(input: {
             filename: a.filename,
             content: a.content,
           })),
-          ...(getLogoAttachment() ? [getLogoAttachment()!] : []),
+          getLogoAttachment(),
         ],
       }),
     catch: (err) => new EmailSendFailed({ reason: String(err) }),

@@ -13,7 +13,7 @@ export function CompletedJobCard({ group, onView }: { group: JobGroup; onView: (
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center">
       <div className="flex flex-1 flex-col gap-1">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="font-rubik text-sm leading-4.5 font-medium text-body">
             {group.customer}
           </span>

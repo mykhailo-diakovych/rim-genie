@@ -26,6 +26,8 @@ export const quoteStatusEnum = pgEnum("quote_status", [
   "completed",
 ]);
 
+export const quoteDiscountTypeEnum = pgEnum("quote_discount_type", ["percent", "fixed"]);
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type JobTypeEntry = {
@@ -99,7 +101,9 @@ export const quote = pgTable(
     fullDiagnosticConsent: boolean("full_diagnostic_consent").default(false).notNull(),
     validUntil: timestamp("valid_until"),
     subtotal: integer("subtotal").default(0).notNull(),
+    discountType: quoteDiscountTypeEnum("discount_type").default("percent").notNull(),
     discountPercent: integer("discount_percent").default(0).notNull(),
+    discountFixedCents: integer("discount_fixed_cents").default(0).notNull(),
     vipDiscountPercent: integer("vip_discount_percent").default(0).notNull(),
     rewardDiscountPercent: integer("reward_discount_percent").default(0).notNull(),
     discountAmount: integer("discount_amount").default(0).notNull(),
@@ -133,13 +137,18 @@ export const quoteItem = pgTable("quote_item", {
   rimMaterial: rimMaterialEnum("rim_material"),
   quantity: integer("quantity").default(1).notNull(),
   unitCost: integer("unit_cost").default(0).notNull(),
+  // Welding only: weld length, multiplied against the per-inch unitCost.
   inches: integer("inches"),
+  // Display-only diameter for general/tire lines; never multiplies price.
+  tireSize: integer("tire_size"),
   jobTypes: jsonb("job_types").$type<JobTypeEntry[]>().default([]).notNull(),
   description: text("description"),
   comments: text("comments"),
   // Recommended but declined by the client: still printed on the quote as NOT INCLUDED,
   // still priced for the client's reference, but kept out of every total.
   isExcluded: boolean("is_excluded").default(false).notNull(),
+  // Hand-typed price; opts out of regeneration and welding's per-inch multiplier.
+  priceOverridden: boolean("price_overridden").default(false).notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
