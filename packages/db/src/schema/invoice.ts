@@ -13,7 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import type { JobTypeEntry } from "./floor";
-import { customer, quote } from "./floor";
+import { customer, quote, quoteItem } from "./floor";
 import { user } from "./auth";
 import { location } from "./location";
 import { quoteVehicleTypeEnum, rimMaterialEnum } from "./manage";
@@ -81,6 +81,8 @@ export const invoiceItem = pgTable(
     invoiceId: text("invoice_id")
       .notNull()
       .references(() => invoice.id, { onDelete: "cascade" }),
+    // The quote line this row mirrors.
+    quoteItemId: text("quote_item_id").references(() => quoteItem.id, { onDelete: "set null" }),
     itemType: text("item_type").default("rim").notNull(),
     vehicleSize: text("vehicle_size"),
     sideOfVehicle: text("side_of_vehicle"),
@@ -103,7 +105,10 @@ export const invoiceItem = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("invoiceItem_invoiceId_idx").on(table.invoiceId)],
+  (table) => [
+    index("invoiceItem_invoiceId_idx").on(table.invoiceId),
+    index("invoiceItem_quoteItemId_idx").on(table.quoteItemId),
+  ],
 );
 
 export const payment = pgTable(

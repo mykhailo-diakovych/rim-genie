@@ -49,6 +49,12 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 4,
   },
+  user: {
+    additionalFields: {
+      // input: false — only the admin-only employees router may write this field.
+      canAdjustPrices: { type: "boolean", input: false, defaultValue: false, required: false },
+    },
+  },
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== "/sign-in/email" && ctx.path !== "/sign-in/username") return;

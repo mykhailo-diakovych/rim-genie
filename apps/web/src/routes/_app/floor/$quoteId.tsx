@@ -39,7 +39,9 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { SignatureModal } from "@/components/terms/signature-modal";
+import { LinePriceCell } from "@/components/pricing/line-price-cell";
 import { authClient } from "@/lib/auth-client";
+import { useCanAdjustPrices } from "@/lib/use-can-adjust-prices";
 import { formatCents, formatDollars } from "@/lib/format-currency";
 import { client, orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
@@ -96,6 +98,7 @@ function QuoteEditorPage() {
 
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
+  const canAdjustPrices = useCanAdjustPrices();
 
   const quoteQuery = useQuery(orpc.floor.quotes.get.queryOptions({ input: { id: quoteId } }));
   const quote = quoteQuery.data;
@@ -156,6 +159,24 @@ function QuoteEditorPage() {
     onError: (err) => toast.error(`Failed to update item: ${err.message}`),
   });
 
+  const setItemPrice = useMutation({
+    ...orpc.floor.quotes.setItemPrice.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateQuote();
+      toast.success("Price updated");
+    },
+    onError: (err) => toast.error(`Failed to update price: ${err.message}`),
+  });
+
+  const clearItemPrice = useMutation({
+    ...orpc.floor.quotes.clearItemPrice.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateQuote();
+      toast.success("Generated price restored");
+    },
+    onError: (err) => toast.error(`Failed to restore price: ${err.message}`),
+  });
+
   const updateQuote = useMutation({
     ...orpc.floor.quotes.update.mutationOptions(),
     onSuccess: async () => {
@@ -199,7 +220,6 @@ function QuoteEditorPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-
   const sendToCashier = useMutation({
     ...orpc.floor.quotes.sendToCashier.mutationOptions(),
     onSuccess: async () => {
@@ -230,21 +250,33 @@ function QuoteEditorPage() {
   }
 
   function handleEditItem(itemId: string, data: QuoteGeneratorSheetData) {
-    updateItem.mutate({
-      id: itemId,
-      itemType: data.itemType ?? "rim",
-      vehicleSize: data.vehicleSize ?? undefined,
-      sideOfVehicle: data.sideOfVehicle ?? undefined,
-      damageLevel: data.damageLevel ?? undefined,
-      vehicleType: data.vehicleType ?? undefined,
-      rimMaterial: data.rimMaterial ?? undefined,
-      quantity: data.quantity,
-      unitCost: data.unitCost,
-      inches: data.inches ?? null,
-      tireSize: data.tireSize ?? null,
-      jobTypes: data.jobTypes,
-      description: data.description || undefined,
-    });
+    // Reworking the service re-prices it, retiring any hand-typed price.
+    const wasOverridden = (quote?.items ?? []).find((i) => i.id === itemId)?.priceOverridden;
+
+    updateItem.mutate(
+      {
+        id: itemId,
+        itemType: data.itemType ?? "rim",
+        vehicleSize: data.vehicleSize ?? undefined,
+        sideOfVehicle: data.sideOfVehicle ?? undefined,
+        damageLevel: data.damageLevel ?? undefined,
+        vehicleType: data.vehicleType ?? undefined,
+        rimMaterial: data.rimMaterial ?? undefined,
+        quantity: data.quantity,
+        unitCost: data.unitCost,
+        inches: data.inches ?? null,
+        tireSize: data.tireSize ?? null,
+        jobTypes: data.jobTypes,
+        description: data.description || undefined,
+      },
+      {
+        onSuccess: () => {
+          if (wasOverridden) {
+            toast.info("The manual price was replaced — this service was re-priced.");
+          }
+        },
+      },
+    );
   }
 
   function handleSave() {
@@ -523,13 +555,23 @@ function QuoteEditorPage() {
                               setEditingItem(item);
                               setSheetOpen(true);
                             }}
+                            onSetPrice={(totalCents) =>
+                              setItemPrice.mutate({ itemId: item.id, totalCents })
+                            }
+                            onResetPrice={() => clearItemPrice.mutate({ itemId: item.id })}
                             isRemoving={
                               removeItem.isPending && removeItem.variables?.id === item.id
                             }
                             isExcluding={
-                              setItemExcluded.isPending &&
-                              setItemExcluded.variables?.id === item.id
+                              setItemExcluded.isPending && setItemExcluded.variables?.id === item.id
                             }
+                            isPricing={
+                              (setItemPrice.isPending &&
+                                setItemPrice.variables?.itemId === item.id) ||
+                              (clearItemPrice.isPending &&
+                                clearItemPrice.variables?.itemId === item.id)
+                            }
+                            canAdjustPrices={canAdjustPrices}
                             isReadOnly={isReadOnly}
                           />
                         ))}
@@ -566,9 +608,7 @@ function QuoteEditorPage() {
               <ServicesExcluded
                 items={excludedItems}
                 onInclude={(id) => setItemExcluded.mutate({ id, excluded: false })}
-                pendingId={
-                  setItemExcluded.isPending ? setItemExcluded.variables?.id : undefined
-                }
+                pendingId={setItemExcluded.isPending ? setItemExcluded.variables?.id : undefined}
                 isReadOnly={isReadOnly}
               />
             )}
@@ -1109,8 +1149,12 @@ function ItemRow({
   onRemove,
   onExclude,
   onEdit,
+  onSetPrice,
+  onResetPrice,
   isRemoving,
   isExcluding,
+  isPricing,
+  canAdjustPrices,
   isReadOnly,
 }: {
   item: {
@@ -1128,8 +1172,12 @@ function ItemRow({
   onRemove: () => void;
   onExclude: () => void;
   onEdit: () => void;
+  onSetPrice: (totalCents: number) => void;
+  onResetPrice: () => void;
   isRemoving: boolean;
   isExcluding: boolean;
+  isPricing: boolean;
+  canAdjustPrices: boolean;
   isReadOnly?: boolean;
 }) {
   const rowTotal = lineTotalCents(item);
@@ -1152,8 +1200,15 @@ function ItemRow({
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
         {formatCents(item.unitCost)}
       </td>
-      <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-        {formatCents(rowTotal)}
+      <td className="border-l border-field-line px-2 py-2">
+        <LinePriceCell
+          totalCents={rowTotal}
+          priceOverridden={item.priceOverridden}
+          canEdit={canAdjustPrices && !isReadOnly}
+          isSaving={isPricing}
+          onSave={onSetPrice}
+          onReset={onResetPrice}
+        />
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
         {!isReadOnly && (
@@ -1162,12 +1217,7 @@ function ItemRow({
               <Pencil className="size-3.5" />
               Edit
             </Button>
-            <Button
-              className="w-full"
-              variant="outline"
-              onClick={onExclude}
-              disabled={isExcluding}
-            >
+            <Button className="w-full" variant="outline" onClick={onExclude} disabled={isExcluding}>
               <CornerDownRight className="size-3.5" />
               Exclude
             </Button>

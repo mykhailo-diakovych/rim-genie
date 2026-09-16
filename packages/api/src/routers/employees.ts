@@ -6,6 +6,7 @@ import { z } from "zod";
 import { auth } from "@rim-genie/auth";
 import { hashPassword } from "@rim-genie/auth/crypto";
 import { db } from "@rim-genie/db";
+import { isPlaceholderEmail, makePlaceholderEmail } from "@rim-genie/db/employee-email";
 import { env } from "@rim-genie/env/server";
 import {
   account,
@@ -39,10 +40,13 @@ const normalizeUsername = (employeeId: string) => employeeId.toLowerCase();
 const createEmployeeSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  email: z.email(),
+  // Placeholder email (when absent) satisfies Better Auth's notNull unique email constraint.
+  email: z.email().optional(),
   employeeId: employeeIdField,
   pin: pinField,
   role: z.enum(userRoleEnum.enumValues),
+  // Lets this employee type line prices by hand. Admins may always do so.
+  canAdjustPrices: z.boolean().default(false),
   // Sign-in rejects any non-admin without a `userLocation` row, so an employee
   // created with no location is permanently locked out.
   locationIds: z.array(z.string().min(1)).min(1),
@@ -52,9 +56,10 @@ const updateEmployeeSchema = z.object({
   id: z.string().min(1),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  email: z.email(),
+  email: z.email().optional(),
   employeeId: employeeIdField,
   role: z.enum(userRoleEnum.enumValues),
+  canAdjustPrices: z.boolean().default(false),
   // Optional on update (omit to leave assignments untouched), but never empty —
   // clearing every location would lock the employee out.
   locationIds: z.array(z.string().min(1)).min(1).optional(),
@@ -95,7 +100,13 @@ async function issueInviteToken(userId: string): Promise<string> {
   return token;
 }
 
-async function sendInvite(row: { id: string; name: string; email: string; username: string | null; role: string | null }) {
+async function sendInvite(row: {
+  id: string;
+  name: string;
+  email: string;
+  username: string | null;
+  role: string | null;
+}) {
   const token = await issueInviteToken(row.id);
   const inviteUrl = `${env.BETTER_AUTH_URL}/set-pin?token=${token}`;
 
@@ -148,6 +159,7 @@ export const employeesRouter = {
         email: user.email,
         username: user.username,
         role: user.role,
+        canAdjustPrices: user.canAdjustPrices,
         banned: user.banned,
         createdAt: user.createdAt,
       })
@@ -192,11 +204,13 @@ export const employeesRouter = {
       throw new ORPCError("CONFLICT", { message: "A user with this Employee ID already exists" });
     }
 
+    const email = input.email ?? makePlaceholderEmail(normalizedUsername);
+
     try {
       const created = await auth.api.createUser({
         body: {
           name: `${input.firstName} ${input.lastName}`,
-          email: input.email,
+          email,
           password: input.pin,
           role: input.role,
         },
@@ -204,29 +218,37 @@ export const employeesRouter = {
 
       await db
         .update(user)
-        .set({ username: normalizedUsername, displayUsername: input.employeeId })
+        .set({
+          username: normalizedUsername,
+          displayUsername: input.employeeId,
+          canAdjustPrices: input.canAdjustPrices,
+        })
         .where(eq(user.id, created.user.id));
       await setUserLocations(created.user.id, input.locationIds);
 
       // The employee can sign in immediately with the PIN the admin set; the invite
       // lets them replace it with one only they know. A mail failure must not undo
       // an otherwise-created account, so it is reported, not thrown.
-      let inviteSent = true;
-      try {
-        await sendInvite({
-          id: created.user.id,
-          name: `${input.firstName} ${input.lastName}`,
-          email: input.email,
-          username: normalizedUsername,
-          role: input.role,
-        });
-      } catch {
-        inviteSent = false;
+      let inviteSent = false;
+      if (input.email) {
+        try {
+          await sendInvite({
+            id: created.user.id,
+            name: `${input.firstName} ${input.lastName}`,
+            email: input.email,
+            username: normalizedUsername,
+            role: input.role,
+          });
+          inviteSent = true;
+        } catch {
+          inviteSent = false;
+        }
       }
 
       return {
         ...created,
         inviteSent,
+        hasEmail: !!input.email,
         user: {
           ...created.user,
           username: normalizedUsername,
@@ -244,14 +266,6 @@ export const employeesRouter = {
   }),
 
   update: adminProcedure.input(updateEmployeeSchema).handler(async ({ input }) => {
-    const existingEmail = await db
-      .select({ id: user.id })
-      .from(user)
-      .where(and(eq(user.email, input.email), ne(user.id, input.id)));
-    if (existingEmail.length > 0) {
-      throw new ORPCError("CONFLICT", { message: "A user with this email already exists" });
-    }
-
     const normalizedUsername = normalizeUsername(input.employeeId);
 
     const existingUsername = await db
@@ -262,14 +276,26 @@ export const employeesRouter = {
       throw new ORPCError("CONFLICT", { message: "A user with this Employee ID already exists" });
     }
 
+    // Clearing the email swaps in a placeholder; adding one back replaces it.
+    const email = input.email ?? makePlaceholderEmail(normalizedUsername);
+
+    const existingEmail = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(and(eq(user.email, email), ne(user.id, input.id)));
+    if (existingEmail.length > 0) {
+      throw new ORPCError("CONFLICT", { message: "A user with this email already exists" });
+    }
+
     const [updated] = await db
       .update(user)
       .set({
         name: `${input.firstName} ${input.lastName}`,
-        email: input.email,
+        email,
         username: normalizedUsername,
         displayUsername: input.employeeId,
         role: input.role,
+        canAdjustPrices: input.canAdjustPrices,
       })
       .where(eq(user.id, input.id))
       .returning();
@@ -300,6 +326,11 @@ export const employeesRouter = {
         .where(eq(user.id, input.userId));
 
       if (!row) throw new ORPCError("NOT_FOUND", { message: "Employee not found" });
+      if (isPlaceholderEmail(row.email)) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "This employee has no email address on file",
+        });
+      }
       await sendInvite(row);
       return { success: true };
     }),
@@ -327,7 +358,8 @@ export const employeesRouter = {
         const userId = await resolveInvite(input.token);
         if (!userId) {
           throw new ORPCError("BAD_REQUEST", {
-            message: "This invite link is invalid or has expired. Ask an administrator for a new one.",
+            message:
+              "This invite link is invalid or has expired. Ask an administrator for a new one.",
           });
         }
 

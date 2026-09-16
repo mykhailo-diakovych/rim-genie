@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { isPlaceholderEmail } from "@rim-genie/db/employee-email";
 import type { UserRole } from "@rim-genie/db/schema";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +16,7 @@ export interface EmployeeCardData {
   username: string | null;
   role: UserRole | null;
   banned: boolean | null;
+  canAdjustPrices?: boolean;
   locations?: { id: string; name: string }[];
 }
 
@@ -78,7 +80,9 @@ export function EmployeeCard({ employee, actions }: EmployeeCardProps) {
           <span className="text-body">{employee.username ?? employee.id.slice(0, 8)}</span>
           <span className="size-1 rounded-full bg-label" />
           <span className="text-label">{m.employees_label_email()}</span>
-          <span className="text-body">{employee.email}</span>
+          <span className="text-body">
+            {isPlaceholderEmail(employee.email) ? m.employees_no_email() : employee.email}
+          </span>
           {employee.locations && employee.locations.length > 0 && (
             <>
               <span className="size-1 rounded-full bg-label" />
