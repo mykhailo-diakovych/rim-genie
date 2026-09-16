@@ -26,6 +26,8 @@ export const quoteStatusEnum = pgEnum("quote_status", [
   "completed",
 ]);
 
+export const quoteDiscountTypeEnum = pgEnum("quote_discount_type", ["percent", "fixed"]);
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type JobTypeEntry = {
@@ -99,7 +101,9 @@ export const quote = pgTable(
     fullDiagnosticConsent: boolean("full_diagnostic_consent").default(false).notNull(),
     validUntil: timestamp("valid_until"),
     subtotal: integer("subtotal").default(0).notNull(),
+    discountType: quoteDiscountTypeEnum("discount_type").default("percent").notNull(),
     discountPercent: integer("discount_percent").default(0).notNull(),
+    discountFixedCents: integer("discount_fixed_cents").default(0).notNull(),
     vipDiscountPercent: integer("vip_discount_percent").default(0).notNull(),
     rewardDiscountPercent: integer("reward_discount_percent").default(0).notNull(),
     discountAmount: integer("discount_amount").default(0).notNull(),

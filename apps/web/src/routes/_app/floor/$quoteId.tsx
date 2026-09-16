@@ -25,6 +25,7 @@ import { toast } from "sonner";
 
 import type { JobTypeEntry } from "@rim-genie/db/schema";
 import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
+import { DISCOUNT_CAP_PERCENT, exceedsDiscountCap } from "@rim-genie/db/discount";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +43,12 @@ import { SignatureModal } from "@/components/terms/signature-modal";
 import { LinePriceCell } from "@/components/pricing/line-price-cell";
 import { authClient } from "@/lib/auth-client";
 import { useCanAdjustPrices } from "@/lib/use-can-adjust-prices";
-import { formatCents, formatDollars } from "@/lib/format-currency";
+import {
+  centsToInputValue,
+  formatCents,
+  formatDollars,
+  parseDollarsToCents,
+} from "@/lib/format-currency";
 import { client, orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
 import { SendQuoteDialog } from "@/components/floor/send-quote-dialog";
@@ -289,17 +295,108 @@ function QuoteEditorPage() {
   }
 
   const [discountStr, setDiscountStr] = useState("");
-  const [lastDiscountPercent, setLastDiscountPercent] = useState<number | null>(null);
+  const [discountMode, setDiscountMode] = useState<"percent" | "fixed">("percent");
+  const [lastDiscountKey, setLastDiscountKey] = useState<string | null>(null);
 
-  if (quote && quote.discountPercent !== lastDiscountPercent) {
-    setDiscountStr(String(quote.discountPercent ?? 0));
-    setLastDiscountPercent(quote.discountPercent ?? 0);
-  }
-
-  const subtotal = (quote?.subtotal ?? quote?.total ?? 0) / 100;
+  const subtotalCents = quote?.subtotal ?? quote?.total ?? 0;
+  const subtotal = subtotalCents / 100;
   const discountAmount = (quote?.discountAmount ?? 0) / 100;
   const total = (quote?.total ?? 0) / 100;
   const discountPercent = quote?.discountPercent ?? 0;
+  const quoteDiscountType = quote?.discountType ?? "percent";
+  const quoteDiscountFixedCents = quote?.discountFixedCents ?? 0;
+
+  const discountKey = quote
+    ? `${quoteDiscountType}:${discountPercent}:${quoteDiscountFixedCents}`
+    : null;
+
+  function discountInputValue(): string {
+    return quoteDiscountType === "fixed"
+      ? centsToInputValue(quoteDiscountFixedCents)
+      : String(discountPercent);
+  }
+
+  if (quote && discountKey !== lastDiscountKey) {
+    setDiscountMode(quoteDiscountType);
+    setDiscountStr(discountInputValue());
+    setLastDiscountKey(discountKey);
+  }
+
+  function resetDiscountInput() {
+    setDiscountMode(quoteDiscountType);
+    setDiscountStr(discountInputValue());
+  }
+
+  function confirmOverCap(label: string): boolean {
+    return window.confirm(
+      `${label} exceeds the ${DISCOUNT_CAP_PERCENT}% discount limit for this quote. Apply it anyway?`,
+    );
+  }
+
+  function commitDiscount() {
+    if (!quote) return;
+
+    if (discountMode === "fixed") {
+      const cents = parseDollarsToCents(discountStr);
+      if (cents === null) {
+        resetDiscountInput();
+        return;
+      }
+      if (quoteDiscountType === "fixed" && cents === quoteDiscountFixedCents) return;
+      const overCap = exceedsDiscountCap(subtotalCents, {
+        discountType: "fixed",
+        discountPercent: 0,
+        discountFixedCents: cents,
+      });
+      if (overCap && !confirmOverCap(formatCents(cents))) {
+        resetDiscountInput();
+        return;
+      }
+      updateQuote.mutate({
+        id: quoteId,
+        discountType: "fixed",
+        discountFixedCents: cents,
+        discountPercent: 0,
+      });
+      return;
+    }
+
+    const val = parseInt(discountStr, 10);
+    if (isNaN(val) || val < 0 || val > 100) {
+      resetDiscountInput();
+      return;
+    }
+    if (quoteDiscountType === "percent" && val === discountPercent) return;
+
+    if (isAdmin) {
+      if (val > DISCOUNT_CAP_PERCENT && !confirmOverCap(`${val}%`)) {
+        resetDiscountInput();
+        return;
+      }
+      updateQuote.mutate({
+        id: quoteId,
+        discountType: "percent",
+        discountPercent: val,
+        discountFixedCents: 0,
+      });
+      return;
+    }
+
+    client.discount
+      .requestQuoteDiscount({ quoteId, requestedPercent: val })
+      .then(() => {
+        toast.success(
+          val > DISCOUNT_CAP_PERCENT
+            ? `Discounts above ${DISCOUNT_CAP_PERCENT}% need an admin — request sent for approval`
+            : "Discount request sent for admin approval",
+        );
+        void queryClient.invalidateQueries({
+          queryKey: orpc.discount.pendingForQuote.key({ input: { quoteId } }),
+        });
+      })
+      .catch((err: Error) => toast.error(err.message));
+    resetDiscountInput();
+  }
 
   const formatDate = (d: Date | string | null | undefined) => {
     if (!d) return "—";
@@ -710,39 +807,45 @@ function QuoteEditorPage() {
                 </div>
               )}
               <div className="flex items-center justify-end gap-3 px-3 font-rubik text-sm leading-5">
-                <span className="text-label">Discount:</span>
+                <span className="text-label">Discount (this quote only):</span>
                 <div className="flex items-center gap-1">
+                  {isAdmin && (
+                    <div className="mr-1 flex items-center rounded-md border border-toggle-line bg-white p-0.5">
+                      {(["percent", "fixed"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          disabled={isReadOnly || !!pendingDiscount}
+                          onClick={() => {
+                            if (mode === discountMode) return;
+                            setDiscountMode(mode);
+                            setDiscountStr(
+                              mode === "fixed"
+                                ? centsToInputValue(quoteDiscountFixedCents)
+                                : String(discountPercent),
+                            );
+                          }}
+                          className={`rounded-sm px-2 py-0.5 font-rubik text-xs leading-4 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                            discountMode === mode ? "bg-blue text-white" : "text-label"
+                          }`}
+                        >
+                          {mode === "percent" ? "%" : "$"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {discountMode === "fixed" && <span className="text-label">$</span>}
                   <input
                     type="text"
                     value={discountStr}
                     onChange={(e) => setDiscountStr(e.target.value)}
-                    onBlur={() => {
-                      const val = parseInt(discountStr, 10);
-                      if (!isNaN(val) && val >= 0 && val <= 100 && val !== discountPercent) {
-                        if (isAdmin) {
-                          updateQuote.mutate({ id: quoteId, discountPercent: val });
-                        } else {
-                          client.discount
-                            .requestQuoteDiscount({ quoteId, requestedPercent: val })
-                            .then(() => {
-                              toast.success("Discount request sent for admin approval");
-                              void queryClient.invalidateQueries({
-                                queryKey: orpc.discount.pendingForQuote.key({
-                                  input: { quoteId },
-                                }),
-                              });
-                            })
-                            .catch((err: Error) => toast.error(err.message));
-                          setDiscountStr(String(discountPercent));
-                        }
-                      } else {
-                        setDiscountStr(String(discountPercent));
-                      }
-                    }}
+                    onBlur={commitDiscount}
                     disabled={isReadOnly || !!pendingDiscount}
-                    className="w-10 rounded border border-transparent bg-transparent px-1 py-0.5 text-right font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`rounded border border-transparent bg-transparent px-1 py-0.5 text-right font-rubik text-sm text-body outline-none hover:border-field-line focus:border-field-line disabled:cursor-not-allowed disabled:opacity-50 ${
+                      discountMode === "fixed" ? "w-16" : "w-10"
+                    }`}
                   />
-                  <span className="text-label">%</span>
+                  {discountMode === "percent" && <span className="text-label">%</span>}
                   {discountAmount > 0 && (
                     <span className="text-body">(-{formatDollars(discountAmount)})</span>
                   )}

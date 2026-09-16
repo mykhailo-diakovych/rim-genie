@@ -106,6 +106,13 @@
       "when": 1789465798697,
       "tag": "0014_smiling_trish_tilby",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1789466459695,
+      "tag": "0015_ancient_valkyrie",
+      "breakpoints": true
     }
   ]
 }

@@ -484,16 +484,32 @@ export const floorRouter = {
           customerReason: z.string().optional(),
           jobRack: z.string().optional(),
           discountPercent: z.number().int().min(0).max(100).optional(),
+          discountType: z.enum(["percent", "fixed"]).optional(),
+          discountFixedCents: z.number().int().min(0).optional(),
           fullDiagnosticConsent: z.boolean().optional(),
         }),
       )
       .handler(async ({ input, context }) => {
-        const { id, discountPercent, ...fields } = input;
+        const { id, discountPercent, discountType, discountFixedCents, ...fields } = input;
         const isAdmin = context.session.user.role === "admin";
+        const touchesDiscount =
+          discountPercent !== undefined ||
+          discountType !== undefined ||
+          discountFixedCents !== undefined;
+
+        // Fixed-dollar discounts skip the (percent-only) approval flow, so admin-only.
+        if (!isAdmin && (discountType === "fixed" || discountFixedCents !== undefined)) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "Fixed-dollar discounts require an admin. Request a percentage instead.",
+          });
+        }
 
         const updateFields: Record<string, unknown> = { ...fields };
-        if (discountPercent !== undefined && isAdmin) {
-          updateFields.discountPercent = discountPercent;
+        if (isAdmin) {
+          if (discountPercent !== undefined) updateFields.discountPercent = discountPercent;
+          if (discountType !== undefined) updateFields.discountType = discountType;
+          if (discountFixedCents !== undefined)
+            updateFields.discountFixedCents = discountFixedCents;
         }
 
         const rows = await db
@@ -502,7 +518,7 @@ export const floorRouter = {
           .where(eq(quote.id, id))
           .returning();
 
-        if (discountPercent !== undefined && isAdmin) {
+        if (touchesDiscount && isAdmin) {
           await recalcQuoteTotal(id);
         }
 

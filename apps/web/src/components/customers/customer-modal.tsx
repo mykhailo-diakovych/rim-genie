@@ -326,16 +326,21 @@ export function CustomerModal({ trigger, customer }: CustomerModalProps) {
 
             <form.Field name="discount">
               {(field) => (
-                <div className="flex w-[105px] flex-col gap-1">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor={field.name}>{m.customers_label_discount()}</Label>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    type="number"
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
+                  <div className="w-[105px]">
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type="number"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                  </div>
+                  <span className="max-w-64 font-rubik text-xs leading-4 text-label">
+                    {m.customers_hint_discount()}
+                  </span>
                 </div>
               )}
             </form.Field>
