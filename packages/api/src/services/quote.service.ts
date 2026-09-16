@@ -7,7 +7,8 @@ export async function recalcQuoteTotal(quoteId: string): Promise<void> {
   const result = await db
     .select({
       total: sum(
-        sql`CASE WHEN ${quoteItem.inches} IS NOT NULL THEN ${quoteItem.inches} * ${quoteItem.unitCost} ELSE ${quoteItem.quantity} * ${quoteItem.unitCost} END`,
+        // SQL mirror of lineTotalCents().
+        sql`CASE WHEN ${quoteItem.priceOverridden} = false AND ${quoteItem.itemType} = 'welding' AND ${quoteItem.inches} IS NOT NULL THEN ${quoteItem.inches} * ${quoteItem.unitCost} * ${quoteItem.quantity} ELSE ${quoteItem.quantity} * ${quoteItem.unitCost} END`,
       ),
     })
     .from(quoteItem)

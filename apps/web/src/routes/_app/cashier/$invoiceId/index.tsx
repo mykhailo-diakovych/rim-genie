@@ -16,6 +16,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
+
 import { Button } from "@/components/ui/button";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { formatCents } from "@/lib/format-currency";
@@ -392,7 +394,7 @@ function InvoiceDetailPage() {
                       </div>
                     </td>
                     <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                      {item.quantity}
+                      {lineQuantityLabel(item)}
                     </td>
                     <td className="border-l border-field-line px-2 py-2 text-sm text-body">
                       {formatCents(item.unitCost)}
@@ -456,11 +458,7 @@ function InvoiceDetailPage() {
                         </div>
                       </td>
                       <td className="border-r border-l border-field-line px-2 py-1.5 text-xs text-body">
-                        {formatCents(
-                          item.inches
-                            ? item.inches * item.unitCost
-                            : item.quantity * item.unitCost,
-                        )}
+                        {formatCents(lineTotalCents(item))}
                       </td>
                     </tr>
                   ))}

@@ -23,6 +23,9 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import type { JobTypeEntry } from "@rim-genie/db/schema";
+import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -220,6 +223,7 @@ function QuoteEditorPage() {
       quantity: data.quantity,
       unitCost: data.unitCost,
       inches: data.inches,
+      tireSize: data.tireSize,
       jobTypes: data.jobTypes,
       description: data.description || undefined,
     });
@@ -237,6 +241,7 @@ function QuoteEditorPage() {
       quantity: data.quantity,
       unitCost: data.unitCost,
       inches: data.inches ?? null,
+      tireSize: data.tireSize ?? null,
       jobTypes: data.jobTypes,
       description: data.description || undefined,
     });
@@ -972,18 +977,14 @@ function ServicesExcluded({
       ) : (
         <div className="flex flex-col gap-1">
           {items.map((item) => {
-            const lineTotal = item.inches
-              ? item.inches * item.unitCost
-              : item.quantity * item.unitCost;
+            const lineTotal = lineTotalCents(item);
             return (
               <div key={item.id} className="flex items-center gap-2 rounded-lg bg-page px-2 py-1">
                 <div className="flex flex-1 items-baseline gap-2 font-rubik">
                   <span className="text-sm leading-[18px] text-body">
                     {item.description ?? item.itemType}
                   </span>
-                  <span className="text-xs leading-3.5 text-label">
-                    ({formatCents(lineTotal)})
-                  </span>
+                  <span className="text-xs leading-3.5 text-label">({formatCents(lineTotal)})</span>
                 </div>
                 {!isReadOnly && (
                   <Button
@@ -1116,9 +1117,12 @@ function ItemRow({
     id: string;
     description: string | null;
     comments: string | null;
+    itemType: string;
     quantity: number;
     unitCost: number;
     inches: number | null;
+    priceOverridden: boolean;
+    jobTypes: JobTypeEntry[];
   };
   index: number;
   onRemove: () => void;
@@ -1128,9 +1132,7 @@ function ItemRow({
   isExcluding: boolean;
   isReadOnly?: boolean;
 }) {
-  const rowTotal = item.inches
-    ? (item.inches * item.unitCost) / 100
-    : (item.quantity * item.unitCost) / 100;
+  const rowTotal = lineTotalCents(item);
 
   return (
     <tr className="border-b border-field-line align-top">
@@ -1145,13 +1147,13 @@ function ItemRow({
         </div>
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-        {item.inches || item.quantity || 1}
+        {lineQuantityLabel(item)}
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
         {formatCents(item.unitCost)}
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-        {formatDollars(rowTotal)}
+        {formatCents(rowTotal)}
       </td>
       <td className="border-r border-l border-field-line px-2 py-2">
         {!isReadOnly && (

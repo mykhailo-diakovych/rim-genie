@@ -549,6 +549,7 @@ export const floorRouter = {
           quantity: z.number().int().min(1).default(1),
           unitCost: z.number().int().min(0).default(0),
           inches: z.number().int().min(1).optional(),
+          tireSize: z.number().int().min(1).optional(),
           jobTypes: z.array(jobTypeEntrySchema).default([]),
           description: z.string().optional(),
         }),
@@ -563,13 +564,16 @@ export const floorRouter = {
 
         const sortOrder = (existing[0]?.sortOrder ?? -1) + 1;
 
+        // inches is welding-only; dropped for other item types to avoid a silent price multiply.
+        const inches = input.itemType === "welding" ? (input.inches ?? null) : null;
+
         const computedPrice = await computeItemPrice({
           itemType: input.itemType,
           jobTypes: input.jobTypes,
           vehicleType: input.vehicleType,
           rimMaterial: input.rimMaterial,
           vehicleSize: input.vehicleSize,
-          inches: input.inches,
+          tireSize: input.tireSize,
         });
         const unitCost = computedPrice > 0 ? computedPrice : input.unitCost;
 
@@ -585,7 +589,8 @@ export const floorRouter = {
             rimMaterial: input.rimMaterial ?? null,
             quantity: input.quantity,
             unitCost,
-            inches: input.inches,
+            inches,
+            tireSize: input.tireSize ?? null,
             jobTypes: input.jobTypes as JobTypeEntry[],
             description: input.description,
             sortOrder,
@@ -609,6 +614,7 @@ export const floorRouter = {
           quantity: z.number().int().min(1).optional(),
           unitCost: z.number().int().min(0).optional(),
           inches: z.number().int().min(1).nullable().optional(),
+          tireSize: z.number().int().min(1).nullable().optional(),
           jobTypes: z.array(jobTypeEntrySchema).optional(),
           description: z.string().optional(),
           comments: z.string().optional(),
@@ -631,7 +637,11 @@ export const floorRouter = {
         const mergedRimMaterial =
           fields.rimMaterial !== undefined ? fields.rimMaterial : current.rimMaterial;
         const mergedVehicleSize = fields.vehicleSize ?? current.vehicleSize;
-        const mergedInches = fields.inches !== undefined ? fields.inches : current.inches;
+        const rawInches = fields.inches !== undefined ? fields.inches : current.inches;
+        // inches is welding-only (see addItem).
+        const mergedInches = mergedItemType === "welding" ? rawInches : null;
+        const mergedTireSize =
+          fields.tireSize !== undefined ? fields.tireSize : (current.tireSize ?? null);
 
         const computedPrice = await computeItemPrice({
           itemType: mergedItemType,
@@ -639,10 +649,13 @@ export const floorRouter = {
           vehicleType: mergedVehicleType,
           rimMaterial: mergedRimMaterial,
           vehicleSize: mergedVehicleSize,
-          inches: mergedInches,
+          tireSize: mergedTireSize,
         });
 
         const updateFields = { ...fields } as Partial<typeof quoteItem.$inferInsert>;
+        updateFields.inches = mergedInches;
+        updateFields.tireSize = mergedTireSize;
+
         if (computedPrice > 0) {
           updateFields.unitCost = computedPrice;
         }

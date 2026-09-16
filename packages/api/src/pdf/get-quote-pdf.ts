@@ -1,4 +1,5 @@
 import { db } from "@rim-genie/db";
+import { lineTotalCents } from "@rim-genie/db/line-item";
 import { quote } from "@rim-genie/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -48,11 +49,14 @@ export async function getQuotePdf(
       quantity: item.quantity,
       unitCost: item.unitCost,
       inches: item.inches,
+      itemType: item.itemType,
+      jobTypes: item.jobTypes,
+      priceOverridden: item.priceOverridden,
     })),
     excludedServices: excludedItems.map((item) => ({
       id: item.id,
       name: item.description ?? item.itemType,
-      price: item.inches ? item.inches * item.unitCost : item.quantity * item.unitCost,
+      price: lineTotalCents(item),
     })),
   });
 

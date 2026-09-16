@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { eq, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
+import { lineTotalCents } from "@rim-genie/db/line-item";
 import { quote, invoice, invoiceItem, payment, job } from "@rim-genie/db/schema";
 
 import {
@@ -50,10 +51,7 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
       return yield* Effect.fail(new QuoteHasNoItems({ quoteId }));
     }
 
-    const subtotal = billableItems.reduce(
-      (s, i) => s + (i.inches ? i.inches * i.unitCost : i.quantity * i.unitCost),
-      0,
-    );
+    const subtotal = billableItems.reduce((s, i) => s + lineTotalCents(i), 0);
     const discountAmount = found.discountAmount;
     const total = subtotal - discountAmount;
 
@@ -89,9 +87,11 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
               quantity: item.quantity,
               unitCost: item.unitCost,
               inches: item.inches,
+              tireSize: item.tireSize,
               jobTypes: item.jobTypes,
               description: item.description,
               comments: item.comments,
+              priceOverridden: item.priceOverridden,
               sortOrder: item.sortOrder,
             })),
           );
@@ -122,9 +122,11 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
             quantity: item.quantity,
             unitCost: item.unitCost,
             inches: item.inches,
+            tireSize: item.tireSize,
             jobTypes: item.jobTypes,
             description: item.description,
             comments: item.comments,
+            priceOverridden: item.priceOverridden,
             sortOrder: item.sortOrder,
           })),
         );

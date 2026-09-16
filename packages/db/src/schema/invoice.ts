@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -89,9 +90,12 @@ export const invoiceItem = pgTable(
     quantity: integer("quantity").default(1).notNull(),
     unitCost: integer("unit_cost").default(0).notNull(),
     inches: integer("inches"),
+    tireSize: integer("tire_size"),
     jobTypes: jsonb("job_types").$type<JobTypeEntry[]>().default([]).notNull(),
     description: text("description"),
     comments: text("comments"),
+    // Mirrors quoteItem.priceOverridden (see lineTotalCents).
+    priceOverridden: boolean("price_overridden").default(false).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

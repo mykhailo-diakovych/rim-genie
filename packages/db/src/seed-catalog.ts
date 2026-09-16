@@ -134,16 +134,14 @@ async function seedCatalog() {
   const vsIdByKey = new Map(vsRows.map((r) => [r.key, r.id]));
 
   // 3. Powder-coat colors
-  await db
-    .insert(powderCoatColor)
-    .values(
-      data.powderCoatColors.map((c) => ({
-        name: c.name,
-        key: c.key,
-        sortOrder: c.sortOrder,
-        hex: c.hex ?? null,
-      })),
-    );
+  await db.insert(powderCoatColor).values(
+    data.powderCoatColors.map((c) => ({
+      name: c.name,
+      key: c.key,
+      sortOrder: c.sortOrder,
+      hex: c.hex ?? null,
+    })),
+  );
 
   // 4. Job types — groups with their sub-types, generics standalone
   const sectionOrder = new Map<JobTypeSection, number>();

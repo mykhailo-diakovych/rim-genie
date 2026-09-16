@@ -59,6 +59,7 @@ export interface QuoteGeneratorSheetData {
   quantity: number;
   unitCost: number;
   inches?: number;
+  tireSize?: number;
   itemType?: "rim" | "welding" | "powder-coating" | "general";
   jobTypes: JobTypeEntry[];
   description: string;
@@ -156,6 +157,7 @@ export interface QuoteGeneratorEditItem {
   quantity: number;
   unitCost: number;
   inches: number | null;
+  tireSize: number | null;
   jobTypes: JobTypeEntry[];
   description: string | null;
 }
@@ -197,7 +199,8 @@ export function QuoteGeneratorSheet({
 
   const [rimComments, setRimComments] = useState("");
   const [generalComments, setGeneralComments] = useState("");
-  const [spotQty, setSpotQty] = useState("1");
+  // Occurrence count per rim job, keyed by root job key.
+  const [rimJobQuantities, setRimJobQuantities] = useState<Record<string, string>>({});
 
   const [rimSelects, setRimSelects] = useState({
     rimSize: "",
@@ -300,6 +303,19 @@ export function QuoteGeneratorSheet({
     enabled: !!(spotLeafKey && spotBucket),
   });
 
+  const rimJobQty = (rootKey: string) => rimJobQuantities[rootKey] ?? "1";
+
+  // Mirrors the server's rim branch in computeItemPrice: base rate × occurrences.
+  const rimJobLineCost = (root: (typeof rimJobList)[number]) => {
+    const qty = parseInt(rimJobQty(root.key), 10) || 1;
+    if (root.key === "spot-polish") {
+      return (spotPrice?.found ? spotPrice.unitCost : 0) * qty;
+    }
+    const leafKey = root.children.length ? jobSubTypes[root.key] : root.key;
+    const base = leafKey ? (rimPrices?.[leafKey]?.unitCost ?? 0) : 0;
+    return applyRimModifier(base) * qty;
+  };
+
   const { data: weldingMaterials } = useQuery(orpc.catalog.weldingMaterials.list.queryOptions());
   const { data: weldingPrices } = useQuery(
     orpc.floor.pricing.lookup.queryOptions({
@@ -381,7 +397,7 @@ export function QuoteGeneratorSheet({
         const childLabel = root.children.find((c) => c.key === leafKey)?.label;
         const entry: JobTypeEntry = { type: leafKey as JobType };
         if (childLabel) entry.subType = childLabel;
-        if (root.key === "spot-polish") entry.input = spotQty;
+        entry.input = rimJobQty(root.key);
         return entry;
       });
 
@@ -389,27 +405,21 @@ export function QuoteGeneratorSheet({
         `${value.rimSize}" Rims`,
         `Vehicle: ${value.vehicleType} - ${value.material}`,
         ...selectedRoots.map((root) => {
+          const qty = rimJobQty(root.key);
+          const suffix = qty === "1" ? "" : ` x${qty}`;
           if (root.children.length) {
             const leafKey = jobSubTypes[root.key];
             const childLabel = root.children.find((c) => c.key === leafKey)?.label;
-            return `${root.label}: ${childLabel ?? ""}`;
+            return `${root.label}: ${childLabel ?? ""}${suffix}`;
           }
-          return root.label;
+          return `${root.label}${suffix}`;
         }),
         rimComments.trim() || null,
       ]
         .filter(Boolean)
         .join(", ");
 
-      const unitCost = selectedRoots.reduce((sum, root) => {
-        if (root.key === "spot-polish") {
-          const base = spotPrice?.found ? spotPrice.unitCost : 0;
-          return sum + base * (parseInt(spotQty, 10) || 1);
-        }
-        const leafKey = root.children.length ? jobSubTypes[root.key] : root.key;
-        const base = leafKey ? (rimPrices?.[leafKey]?.unitCost ?? 0) : 0;
-        return sum + applyRimModifier(base);
-      }, 0);
+      const unitCost = selectedRoots.reduce((sum, root) => sum + rimJobLineCost(root), 0);
 
       const data: QuoteGeneratorSheetData = {
         vehicleSize: value.rimSize,
@@ -592,7 +602,7 @@ export function QuoteGeneratorSheet({
         damageLevel: null,
         quantity: 1,
         unitCost: generalUnitCost,
-        inches: value.tireSize ? parseInt(value.tireSize, 10) : undefined,
+        tireSize: value.tireSize ? parseInt(value.tireSize, 10) : undefined,
         itemType: "general",
         jobTypes: selectedServices.map((s) =>
           s.isTire
@@ -647,7 +657,7 @@ export function QuoteGeneratorSheet({
     } else if (editItem.itemType === "general") {
       setTab("general");
       const vs = editItem.vehicleSize ?? "";
-      const ts = String(editItem.inches ?? "");
+      const ts = String(editItem.tireSize ?? "");
       setGeneralSelects({ vehicleSize: vs, tireSize: ts });
       generalForm.reset({ vehicleSize: vs, tireSize: ts });
       const svcChecked: Partial<Record<string, boolean>> = {};
@@ -684,6 +694,7 @@ export function QuoteGeneratorSheet({
 
     const checked: Record<string, boolean> = {};
     const subTypes: Record<string, string> = {};
+    const quantities: Record<string, string> = {};
     for (const jt of editItem.jobTypes) {
       const root = rimJobList.find(
         (r) => r.key === jt.type || r.children.some((c) => c.key === jt.type),
@@ -691,13 +702,14 @@ export function QuoteGeneratorSheet({
       if (root) {
         checked[root.key] = true;
         if (root.children.length) subTypes[root.key] = jt.type;
-        if (root.key === "spot-polish" && jt.input) setSpotQty(jt.input);
+        if (jt.input) quantities[root.key] = jt.input;
       } else {
         checked[jt.type] = true;
       }
     }
     setCheckedJobs(checked);
     setJobSubTypes(subTypes);
+    setRimJobQuantities(quantities);
     setInitialized(editItem.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editItem?.id]);
@@ -730,7 +742,7 @@ export function QuoteGeneratorSheet({
     setInitialized(null);
     setRimComments("");
     setGeneralComments("");
-    setSpotQty("1");
+    setRimJobQuantities({});
     setRimSelects({ rimSize: "", vehicleType: "", material: "" });
     setWeldingSelects({ materialType: "", lengthOfWeld: "" });
     setPcSelects({ rimSize: "", scope: "", colorCount: "" });
@@ -953,12 +965,13 @@ export function QuoteGeneratorSheet({
                     const isSpot = job.key === "spot-polish";
                     const priceLoading = isSpot ? spotPriceFetching : rimPricesFetching;
                     const priceRow = leafKey && !isSpot ? rimPrices?.[leafKey] : undefined;
+                    const qty = parseInt(rimJobQty(job.key), 10) || 1;
                     const displayUnit = isSpot
                       ? spotPrice?.found && leafKey
-                        ? spotPrice.unitCost * (parseInt(spotQty, 10) || 1)
+                        ? spotPrice.unitCost * qty
                         : undefined
                       : priceRow?.found
-                        ? applyRimModifier(priceRow.unitCost)
+                        ? applyRimModifier(priceRow.unitCost) * qty
                         : undefined;
                     return (
                       <div key={job.key}>
@@ -1020,30 +1033,33 @@ export function QuoteGeneratorSheet({
                                 ))}
                               </SelectPopup>
                             </Select>
-                            {isSpot && leafKey && (
-                              <div className="mt-1 flex flex-col gap-1">
-                                {rimSize != null && (
-                                  <span className="font-rubik text-xs text-label">
-                                    Rim size band:{" "}
-                                    <span className="font-medium text-body">
-                                      {rimSize >= 21 ? '21" and above' : '20" and under'}
-                                    </span>
-                                  </span>
-                                )}
-                                <label className="font-rubik text-xs leading-3.5 text-label">
-                                  How many rims?
-                                </label>
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={spotQty}
-                                  onChange={(e) =>
-                                    setSpotQty(e.target.value.replace(/\D/g, "") || "1")
-                                  }
-                                  className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none"
-                                />
-                              </div>
+                            {isSpot && leafKey && rimSize != null && (
+                              <span className="mt-1 font-rubik text-xs text-label">
+                                Rim size band:{" "}
+                                <span className="font-medium text-body">
+                                  {rimSize >= 21 ? '21" and above' : '20" and under'}
+                                </span>
+                              </span>
                             )}
+                          </div>
+                        )}
+                        {isChecked && (
+                          <div className="flex flex-col gap-1 bg-page px-3 pb-2">
+                            <label className="font-rubik text-xs leading-3.5 text-label">
+                              {isSpot ? "How many rims?" : "How many on this rim?"}
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              value={rimJobQty(job.key)}
+                              onChange={(e) =>
+                                setRimJobQuantities((prev) => ({
+                                  ...prev,
+                                  [job.key]: e.target.value.replace(/\D/g, "") || "1",
+                                }))
+                              }
+                              className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none"
+                            />
                           </div>
                         )}
                       </div>
@@ -1741,15 +1757,7 @@ export function QuoteGeneratorSheet({
               {(() => {
                 if (tab === "rims") {
                   const selectedRoots = rimJobList.filter((j) => checkedJobs[j.key]);
-                  const total = selectedRoots.reduce((sum, root) => {
-                    if (root.key === "spot-polish") {
-                      const base = spotPrice?.found ? spotPrice.unitCost : 0;
-                      return sum + base * (parseInt(spotQty, 10) || 1);
-                    }
-                    const leafKey = root.children.length ? jobSubTypes[root.key] : root.key;
-                    const base = leafKey ? (rimPrices?.[leafKey]?.unitCost ?? 0) : 0;
-                    return sum + applyRimModifier(base);
-                  }, 0);
+                  const total = selectedRoots.reduce((sum, root) => sum + rimJobLineCost(root), 0);
                   return (total / 100).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
