@@ -7,6 +7,8 @@ import { Command } from "cmdk";
 import { FileText, Receipt, Search, User, Users } from "lucide-react";
 
 import { useDebounce } from "@/lib/use-debounce";
+import { isPlaceholderEmail } from "@rim-genie/db/employee-email";
+
 import { m } from "@/paraglide/messages";
 import { orpc } from "@/utils/orpc";
 
@@ -198,7 +200,9 @@ export function CommandPalette({
                       <Users className="size-4 shrink-0 text-label" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate">{emp.name}</p>
-                        <p className="truncate text-xs text-label">{emp.email}</p>
+                        <p className="truncate text-xs text-label">
+                          {isPlaceholderEmail(emp.email) ? m.employees_no_email() : emp.email}
+                        </p>
                       </div>
                     </Command.Item>
                   ))}

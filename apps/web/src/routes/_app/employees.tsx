@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { isPlaceholderEmail } from "@rim-genie/db/employee-email";
 import { Mail, Plus, Power, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -109,6 +110,7 @@ function EmployeeActions({ employee }: { employee: EmployeeCardData }) {
   });
 
   const isDeactivated = employee.banned === true;
+  const hasEmail = !isPlaceholderEmail(employee.email);
 
   if (isDeactivated) {
     return (
@@ -159,16 +161,18 @@ function EmployeeActions({ employee }: { employee: EmployeeCardData }) {
           </Button>
         }
       />
-      <Button
-        variant="outline"
-        onClick={() => resendInvite.mutate()}
-        disabled={resendInvite.isPending}
-      >
-        <Mail />
-        {resendInvite.isPending
-          ? m.employees_btn_sending_invite()
-          : m.employees_btn_resend_invite()}
-      </Button>
+      {hasEmail && (
+        <Button
+          variant="outline"
+          onClick={() => resendInvite.mutate()}
+          disabled={resendInvite.isPending}
+        >
+          <Mail />
+          {resendInvite.isPending
+            ? m.employees_btn_sending_invite()
+            : m.employees_btn_resend_invite()}
+        </Button>
+      )}
       <Button variant="outline" color="destructive" onClick={() => setDeactivateOpen(true)}>
         <Power />
         {m.employees_btn_deactivate()}
