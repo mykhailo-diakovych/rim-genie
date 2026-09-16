@@ -73,7 +73,12 @@ const CARD_METHODS: {
     iconSrc: "/icons/payment/credit.svg",
     apiMode: "credit_card",
   },
-  { key: "debit", label: "Debit (POS)", iconSrc: "/icons/payment/debit.svg", apiMode: "debit_card" },
+  {
+    key: "debit",
+    label: "Debit (POS)",
+    iconSrc: "/icons/payment/debit.svg",
+    apiMode: "debit_card",
+  },
   {
     key: "cheque",
     label: "Cheque",
@@ -220,6 +225,7 @@ function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showNoPaymentConfirm, setShowNoPaymentConfirm] = useState(false);
 
   const sendReceipt = useMutation(
     orpc.cashier.invoices.sendReceipt.mutationOptions({
@@ -310,6 +316,33 @@ function CheckoutPage() {
     }
   }
 
+  // Persists discount/notes only; writes no payment, leaving the invoice unpaid.
+  async function handleCompleteWithoutPayment() {
+    setIsSubmitting(true);
+    try {
+      const trimmedNotes = notes.trim();
+      if (discountCents > 0 || trimmedNotes) {
+        await orpc.cashier.invoices.update.call({
+          id: invoiceId,
+          ...(discountCents > 0 && { discount: discountCents }),
+          ...(trimmedNotes && { notes: trimmedNotes }),
+        });
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: orpc.cashier.invoices.get.key({ input: { id: invoiceId } }),
+      });
+      await queryClient.invalidateQueries({ queryKey: orpc.cashier.invoices.list.key() });
+      toast.success(`Recorded — no payment collected, ${formatCents(balanceCents)} outstanding`);
+      setShowNoPaymentConfirm(false);
+      navigate({ to: "/cashier/$invoiceId", params: { invoiceId } });
+    } catch (err) {
+      toast.error(`Failed to complete: ${(err as Error).message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-3 sm:p-5">
       {/* Header */}
@@ -353,9 +386,7 @@ function CheckoutPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <span className="font-rubik text-xs leading-3.5 text-label">
-                Invoice balance due
-              </span>
+              <span className="font-rubik text-xs leading-3.5 text-label">Invoice balance due</span>
               <span className="font-rubik text-[22px] leading-6.5 font-medium text-body">
                 {formatCents(balanceCents)}
               </span>
@@ -677,6 +708,14 @@ function CheckoutPage() {
             <Lock />
             {isSubmitting ? "Processing..." : "Complete Payment"}
           </Button>
+          <Button
+            variant="outline"
+            fullWidth
+            disabled={isSubmitting || balanceCents <= 0}
+            onClick={() => setShowNoPaymentConfirm(true)}
+          >
+            Complete without payment
+          </Button>
         </aside>
       </div>
 
@@ -714,6 +753,33 @@ function CheckoutPage() {
                 }}
               >
                 Done
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNoPaymentConfirm} onOpenChange={setShowNoPaymentConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete without payment?</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 p-3">
+            <DialogDescription>
+              No payment will be recorded. The invoice will remain unpaid with a balance of{" "}
+              <span className="font-medium text-body">{formatCents(balanceCents)}</span>{" "}
+              outstanding.
+            </DialogDescription>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowNoPaymentConfirm(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCompleteWithoutPayment} disabled={isSubmitting}>
+                {isSubmitting ? "Processing..." : "Confirm"}
               </Button>
             </div>
           </div>
