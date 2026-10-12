@@ -223,6 +223,10 @@ export const floorRouter = {
                 with: {
                   invoiceItem: true,
                   technician: { columns: { id: true, name: true } },
+                  pickup: {
+                    columns: { pickedUpAt: true },
+                    with: { pickedUpBy: { columns: { name: true } } },
+                  },
                 },
               },
             },
