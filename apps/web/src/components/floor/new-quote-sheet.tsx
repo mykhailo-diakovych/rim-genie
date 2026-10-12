@@ -35,7 +35,7 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
   const [showAddClient, setShowAddClient] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(lockedCustomerId);
   const [customerReason, setCustomerReason] = useState("");
-  const [fullDiagnosticConsent, setFullDiagnosticConsent] = useState(false);
+  const [fullDiagnosticConsent, setFullDiagnosticConsent] = useState<boolean | null>(null);
 
   useEffect(() => {
     setSelectedCustomerId(lockedCustomerId);
@@ -98,7 +98,7 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
     setShowAddClient(false);
     setSelectedCustomerId(lockedCustomerId);
     setCustomerReason("");
-    setFullDiagnosticConsent(false);
+    setFullDiagnosticConsent(null);
     onClose();
   }
 
@@ -109,7 +109,7 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
   }
 
   function handleSubmit() {
-    if (!selectedCustomerId) return;
+    if (!selectedCustomerId || fullDiagnosticConsent === null) return;
     createQuote.mutate({
       customerId: selectedCustomerId,
       customerReason: customerReason.trim() || undefined,
@@ -267,11 +267,23 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
 
           {/* Full Diagnostic Consent */}
           <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 rounded-lg bg-[#ebf5ff] px-3 py-2">
+              <div className="flex shrink-0 items-center justify-center rounded-full bg-[#cbe5fc] p-2">
+                <Info className="size-5 text-blue" />
+              </div>
+              <p className="font-rubik text-xs leading-3.5 text-body">
+                Confirm with customer if they would like to proceed with a{" "}
+                <span className="font-medium">full diagnostic assessment</span>
+              </p>
+            </div>
+
             <label className="font-rubik text-xs leading-3.5 text-label">
               Full Diagnostic Service:
             </label>
             <RadioGroup
-              value={fullDiagnosticConsent ? "agree" : "disagree"}
+              value={
+                fullDiagnosticConsent === null ? null : fullDiagnosticConsent ? "agree" : "disagree"
+              }
               onValueChange={(val) => setFullDiagnosticConsent(val === "agree")}
               className="flex items-center gap-6 py-2"
             >
@@ -294,17 +306,11 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
                 <span className="font-rubik text-sm leading-[18px] text-body">Disagree</span>
               </label>
             </RadioGroup>
-
-            {/* Info banner */}
-            <div className="flex items-center gap-3 rounded-lg bg-[#ebf5ff] px-3 py-2">
-              <div className="flex shrink-0 items-center justify-center rounded-full bg-[#cbe5fc] p-2">
-                <Info className="size-5 text-blue" />
-              </div>
-              <p className="font-rubik text-xs leading-3.5 text-body">
-                Confirm with customer if they would like to proceed with a{" "}
-                <span className="font-medium">full diagnostic assessment</span>
+            {fullDiagnosticConsent === null && (
+              <p className="font-rubik text-xs leading-3.5 text-label">
+                Select Agree or Disagree to create the quote
               </p>
-            </div>
+            )}
           </div>
         </div>
 
@@ -317,7 +323,9 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
             <Button
               color="success"
               className="w-32"
-              disabled={!selectedCustomerId || createQuote.isPending}
+              disabled={
+                !selectedCustomerId || fullDiagnosticConsent === null || createQuote.isPending
+              }
               onClick={handleSubmit}
             >
               {!createQuote.isPending && <Plus />}
