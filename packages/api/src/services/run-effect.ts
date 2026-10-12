@@ -34,6 +34,11 @@ const TAG_MAP: Record<
     message:
       "This job cannot be picked up while there is an outstanding balance. Collect the final payment first.",
   },
+  JobAlreadyPickedUp: { code: "CONFLICT", message: "This job has already been picked up" },
+  PickupSignatureRequired: {
+    code: "BAD_REQUEST",
+    message: "A valid customer signature is required to complete the pickup",
+  },
   EODAlreadyExists: { code: "CONFLICT", message: "An EOD record already exists for this date" },
   SODAlreadyExists: { code: "CONFLICT", message: "An SOD record already exists for this date" },
   QuoteHasNoItems: {

@@ -1,8 +1,8 @@
 import { Effect } from "effect";
-import { eq, sql, sum } from "drizzle-orm";
+import { and, eq, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
-import { invoice, job, payment } from "@rim-genie/db/schema";
+import { invoice, job, jobPickup, payment } from "@rim-genie/db/schema";
 
 import {
   InvoiceNotFound,
@@ -13,6 +13,8 @@ import {
   JobsAlreadyCreated,
   JobCannotBeReversed,
   JobHasOutstandingBalance,
+  JobAlreadyPickedUp,
+  PickupSignatureRequired,
 } from "./errors";
 
 export function sendToTechnician(invoiceId: string) {
@@ -158,48 +160,118 @@ export function addNote(jobId: string, note: string) {
   });
 }
 
-export function markAsPickedUp(jobId: string) {
+const SIGNATURE_PREFIX = "data:image/png;base64,";
+const SIGNATURE_MAX_LENGTH = 400_000;
+const BASE64_PAYLOAD = /^[A-Za-z0-9+/]+={0,2}$/;
+
+function isValidSignatureDataUrl(value: string) {
+  return (
+    value.length <= SIGNATURE_MAX_LENGTH &&
+    value.startsWith(SIGNATURE_PREFIX) &&
+    BASE64_PAYLOAD.test(value.slice(SIGNATURE_PREFIX.length))
+  );
+}
+
+interface MarkAsPickedUpInput {
+  jobId: string;
+  signatureDataUrl: string;
+  notes?: string;
+  pickedUpById: string;
+}
+
+export function markAsPickedUp({
+  jobId,
+  signatureDataUrl,
+  notes,
+  pickedUpById,
+}: MarkAsPickedUpInput) {
   return Effect.gen(function* () {
+    if (!isValidSignatureDataUrl(signatureDataUrl)) {
+      return yield* Effect.fail(new PickupSignatureRequired({ jobId }));
+    }
+
     const found = yield* Effect.tryPromise(() =>
-      db.query.job.findFirst({ where: eq(job.id, jobId) }),
+      db.query.job.findFirst({
+        where: eq(job.id, jobId),
+        with: { invoice: { columns: { total: true, customerId: true } } },
+      }),
     );
 
     if (!found) {
       return yield* Effect.fail(new JobNotFound({ id: jobId }));
     }
 
-    if (found.invoiceId) {
-      const [inv] = yield* Effect.tryPromise(() =>
-        db.select({ total: invoice.total }).from(invoice).where(eq(invoice.id, found.invoiceId)),
-      );
-
-      if (inv) {
-        const [paidRow] = yield* Effect.tryPromise(() =>
-          db
-            .select({ paid: sum(payment.amount) })
-            .from(payment)
-            .where(eq(payment.invoiceId, found.invoiceId)),
-        );
-        const balance = inv.total - Number(paidRow?.paid ?? 0);
-        if (balance > 0) {
-          return yield* Effect.fail(new JobHasOutstandingBalance({ jobId, balance }));
-        }
-      }
+    if (found.isPickedUp) {
+      return yield* Effect.fail(new JobAlreadyPickedUp({ jobId }));
     }
 
-    const [updated] = yield* Effect.tryPromise(() =>
+    const [paidRow] = yield* Effect.tryPromise(() =>
       db
-        .update(job)
-        .set({
-          isPickedUp: true,
-          status: "completed",
-          completedAt: new Date(),
-        })
-        .where(eq(job.id, jobId))
-        .returning(),
+        .select({ paid: sum(payment.amount) })
+        .from(payment)
+        .where(eq(payment.invoiceId, found.invoiceId)),
+    );
+    const balance = found.invoice.total - Number(paidRow?.paid ?? 0);
+    if (balance > 0) {
+      return yield* Effect.fail(new JobHasOutstandingBalance({ jobId, balance }));
+    }
+
+    const updated = yield* Effect.tryPromise(() =>
+      db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(job)
+          .set({
+            isPickedUp: true,
+            status: "completed",
+            completedAt: found.completedAt ?? new Date(),
+          })
+          .where(and(eq(job.id, jobId), eq(job.isPickedUp, false)))
+          .returning();
+
+        if (!row) return null;
+
+        await tx.insert(jobPickup).values({
+          jobId,
+          customerId: found.invoice.customerId,
+          pickedUpById,
+          notes: notes?.trim() || null,
+          signatureDataUrl,
+        });
+
+        return row;
+      }),
     );
 
-    return updated!;
+    if (!updated) {
+      return yield* Effect.fail(new JobAlreadyPickedUp({ jobId }));
+    }
+
+    return updated;
+  });
+}
+
+// The single read path for pickup proof, so the signature can later move to object storage
+// without touching callers.
+export function getPickupByJobId(jobId: string) {
+  return Effect.gen(function* () {
+    const row = yield* Effect.tryPromise(() =>
+      db.query.jobPickup.findFirst({
+        where: eq(jobPickup.jobId, jobId),
+        with: { pickedUpBy: { columns: { id: true, name: true } } },
+      }),
+    );
+
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      jobId: row.jobId,
+      customerId: row.customerId,
+      pickedUpAt: row.pickedUpAt,
+      pickedUpBy: row.pickedUpBy,
+      notes: row.notes,
+      signatureUrl: row.signatureDataUrl,
+    };
   });
 }
 

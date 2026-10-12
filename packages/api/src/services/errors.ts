@@ -55,6 +55,14 @@ export class JobHasOutstandingBalance extends Data.TaggedError("JobHasOutstandin
   balance: number;
 }> {}
 
+export class JobAlreadyPickedUp extends Data.TaggedError("JobAlreadyPickedUp")<{
+  jobId: string;
+}> {}
+
+export class PickupSignatureRequired extends Data.TaggedError("PickupSignatureRequired")<{
+  jobId: string;
+}> {}
+
 export class EODAlreadyExists extends Data.TaggedError("EODAlreadyExists")<{
   recordDate: string;
 }> {}

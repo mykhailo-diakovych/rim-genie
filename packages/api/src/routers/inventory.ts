@@ -4,7 +4,7 @@ import { and, desc, eq, gte, lte, ne, sql } from "drizzle-orm";
 import { db } from "@rim-genie/db";
 import { inventoryRecord, invoice, job } from "@rim-genie/db/schema";
 
-import { inventoryClerkProcedure } from "../index";
+import { inventoryClerkProcedure, requireRole } from "../index";
 import * as InventoryService from "../services/inventory.service";
 import * as JobService from "../services/job.service";
 import { runEffect } from "../services/run-effect";
@@ -126,9 +126,17 @@ export const inventoryRouter = {
       }),
 
     markPickup: inventoryClerkProcedure
-      .input(z.object({ jobId: z.string() }))
-      .handler(async ({ input }) => {
-        return runEffect(JobService.markAsPickedUp(input.jobId));
+      .input(
+        z.object({
+          jobId: z.string(),
+          signatureDataUrl: z.string(),
+          notes: z.string().max(2000).optional(),
+        }),
+      )
+      .handler(async ({ input, context }) => {
+        return runEffect(
+          JobService.markAsPickedUp({ ...input, pickedUpById: context.session.user.id }),
+        );
       }),
 
     markOvernight: inventoryClerkProcedure
@@ -166,6 +174,14 @@ export const inventoryRouter = {
           .update(job)
           .set({ specialNotes: updatedLines.join("\n") })
           .where(eq(job.id, input.jobId));
+      }),
+  },
+
+  pickups: {
+    getByJobId: requireRole("admin", "floorManager", "cashier", "inventoryClerk")
+      .input(z.object({ jobId: z.string() }))
+      .handler(async ({ input }) => {
+        return runEffect(JobService.getPickupByJobId(input.jobId));
       }),
   },
 
