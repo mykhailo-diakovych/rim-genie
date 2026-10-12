@@ -202,7 +202,7 @@ export const floorRouter = {
       }),
 
     getById: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
-      return db.query.customer.findFirst({
+      const row = await db.query.customer.findFirst({
         where: and(eq(customer.id, input.id), isNull(customer.deletedAt)),
         with: {
           quotes: {
@@ -215,7 +215,10 @@ export const floorRouter = {
             },
           },
           invoices: {
+            orderBy: (i, { desc }) => [desc(i.createdAt)],
             with: {
+              quote: { columns: { id: true }, with: { createdBy: { columns: { name: true } } } },
+              payments: { columns: { amount: true } },
               jobs: {
                 with: {
                   invoiceItem: true,
@@ -226,6 +229,21 @@ export const floorRouter = {
           },
         },
       });
+      if (!row) return undefined;
+
+      return {
+        ...row,
+        invoices: row.invoices.map(({ quote, payments, ...inv }) => {
+          const paid = payments.reduce((sum, p) => sum + p.amount, 0);
+          return {
+            ...inv,
+            paid,
+            balance: inv.total - paid,
+            // Same rule as the invoice PDF: the quote's author, not whoever converted it.
+            preparedByName: quote.createdBy.name,
+          };
+        }),
+      };
     }),
 
     update: floorManagerProcedure
