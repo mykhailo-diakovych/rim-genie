@@ -601,9 +601,7 @@ function QuoteEditorPage() {
                         {/* Full Diagnostic Consent row */}
                         {quote && (
                           <tr className="border-b border-field-line align-top">
-                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                              1
-                            </td>
+                            <td className="border-l border-field-line px-2 py-2" />
                             <td className="border-l border-field-line px-2 py-2">
                               <div className="flex flex-col gap-2">
                                 <span className="text-sm leading-[18px] text-body">
@@ -620,12 +618,8 @@ function QuoteEditorPage() {
                             <td className="border-l border-field-line px-2 py-2 text-sm text-body">
                               —
                             </td>
-                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                              $0.00
-                            </td>
-                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                              $0.00
-                            </td>
+                            <td className="border-l border-field-line px-2 py-2" />
+                            <td className="border-l border-field-line px-2 py-2" />
                             <td className="border-r border-l border-field-line px-2 py-2">
                               {!isReadOnly && (
                                 <Button
@@ -644,7 +638,7 @@ function QuoteEditorPage() {
                           <ItemRow
                             key={item.id}
                             item={item}
-                            index={idx + 1}
+                            index={idx}
                             onRemove={() => setRemoveConfirm(item.id)}
                             onExclude={() =>
                               setItemExcluded.mutate({ id: item.id, excluded: true })

@@ -327,7 +327,7 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
 
           {/* Full Diagnostic Consent row */}
           <View style={styles.tableRow}>
-            <Text style={[styles.cell, styles.colNum]}>1</Text>
+            <View style={styles.colNum} />
             <View style={styles.colDesc}>
               <Text style={styles.cell}>Full Diagnostic Service</Text>
               <Text style={styles.itemComments}>
@@ -335,8 +335,8 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
               </Text>
             </View>
             <Text style={[styles.cell, styles.colQty]}>—</Text>
-            <Text style={[styles.cell, styles.colUnit]}>$0.00</Text>
-            <Text style={[styles.cell, styles.colTotal]}>$0.00</Text>
+            <View style={styles.colUnit} />
+            <View style={styles.colTotal} />
           </View>
 
           {/* Item rows */}
@@ -344,7 +344,7 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
             const rowTotal = lineTotalCents(item);
             return (
               <View style={styles.tableRow} key={item.id}>
-                <Text style={[styles.cell, styles.colNum]}>{idx + 2}</Text>
+                <Text style={[styles.cell, styles.colNum]}>{idx + 1}</Text>
                 <View style={styles.colDesc}>
                   <Text style={styles.cell}>{item.description ?? "Rim Job"}</Text>
                   {item.comments && (
