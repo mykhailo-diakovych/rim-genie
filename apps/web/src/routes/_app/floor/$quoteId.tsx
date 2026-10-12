@@ -28,6 +28,7 @@ import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
 import { DISCOUNT_CAP_PERCENT, exceedsDiscountCap } from "@rim-genie/db/discount";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogClose,
@@ -64,6 +65,12 @@ import type {
 // navigable comes out of the query string.
 const QUOTE_ORIGINS = ["floor", "customer"] as const;
 type QuoteOrigin = (typeof QUOTE_ORIGINS)[number];
+
+type DiscountPatch = {
+  discountType: "percent" | "fixed";
+  discountPercent: number;
+  discountFixedCents: number;
+};
 
 export const Route = createFileRoute("/_app/floor/$quoteId")({
   // Optional: links that don't care (global search, redirects) omit it and get the
@@ -298,6 +305,11 @@ function QuoteEditorPage() {
   const [discountStr, setDiscountStr] = useState("");
   const [discountMode, setDiscountMode] = useState<"percent" | "fixed">("percent");
   const [lastDiscountKey, setLastDiscountKey] = useState<string | null>(null);
+  const [overCapOpen, setOverCapOpen] = useState(false);
+  const [overCapDiscount, setOverCapDiscount] = useState<{
+    label: string;
+    patch: DiscountPatch;
+  } | null>(null);
 
   const subtotalCents = quote?.subtotal ?? quote?.total ?? 0;
   const subtotal = subtotalCents / 100;
@@ -328,10 +340,13 @@ function QuoteEditorPage() {
     setDiscountStr(discountInputValue());
   }
 
-  function confirmOverCap(label: string): boolean {
-    return window.confirm(
-      `${label} exceeds the ${DISCOUNT_CAP_PERCENT}% discount limit for this quote. Apply it anyway?`,
-    );
+  function applyDiscount(patch: DiscountPatch, overCapLabel: string | null) {
+    if (overCapLabel) {
+      setOverCapDiscount({ label: overCapLabel, patch });
+      setOverCapOpen(true);
+      return;
+    }
+    updateQuote.mutate({ id: quoteId, ...patch });
   }
 
   function commitDiscount() {
@@ -349,16 +364,10 @@ function QuoteEditorPage() {
         discountPercent: 0,
         discountFixedCents: cents,
       });
-      if (overCap && !confirmOverCap(formatCents(cents))) {
-        resetDiscountInput();
-        return;
-      }
-      updateQuote.mutate({
-        id: quoteId,
-        discountType: "fixed",
-        discountFixedCents: cents,
-        discountPercent: 0,
-      });
+      applyDiscount(
+        { discountType: "fixed", discountFixedCents: cents, discountPercent: 0 },
+        overCap ? formatCents(cents) : null,
+      );
       return;
     }
 
@@ -370,16 +379,10 @@ function QuoteEditorPage() {
     if (quoteDiscountType === "percent" && val === discountPercent) return;
 
     if (isAdmin) {
-      if (val > DISCOUNT_CAP_PERCENT && !confirmOverCap(`${val}%`)) {
-        resetDiscountInput();
-        return;
-      }
-      updateQuote.mutate({
-        id: quoteId,
-        discountType: "percent",
-        discountPercent: val,
-        discountFixedCents: 0,
-      });
+      applyDiscount(
+        { discountType: "percent", discountPercent: val, discountFixedCents: 0 },
+        val > DISCOUNT_CAP_PERCENT ? `${val}%` : null,
+      );
       return;
     }
 
@@ -870,6 +873,22 @@ function QuoteEditorPage() {
         onEdit={handleEditItem}
         editItem={editingItem}
         isAdding={addItem.isPending || updateItem.isPending}
+      />
+
+      <ConfirmDialog
+        open={overCapOpen}
+        onOpenChange={(open) => {
+          if (open) return;
+          setOverCapOpen(false);
+          resetDiscountInput();
+        }}
+        title="Discount over limit"
+        description={`${overCapDiscount?.label} exceeds the ${DISCOUNT_CAP_PERCENT}% discount limit for this quote. Apply it anyway?`}
+        confirmLabel="Apply anyway"
+        onConfirm={() => {
+          if (overCapDiscount) updateQuote.mutate({ id: quoteId, ...overCapDiscount.patch });
+          setOverCapOpen(false);
+        }}
       />
 
       <Dialog

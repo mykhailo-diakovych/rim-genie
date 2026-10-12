@@ -9,6 +9,7 @@ import type { JobTypeSection } from "@rim-genie/db/schema";
 import { JobTypeModal, SECTION_LABELS } from "@/components/manage/job-type-modal";
 import type { JobTypeRow } from "@/components/manage/job-type-modal";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Select,
   SelectOption,
@@ -23,6 +24,8 @@ export function JobTypesTab() {
   const [section, setSection] = useState<JobTypeSection>("rims");
   const [addOpen, setAddOpen] = useState(false);
   const [editRow, setEditRow] = useState<JobTypeRow | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteRow, setDeleteRow] = useState<JobTypeRow | null>(null);
 
   const { data, isLoading } = useQuery(
     orpc.catalog.jobTypes.list.queryOptions({ input: { section, page: 1, pageSize: 100 } }),
@@ -34,18 +37,18 @@ export function JobTypesTab() {
     mutationFn: (id: string) => client.catalog.jobTypes.delete({ id }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: orpc.catalog.jobTypes.list.key() });
+      setDeleteOpen(false);
       toast.success("Job type deleted");
     },
     onError: (err: Error) => toast.error(err.message),
   });
 
   const handleDelete = (row: JobTypeRow) => {
-    const hasChildren = rows.some((r) => r.parentId === row.id);
-    const msg = hasChildren
-      ? `Delete "${row.label}" and all of its sub-types? This cannot be undone.`
-      : `Delete "${row.label}"? This cannot be undone.`;
-    if (window.confirm(msg)) deleteMutation.mutate(row.id);
+    setDeleteRow(row);
+    setDeleteOpen(true);
   };
+
+  const deleteHasChildren = !!deleteRow && rows.some((r) => r.parentId === deleteRow.id);
 
   return (
     <div className="flex flex-col gap-3">
@@ -152,6 +155,20 @@ export function JobTypesTab() {
         }}
         jobType={editRow ?? undefined}
         defaultSection={section}
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete job type"
+        description={
+          deleteHasChildren
+            ? `Delete "${deleteRow?.label}" and all of its sub-types? This cannot be undone.`
+            : `Delete "${deleteRow?.label}"? This cannot be undone.`
+        }
+        confirmLabel="Delete"
+        onConfirm={() => deleteRow && deleteMutation.mutate(deleteRow.id)}
+        isPending={deleteMutation.isPending}
+        destructive
       />
     </div>
   );
