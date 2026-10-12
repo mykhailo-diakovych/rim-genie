@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, Trash2 } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { formatCents } from "@/lib/format-currency";
+import { InvoiceCard, InvoiceCardSkeleton } from "@/components/cashier/invoice-card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   DateRangeFilter,
   getDateFrom,
@@ -13,15 +12,7 @@ import {
   parseDateRange,
   type DateRange,
 } from "@/components/ui/date-range-filter";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { IconPay } from "@/components/ui/nav-icons";
+import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePersistedState } from "@/lib/use-persisted-state";
 import { cn } from "@/lib/utils";
@@ -32,7 +23,7 @@ type InvoiceTab = (typeof TAB_VALUES)[number];
 
 const TAB_LABELS: Record<InvoiceTab, string> = {
   unpaid: "Unpaid",
-  partially: "Partially",
+  partially: "Partially Paid",
   paid: "Paid",
 };
 
@@ -56,114 +47,6 @@ function TabCounter({ count, active }: { count: number; active: boolean }) {
   );
 }
 
-function formatDate(date: Date | string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(date));
-}
-
-function InvoiceCardSkeleton() {
-  return (
-    <div className="flex animate-pulse flex-col gap-3 rounded-xl border border-card-line bg-white p-3 sm:min-h-16 sm:flex-row sm:items-center sm:gap-4">
-      <div className="flex min-w-0 flex-1 items-center gap-4">
-        <div className="h-4 w-32 rounded bg-[#e2e4e5]" />
-        <div className="h-4 w-16 rounded bg-[#e2e4e5]" />
-        <div className="h-4 w-24 rounded bg-[#e2e4e5]" />
-        <div className="h-4 w-28 rounded bg-[#e2e4e5]" />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <div className="h-9 w-20 rounded-lg bg-[#e2e4e5]" />
-        <div className="h-9 w-16 rounded-lg bg-[#e2e4e5]" />
-        <div className="h-9 w-20 rounded-lg bg-[#e2e4e5]" />
-      </div>
-    </div>
-  );
-}
-
-function InvoiceCard({
-  invoice,
-  onDelete,
-  isDeleting,
-  onPay,
-}: {
-  invoice: {
-    id: string;
-    invoiceNumber: number;
-    status: string;
-    total: number;
-    balance: number;
-    createdAt: Date | string;
-    customerName: string;
-  };
-  onDelete: () => void;
-  isDeleting: boolean;
-  onPay: () => void;
-}) {
-  const canPay = invoice.status === "unpaid" || invoice.status === "partially_paid";
-
-  return (
-    <div className="flex flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card sm:min-h-16 sm:flex-row sm:items-center sm:gap-4">
-      <div className="flex min-w-0 flex-1 items-center gap-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="truncate font-rubik text-sm leading-4.5 font-medium text-body">
-            {invoice.customerName}
-          </span>
-        </div>
-
-        <div className="flex w-22 shrink-0 flex-col gap-1 font-rubik text-xs leading-4">
-          <span className="text-label">Invoice #:</span>
-          <span className="text-body">{`INV-${String(invoice.invoiceNumber).padStart(4, "0")}`}</span>
-        </div>
-
-        <div className="flex w-24 shrink-0 flex-col gap-1 font-rubik text-xs leading-4">
-          <span className="text-label">Date:</span>
-          <span className="truncate text-body">{formatDate(invoice.createdAt)}</span>
-        </div>
-
-        <div className="flex w-36 shrink-0 flex-col gap-1 font-rubik text-xs leading-4">
-          <span className="text-label">Total / Balance</span>
-          <span className="text-body">
-            {formatCents(invoice.total)} / {formatCents(invoice.balance)}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Button
-          className="w-18"
-          nativeButton={false}
-          render={<Link to="/cashier/$invoiceId" params={{ invoiceId: invoice.id }} />}
-        >
-          <Eye />
-          View
-        </Button>
-        <Button
-          className="w-18"
-          variant="outline"
-          color="success"
-          disabled={!canPay}
-          onClick={onPay}
-        >
-          <IconPay />
-          Pay
-        </Button>
-        <Button
-          className="w-18"
-          variant="outline"
-          color="destructive"
-          onClick={onDelete}
-          disabled={isDeleting || invoice.status !== "unpaid"}
-        >
-          <Trash2 />
-          Delete
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 function CashierPage() {
   const [tab, setTab] = usePersistedState<InvoiceTab>("cashier.tab", "unpaid", (v) =>
     TAB_VALUES.includes(v as InvoiceTab) ? (v as InvoiceTab) : null,
@@ -171,7 +54,6 @@ function CashierPage() {
   const [dateRange, setDateRange] = usePersistedState<DateRange>("cashier.dateRange", "30d", (v) =>
     parseDateRange(v, "30d"),
   );
-  const navigate = useNavigate({ from: Route.fullPath });
   const queryClient = useQueryClient();
 
   const dateFrom = getDateFrom(dateRange);
@@ -221,12 +103,11 @@ function CashierPage() {
       <Tabs value={tab} onValueChange={(value) => setTab(value as InvoiceTab)}>
         {/* Header + tabs pinned so switching status never means scrolling back up. */}
         <div className="z-10 -mx-3 -mt-4 flex flex-col gap-4 bg-background px-3 pt-4 pb-3 sm:-mx-5 sm:px-5 md:sticky md:top-0">
-          <div className="flex items-center justify-between">
-            <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
-              List of Invoices
-            </h1>
-            <DateRangeFilter value={dateRange} onChange={setDateRange} />
-          </div>
+          <PageHeader
+            title="Invoices"
+            description="Manage finalized invoices, process customer payments, and complete transactions."
+            actions={<DateRangeFilter value={dateRange} onChange={setDateRange} />}
+          />
 
           <TabsList>
             {TAB_VALUES.map((value) => (
@@ -252,13 +133,6 @@ function CashierPage() {
                       key={invoice.id}
                       invoice={invoice}
                       onDelete={() => setDeleteConfirm(invoice.id)}
-                      isDeleting={false}
-                      onPay={() =>
-                        navigate({
-                          to: "/cashier/$invoiceId/checkout",
-                          params: { invoiceId: invoice.id },
-                        })
-                      }
                     />
                   ))}
                   {invoices.length === 0 && (
@@ -273,47 +147,24 @@ function CashierPage() {
         ))}
       </Tabs>
 
-      <Dialog
+      <ConfirmDialog
         open={!!deleteConfirm}
         onOpenChange={(open) => {
           if (!open) setDeleteConfirm(null);
         }}
-      >
-        <DialogContent>
-          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-error-50 bg-error-100">
-                <Trash2 className="size-6 text-destructive" />
-              </div>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <DialogTitle>Delete invoice</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to delete this invoice?
-                  <br />
-                  This action cannot be undone.
-                </DialogDescription>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose
-                render={
-                  <Button variant="ghost" type="button">
-                    Cancel
-                  </Button>
-                }
-              />
-              <Button
-                color="destructive"
-                className="w-32"
-                onClick={() => deleteConfirm && deleteInvoice.mutate({ id: deleteConfirm })}
-                disabled={deleteInvoice.isPending}
-              >
-                Delete
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+        title="Delete invoice"
+        description={
+          <>
+            Are you sure you want to delete this invoice?
+            <br />
+            This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        onConfirm={() => deleteConfirm && deleteInvoice.mutate({ id: deleteConfirm })}
+        isPending={deleteInvoice.isPending}
+        destructive
+      />
     </div>
   );
 }
