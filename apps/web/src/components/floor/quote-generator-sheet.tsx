@@ -8,6 +8,7 @@ import { Radio } from "@base-ui/react/radio";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { NumberStepper } from "@/components/ui/number-stepper";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
@@ -139,7 +140,9 @@ export function FloorCheckbox({
   // Pass the label through rather than sitting it in a sibling <span>: wrapping both
   // in a <label> makes the text a hit target too, instead of just the 20px box.
   return (
-    <label className={cn("flex cursor-pointer items-center gap-1.5", className)}>
+    <label
+      className={cn("flex cursor-pointer items-center gap-1.5 pointer-coarse:min-h-11", className)}
+    >
       {box}
       <span className="font-rubik text-sm leading-[18px] text-body">{label}</span>
     </label>
@@ -791,20 +794,20 @@ export function QuoteGeneratorSheet({
         </div>
 
         {/* Scrollable content */}
-        <div className="flex flex-1 flex-col overflow-y-auto pb-10">
+        <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto pb-10">
           <Tabs value={tab} onValueChange={(v) => setTab(String(v))}>
             <div className="border-b border-field-line px-3">
-              <TabsList className="border-0">
-                <TabsTrigger value="rims" className="px-2 whitespace-nowrap">
+              <TabsList className="justify-between border-0">
+                <TabsTrigger value="rims" className="px-1.5 whitespace-nowrap">
                   Rims
                 </TabsTrigger>
-                <TabsTrigger value="other-welding" className="px-2 whitespace-nowrap">
+                <TabsTrigger value="other-welding" className="px-1.5 whitespace-nowrap">
                   Other Welding
                 </TabsTrigger>
-                <TabsTrigger value="powder-coating" className="px-2 whitespace-nowrap">
+                <TabsTrigger value="powder-coating" className="px-1.5 whitespace-nowrap">
                   Powder Coating
                 </TabsTrigger>
-                <TabsTrigger value="general" className="px-2 whitespace-nowrap">
+                <TabsTrigger value="general" className="px-1.5 whitespace-nowrap">
                   General
                 </TabsTrigger>
               </TabsList>
@@ -923,7 +926,7 @@ export function QuoteGeneratorSheet({
                         className="flex gap-4"
                         disabled={rimSelects.vehicleType === "Motorcycle"}
                       >
-                        <label className="flex cursor-pointer items-center gap-2">
+                        <label className="flex cursor-pointer items-center gap-2 pointer-coarse:min-h-11">
                           <Radio.Root
                             value="Steel"
                             className="flex size-5 items-center justify-center rounded-full border-[1.2px] border-[#cdcfd1] bg-white data-checked:border-blue"
@@ -933,7 +936,7 @@ export function QuoteGeneratorSheet({
                           </Radio.Root>
                           <span className="font-rubik text-sm text-body">Steel</span>
                         </label>
-                        <label className="flex cursor-pointer items-center gap-2">
+                        <label className="flex cursor-pointer items-center gap-2 pointer-coarse:min-h-11">
                           <Radio.Root
                             value="Aluminum"
                             className="flex size-5 items-center justify-center rounded-full border-[1.2px] border-[#cdcfd1] bg-white data-checked:border-blue"
@@ -977,7 +980,7 @@ export function QuoteGeneratorSheet({
                       <div key={job.key}>
                         <div
                           className={cn(
-                            "flex items-center gap-4 px-3 py-2",
+                            "flex items-center gap-4 px-3 py-2 pointer-coarse:py-0",
                             isChecked && "bg-page",
                           )}
                         >
@@ -1045,20 +1048,19 @@ export function QuoteGeneratorSheet({
                         )}
                         {isChecked && (
                           <div className="flex flex-col gap-1 bg-page px-3 pb-2">
-                            <label className="font-rubik text-xs leading-3.5 text-label">
+                            <label
+                              htmlFor={`rim-qty-${job.key}`}
+                              className="font-rubik text-xs leading-3.5 text-label"
+                            >
                               {isSpot ? "How many rims?" : "How many on this rim?"}
                             </label>
-                            <input
-                              type="number"
+                            <NumberStepper
+                              id={`rim-qty-${job.key}`}
                               min={1}
-                              value={rimJobQty(job.key)}
-                              onChange={(e) =>
-                                setRimJobQuantities((prev) => ({
-                                  ...prev,
-                                  [job.key]: e.target.value.replace(/\D/g, "") || "1",
-                                }))
+                              value={parseInt(rimJobQty(job.key), 10) || 1}
+                              onChange={(n) =>
+                                setRimJobQuantities((prev) => ({ ...prev, [job.key]: String(n) }))
                               }
-                              className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none"
                             />
                           </div>
                         )}
@@ -1140,24 +1142,30 @@ export function QuoteGeneratorSheet({
                 <weldingForm.Field name="lengthOfWeld">
                   {(field) => (
                     <div className="flex flex-col gap-1">
-                      <label className="font-rubik text-xs leading-3.5 text-label">
+                      <label
+                        htmlFor="weld-length"
+                        className="font-rubik text-xs leading-3.5 text-label"
+                      >
                         Length of weld (in inches):
                       </label>
                       <input
-                        type="number"
-                        min="1"
+                        id="weld-length"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={(e) => {
-                          field.handleChange(e.target.value);
+                          const digits = e.target.value.replace(/\D/g, "");
+                          field.handleChange(digits);
                           setWeldingSelects((prev) => ({
                             ...prev,
-                            lengthOfWeld: e.target.value,
+                            lengthOfWeld: digits,
                           }));
                         }}
                         placeholder="Enter length"
                         className={cn(
-                          "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
+                          "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost pointer-coarse:h-11 pointer-coarse:text-base pointer-coarse:leading-6",
                           field.state.meta.errors.length > 0
                             ? "border-red/50"
                             : "border-field-line",
@@ -1332,7 +1340,7 @@ export function QuoteGeneratorSheet({
                               })
                             }
                             className={cn(
-                              "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 font-rubik text-xs text-body",
+                              "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 font-rubik text-xs text-body pointer-coarse:min-h-11",
                               selected ? "border-blue bg-blue/5" : "border-field-line bg-white",
                             )}
                           >
@@ -1357,15 +1365,14 @@ export function QuoteGeneratorSheet({
 
                 {pcSelects.scope === "rim" && (
                   <div className="flex flex-col gap-1">
-                    <label className="font-rubik text-xs leading-3.5 text-label">
+                    <label htmlFor="pc-qty" className="font-rubik text-xs leading-3.5 text-label">
                       How many rims?
                     </label>
-                    <input
-                      type="number"
+                    <NumberStepper
+                      id="pc-qty"
                       min={1}
-                      value={pcQty}
-                      onChange={(e) => setPcQty(e.target.value.replace(/\D/g, "") || "1")}
-                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none"
+                      value={parseInt(pcQty, 10) || 1}
+                      onChange={(n) => setPcQty(String(n))}
                     />
                   </div>
                 )}
@@ -1515,7 +1522,7 @@ export function QuoteGeneratorSheet({
                             <div key={svc.key} className="flex flex-col">
                               <div
                                 className={cn(
-                                  "flex items-center gap-1.5 px-3 py-2",
+                                  "flex items-center gap-1.5 px-3 py-2 pointer-coarse:py-0",
                                   isChecked && "bg-page",
                                 )}
                               >
@@ -1559,20 +1566,20 @@ export function QuoteGeneratorSheet({
                               </div>
                               {isChecked && (
                                 <div className="flex flex-col gap-1 bg-page px-3 pb-2">
-                                  <label className="font-rubik text-xs leading-3.5 text-label">
+                                  <label
+                                    htmlFor={`tire-qty-${svc.key}`}
+                                    className="font-rubik text-xs leading-3.5 text-label"
+                                  >
                                     How many?
                                   </label>
-                                  <input
-                                    type="number"
-                                    inputMode="numeric"
-                                    pattern="[0-9]*"
+                                  <NumberStepper
+                                    id={`tire-qty-${svc.key}`}
                                     min={1}
-                                    value={serviceQuantities[svc.key] ?? "1"}
-                                    onChange={(e) => {
-                                      const raw = e.target.value.replace(/\D/g, "");
+                                    value={parseInt(serviceQuantities[svc.key] ?? "1", 10) || 1}
+                                    onChange={(n) => {
                                       setServiceQuantities((prev) => ({
                                         ...prev,
-                                        [svc.key]: raw === "" ? "1" : raw,
+                                        [svc.key]: String(n),
                                       }));
                                       setServiceQuantityErrors((prev) => {
                                         const next = { ...prev };
@@ -1580,17 +1587,8 @@ export function QuoteGeneratorSheet({
                                         return next;
                                       });
                                     }}
-                                    onKeyDown={(e) => {
-                                      if (["e", "E", "+", "-", "."].includes(e.key)) {
-                                        e.preventDefault();
-                                      }
-                                    }}
-                                    placeholder="Enter number"
                                     className={cn(
-                                      "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
-                                      serviceQuantityErrors[svc.key]
-                                        ? "border-red/50"
-                                        : "border-field-line",
+                                      serviceQuantityErrors[svc.key] && "border-red/50",
                                     )}
                                   />
                                   {serviceQuantityErrors[svc.key] && (
@@ -1623,7 +1621,7 @@ export function QuoteGeneratorSheet({
                             <div key={svc.value} className="flex flex-col">
                               <div
                                 className={cn(
-                                  "flex items-center gap-1.5 px-3 py-2",
+                                  "flex items-center gap-1.5 px-3 py-2 pointer-coarse:py-0",
                                   isChecked && "bg-page",
                                 )}
                               >
@@ -1704,22 +1702,22 @@ export function QuoteGeneratorSheet({
                                     </Select>
                                   </div>
                                   <div className="flex flex-col gap-1">
-                                    <label className="font-rubik text-xs leading-3.5 text-label">
+                                    <label
+                                      htmlFor={`brake-qty-${svc.value}`}
+                                      className="font-rubik text-xs leading-3.5 text-label"
+                                    >
                                       How many?
                                     </label>
-                                    <input
-                                      type="number"
-                                      inputMode="numeric"
+                                    <NumberStepper
+                                      id={`brake-qty-${svc.value}`}
                                       min={1}
-                                      value={serviceQuantities[svc.value] ?? "1"}
-                                      onChange={(e) => {
-                                        const raw = e.target.value.replace(/\D/g, "");
+                                      value={qty}
+                                      onChange={(n) =>
                                         setServiceQuantities((prev) => ({
                                           ...prev,
-                                          [svc.value]: raw === "" ? "1" : raw,
-                                        }));
-                                      }}
-                                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none"
+                                          [svc.value]: String(n),
+                                        }))
+                                      }
                                     />
                                   </div>
                                 </div>
