@@ -388,9 +388,9 @@ export function QuoteGeneratorSheet({
     }),
     enabled: !!generalSelects.vehicleSize,
   });
-  const brakePriceFor = (key: string) =>
-    brakeCombos?.find((c) => c.unit === brakeUnit[key] && c.removalIncluded === brakeRemoval[key])
-      ?.unitCost ?? 0;
+  const brakeComboFor = (key: string) =>
+    brakeCombos?.find((c) => c.unit === brakeUnit[key] && c.removalIncluded === brakeRemoval[key]);
+  const brakePriceFor = (key: string) => brakeComboFor(key)?.unitCost ?? 0;
 
   const rimForm = useForm({
     defaultValues: RIM_DEFAULTS,
@@ -601,7 +601,7 @@ export function QuoteGeneratorSheet({
 
       const desc = [
         `General: ${value.vehicleSize}`,
-        `Tire: ${value.tireSize}"`,
+        value.tireSize ? `Tire: ${value.tireSize}"` : null,
         ...selectedServices.map((s) => `${s.label} x${serviceQuantities[s.key] ?? "1"}`),
         generalComments.trim() || null,
       ]
@@ -1492,7 +1492,7 @@ export function QuoteGeneratorSheet({
               >
                 <div className="flex gap-3 px-3">
                   {generalSubTab === "brake-service" ? (
-                    <generalForm.Field name="vehicleSize">
+                    <generalForm.Field key="vehicleSize" name="vehicleSize">
                       {(field) => (
                         <div className="flex flex-1 flex-col gap-1">
                           <label className="font-rubik text-xs leading-3.5 text-label">
@@ -1521,7 +1521,7 @@ export function QuoteGeneratorSheet({
                       )}
                     </generalForm.Field>
                   ) : (
-                    <generalForm.Field name="tireSize">
+                    <generalForm.Field key="tireSize" name="tireSize">
                       {(field) => (
                         <div className="flex flex-1 flex-col gap-1">
                           <label className="font-rubik text-xs leading-3.5 text-label">
@@ -1671,7 +1671,7 @@ export function QuoteGeneratorSheet({
                             removal !== undefined &&
                             generalSelects.vehicleSize
                           );
-                          const brakeUnitCost = priceReady ? brakePriceFor(svc.value) : 0;
+                          const brakeCombo = priceReady ? brakeComboFor(svc.value) : undefined;
                           return (
                             <div key={svc.value} className="flex flex-col">
                               <div
@@ -1689,15 +1689,25 @@ export function QuoteGeneratorSheet({
                                   label={svc.label}
                                   className="flex-1"
                                 />
-                                {priceReady && brakeUnitCost > 0 ? (
+                                {brakeCombo ? (
                                   <span className="ml-auto font-rubik text-base font-semibold text-body">
                                     $
-                                    {((brakeUnitCost * qty) / 100).toLocaleString("en-US", {
+                                    {((brakeCombo.unitCost * qty) / 100).toLocaleString("en-US", {
                                       minimumFractionDigits: 2,
                                     })}
                                   </span>
-                                ) : priceReady && brakeCombosFetching ? (
-                                  <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-label" />
+                                ) : isChecked && !generalSelects.vehicleSize ? (
+                                  <span className="ml-auto font-rubik text-xs text-red">
+                                    Select vehicle size
+                                  </span>
+                                ) : priceReady ? (
+                                  brakeCombosFetching ? (
+                                    <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-label" />
+                                  ) : (
+                                    <span className="ml-auto font-rubik text-xs text-red">
+                                      No price set
+                                    </span>
+                                  )
                                 ) : null}
                               </div>
                               {isChecked && (
@@ -1746,7 +1756,13 @@ export function QuoteGeneratorSheet({
                                       <SelectTrigger>
                                         <SelectValue placeholder="Select">
                                           {(v) =>
-                                            v === "include" ? "Include Removal" : "Without Removal"
+                                            v === "include" ? (
+                                              "Include Removal"
+                                            ) : v === "without" ? (
+                                              "Without Removal"
+                                            ) : (
+                                              <span className="text-ghost">Select</span>
+                                            )
                                           }
                                         </SelectValue>
                                       </SelectTrigger>
