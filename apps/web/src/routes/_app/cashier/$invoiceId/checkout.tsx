@@ -14,9 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { formatCents } from "@/lib/format-currency";
 import { cn } from "@/lib/utils";
+import { validateInvoiceOrigin } from "@/lib/invoice-origin";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/cashier/$invoiceId/checkout")({
+  validateSearch: validateInvoiceOrigin,
   head: () => ({
     meta: [{ title: "Rim-Genie | Collect Payment" }],
   }),
@@ -192,6 +194,7 @@ function SummaryRow({
 
 function CheckoutPage() {
   const { invoiceId } = Route.useParams();
+  const { from } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -335,7 +338,7 @@ function CheckoutPage() {
       await queryClient.invalidateQueries({ queryKey: orpc.cashier.invoices.list.key() });
       toast.success(`Recorded — no payment collected, ${formatCents(balanceCents)} outstanding`);
       setShowNoPaymentConfirm(false);
-      navigate({ to: "/cashier/$invoiceId", params: { invoiceId } });
+      navigate({ to: "/cashier/$invoiceId", params: { invoiceId }, search: { from } });
     } catch (err) {
       toast.error(`Failed to complete: ${(err as Error).message}`);
     } finally {
@@ -351,7 +354,7 @@ function CheckoutPage() {
           <Button
             variant="ghost"
             nativeButton={false}
-            render={<Link to="/cashier/$invoiceId" params={{ invoiceId }} />}
+            render={<Link to="/cashier/$invoiceId" params={{ invoiceId }} search={{ from }} />}
           >
             <ChevronLeft />
             Back
@@ -749,7 +752,7 @@ function CheckoutPage() {
                 variant="outline"
                 onClick={() => {
                   setShowSuccess(false);
-                  navigate({ to: "/cashier/$invoiceId", params: { invoiceId } });
+                  navigate({ to: "/cashier/$invoiceId", params: { invoiceId }, search: { from } });
                 }}
               >
                 Done

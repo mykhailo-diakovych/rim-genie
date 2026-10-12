@@ -35,9 +35,11 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { validateInvoiceOrigin } from "@/lib/invoice-origin";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/cashier/$invoiceId/")({
+  validateSearch: validateInvoiceOrigin,
   head: () => ({
     meta: [{ title: "Rim-Genie | Invoice" }],
   }),
@@ -113,6 +115,7 @@ function MoreDropdown({
 
 function InvoiceDetailPage() {
   const { invoiceId } = Route.useParams();
+  const { from } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -196,17 +199,30 @@ function InvoiceDetailPage() {
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <StickyActionBar className="print:hidden">
-        <Button variant="outline" nativeButton={false} render={<Link to="/cashier" />}>
-          <ChevronLeft />
-          Back to list
-        </Button>
+        {from === "customer" && inv?.customer ? (
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link to="/customers/$customerId" params={{ customerId: inv.customer.id }} />}
+          >
+            <ChevronLeft />
+            Back to customer
+          </Button>
+        ) : (
+          <Button variant="outline" nativeButton={false} render={<Link to="/cashier" />}>
+            <ChevronLeft />
+            Back to list
+          </Button>
+        )}
 
         <div className="flex flex-1 items-center justify-end gap-2">
           <Button
             color="success"
             disabled={!canPay}
             nativeButton={false}
-            render={<Link to="/cashier/$invoiceId/checkout" params={{ invoiceId }} />}
+            render={
+              <Link to="/cashier/$invoiceId/checkout" params={{ invoiceId }} search={{ from }} />
+            }
           >
             <CircleDollarSign />
             Pay

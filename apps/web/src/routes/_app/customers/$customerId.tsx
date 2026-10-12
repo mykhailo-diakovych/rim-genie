@@ -5,6 +5,7 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Award, ChevronLeft, Mail, Pencil, Percent, Phone, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { CustomerInvoicesTable } from "@/components/customers/customer-invoices-table";
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { NewQuoteSheet } from "@/components/floor/new-quote-sheet";
 import { SendQuoteDialog, type SendQuoteCustomer } from "@/components/floor/send-quote-dialog";
@@ -22,10 +23,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { AppRouterClient } from "@rim-genie/api/routers/index";
+import type { UserRole } from "@rim-genie/db/schema";
 
 import { authClient } from "@/lib/auth-client";
 import { formatCents } from "@/lib/format-currency";
-import { requireRoles } from "@/lib/route-permissions";
+import { hasRouteAccess, requireRoles } from "@/lib/route-permissions";
 import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
 
@@ -403,6 +405,7 @@ function CustomerProfilePage() {
 
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
+  const canOpenCashier = hasRouteAccess("/cashier", session?.user?.role as UserRole | undefined);
 
   const { data: customer, isLoading } = useQuery(
     orpc.floor.customers.getById.queryOptions({ input: { id: customerId } }),
@@ -420,9 +423,17 @@ function CustomerProfilePage() {
   const quotes = customer?.quotes ?? [];
   const latestQuotes = quotes.slice(0, 10);
 
-  const allJobs = (customer?.invoices ?? []).flatMap((inv) =>
-    inv.jobs.map((j) => ({ ...j, quoteId: inv.quoteId, invoiceNumber: inv.invoiceNumber })),
-  );
+  const invoices = customer?.invoices ?? [];
+
+  const allJobs = invoices
+    .flatMap((inv) =>
+      inv.jobs.map((j) => ({ ...j, quoteId: inv.quoteId, invoiceNumber: inv.invoiceNumber })),
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.completedAt ?? b.createdAt).getTime() -
+        new Date(a.completedAt ?? a.createdAt).getTime(),
+    );
   const latestJobs = allJobs.slice(0, 10);
 
   return (
@@ -549,6 +560,11 @@ function CustomerProfilePage() {
         </div>
 
         <QuotesTable quotes={latestQuotes} customer={customer} />
+      </div>
+
+      <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
+        <h2 className="font-rubik text-base leading-5 font-medium text-body">Invoices</h2>
+        <CustomerInvoicesTable invoices={invoices} canOpenCashier={canOpenCashier} />
       </div>
 
       <div className="flex flex-col gap-3 overflow-clip rounded-xl border border-card-line bg-white p-3 shadow-card">
