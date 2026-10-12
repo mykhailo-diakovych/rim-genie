@@ -42,6 +42,6 @@ export function lineQuantityLabel(item: LineItemQuantityInput): string {
     .filter((part) => Number.isFinite(part.qty) && part.qty > 0);
 
   if (parts.length === 0) return String(item.quantity);
-  if (parts.length === 1) return String(parts[0]!.qty);
+  if (parts.every((part) => part.qty === parts[0]!.qty)) return String(parts[0]!.qty);
   return parts.map((part) => `${part.label} x${part.qty}`).join(", ");
 }
