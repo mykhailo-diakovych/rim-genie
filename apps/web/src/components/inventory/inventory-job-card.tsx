@@ -1,20 +1,40 @@
-import { IconMissing, IconNight, IconPickup } from "@/components/ui/nav-icons";
+import { useState, type ReactNode } from "react";
+
+import { TriangleAlert } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { IconNight, IconPickup } from "@/components/ui/nav-icons";
+import { RowActionsMenu, RowActionsMenuItem } from "@/components/ui/row-actions-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCents } from "@/lib/format-currency";
+import { cn } from "@/lib/utils";
 
 import { EditNoteDialog, JobActionDialog } from "./job-action-dialog";
-import type { NoteType } from "./job-action-dialog";
+import type { JobAction, NoteType } from "./job-action-dialog";
 import { PickupDialog } from "./pickup-dialog";
 import type { ApiJob, TabValue } from "./types";
 
 function formatJobTypes(job: ApiJob): string {
-  const types = job.invoiceItem.jobTypes as { type: string }[];
+  const types = (job.invoiceItem.jobTypes ?? []) as {
+    type: string;
+    subType?: string;
+    input?: string;
+  }[];
   if (!types.length) return "";
   const counts = new Map<string, number>();
   for (const t of types) {
-    counts.set(t.type, (counts.get(t.type) ?? 0) + 1);
+    const label =
+      t.subType ??
+      t.type
+        .split("-")
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    const qty = Number.parseInt(t.input ?? "", 10) || 1;
+    counts.set(label, (counts.get(label) ?? 0) + qty);
   }
   return Array.from(counts.entries())
-    .map(([type, count]) => `${count} x ${type}`)
+    .map(([label, count]) => `${count} x ${label}`)
     .join(", ");
 }
 
@@ -31,77 +51,103 @@ function parseNotes(specialNotes: string | null): { tag: string; text: string }[
 }
 
 const TAG_STYLES: Record<string, string> = {
-  MISSING: "bg-[#fee4e2] text-[#d92d20]",
-  OVERNIGHT: "bg-[#e0f2fe] text-[#0369a1]",
-  REVERSED: "bg-[#fef3c7] text-[#92400e]",
+  MISSING: "bg-error-100 text-red",
+  OVERNIGHT: "bg-blue/10 text-blue",
+  REVERSED: "bg-badge-orange/10 text-badge-orange",
 };
 
 function getStatusBadge(job: ApiJob): { label: string; className: string } {
-  if (job.isPickedUp) return { label: "Picked Up", className: "bg-green-100 text-green-700" };
-  if (job.isMissing) return { label: "Missing", className: "bg-[#fee4e2] text-[#d92d20]" };
-  if (job.isOvernight) return { label: "Overnight", className: "bg-[#243a5e] text-[#ebf0ff]" };
-  if (job.status === "completed")
-    return { label: "Ready", className: "bg-[#e0f2fe] text-[#0369a1]" };
-  return { label: job.status, className: "bg-gray-100 text-gray-600" };
+  if (job.isPickedUp) return { label: "Picked Up", className: "bg-green/10 text-green" };
+  if (job.isMissing) return { label: "Missing", className: "bg-error-100 text-red" };
+  if (job.isOvernight)
+    return { label: "Overnight", className: "bg-banner-navy text-banner-navy-foreground" };
+  if (job.status === "completed") return { label: "Ready", className: "bg-blue/10 text-blue" };
+  return { label: job.status, className: "bg-page text-label" };
 }
 
-const TAB_ACTIONS: Record<TabValue, ("pickup" | "overnight" | "missing")[]> = {
-  overnight: ["pickup", "missing"],
-  readyForPickup: ["pickup", "missing"],
-  outstandingBalance: ["pickup", "overnight", "missing"],
-  missing: ["pickup"],
-  pickedUp: [],
+const TAB_ACTIONS: Record<TabValue, { pickup: boolean; menu: JobAction[] }> = {
+  overnight: { pickup: true, menu: ["missing"] },
+  readyForPickup: { pickup: true, menu: ["missing"] },
+  outstandingBalance: { pickup: true, menu: ["overnight", "missing"] },
+  missing: { pickup: true, menu: [] },
+  pickedUp: { pickup: false, menu: [] },
 };
 
-const ACTION_ICONS = {
-  pickup: IconPickup,
-  overnight: IconNight,
-  missing: IconMissing,
-} as const;
+const MENU_ITEMS: Record<JobAction, { label: string; icon: ReactNode; destructive: boolean }> = {
+  overnight: { label: "Mark as Overnight", icon: <IconNight />, destructive: false },
+  missing: { label: "Mark as Missing", icon: <TriangleAlert />, destructive: true },
+};
 
 function InvoiceBalance({ invoice }: { invoice: ApiJob["invoice"] }) {
-  const total = invoice.total;
   const paid = invoice.payments.reduce((sum, p) => sum + p.amount, 0);
-  const balance = total - paid;
+  const balance = invoice.total - paid;
 
   return (
-    <p className="font-rubik text-xs text-label">
-      Total: {formatCents(total)} /{" "}
-      <span className={balance > 0 ? "text-[#d92d20]" : undefined}>
-        Balance: {formatCents(balance)}
-      </span>
-    </p>
+    <div className="grid grid-cols-2 rounded-lg bg-page p-3 font-rubik md:w-80">
+      <div className="flex min-w-0 flex-col gap-1 pr-4">
+        <span className="text-xs text-label">Total</span>
+        <span className="truncate text-xl leading-7 font-semibold text-body tabular-nums">
+          {formatCents(invoice.total)}
+        </span>
+      </div>
+      <div className="flex min-w-0 flex-col gap-1 border-l border-field-line pl-4">
+        <span className="text-xs text-label">Balance</span>
+        <span
+          className={cn(
+            "truncate text-xl leading-7 font-semibold tabular-nums",
+            balance > 0 ? "text-red" : "text-body",
+          )}
+        >
+          {formatCents(balance)}
+        </span>
+      </div>
+    </div>
   );
 }
 
+const cardClass =
+  "flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card md:flex-row md:items-center md:gap-5 md:px-4";
+
+const balanceColumnClass = "md:self-stretch md:border-l md:border-card-line md:pl-5";
+
 export function InventoryJobCard({ job, tab }: { job: ApiJob; tab: TabValue }) {
+  const [openDialog, setOpenDialog] = useState<"pickup" | JobAction | null>(null);
   const jobTypesStr = formatJobTypes(job);
   const notes = parseNotes(job.specialNotes);
   const badge = getStatusBadge(job);
   const actions = TAB_ACTIONS[tab];
 
+  const dialogProps = (dialog: "pickup" | JobAction) => ({
+    open: openDialog === dialog,
+    onOpenChange: (open: boolean) => setOpenDialog(open ? dialog : null),
+  });
+
   return (
-    <div className="flex gap-4 rounded-xl border border-card-line bg-white p-3 shadow-card">
-      <div className="flex flex-1 flex-col gap-3">
+    <div className={cardClass}>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-4">
-            <span className="font-rubik text-sm leading-4.5 font-medium text-body">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="font-rubik text-base leading-5 font-medium text-body">
               {job.invoice.customer.name}
             </span>
             <span
-              className={`rounded-[4px] px-1.5 py-0.5 font-rubik text-xs leading-3.5 ${badge.className}`}
+              className={cn(
+                "rounded px-1.5 py-0.5 font-rubik text-xs leading-3.5",
+                badge.className,
+              )}
             >
               {badge.label}
             </span>
           </div>
-          <div className="flex items-baseline gap-1 font-rubik text-xs leading-3.5">
-            <span className="text-label">Job ID:</span>
-            <span className="text-body">{job.invoice.invoiceNumber}</span>
-          </div>
+          <span className="font-rubik text-xs leading-3.5 text-label">
+            Job ID: {job.invoice.invoiceNumber}
+          </span>
         </div>
-        <div className="font-rubik text-sm leading-4.5 text-body">
-          {job.invoiceItem.description && <p>{job.invoiceItem.description}</p>}
-          {jobTypesStr && <p>{jobTypesStr}</p>}
+        <div className="flex flex-col gap-1 font-rubik">
+          {job.invoiceItem.description && (
+            <p className="text-sm leading-4.5 text-body">{job.invoiceItem.description}</p>
+          )}
+          {jobTypesStr && <p className="text-xs leading-3.5 text-label">{jobTypesStr}</p>}
         </div>
         {notes.length > 0 && (
           <div className="flex flex-col gap-1">
@@ -109,7 +155,10 @@ export function InventoryJobCard({ job, tab }: { job: ApiJob; tab: TabValue }) {
               <div key={i} className="flex items-center gap-2 font-rubik text-xs leading-3.5">
                 {entry.tag && (
                   <span
-                    className={`rounded px-1.5 py-0.5 font-medium ${TAG_STYLES[entry.tag] ?? "bg-gray-100 text-gray-600"}`}
+                    className={cn(
+                      "rounded px-1.5 py-0.5 font-medium",
+                      TAG_STYLES[entry.tag] ?? "bg-page text-label",
+                    )}
                   >
                     {entry.tag}
                   </span>
@@ -126,21 +175,75 @@ export function InventoryJobCard({ job, tab }: { job: ApiJob; tab: TabValue }) {
             ))}
           </div>
         )}
+      </div>
+
+      <div className={cn("flex items-center", balanceColumnClass)}>
         <InvoiceBalance invoice={job.invoice} />
       </div>
 
-      {actions.length > 0 && (
-        <div className="flex shrink-0 flex-col gap-2">
-          {actions.map((action) => {
-            const Icon = ACTION_ICONS[action];
-            return action === "pickup" ? (
-              <PickupDialog key={action} job={job} trigger={<Icon />} />
-            ) : (
-              <JobActionDialog key={action} job={job} action={action} trigger={<Icon />} />
-            );
-          })}
+      {(actions.pickup || actions.menu.length > 0) && (
+        <div className="flex items-center gap-2">
+          {actions.pickup && (
+            <>
+              <Button
+                variant="outline"
+                color="success"
+                className="flex-1 md:flex-none"
+                onClick={() => setOpenDialog("pickup")}
+              >
+                <IconPickup />
+                Pickup
+              </Button>
+              <PickupDialog job={job} {...dialogProps("pickup")} />
+            </>
+          )}
+          {actions.menu.length > 0 && (
+            <>
+              <RowActionsMenu label="Job actions" className="size-9.5">
+                {actions.menu.map((action) => {
+                  const item = MENU_ITEMS[action];
+                  return (
+                    <RowActionsMenuItem
+                      key={action}
+                      destructive={item.destructive}
+                      onClick={() => setOpenDialog(action)}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </RowActionsMenuItem>
+                  );
+                })}
+              </RowActionsMenu>
+              {actions.menu.map((action) => (
+                <JobActionDialog key={action} job={job} action={action} {...dialogProps(action)} />
+              ))}
+            </>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+export function InventoryJobCardSkeleton() {
+  return (
+    <div className={cardClass}>
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-5 w-32 rounded" />
+          <Skeleton className="h-5 w-14 rounded" />
+        </div>
+        <Skeleton className="h-4 w-20 rounded" />
+        <Skeleton className="h-4 w-64 max-w-full rounded" />
+        <Skeleton className="h-4 w-40 rounded" />
+      </div>
+      <div className={balanceColumnClass}>
+        <Skeleton className="h-20 w-full rounded-lg md:w-80" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-9.5 w-24 rounded-md" />
+        <Skeleton className="size-9.5 rounded-md" />
+      </div>
     </div>
   );
 }

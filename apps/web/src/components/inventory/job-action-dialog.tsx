@@ -17,7 +17,7 @@ import { client, orpc } from "@/utils/orpc";
 
 import type { ApiJob } from "./types";
 
-type JobAction = "overnight" | "missing";
+export type JobAction = "overnight" | "missing";
 type NoteType = "OVERNIGHT" | "MISSING";
 
 const ACTION_CONFIG: Record<JobAction, { title: string; color: "default" | "destructive" }> = {
@@ -33,7 +33,8 @@ const ACTION_NOTE_TYPE: Partial<Record<JobAction, NoteType>> = {
 interface JobActionDialogProps {
   job: ApiJob;
   action: JobAction;
-  trigger: React.ReactElement;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 interface EditNoteDialogProps {
@@ -104,12 +105,16 @@ function NoteDialogContent({
   );
 }
 
-export function JobActionDialog({ job, action, trigger }: JobActionDialogProps) {
-  const [open, setOpen] = useState(false);
+export function JobActionDialog({ job, action, open, onOpenChange }: JobActionDialogProps) {
   const [notes, setNotes] = useState("");
   const queryClient = useQueryClient();
 
   const { title, color } = ACTION_CONFIG[action];
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen) setNotes("");
+  };
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -126,25 +131,13 @@ export function JobActionDialog({ job, action, trigger }: JobActionDialogProps) 
         missing: "Job marked as missing",
       };
       toast.success(messages[action]);
-      setNotes("");
-      setOpen(false);
+      handleOpenChange(false);
     },
     onError: (err: Error) => toast.error(err.message),
   });
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (!nextOpen) setNotes("");
-      }}
-    >
-      <Button variant="outline" color={color} onClick={() => setOpen(true)}>
-        {trigger}
-        {title}
-      </Button>
-
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <NoteDialogContent
         job={job}
         title={title}

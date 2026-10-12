@@ -23,21 +23,15 @@ import type { ApiJob } from "./types";
 
 interface PickupDialogProps {
   job: ApiJob;
-  trigger: React.ReactElement;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function PickupDialog({ job, trigger }: PickupDialogProps) {
-  const [open, setOpen] = useState(false);
-
+export function PickupDialog({ job, open, onOpenChange }: PickupDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <Button variant="outline" color="success" onClick={() => setOpen(true)}>
-        {trigger}
-        Pickup
-      </Button>
-
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl">
-        <PickupDialogBody job={job} onDone={() => setOpen(false)} />
+        <PickupDialogBody job={job} onDone={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );
@@ -60,7 +54,10 @@ function PickupDialogBody({ job, onDone }: { job: ApiJob; onDone: () => void }) 
         notes: notes.trim() || undefined,
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: orpc.inventory.jobs.key() });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: orpc.inventory.jobs.key() }),
+        queryClient.invalidateQueries({ queryKey: orpc.floor.customers.key() }),
+      ]);
       toast.success("Job marked as picked up");
       onDone();
     },
