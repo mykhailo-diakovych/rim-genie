@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Eye, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { NewQuoteSheet } from "@/components/floor/new-quote-sheet";
@@ -7,6 +8,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { PageHeader } from "@/components/ui/page-header";
+import { RowActionsMenu, RowActionsMenuItem } from "@/components/ui/row-actions-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
   DateRangeFilter,
@@ -16,25 +20,16 @@ import {
   type DateRange,
 } from "@/components/ui/date-range-filter";
 import { usePersistedState } from "@/lib/use-persisted-state";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/floor/")({
   head: () => ({
-    meta: [{ title: "Rim-Genie | Floor" }],
+    meta: [{ title: "Rim-Genie | Floor Queue" }],
   }),
   component: FloorPage,
 });
-
-// ─── Quote Card ───────────────────────────────────────────────────────────────
 
 type QuoteListItem = {
   id: string;
@@ -46,54 +41,65 @@ type QuoteListItem = {
   createdBy?: { id: string; name: string } | null;
 };
 
+function QuoteField({
+  label,
+  children,
+  valueClassName,
+}: {
+  label: string;
+  children: React.ReactNode;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 lg:flex-1 lg:border-l lg:border-card-line lg:pl-5">
+      <span className="font-rubik text-xs leading-3.5 text-label">{label}</span>
+      <span className={cn("truncate font-rubik text-sm leading-4.5 text-body", valueClassName)}>
+        {children}
+      </span>
+    </div>
+  );
+}
+
 function QuoteCard({
   quote,
-  quoteId,
   onDelete,
-  isDeleting,
   isAdmin,
 }: {
   quote: QuoteListItem;
-  quoteId: string;
   onDelete: () => void;
-  isDeleting: boolean;
   isAdmin: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:min-h-16 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className="font-rubik text-sm leading-4.5 font-medium text-body">
+    <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card lg:flex-row lg:items-center lg:gap-5 lg:px-5">
+      <div className="flex min-w-0 flex-col gap-1 lg:flex-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate font-rubik text-base leading-5 font-medium text-body">
             {quote.customer.name}
           </span>
-          <StatusBadge status={quote.status} />
+          <StatusBadge status={quote.status} className="shrink-0" />
         </div>
-        <div className="flex flex-wrap items-center gap-2 font-rubik text-xs leading-3.5">
-          <span className="text-label">Quote #:</span>
-          <span className="text-body">{`QUO-${String(quote.quoteNumber).padStart(4, "0")}`}</span>
-          <span className="size-1 rounded-full bg-ghost" />
-          <span className="text-label">Total:</span>
-          <span className="text-body">{formatCents(quote.total)}</span>
-          <span className="size-1 rounded-full bg-ghost" />
-          <span className="text-label">Job Rack:</span>
-          <span className="text-body">{quote.jobRack ?? "—"}</span>
-          <span className="size-1 rounded-full bg-ghost" />
-          <span className="text-label">Prepared By:</span>
-          <span className="text-body">{quote.createdBy?.name ?? "—"}</span>
-        </div>
+        <span className="font-rubik text-sm leading-4.5 text-label">
+          {`QUO-${String(quote.quoteNumber).padStart(4, "0")}`}
+        </span>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-3 gap-3 border-t border-card-line pt-3 lg:contents">
+        <QuoteField label="Job Rack">{quote.jobRack ?? "—"}</QuoteField>
+        <QuoteField label="Prepared By">{quote.createdBy?.name ?? "—"}</QuoteField>
+        <QuoteField label="Quote Total" valueClassName="text-base leading-5 font-semibold">
+          {formatCents(quote.total)}
+        </QuoteField>
+      </div>
+
+      <div className="flex items-center gap-2 lg:shrink-0 lg:border-l lg:border-card-line lg:pl-5">
         <Button
-          className="w-18 gap-1.5 px-2"
           nativeButton={false}
-          render={<Link to="/floor/$quoteId" params={{ quoteId }} />}
+          render={<Link to="/floor/$quoteId" params={{ quoteId: quote.id }} />}
         >
           <Eye />
           View
         </Button>
         <Button
-          className="w-18 gap-1.5 px-2"
           variant="outline"
           onClick={() => window.open(`/api/quotes/${quote.id}/pdf`, "_blank")}
         >
@@ -101,23 +107,17 @@ function QuoteCard({
           Print
         </Button>
         {isAdmin && (
-          <Button
-            className="w-18 gap-1.5 px-2"
-            variant="outline"
-            color="destructive"
-            onClick={onDelete}
-            disabled={isDeleting}
-          >
-            <Trash2 />
-            Delete
-          </Button>
+          <RowActionsMenu label="Quote actions" className="size-9">
+            <RowActionsMenuItem destructive onClick={onDelete}>
+              <Trash2 />
+              Delete
+            </RowActionsMenuItem>
+          </RowActionsMenu>
         )}
       </div>
     </div>
   );
 }
-
-// ─── Floor Page ───────────────────────────────────────────────────────────────
 
 function FloorPage() {
   const queryClient = useQueryClient();
@@ -152,31 +152,31 @@ function FloorPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
-      {/* Title row */}
-      <div className="flex items-center justify-between">
-        <h1 className="font-rubik text-[22px] leading-6.5 font-medium text-body">List of Quotes</h1>
-        <div className="flex items-center gap-2">
-          <DateRangeFilter value={dateRange} onChange={setDateRange} />
-          <Button className="w-32" onClick={() => setShowNewQuote(true)}>
-            <Plus />
-            New Quote
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Floor Queue"
+        description="Review and manage quotes awaiting processing or finalization."
+        actions={
+          <>
+            <DateRangeFilter value={dateRange} onChange={setDateRange} />
+            <Button onClick={() => setShowNewQuote(true)}>
+              <Plus />
+              New Quote
+            </Button>
+          </>
+        }
+      />
 
-      {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ghost" />
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by invoice #, quote #, or customer..."
+          placeholder="Search by quote # or customer..."
           className="flex h-10 w-full rounded-lg border border-field-line bg-white pr-3 pl-9 font-rubik text-sm text-body outline-none placeholder:text-ghost"
         />
       </div>
 
-      {/* Quote list */}
       <div className="flex flex-col gap-2">
         {quotesQuery.isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -197,56 +197,31 @@ function FloorPage() {
             <QuoteCard
               key={quote.id}
               quote={quote}
-              quoteId={quote.id}
               onDelete={() => setDeleteConfirm(quote.id)}
-              isDeleting={false}
               isAdmin={isAdmin}
             />
           ))
         )}
       </div>
 
-      <Dialog
+      <ConfirmDialog
         open={!!deleteConfirm}
         onOpenChange={(open) => {
           if (!open) setDeleteConfirm(null);
         }}
-      >
-        <DialogContent>
-          <div className="flex flex-col items-center gap-6 px-3 pt-4 pb-3">
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-full border-8 border-error-50 bg-error-100">
-                <Trash2 className="size-6 text-destructive" />
-              </div>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <DialogTitle>Delete quote</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to delete this quote?
-                  <br />
-                  This action cannot be undone.
-                </DialogDescription>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose
-                render={
-                  <Button variant="ghost" type="button">
-                    Cancel
-                  </Button>
-                }
-              />
-              <Button
-                color="destructive"
-                className="w-32"
-                onClick={() => deleteConfirm && deleteQuote.mutate({ id: deleteConfirm })}
-                disabled={deleteQuote.isPending}
-              >
-                Delete
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+        title="Delete quote"
+        description={
+          <>
+            Are you sure you want to delete this quote?
+            <br />
+            This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        onConfirm={() => deleteConfirm && deleteQuote.mutate({ id: deleteConfirm })}
+        isPending={deleteQuote.isPending}
+        destructive
+      />
 
       <NewQuoteSheet open={showNewQuote} onClose={() => setShowNewQuote(false)} />
     </div>
