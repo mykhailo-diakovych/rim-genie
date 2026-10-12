@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import SignaturePad from "signature_pad";
+import { useState } from "react";
 
 import { FilePenLine } from "lucide-react";
 
@@ -13,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SignaturePadField } from "@/components/ui/signature-pad-field";
 
 import { DISCLAIMER_PARAGRAPHS, DISCLAIMER_TITLE } from "./disclaimer";
 
@@ -23,94 +23,63 @@ interface SignatureModalProps {
 }
 
 export function SignatureModal({ open, onOpenChange, onSign }: SignatureModalProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const signaturePadRef = useRef<SignaturePad | null>(null);
-  const [isEmpty, setIsEmpty] = useState(true);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[900px]">
+        <SignatureModalBody onSign={onSign} onOpenChange={onOpenChange} />
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-  useEffect(() => {
-    if (!open) {
-      signaturePadRef.current?.off();
-      signaturePadRef.current = null;
-      setIsEmpty(true);
-      return;
-    }
-
-    let rafId: number;
-
-    rafId = requestAnimationFrame(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const ratio = window.devicePixelRatio ?? 1;
-      canvas.width = canvas.offsetWidth * ratio;
-      canvas.height = canvas.offsetHeight * ratio;
-      canvas.getContext("2d")?.scale(ratio, ratio);
-
-      const pad = new SignaturePad(canvas);
-      signaturePadRef.current = pad;
-
-      pad.addEventListener("endStroke", () => {
-        setIsEmpty(pad.isEmpty());
-      });
-    });
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      signaturePadRef.current?.off();
-    };
-  }, [open]);
+function SignatureModalBody({ onOpenChange, onSign }: Omit<SignatureModalProps, "open">) {
+  const [signature, setSignature] = useState<string | null>(null);
 
   function handleSign() {
-    const pad = signaturePadRef.current;
-    if (!pad || pad.isEmpty()) return;
-    onSign(pad.toDataURL());
+    if (!signature) return;
+    onSign(signature);
     onOpenChange(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px]">
-        <DialogHeader>
-          <DialogTitle>Add Signature</DialogTitle>
-        </DialogHeader>
+    <>
+      <DialogHeader>
+        <DialogTitle>Add Signature</DialogTitle>
+      </DialogHeader>
 
-        <div className="flex flex-col gap-4 px-3 py-3">
-          <Banner icon={<FilePenLine />}>
-            Sign below to confirm acceptance of the service conditions
-          </Banner>
+      <div className="flex flex-col gap-4 px-3 py-3">
+        <Banner icon={<FilePenLine />}>
+          Sign below to confirm acceptance of the service conditions
+        </Banner>
 
-          <div className="flex flex-col gap-6 md:flex-row md:items-stretch">
-            {/* Disclaimer — shown to the left of the signature widget (RIM-3) */}
-            <div className="flex flex-1 flex-col gap-1">
-              <span className="font-rubik text-sm leading-4.5 text-body">{DISCLAIMER_TITLE}</span>
-              <div className="flex max-h-[280px] flex-col gap-2 overflow-y-auto rounded-md border border-field-line bg-page p-3">
-                {DISCLAIMER_PARAGRAPHS.map((paragraph, i) => (
-                  <p key={i} className="font-rubik text-sm leading-5 text-body">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-1">
-              <label className="font-rubik text-sm leading-4.5 text-body">
-                Signature inside the field:
-              </label>
-              <canvas
-                ref={canvasRef}
-                className="h-[280px] w-full rounded-md border border-field-line bg-white"
-              />
+        <div className="flex flex-col gap-6 md:flex-row md:items-stretch">
+          {/* Disclaimer — shown to the left of the signature widget (RIM-3) */}
+          <div className="flex flex-1 flex-col gap-1">
+            <span className="font-rubik text-sm leading-4.5 text-body">{DISCLAIMER_TITLE}</span>
+            <div className="flex max-h-[280px] flex-col gap-2 overflow-y-auto rounded-md border border-field-line bg-page p-3">
+              {DISCLAIMER_PARAGRAPHS.map((paragraph, i) => (
+                <p key={i} className="font-rubik text-sm leading-5 text-body">
+                  {paragraph}
+                </p>
+              ))}
             </div>
           </div>
 
-          <DialogFooter className="p-0">
-            <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
-            <Button color="success" className="w-32" disabled={isEmpty} onClick={handleSign}>
-              Sign
-            </Button>
-          </DialogFooter>
+          <div className="flex flex-1 flex-col gap-1">
+            <span className="font-rubik text-sm leading-4.5 text-body">
+              Signature inside the field:
+            </span>
+            <SignaturePadField className="h-70" onChange={setSignature} />
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <DialogFooter className="p-0">
+          <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+          <Button color="success" className="w-32" disabled={!signature} onClick={handleSign}>
+            Sign
+          </Button>
+        </DialogFooter>
+      </div>
+    </>
   );
 }
