@@ -16,7 +16,7 @@ import {
   user,
   verification,
 } from "@rim-genie/db/schema";
-import { desc, eq, and, ne, like, inArray, lt } from "drizzle-orm";
+import { desc, eq, and, ne, like, inArray } from "drizzle-orm";
 
 import { adminProcedure, publicProcedure } from "../index";
 import * as EmailService from "../services/email.service";
@@ -81,14 +81,17 @@ const ROLE_LABELS: Record<string, string> = {
   inventoryClerk: "Inventory Clerk",
 };
 
+async function clearInviteTokens(userId: string) {
+  await db.delete(verification).where(eq(verification.value, `${INVITE_PREFIX}${userId}`));
+}
+
 async function issueInviteToken(userId: string): Promise<string> {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
 
-  // One live invite per user: a resend must invalidate the previous link.
-  await db.delete(verification).where(eq(verification.value, `${INVITE_PREFIX}${userId}`));
-  // Opportunistically drop expired invites so the table does not grow forever.
-  await db.delete(verification).where(lt(verification.expiresAt, new Date()));
+  // One invite per user: a resend must invalidate the previous link. Expired rows are kept
+  // on purpose so the employee list can still show the invite as unaccepted.
+  await clearInviteTokens(userId);
 
   await db.insert(verification).values({
     id: crypto.randomUUID(),
@@ -110,19 +113,24 @@ async function sendInvite(row: {
   const token = await issueInviteToken(row.id);
   const inviteUrl = `${env.BETTER_AUTH_URL}/set-pin?token=${token}`;
 
-  await runEffect(
-    EmailService.send({
-      to: row.email,
-      subject: "Set up your Rim Genie account",
-      react: createStaffInviteEmail({
-        name: row.name,
-        employeeId: row.username ?? row.email,
-        roleLabel: ROLE_LABELS[row.role ?? ""] ?? "Staff",
-        inviteUrl,
-        expiresInDays: INVITE_TTL_DAYS,
+  try {
+    await runEffect(
+      EmailService.send({
+        to: row.email,
+        subject: "Set up your Rim Genie account",
+        react: createStaffInviteEmail({
+          name: row.name,
+          employeeId: row.username ?? row.email,
+          roleLabel: ROLE_LABELS[row.role ?? ""] ?? "Staff",
+          inviteUrl,
+          expiresInDays: INVITE_TTL_DAYS,
+        }),
       }),
-    }),
-  );
+    );
+  } catch (error) {
+    await clearInviteTokens(row.id);
+    throw error;
+  }
 }
 
 async function resolveInvite(token: string) {
@@ -190,7 +198,26 @@ export const employeesRouter = {
       byUser.set(row.userId, list);
     }
 
-    return users.map((u) => ({ ...u, locations: byUser.get(u.id) ?? [] }));
+    // An invite token (live or expired) means the employee has not set a PIN yet:
+    // `setPin` and `resetPin` delete it, and a failed send never leaves one behind.
+    const liveInvites = await db
+      .select({ value: verification.value })
+      .from(verification)
+      .where(
+        inArray(
+          verification.value,
+          users.map((u) => `${INVITE_PREFIX}${u.id}`),
+        ),
+      );
+    const invitePendingIds = new Set(
+      liveInvites.map((row) => row.value.slice(INVITE_PREFIX.length)),
+    );
+
+    return users.map((u) => ({
+      ...u,
+      locations: byUser.get(u.id) ?? [],
+      invitePending: invitePendingIds.has(u.id),
+    }));
   }),
 
   create: adminProcedure.input(createEmployeeSchema).handler(async ({ input }) => {
@@ -240,8 +267,8 @@ export const employeesRouter = {
             role: input.role,
           });
           inviteSent = true;
-        } catch {
-          inviteSent = false;
+        } catch (error) {
+          console.error("Employee invite email failed", { userId: created.user.id, error });
         }
       }
 
@@ -397,6 +424,7 @@ export const employeesRouter = {
         body: { userId: input.userId, newPassword: input.newPin },
         headers: context.headers,
       });
+      await clearInviteTokens(input.userId);
       return { success: true };
     }),
 
