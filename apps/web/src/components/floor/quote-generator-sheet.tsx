@@ -17,6 +17,7 @@ import {
   SelectPopup,
   SelectOption,
 } from "@/components/ui/select";
+import { formatCents } from "@/lib/format-currency";
 import { cn } from "@/lib/utils";
 import { orpc } from "@/utils/orpc";
 
@@ -72,6 +73,9 @@ const BRAKE_SERVICE_TYPES = [
   { value: "disc-rotor-skimming", label: "Disc Rotor Skimming", quantityLabel: "How many pairs?" },
   { value: "brake-drum-skimming", label: "Brake Drum Skimming", quantityLabel: "How many pairs?" },
 ];
+
+// Groups where several options can apply to one rim; their prices are summed.
+const MULTI_SELECT_RIM_GROUPS = new Set(["build-up", "crack-fix", "sprong"]);
 
 const VEHICLE_TYPE_MAP: Record<string, "truck" | "car_suv" | "motorcycle"> = {
   Truck: "truck",
@@ -194,9 +198,9 @@ export function QuoteGeneratorSheet({
   isAdding,
 }: QuoteGeneratorSheetProps) {
   const [tab, setTab] = useState("rims");
-  // Rims: selected groups by root key + chosen sub-type leaf key per group
+  // Rims: selected groups by root key + chosen sub-type leaf keys per group
   const [checkedJobs, setCheckedJobs] = useState<Record<string, boolean>>({});
-  const [jobSubTypes, setJobSubTypes] = useState<Record<string, string>>({});
+  const [jobSubTypes, setJobSubTypes] = useState<Record<string, string[]>>({});
   const [jobTypeError, setJobTypeError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState<string | null>(null);
 
@@ -295,7 +299,7 @@ export function QuoteGeneratorSheet({
 
   // Spot polish is a Rims group priced by size bucket × qty (its own price table).
   const spotBucket = rimSize != null ? (rimSize >= 21 ? "ge21" : "le20") : undefined;
-  const spotLeafKey = jobSubTypes["spot-polish"];
+  const spotLeafKey = jobSubTypes["spot-polish"]?.[0];
   const { data: spotPrice, isFetching: spotPriceFetching } = useQuery({
     ...orpc.catalog.spotPrices.lookup.queryOptions({
       input: {
@@ -308,15 +312,24 @@ export function QuoteGeneratorSheet({
 
   const rimJobQty = (rootKey: string) => rimJobQuantities[rootKey] ?? "1";
 
-  // Mirrors the server's rim branch in computeItemPrice: base rate × occurrences.
+  const selectedLeaves = (root: (typeof rimJobList)[number]) => {
+    if (!root.children.length) return [{ key: root.key, label: undefined }];
+    const picked = jobSubTypes[root.key] ?? [];
+    return root.children.filter((c) => picked.includes(c.key));
+  };
+
+  // Mirrors the server's rim branch in computeItemPrice: each selected option is priced
+  // on its own and every one is multiplied by the group's occurrence count.
   const rimJobLineCost = (root: (typeof rimJobList)[number]) => {
     const qty = parseInt(rimJobQty(root.key), 10) || 1;
     if (root.key === "spot-polish") {
       return (spotPrice?.found ? spotPrice.unitCost : 0) * qty;
     }
-    const leafKey = root.children.length ? jobSubTypes[root.key] : root.key;
-    const base = leafKey ? (rimPrices?.[leafKey]?.unitCost ?? 0) : 0;
-    return applyRimModifier(base) * qty;
+    const base = selectedLeaves(root).reduce(
+      (sum, leaf) => sum + applyRimModifier(rimPrices?.[leaf.key]?.unitCost ?? 0),
+      0,
+    );
+    return base * qty;
   };
 
   const { data: weldingMaterials } = useQuery(orpc.catalog.weldingMaterials.list.queryOptions());
@@ -388,21 +401,24 @@ export function QuoteGeneratorSheet({
         return;
       }
       for (const root of selectedRoots) {
-        if (root.children.length > 0 && !jobSubTypes[root.key]) {
-          setJobTypeError(`Select an option for ${root.label}`);
+        if (selectedLeaves(root).length === 0) {
+          setJobTypeError(
+            MULTI_SELECT_RIM_GROUPS.has(root.key)
+              ? `Select at least one option for ${root.label}`
+              : `Select an option for ${root.label}`,
+          );
           return;
         }
       }
       setJobTypeError(null);
 
-      const jobTypes: JobTypeEntry[] = selectedRoots.map((root) => {
-        const leafKey = root.children.length ? jobSubTypes[root.key]! : root.key;
-        const childLabel = root.children.find((c) => c.key === leafKey)?.label;
-        const entry: JobTypeEntry = { type: leafKey as JobType };
-        if (childLabel) entry.subType = childLabel;
-        entry.input = rimJobQty(root.key);
-        return entry;
-      });
+      const jobTypes: JobTypeEntry[] = selectedRoots.flatMap((root) =>
+        selectedLeaves(root).map((leaf) => {
+          const entry: JobTypeEntry = { type: leaf.key, input: rimJobQty(root.key) };
+          if (leaf.label) entry.subType = leaf.label;
+          return entry;
+        }),
+      );
 
       const description = [
         `${value.rimSize}" Rims`,
@@ -411,9 +427,8 @@ export function QuoteGeneratorSheet({
           const qty = rimJobQty(root.key);
           const suffix = qty === "1" ? "" : ` x${qty}`;
           if (root.children.length) {
-            const leafKey = jobSubTypes[root.key];
-            const childLabel = root.children.find((c) => c.key === leafKey)?.label;
-            return `${root.label}: ${childLabel ?? ""}${suffix}`;
+            const labels = selectedLeaves(root).map((leaf) => leaf.label);
+            return `${root.label}: ${labels.join(" + ")}${suffix}`;
           }
           return `${root.label}${suffix}`;
         }),
@@ -696,7 +711,7 @@ export function QuoteGeneratorSheet({
     }
 
     const checked: Record<string, boolean> = {};
-    const subTypes: Record<string, string> = {};
+    const subTypes: Record<string, string[]> = {};
     const quantities: Record<string, string> = {};
     for (const jt of editItem.jobTypes) {
       const root = rimJobList.find(
@@ -704,7 +719,7 @@ export function QuoteGeneratorSheet({
       );
       if (root) {
         checked[root.key] = true;
-        if (root.children.length) subTypes[root.key] = jt.type;
+        if (root.children.length) subTypes[root.key] = [...(subTypes[root.key] ?? []), jt.type];
         if (jt.input) quantities[root.key] = jt.input;
       } else {
         checked[jt.type] = true;
@@ -731,6 +746,14 @@ export function QuoteGeneratorSheet({
         return next;
       });
     }
+    if (checked) setJobTypeError(null);
+  }
+
+  function toggleRimLeaf(rootKey: string, leafKey: string, checked: boolean) {
+    setJobSubTypes((prev) => {
+      const current = (prev[rootKey] ?? []).filter((k) => k !== leafKey);
+      return { ...prev, [rootKey]: checked ? [...current, leafKey] : current };
+    });
     if (checked) setJobTypeError(null);
   }
 
@@ -964,18 +987,15 @@ export function QuoteGeneratorSheet({
                 <div className="flex flex-col gap-1">
                   {rimJobList.map((job) => {
                     const isChecked = !!checkedJobs[job.key];
-                    const leafKey = job.children.length ? jobSubTypes[job.key] : job.key;
+                    const leaves = selectedLeaves(job);
                     const isSpot = job.key === "spot-polish";
+                    const isMulti = MULTI_SELECT_RIM_GROUPS.has(job.key);
                     const priceLoading = isSpot ? spotPriceFetching : rimPricesFetching;
-                    const priceRow = leafKey && !isSpot ? rimPrices?.[leafKey] : undefined;
-                    const qty = parseInt(rimJobQty(job.key), 10) || 1;
-                    const displayUnit = isSpot
-                      ? spotPrice?.found && leafKey
-                        ? spotPrice.unitCost * qty
-                        : undefined
-                      : priceRow?.found
-                        ? applyRimModifier(priceRow.unitCost) * qty
-                        : undefined;
+                    const priced = isSpot
+                      ? !!spotPrice?.found
+                      : leaves.some((leaf) => rimPrices?.[leaf.key]?.found);
+                    const displayUnit =
+                      leaves.length > 0 && priced ? rimJobLineCost(job) : undefined;
                     return (
                       <div key={job.key}>
                         <div
@@ -998,7 +1018,7 @@ export function QuoteGeneratorSheet({
                                   minimumFractionDigits: 2,
                                 })}
                               </span>
-                            ) : isChecked && leafKey && rimSize ? (
+                            ) : isChecked && leaves.length > 0 && rimSize ? (
                               priceLoading ? (
                                 <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-label" />
                               ) : (
@@ -1009,15 +1029,50 @@ export function QuoteGeneratorSheet({
                             ) : null}
                           </div>
                         </div>
-                        {job.children.length > 0 && isChecked && (
+                        {job.children.length > 0 && isChecked && isMulti && (
+                          <div className="flex flex-col gap-1 bg-page px-3 pb-2">
+                            <p className="font-rubik text-xs leading-3.5 text-label">
+                              Select one or more options:
+                            </p>
+                            <div className="flex flex-col divide-y divide-field-line rounded-lg border border-field-line bg-white">
+                              {job.children.map((c) => {
+                                const leafPrice = rimPrices?.[c.key];
+                                return (
+                                  <div key={c.key} className="flex items-center gap-2 pr-2">
+                                    <FloorCheckbox
+                                      checked={leaves.some((leaf) => leaf.key === c.key)}
+                                      onCheckedChange={(v) => toggleRimLeaf(job.key, c.key, !!v)}
+                                      label={c.label}
+                                      className="min-h-11 flex-1 px-2"
+                                    />
+                                    {leafPrice?.found ? (
+                                      <span className="shrink-0 font-rubik text-xs font-medium text-body">
+                                        {formatCents(applyRimModifier(leafPrice.unitCost))}
+                                      </span>
+                                    ) : rimSize ? (
+                                      rimPricesFetching ? (
+                                        <Loader2 className="size-4 shrink-0 animate-spin text-label" />
+                                      ) : (
+                                        <span className="shrink-0 font-rubik text-xs text-red">
+                                          No price set
+                                        </span>
+                                      )
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {job.children.length > 0 && isChecked && !isMulti && (
                           <div className="flex flex-col gap-1 bg-page px-3 pb-2">
                             <label className="font-rubik text-xs leading-3.5 text-label">
                               Select option:
                             </label>
                             <Select
-                              value={jobSubTypes[job.key] ?? null}
+                              value={jobSubTypes[job.key]?.[0] ?? null}
                               onValueChange={(v) => {
-                                setJobSubTypes((prev) => ({ ...prev, [job.key]: v as string }));
+                                setJobSubTypes((prev) => ({ ...prev, [job.key]: [v as string] }));
                                 setJobTypeError(null);
                               }}
                             >
@@ -1036,7 +1091,7 @@ export function QuoteGeneratorSheet({
                                 ))}
                               </SelectPopup>
                             </Select>
-                            {isSpot && leafKey && rimSize != null && (
+                            {isSpot && leaves.length > 0 && rimSize != null && (
                               <span className="mt-1 font-rubik text-xs text-label">
                                 Rim size band:{" "}
                                 <span className="font-medium text-body">
