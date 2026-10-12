@@ -3,6 +3,7 @@ import { formatCents } from "@/lib/format-currency";
 
 import { EditNoteDialog, JobActionDialog } from "./job-action-dialog";
 import type { NoteType } from "./job-action-dialog";
+import { PickupDialog } from "./pickup-dialog";
 import type { ApiJob, TabValue } from "./types";
 
 function formatJobTypes(job: ApiJob): string {
@@ -132,7 +133,11 @@ export function InventoryJobCard({ job, tab }: { job: ApiJob; tab: TabValue }) {
         <div className="flex shrink-0 flex-col gap-2">
           {actions.map((action) => {
             const Icon = ACTION_ICONS[action];
-            return <JobActionDialog key={action} job={job} action={action} trigger={<Icon />} />;
+            return action === "pickup" ? (
+              <PickupDialog key={action} job={job} trigger={<Icon />} />
+            ) : (
+              <JobActionDialog key={action} job={job} action={action} trigger={<Icon />} />
+            );
           })}
         </div>
       )}
