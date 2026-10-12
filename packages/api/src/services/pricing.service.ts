@@ -1,4 +1,4 @@
-import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import {
@@ -26,31 +26,37 @@ interface PriceLookupParams {
   size?: number | null;
 }
 
+
 export async function lookupPrice(params: PriceLookupParams): Promise<number | null> {
+  const { size } = params;
   const conditions = [
     eq(servicePrice.category, params.category),
     eq(servicePrice.jobType, params.jobType),
+    params.vehicleType
+      ? or(isNull(servicePrice.vehicleType), eq(servicePrice.vehicleType, params.vehicleType))
+      : isNull(servicePrice.vehicleType),
+    params.rimMaterial
+      ? or(isNull(servicePrice.rimMaterial), eq(servicePrice.rimMaterial, params.rimMaterial))
+      : isNull(servicePrice.rimMaterial),
+    ...(size != null
+      ? [
+          or(isNull(servicePrice.minSize), lte(servicePrice.minSize, size)),
+          or(isNull(servicePrice.maxSize), gte(servicePrice.maxSize, size)),
+        ]
+      : [isNull(servicePrice.minSize), isNull(servicePrice.maxSize)]),
   ];
-
-  if (params.vehicleType) {
-    conditions.push(
-      or(isNull(servicePrice.vehicleType), eq(servicePrice.vehicleType, params.vehicleType))!,
-    );
-  }
-  if (params.rimMaterial) {
-    conditions.push(
-      or(isNull(servicePrice.rimMaterial), eq(servicePrice.rimMaterial, params.rimMaterial))!,
-    );
-  }
-  if (params.size != null) {
-    conditions.push(or(isNull(servicePrice.minSize), lte(servicePrice.minSize, params.size))!);
-    conditions.push(or(isNull(servicePrice.maxSize), gte(servicePrice.maxSize, params.size))!);
-  }
 
   const rows = await db
     .select({ unitCost: servicePrice.unitCost })
     .from(servicePrice)
     .where(and(...conditions))
+    .orderBy(
+      sql`${servicePrice.vehicleType} is null`,
+      sql`${servicePrice.rimMaterial} is null`,
+      sql`coalesce(${servicePrice.maxSize}, 2147483647) - coalesce(${servicePrice.minSize}, 0)`,
+      desc(servicePrice.updatedAt),
+      asc(servicePrice.id),
+    )
     .limit(1);
 
   return rows.length > 0 ? rows[0]!.unitCost : null;
@@ -177,8 +183,8 @@ interface ComputeItemPriceJob {
 interface ComputeItemPriceParams {
   itemType: string;
   jobTypes: ComputeItemPriceJob[];
-  vehicleType?: string | null;
-  rimMaterial?: string | null;
+  vehicleType?: QuoteVehicleType | null;
+  rimMaterial?: RimMaterial | null;
   vehicleSize?: string | null;
   rimSize?: number | null;
   tireSize?: number | null;
@@ -199,7 +205,13 @@ export async function computeItemPrice(params: ComputeItemPriceParams): Promise<
     for (const jt of params.jobTypes) {
       // A line can carry several occurrences of the same repair, priced per occurrence.
       const qty = jt.input ? parseInt(jt.input, 10) || 1 : 1;
-      const base = await lookupPrice({ category, jobType: jt.type, size });
+      const base = await lookupPrice({
+        category,
+        jobType: jt.type,
+        vehicleType: params.vehicleType,
+        rimMaterial: params.rimMaterial,
+        size,
+      });
       if (base != null) {
         total += applyRimModifiers(base, { isSteel, isTruck, ...config }) * qty;
         continue;

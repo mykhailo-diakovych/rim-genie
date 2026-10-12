@@ -13,7 +13,6 @@ import {
   payment,
   job,
   service,
-  servicePrice,
   serviceTypeEnum,
   serviceCategoryEnum,
   quoteVehicleTypeEnum,
@@ -43,7 +42,7 @@ import {
   QuoteNotFound,
 } from "../services/errors";
 import { runEffect } from "../services/run-effect";
-import { computeItemPrice } from "../services/pricing.service";
+import { computeItemPrice, lookupPrice } from "../services/pricing.service";
 import { recalcQuoteTotal } from "../services/quote.service";
 import { getQuotePdf } from "../pdf/get-quote-pdf";
 import { createQuoteEmail } from "../emails/quote-email";
@@ -114,46 +113,14 @@ export const floorRouter = {
         const result: Record<string, { unitCost: number; found: boolean }> = {};
 
         for (const jt of input.jobTypes) {
-          const conditions = [
-            eq(servicePrice.category, input.category),
-            eq(servicePrice.jobType, jt),
-          ];
-
-          if (input.vehicleType) {
-            conditions.push(
-              or(
-                isNull(servicePrice.vehicleType),
-                eq(servicePrice.vehicleType, input.vehicleType),
-              )!,
-            );
-          }
-          if (input.rimMaterial) {
-            conditions.push(
-              or(
-                isNull(servicePrice.rimMaterial),
-                eq(servicePrice.rimMaterial, input.rimMaterial),
-              )!,
-            );
-          }
-          if (input.size != null) {
-            conditions.push(
-              or(isNull(servicePrice.minSize), lte(servicePrice.minSize, input.size))!,
-            );
-            conditions.push(
-              or(isNull(servicePrice.maxSize), gte(servicePrice.maxSize, input.size))!,
-            );
-          }
-
-          const rows = await db
-            .select({ unitCost: servicePrice.unitCost })
-            .from(servicePrice)
-            .where(and(...conditions))
-            .limit(1);
-
-          result[jt] =
-            rows.length > 0
-              ? { unitCost: rows[0]!.unitCost, found: true }
-              : { unitCost: 0, found: false };
+          const unitCost = await lookupPrice({
+            category: input.category,
+            jobType: jt,
+            vehicleType: input.vehicleType,
+            rimMaterial: input.rimMaterial,
+            size: input.size,
+          });
+          result[jt] = unitCost != null ? { unitCost, found: true } : { unitCost: 0, found: false };
         }
 
         return result;
