@@ -92,9 +92,15 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
     ...orpc.employees.create.mutationOptions(),
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: orpc.employees.key() });
-      toast.success(
-        result.hasEmail ? m.employees_toast_created() : m.employees_toast_created_no_email(),
-      );
+      if (!result.hasEmail) {
+        toast.success(m.employees_toast_created_no_email());
+      } else if (result.inviteSent) {
+        toast.success(m.employees_toast_created());
+      } else {
+        toast.warning(
+          "Employee created, but the invite email could not be sent. Use Resend Invite from the menu.",
+        );
+      }
       form.reset();
       setOpen(false);
     },
