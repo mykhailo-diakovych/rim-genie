@@ -38,6 +38,7 @@ import { Route as ApiReportsDailyDateRouteImport } from './routes/api/reports/da
 import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$quoteId/pdf'
 import { Route as ApiInvoicesInvoiceIdPdfRouteImport } from './routes/api/invoices/$invoiceId/pdf'
 import { Route as AppCashierInvoiceIdCheckoutRouteImport } from './routes/_app/cashier/$invoiceId/checkout'
+import { Route as AppCustomersCustomerIdJobsInvoiceIdRouteImport } from './routes/_app/customers/$customerId_.jobs.$invoiceId'
 
 const SetPinRoute = SetPinRouteImport.update({
   id: '/set-pin',
@@ -185,6 +186,12 @@ const AppCashierInvoiceIdCheckoutRoute =
     path: '/checkout',
     getParentRoute: () => AppCashierInvoiceIdRoute,
   } as any)
+const AppCustomersCustomerIdJobsInvoiceIdRoute =
+  AppCustomersCustomerIdJobsInvoiceIdRouteImport.update({
+    id: '/customers/$customerId_/jobs/$invoiceId',
+    path: '/customers/$customerId/jobs/$invoiceId',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/api/reports/daily/$date': typeof ApiReportsDailyDateRoute
   '/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
+  '/customers/$customerId/jobs/$invoiceId': typeof AppCustomersCustomerIdJobsInvoiceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -240,6 +248,7 @@ export interface FileRoutesByTo {
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/api/reports/daily/$date': typeof ApiReportsDailyDateRoute
   '/cashier/$invoiceId': typeof AppCashierInvoiceIdIndexRoute
+  '/customers/$customerId/jobs/$invoiceId': typeof AppCustomersCustomerIdJobsInvoiceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -272,6 +281,7 @@ export interface FileRoutesById {
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/api/reports/daily/$date': typeof ApiReportsDailyDateRoute
   '/_app/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
+  '/_app/customers/$customerId_/jobs/$invoiceId': typeof AppCustomersCustomerIdJobsInvoiceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/api/quotes/$quoteId/pdf'
     | '/api/reports/daily/$date'
     | '/cashier/$invoiceId/'
+    | '/customers/$customerId/jobs/$invoiceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -329,6 +340,7 @@ export interface FileRouteTypes {
     | '/api/quotes/$quoteId/pdf'
     | '/api/reports/daily/$date'
     | '/cashier/$invoiceId'
+    | '/customers/$customerId/jobs/$invoiceId'
   id:
     | '__root__'
     | '/_app'
@@ -360,6 +372,7 @@ export interface FileRouteTypes {
     | '/api/quotes/$quoteId/pdf'
     | '/api/reports/daily/$date'
     | '/_app/cashier/$invoiceId/'
+    | '/_app/customers/$customerId_/jobs/$invoiceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -578,6 +591,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCashierInvoiceIdCheckoutRouteImport
       parentRoute: typeof AppCashierInvoiceIdRoute
     }
+    '/_app/customers/$customerId_/jobs/$invoiceId': {
+      id: '/_app/customers/$customerId_/jobs/$invoiceId'
+      path: '/customers/$customerId/jobs/$invoiceId'
+      fullPath: '/customers/$customerId/jobs/$invoiceId'
+      preLoaderRoute: typeof AppCustomersCustomerIdJobsInvoiceIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -637,6 +657,7 @@ interface AppRouteChildren {
   AppTechnicianInvoiceIdRoute: typeof AppTechnicianInvoiceIdRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppTechnicianIndexRoute: typeof AppTechnicianIndexRoute
+  AppCustomersCustomerIdJobsInvoiceIdRoute: typeof AppCustomersCustomerIdJobsInvoiceIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -654,6 +675,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppTechnicianInvoiceIdRoute: AppTechnicianInvoiceIdRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppTechnicianIndexRoute: AppTechnicianIndexRoute,
+  AppCustomersCustomerIdJobsInvoiceIdRoute:
+    AppCustomersCustomerIdJobsInvoiceIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

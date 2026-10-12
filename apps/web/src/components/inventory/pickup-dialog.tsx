@@ -57,6 +57,7 @@ function PickupDialogBody({ job, onDone }: { job: ApiJob; onDone: () => void }) 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: orpc.inventory.jobs.key() }),
         queryClient.invalidateQueries({ queryKey: orpc.floor.customers.key() }),
+        queryClient.invalidateQueries({ queryKey: orpc.jobs.key() }),
       ]);
       toast.success("Job marked as picked up");
       onDone();

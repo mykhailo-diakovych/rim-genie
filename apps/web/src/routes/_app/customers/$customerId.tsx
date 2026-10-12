@@ -421,7 +421,7 @@ function CustomerProfilePage() {
   const latestQuotes = quotes.slice(0, 10);
 
   const allJobs = (customer?.invoices ?? []).flatMap((inv) =>
-    inv.jobs.map((j) => ({ ...j, quoteId: inv.quoteId })),
+    inv.jobs.map((j) => ({ ...j, quoteId: inv.quoteId, invoiceNumber: inv.invoiceNumber })),
   );
   const latestJobs = allJobs.slice(0, 10);
 
@@ -851,6 +851,8 @@ function QuotesTable({
 interface JobRow {
   id: string;
   quoteId: string;
+  invoiceId: string;
+  invoiceNumber: number;
   status: JobStatus;
   completedAt: Date | string | null;
   createdAt: Date | string;
@@ -859,7 +861,7 @@ interface JobRow {
 }
 
 function JobsTable({ jobs }: { jobs: JobRow[] }) {
-  const navigate = useNavigate();
+  const { customerId } = Route.useParams();
   const [signedDocQuoteId, setSignedDocQuoteId] = useState<string | null>(null);
 
   const { data: signedDocData } = useQuery(
@@ -919,19 +921,13 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
                   <td
                     className={`h-12 w-[104px] border-t border-l border-field-line p-2 text-sm leading-4.5 ${borderB}`}
                   >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void navigate({
-                          to: "/floor/$quoteId",
-                          params: { quoteId: job.quoteId },
-                          search: { from: "customer" },
-                        })
-                      }
-                      className="cursor-pointer text-blue underline"
+                    <Link
+                      to="/customers/$customerId/jobs/$invoiceId"
+                      params={{ customerId, invoiceId: job.invoiceId }}
+                      className="text-blue underline"
                     >
-                      {job.id.slice(0, 7).toUpperCase()}
-                    </button>
+                      {job.invoiceNumber}
+                    </Link>
                   </td>
                   <td
                     className={`h-12 w-[140px] border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
