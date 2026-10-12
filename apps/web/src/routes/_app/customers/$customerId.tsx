@@ -7,6 +7,10 @@ import { toast } from "sonner";
 
 import { CustomerInvoicesTable } from "@/components/customers/customer-invoices-table";
 import { CustomerModal } from "@/components/customers/customer-modal";
+import {
+  JobSignedDocsDialog,
+  type SignedDocsJob,
+} from "@/components/customers/job-signed-docs-dialog";
 import { NewQuoteSheet } from "@/components/floor/new-quote-sheet";
 import { SendQuoteDialog, type SendQuoteCustomer } from "@/components/floor/send-quote-dialog";
 import { Button } from "@/components/ui/button";
@@ -60,6 +64,16 @@ function formatDate(d: Date | string | null | undefined) {
     month: "short",
     day: "2-digit",
     year: "numeric",
+  });
+}
+
+function formatDateTime(d: Date | string) {
+  return new Date(d).toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 
@@ -872,25 +886,40 @@ interface JobRow {
   status: JobStatus;
   completedAt: Date | string | null;
   createdAt: Date | string;
+  isPickedUp: boolean;
   invoiceItem: { description: string | null } | null;
   technician: { name: string } | null;
+  pickup: { pickedUpAt: Date | string; pickedUpBy: { name: string } } | null;
+}
+
+function PickedUpCell({ job }: { job: JobRow }) {
+  if (job.pickup) {
+    return (
+      <div className="flex flex-col gap-0.5">
+        <span>{formatDateTime(job.pickup.pickedUpAt)}</span>
+        <span className="text-xs leading-3.5 text-label">by {job.pickup.pickedUpBy.name}</span>
+      </div>
+    );
+  }
+  if (job.isPickedUp) {
+    return (
+      <div className="flex flex-col gap-0.5">
+        <span>Yes</span>
+        <span className="text-xs leading-3.5 text-label">Time not recorded</span>
+      </div>
+    );
+  }
+  return "—";
 }
 
 function JobsTable({ jobs }: { jobs: JobRow[] }) {
   const { customerId } = Route.useParams();
-  const [signedDocQuoteId, setSignedDocQuoteId] = useState<string | null>(null);
-
-  const { data: signedDocData } = useQuery(
-    orpc.floor.termsSignature.getByQuoteId.queryOptions({
-      input: { quoteId: signedDocQuoteId ?? "" },
-      enabled: !!signedDocQuoteId,
-    }),
-  );
+  const [signedDocsJob, setSignedDocsJob] = useState<SignedDocsJob | null>(null);
 
   return (
     <>
       <div className="w-full overflow-x-auto">
-        <table className="w-full min-w-[720px] font-rubik text-xs">
+        <table className="w-full min-w-[880px] font-rubik text-xs">
           <thead>
             <tr className="text-left text-label">
               <th className="h-8 w-[144px] border-t border-l border-field-line px-2 py-1.5 font-normal">
@@ -905,6 +934,9 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
               <th className="h-8 border-t border-l border-field-line px-2 py-1.5 font-normal">
                 Description
               </th>
+              <th className="h-8 w-[160px] border-t border-l border-field-line px-2 py-1.5 font-normal">
+                Picked Up
+              </th>
               <th className="h-8 w-[104px] border-t border-l border-field-line px-2 py-1.5 font-normal">
                 Status
               </th>
@@ -915,7 +947,7 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
             {jobs.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="border border-field-line px-2 py-6 text-center text-sm text-label"
                 >
                   No jobs yet
@@ -956,6 +988,11 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
                     {description}
                   </td>
                   <td
+                    className={`h-12 w-[160px] border-t border-l border-field-line p-2 text-sm leading-4.5 text-body ${borderB}`}
+                  >
+                    <PickedUpCell job={job} />
+                  </td>
+                  <td
                     className={`h-12 w-[104px] border-t border-l border-field-line p-2 ${borderB}`}
                   >
                     <StatusBadge status={job.status} />
@@ -964,11 +1001,17 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
                     className={`h-12 w-[120px] border-t border-r border-l border-field-line p-2 ${borderB}`}
                   >
                     <div className="flex flex-col items-stretch">
-                      {job.status === "completed" && (
+                      {(job.status === "completed" || job.isPickedUp) && (
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setSignedDocQuoteId(job.quoteId)}
+                          onClick={() =>
+                            setSignedDocsJob({
+                              id: job.id,
+                              quoteId: job.quoteId,
+                              isPickedUp: job.isPickedUp,
+                            })
+                          }
                         >
                           <IconSignedDoc />
                           Signed Doc
@@ -983,53 +1026,7 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
         </table>
       </div>
 
-      {/* Signed Doc Modal */}
-      <Dialog
-        open={!!signedDocQuoteId}
-        onOpenChange={(open) => {
-          if (!open) setSignedDocQuoteId(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Signed Disclaimer</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 p-3">
-            <SignedDisclaimerNotice />
-            {signedDocData ? (
-              <>
-                <div className="flex flex-col gap-1">
-                  <span className="font-rubik text-xs leading-3.5 text-label">Signature:</span>
-                  <div className="rounded-md border border-field-line bg-white p-2">
-                    <img
-                      src={signedDocData.signatureDataUrl}
-                      alt="Customer signature"
-                      className="h-[120px] w-full object-contain"
-                    />
-                  </div>
-                </div>
-                <div className="font-rubik text-xs text-label">
-                  Signed on{" "}
-                  {new Date(signedDocData.signedAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
-              </>
-            ) : (
-              <p className="py-4 text-center font-rubik text-sm text-label">
-                No disclaimer has been signed for this quote yet.
-              </p>
-            )}
-          </div>
-          <DialogFooter className="p-3 pt-0">
-            <DialogClose render={<Button variant="ghost">Close</Button>} />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <JobSignedDocsDialog job={signedDocsJob} onClose={() => setSignedDocsJob(null)} />
     </>
   );
 }
