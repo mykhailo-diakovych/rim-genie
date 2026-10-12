@@ -11,6 +11,7 @@ import { SendQuoteDialog, type SendQuoteCustomer } from "@/components/floor/send
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
+import { SignedDisclaimerNotice } from "@/components/terms/signed-disclaimer-notice";
 import {
   Dialog,
   DialogClose,
@@ -808,13 +809,7 @@ function QuotesTable({
             <DialogTitle>Signed Disclaimer</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 p-3">
-            <div className="rounded-md border border-field-line bg-page p-3">
-              <p className="font-rubik text-sm leading-5 text-body">
-                The customer has reviewed and accepted the service conditions for this quote. By
-                signing, they acknowledge the services to be performed and agree to the terms
-                outlined.
-              </p>
-            </div>
+            <SignedDisclaimerNotice />
             {signedDocData ? (
               <>
                 <div className="flex flex-col gap-1">
@@ -988,13 +983,7 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
             <DialogTitle>Signed Disclaimer</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 p-3">
-            <div className="rounded-md border border-field-line bg-page p-3">
-              <p className="font-rubik text-sm leading-5 text-body">
-                The customer has reviewed and accepted the service conditions for this quote. By
-                signing, they acknowledge the services to be performed and agree to the terms
-                outlined.
-              </p>
-            </div>
+            <SignedDisclaimerNotice />
             {signedDocData ? (
               <>
                 <div className="flex flex-col gap-1">

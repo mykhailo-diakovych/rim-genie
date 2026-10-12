@@ -27,6 +27,8 @@
   --ghost: #b3bbc2;
   --dim: #54687a;
   --dialog: oklch(0.988 0.002 255);
+  --banner-navy: oklch(0.307 0.097 256.4);
+  --banner-navy-foreground: oklch(1 0 0);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0.01 145);
   --card: oklch(1 0 0);
@@ -123,6 +125,8 @@
   --color-ghost: var(--ghost);
   --color-dim: var(--dim);
   --color-dialog: var(--dialog);
+  --color-banner-navy: var(--banner-navy);
+  --color-banner-navy-foreground: var(--banner-navy-foreground);
   --shadow-dialog: 0 0 40px 0 oklch(0 0 0 / 4%);
   --shadow-card: 0 2px 8px 0 rgba(116, 117, 118, 0.04);
   --color-sidebar-ring: var(--sidebar-ring);

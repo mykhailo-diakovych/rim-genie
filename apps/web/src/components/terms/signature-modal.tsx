@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import SignaturePad from "signature_pad";
 
-import { Info } from "lucide-react";
+import { FilePenLine } from "lucide-react";
 
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -73,16 +74,11 @@ export function SignatureModal({ open, onOpenChange, onSign }: SignatureModalPro
           <DialogTitle>Add Signature</DialogTitle>
         </DialogHeader>
 
-        <div className="flex items-center gap-4 bg-[#e2f1fe] px-3 py-2">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#c9e0f3]">
-            <Info className="size-6 text-blue" />
-          </div>
-          <p className="font-rubik text-sm leading-4.5 text-body">
-            Sign below to confirm acceptance of the service conditions
-          </p>
-        </div>
-
         <div className="flex flex-col gap-4 px-3 py-3">
+          <Banner icon={<FilePenLine />}>
+            Sign below to confirm acceptance of the service conditions
+          </Banner>
+
           <div className="flex flex-col gap-6 md:flex-row md:items-stretch">
             {/* Disclaimer — shown to the left of the signature widget (RIM-3) */}
             <div className="flex flex-1 flex-col gap-1">

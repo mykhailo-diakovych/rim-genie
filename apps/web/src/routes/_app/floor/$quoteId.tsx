@@ -52,6 +52,7 @@ import {
 import { client, orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
 import { SendQuoteDialog } from "@/components/floor/send-quote-dialog";
+import { SignedDisclaimerNotice } from "@/components/terms/signed-disclaimer-notice";
 import type {
   QuoteGeneratorSheetData,
   QuoteGeneratorEditItem,
@@ -1045,13 +1046,7 @@ function QuoteEditorPage() {
             <DialogTitle>Signed Disclaimer</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 p-3">
-            <div className="rounded-md border border-field-line bg-page p-3">
-              <p className="font-rubik text-sm leading-5 text-body">
-                The customer has reviewed and accepted the service conditions for this quote. By
-                signing, they acknowledge the services to be performed and agree to the terms
-                outlined.
-              </p>
-            </div>
+            <SignedDisclaimerNotice />
             {termsSignatureData && (
               <>
                 <div className="flex flex-col gap-1">
