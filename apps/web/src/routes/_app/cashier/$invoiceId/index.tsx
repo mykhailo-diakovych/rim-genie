@@ -1,8 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Building2,
-  ChevronDown,
   ChevronLeft,
   CircleDollarSign,
   Info,
@@ -19,6 +18,11 @@ import { toast } from "sonner";
 import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
 
 import { Button } from "@/components/ui/button";
+import {
+  RowActionsMenu,
+  RowActionsMenuItem,
+  RowActionsMenuSeparator,
+} from "@/components/ui/row-actions-menu";
 import { LinePriceCell } from "@/components/pricing/line-price-cell";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { formatCents } from "@/lib/format-currency";
@@ -79,78 +83,31 @@ function MoreDropdown({
   onDelete: () => void;
   isDeleting: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
   const sendReceipt = useMutation({
     ...orpc.cashier.invoices.sendReceipt.mutationOptions(),
     onSuccess: () => toast.success("Receipt sent successfully"),
     onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
   });
 
-  useEffect(() => {
-    if (!open) return;
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [open]);
-
   return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-9 items-center justify-center gap-2 rounded-md border border-field-line bg-white px-3 font-rubik text-xs text-body transition-colors hover:bg-page"
+    <RowActionsMenu label="More actions" className="size-9.5">
+      <RowActionsMenuItem onClick={onPrint}>
+        <Printer className="text-blue" />
+        Print
+      </RowActionsMenuItem>
+      <RowActionsMenuItem
+        disabled={(!customerEmail && !customerPhone) || sendReceipt.isPending}
+        onClick={() => sendReceipt.mutate({ invoiceId })}
       >
-        More
-        <ChevronDown className="size-4 text-ghost" />
-      </button>
-
-      {open && (
-        <div className="absolute top-full right-0 z-10 mt-1 w-44 overflow-clip rounded-md bg-white pb-1 shadow-[0px_0px_32px_0px_rgba(10,13,18,0.1)]">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onPrint();
-            }}
-            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page"
-          >
-            <Printer className="size-4 text-blue" />
-            Print
-          </button>
-          <button
-            type="button"
-            disabled={(!customerEmail && !customerPhone) || sendReceipt.isPending}
-            onClick={() => {
-              setOpen(false);
-              sendReceipt.mutate({ invoiceId });
-            }}
-            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
-          >
-            <Send className="size-4 text-blue" />
-            Send (Email/SMS)
-          </button>
-          <div className="h-px bg-field-line" />
-          <button
-            type="button"
-            disabled={isDeleting}
-            onClick={() => {
-              setOpen(false);
-              onDelete();
-            }}
-            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-destructive transition-colors hover:bg-page disabled:opacity-50"
-          >
-            <Trash2 className="size-4" />
-            Delete
-          </button>
-        </div>
-      )}
-    </div>
+        <Send className="text-blue" />
+        Send (Email/SMS)
+      </RowActionsMenuItem>
+      <RowActionsMenuSeparator />
+      <RowActionsMenuItem destructive disabled={isDeleting} onClick={onDelete}>
+        <Trash2 />
+        Delete
+      </RowActionsMenuItem>
+    </RowActionsMenu>
   );
 }
 
