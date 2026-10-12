@@ -16,7 +16,7 @@ function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "flex h-9 w-full items-center justify-between rounded-md border bg-white px-2 font-rubik text-sm leading-5 transition-colors outline-none",
+        "flex h-9 w-full touch-manipulation items-center justify-between rounded-md border bg-white px-2 font-rubik text-sm leading-5 transition-colors outline-none pointer-coarse:h-11",
         error ? "border-red/50" : "border-field-line",
         className,
       )}
@@ -69,7 +69,7 @@ function SelectOption({ className, children, ...props }: SelectPrimitive.Item.Pr
   return (
     <SelectPrimitive.Item
       className={cn(
-        "flex cursor-default items-center justify-between px-3 py-2 font-rubik text-sm leading-5 text-body capitalize outline-none select-none",
+        "flex cursor-default items-center justify-between px-3 py-2 font-rubik text-sm leading-5 text-body capitalize outline-none select-none pointer-coarse:py-3",
         "data-highlighted:bg-blue/5 data-selected:text-blue",
         className,
       )}
