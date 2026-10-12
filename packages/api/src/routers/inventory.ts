@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { and, desc, eq, gte, lte, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, lte, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
-import { inventoryRecord, invoice, job } from "@rim-genie/db/schema";
+import { customer, inventoryRecord, invoice, job } from "@rim-genie/db/schema";
 
 import { inventoryClerkProcedure, requireRole } from "../index";
 import * as InventoryService from "../services/inventory.service";
@@ -19,21 +19,48 @@ const tabSchema = z.enum([
 
 export type InventoryTab = z.infer<typeof tabSchema>;
 
+const jobFilterSchema = z.object({
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  search: z.string().max(100).optional(),
+});
+
+function searchFilter(search?: string) {
+  const term = search?.trim();
+  if (!term) return undefined;
+  const pattern = `%${term.replace(/[\\%_]/g, "\\$&")}%`;
+  const invoiceNumber = /^(?:inv-?)?0*(\d+)$/i.exec(term)?.[1];
+  return inArray(
+    job.invoiceId,
+    db
+      .select({ id: invoice.id })
+      .from(invoice)
+      .innerJoin(customer, eq(invoice.customerId, customer.id))
+      .where(
+        or(
+          ilike(customer.name, pattern),
+          invoiceNumber
+            ? sql`${invoice.invoiceNumber}::text LIKE ${`%${invoiceNumber}%`}`
+            : undefined,
+        ),
+      ),
+  );
+}
+
+function buildJobFilter({ dateFrom, dateTo, search }: z.infer<typeof jobFilterSchema>) {
+  return and(
+    dateFrom ? gte(job.createdAt, new Date(dateFrom)) : undefined,
+    dateTo ? lte(job.createdAt, new Date(dateTo)) : undefined,
+    searchFilter(search),
+  );
+}
+
 export const inventoryRouter = {
   jobs: {
     list: inventoryClerkProcedure
-      .input(
-        z.object({
-          tab: tabSchema,
-          dateFrom: z.string().optional(),
-          dateTo: z.string().optional(),
-        }),
-      )
+      .input(jobFilterSchema.extend({ tab: tabSchema }))
       .handler(async ({ input }) => {
-        const dateFilter = and(
-          input.dateFrom ? gte(job.createdAt, new Date(input.dateFrom)) : undefined,
-          input.dateTo ? lte(job.createdAt, new Date(input.dateTo)) : undefined,
-        );
+        const jobFilter = buildJobFilter(input);
 
         if (input.tab === "outstandingBalance") {
           const rows = await db
@@ -42,7 +69,7 @@ export const inventoryRouter = {
             })
             .from(job)
             .innerJoin(invoice, eq(job.invoiceId, invoice.id))
-            .where(and(ne(invoice.status, "paid"), eq(job.isPickedUp, false), dateFilter));
+            .where(and(ne(invoice.status, "paid"), eq(job.isPickedUp, false), jobFilter));
 
           const jobIds = rows.map((r) => r.jobId);
           if (jobIds.length === 0) return [];
@@ -72,7 +99,7 @@ export const inventoryRouter = {
                   return eqOp(j.isPickedUp, true);
               }
             })();
-            return dateFilter ? andOp(tabCondition, dateFilter) : tabCondition;
+            return andOp(tabCondition, jobFilter);
           },
           orderBy: (j, { desc: descOp }) => [descOp(j.createdAt)],
           with: {
@@ -83,47 +110,42 @@ export const inventoryRouter = {
         });
       }),
 
-    counts: inventoryClerkProcedure
-      .input(z.object({ dateFrom: z.string().optional(), dateTo: z.string().optional() }))
-      .handler(async ({ input }) => {
-        const dateFilter = and(
-          input.dateFrom ? gte(job.createdAt, new Date(input.dateFrom)) : undefined,
-          input.dateTo ? lte(job.createdAt, new Date(input.dateTo)) : undefined,
-        );
+    counts: inventoryClerkProcedure.input(jobFilterSchema).handler(async ({ input }) => {
+      const jobFilter = buildJobFilter(input);
 
-        const [overnightResult, readyResult, missingResult, pickedUpResult, outstandingResult] =
-          await Promise.all([
-            db
-              .select({ count: sql<number>`count(*)::int` })
-              .from(job)
-              .where(and(eq(job.isOvernight, true), eq(job.isPickedUp, false), dateFilter)),
-            db
-              .select({ count: sql<number>`count(*)::int` })
-              .from(job)
-              .where(and(eq(job.status, "completed"), eq(job.isPickedUp, false), dateFilter)),
-            db
-              .select({ count: sql<number>`count(*)::int` })
-              .from(job)
-              .where(and(eq(job.isMissing, true), eq(job.isPickedUp, false), dateFilter)),
-            db
-              .select({ count: sql<number>`count(*)::int` })
-              .from(job)
-              .where(and(eq(job.isPickedUp, true), dateFilter)),
-            db
-              .select({ count: sql<number>`count(*)::int` })
-              .from(job)
-              .innerJoin(invoice, eq(job.invoiceId, invoice.id))
-              .where(and(ne(invoice.status, "paid"), eq(job.isPickedUp, false), dateFilter)),
-          ]);
+      const [overnightResult, readyResult, missingResult, pickedUpResult, outstandingResult] =
+        await Promise.all([
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(job)
+            .where(and(eq(job.isOvernight, true), eq(job.isPickedUp, false), jobFilter)),
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(job)
+            .where(and(eq(job.status, "completed"), eq(job.isPickedUp, false), jobFilter)),
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(job)
+            .where(and(eq(job.isMissing, true), eq(job.isPickedUp, false), jobFilter)),
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(job)
+            .where(and(eq(job.isPickedUp, true), jobFilter)),
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(job)
+            .innerJoin(invoice, eq(job.invoiceId, invoice.id))
+            .where(and(ne(invoice.status, "paid"), eq(job.isPickedUp, false), jobFilter)),
+        ]);
 
-        return {
-          overnight: overnightResult[0]!.count,
-          readyForPickup: readyResult[0]!.count,
-          outstandingBalance: outstandingResult[0]!.count,
-          missing: missingResult[0]!.count,
-          pickedUp: pickedUpResult[0]!.count,
-        };
-      }),
+      return {
+        overnight: overnightResult[0]!.count,
+        readyForPickup: readyResult[0]!.count,
+        outstandingBalance: outstandingResult[0]!.count,
+        missing: missingResult[0]!.count,
+        pickedUp: pickedUpResult[0]!.count,
+      };
+    }),
 
     markPickup: inventoryClerkProcedure
       .input(
