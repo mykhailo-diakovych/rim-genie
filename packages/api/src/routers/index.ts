@@ -12,6 +12,7 @@ import { discountRouter } from "./discount";
 import { employeesRouter } from "./employees";
 import { floorRouter } from "./floor";
 import { inventoryRouter } from "./inventory";
+import { jobsRouter } from "./jobs";
 import { loyaltyRouter } from "./loyalty";
 import { manageRouter } from "./manage";
 import { notificationRouter } from "./notification";
@@ -39,6 +40,7 @@ export const appRouter = {
   employees: employeesRouter,
   floor: floorRouter,
   inventory: inventoryRouter,
+  jobs: jobsRouter,
   loyalty: loyaltyRouter,
   manage: manageRouter,
   notifications: notificationRouter,
