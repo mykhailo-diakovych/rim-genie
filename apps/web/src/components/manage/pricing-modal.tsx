@@ -43,13 +43,6 @@ const VEHICLE_TYPE_LABELS: Record<string, string> = {
   motorcycle: "Motorcycle",
 };
 
-const WELDING_JOB_TYPE_OPTIONS = [
-  { value: "aluminium", label: "Aluminium" },
-  { value: "steel", label: "Steel" },
-  { value: "stainless-steel", label: "Stainless Steel" },
-  { value: "cast-iron", label: "Cast Iron" },
-];
-
 type JobTypeOption = { value: string; label: string };
 
 type JobTypeGroup = {
@@ -57,7 +50,6 @@ type JobTypeGroup = {
   label: string;
   children: { key: string; label: string }[];
 };
-
 
 function leafOptions(groups: JobTypeGroup[] | undefined): JobTypeOption[] {
   return (groups ?? [])
@@ -112,6 +104,10 @@ export function PricingModal({ open, onOpenChange, price, defaultCategory }: Pri
     ...orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "tire-service" } }),
     enabled: open,
   });
+  const { data: weldingMaterials } = useQuery({
+    ...orpc.catalog.weldingMaterials.list.queryOptions(),
+    enabled: open,
+  });
 
   const jobTypeOptionsFor = (category: ServiceCategory): JobTypeOption[] => {
     switch (category) {
@@ -120,7 +116,7 @@ export function PricingModal({ open, onOpenChange, price, defaultCategory }: Pri
       case "general":
         return leafOptions(tireGroups);
       case "welding":
-        return WELDING_JOB_TYPE_OPTIONS;
+        return (weldingMaterials ?? []).map((w) => ({ value: w.key, label: w.label }));
       case "powder_coating":
         return [];
     }
