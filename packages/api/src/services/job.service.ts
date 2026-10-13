@@ -17,6 +17,7 @@ import {
   InvoiceJobsNotReady,
   PickupSignatureRequired,
 } from "./errors";
+import * as NotificationService from "./notification.service";
 
 export function sendToTechnician(invoiceId: string) {
   return Effect.gen(function* () {
@@ -290,6 +291,45 @@ export function getPickupByInvoiceId(invoiceId: string) {
       notes: row.notes,
       signatureUrl: row.signatureDataUrl,
     };
+  });
+}
+
+export function markAsOvernight(jobId: string, note?: string) {
+  return Effect.gen(function* () {
+    const found = yield* Effect.tryPromise(() =>
+      db.query.job.findFirst({
+        where: eq(job.id, jobId),
+        with: { invoiceItem: true, invoice: { with: { customer: true } } },
+      }),
+    );
+
+    if (!found) {
+      return yield* Effect.fail(new JobNotFound({ id: jobId }));
+    }
+
+    const text = note?.trim();
+    const overnightNote = `[OVERNIGHT]: ${text || "Kept overnight"}`;
+    const combined = found.specialNotes ? `${found.specialNotes}\n${overnightNote}` : overnightNote;
+
+    const [updated] = yield* Effect.tryPromise(() =>
+      db
+        .update(job)
+        .set({ isOvernight: true, specialNotes: combined })
+        .where(eq(job.id, jobId))
+        .returning(),
+    );
+
+    const invoiceLabel = `INV-${String(found.invoice.invoiceNumber).padStart(4, "0")}`;
+    const jobLabel = found.invoiceItem.description ?? "Rim job";
+    yield* NotificationService.notifyAdmins({
+      type: "job_overnight",
+      title: "Job Kept Overnight",
+      message: `${found.invoice.customer.name} · ${invoiceLabel} · ${jobLabel}. Note: ${text || "none"}`,
+      referenceId: jobId,
+      referenceType: "inventory_job",
+    }).pipe(Effect.catchAll(() => Effect.void));
+
+    return updated!;
   });
 }
 

@@ -73,9 +73,9 @@ function getStatusBadge(job: ApiJob): { label: string; className: string } {
 
 const TAB_ACTIONS: Record<TabValue, { pickup: boolean; menu: JobAction[] }> = {
   overnight: { pickup: true, menu: ["missing"] },
-  readyForPickup: { pickup: true, menu: ["missing"] },
+  readyForPickup: { pickup: true, menu: ["overnight", "missing"] },
   outstandingBalance: { pickup: true, menu: ["overnight", "missing"] },
-  missing: { pickup: true, menu: [] },
+  missing: { pickup: true, menu: ["overnight"] },
   pickedUp: { pickup: false, menu: [] },
 };
 
@@ -84,8 +84,10 @@ const MENU_ITEMS: Record<JobAction, { label: string; icon: ReactNode; destructiv
   missing: { label: "Mark as Missing", icon: <TriangleAlert />, destructive: true },
 };
 
-function availableActions(tab: TabValue) {
-  return TAB_ACTIONS[tab].menu;
+function availableActions(job: ApiJob, tab: TabValue) {
+  return TAB_ACTIONS[tab].menu.filter((action) =>
+    action === "overnight" ? !job.isOvernight : !job.isMissing,
+  );
 }
 
 function InvoiceBalance({ invoice }: { invoice: ApiJob["invoice"] }) {
@@ -226,7 +228,7 @@ function JobDetails({ job }: { job: ApiJob }) {
 }
 
 export function InventoryJobCard({ job, tab }: { job: ApiJob; tab: TabValue }) {
-  const actions = availableActions(tab);
+  const actions = availableActions(job, tab);
 
   return (
     <div className={cardClass}>
@@ -287,7 +289,7 @@ export function InventoryInvoiceCard({ jobs, tab }: { jobs: ApiJob[]; tab: TabVa
                 </div>
                 <JobDetails job={job} />
               </div>
-              <JobActionsMenu job={job} actions={availableActions(tab)} />
+              <JobActionsMenu job={job} actions={availableActions(job, tab)} />
             </div>
           ))}
         </div>

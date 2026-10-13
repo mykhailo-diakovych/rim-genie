@@ -127,6 +127,13 @@
       "when": 1791876079545,
       "tag": "0017_invoice_pickup",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791876146851,
+      "tag": "0018_job_overnight_notification",
+      "breakpoints": true
     }
   ]
 }

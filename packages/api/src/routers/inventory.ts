@@ -29,7 +29,7 @@ function searchFilter(search?: string) {
   const term = search?.trim();
   if (!term) return undefined;
   const pattern = `%${term.replace(/[\\%_]/g, "\\$&")}%`;
-  const invoiceNumber = /^(?:inv-?)?0*(\d+)$/i.exec(term)?.[1];
+  const invoiceNumber = /^(?:inv[\s-]*)?#?0*(\d{1,9})$/i.exec(term)?.[1];
   return inArray(
     job.invoiceId,
     db
@@ -39,9 +39,7 @@ function searchFilter(search?: string) {
       .where(
         or(
           ilike(customer.name, pattern),
-          invoiceNumber
-            ? sql`${invoice.invoiceNumber}::text LIKE ${`%${invoiceNumber}%`}`
-            : undefined,
+          invoiceNumber ? eq(invoice.invoiceNumber, Number(invoiceNumber)) : undefined,
         ),
       ),
   );
@@ -190,8 +188,7 @@ export const inventoryRouter = {
     markOvernight: inventoryClerkProcedure
       .input(z.object({ jobId: z.string(), notes: z.string().optional() }))
       .handler(async ({ input }) => {
-        const note = input.notes ? `[OVERNIGHT]: ${input.notes}` : "[OVERNIGHT]: Kept overnight";
-        return runEffect(JobService.addNote(input.jobId, note));
+        return runEffect(JobService.markAsOvernight(input.jobId, input.notes));
       }),
 
     markMissing: inventoryClerkProcedure

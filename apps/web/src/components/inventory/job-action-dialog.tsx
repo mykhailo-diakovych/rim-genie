@@ -125,7 +125,10 @@ export function JobActionDialog({ job, action, open, onOpenChange }: JobActionDi
       }
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: orpc.inventory.jobs.key() });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: orpc.inventory.jobs.key() }),
+        queryClient.invalidateQueries({ queryKey: orpc.notifications.key() }),
+      ]);
       const messages: Record<JobAction, string> = {
         overnight: "Job marked as overnight",
         missing: "Job marked as missing",
