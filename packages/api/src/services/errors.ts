@@ -138,3 +138,20 @@ export class UnknownJobType extends Data.TaggedError("UnknownJobType")<{
 export class PriceNotFound extends Data.TaggedError("PriceNotFound")<{
   reason: string;
 }> {}
+
+export class QuoteNotEditable extends Data.TaggedError("QuoteNotEditable")<{
+  quoteId: string;
+}> {}
+
+export class QuoteNotFinalized extends Data.TaggedError("QuoteNotFinalized")<{
+  quoteId: string;
+}> {}
+
+export class DisclaimerNotSigned extends Data.TaggedError("DisclaimerNotSigned")<{
+  quoteId: string;
+}> {}
+
+export class InvoiceTotalBelowPaid extends Data.TaggedError("InvoiceTotalBelowPaid")<{
+  invoiceId: string;
+  paid: number;
+}> {}

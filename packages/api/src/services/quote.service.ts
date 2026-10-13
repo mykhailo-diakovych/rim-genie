@@ -1,8 +1,22 @@
+import { Effect } from "effect";
 import { and, eq, sum, sql } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { quoteDiscountCents } from "@rim-genie/db/discount";
+import { isQuoteEditable } from "@rim-genie/db/quote-status";
 import { quote, quoteItem } from "@rim-genie/db/schema";
+
+import { QuoteNotEditable, QuoteNotFound } from "./errors";
+import { runEffect } from "./run-effect";
+
+// Server-side half of the read-only rule: no role can change a quote once it is with the cashier.
+export async function assertQuoteEditable(quoteId: string): Promise<void> {
+  const [row] = await db.select({ status: quote.status }).from(quote).where(eq(quote.id, quoteId));
+  if (!row) await runEffect(Effect.fail(new QuoteNotFound({ id: quoteId })));
+  else if (!isQuoteEditable(row.status)) {
+    await runEffect(Effect.fail(new QuoteNotEditable({ quoteId })));
+  }
+}
 
 export async function recalcQuoteTotal(quoteId: string): Promise<void> {
   const result = await db

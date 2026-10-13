@@ -1,9 +1,11 @@
 import { Effect } from "effect";
-import { and, eq, sql, sum } from "drizzle-orm";
+import { eq, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { lineTotalCents } from "@rim-genie/db/line-item";
+import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
 import { quote, invoice, invoiceItem, payment, job } from "@rim-genie/db/schema";
+import type { InvoiceStatus } from "@rim-genie/db/schema";
 
 import {
   QuoteNotFound,
@@ -11,18 +13,61 @@ import {
   InvoiceNotFound,
   InvoiceHasPayments,
   InvoiceHasJobs,
+  InvoiceTotalBelowPaid,
+  QuoteNotFinalized,
 } from "./errors";
 
-export function createFromQuote(quoteId: string, userId: string) {
+// The invoice (and with it anything the cashier and technicians see) only comes into being
+// here, when the floor explicitly sends a finalized quote 
+export function sendQuoteToCashier(quoteId: string, userId: string) {
   return Effect.gen(function* () {
-    // Ensure the invoice mirror reflects the latest quote items (creating it on the
-    // first conversion, re-syncing it otherwise), then finalize the quote. Idempotent:
-    // safe to call whether or not an invoice already exists.
+    const found = yield* Effect.tryPromise(() =>
+      db.query.quote.findFirst({ where: eq(quote.id, quoteId), columns: { status: true } }),
+    );
+
+    if (!found) {
+      return yield* Effect.fail(new QuoteNotFound({ id: quoteId }));
+    }
+    if (found.status !== "finalized") {
+      return yield* Effect.fail(new QuoteNotFinalized({ quoteId }));
+    }
+
     const inv = yield* syncInvoiceFromQuote(quoteId, userId);
     yield* Effect.tryPromise(() =>
-      db.update(quote).set({ status: "completed" }).where(eq(quote.id, quoteId)),
+      db
+        .update(quote)
+        .set({ status: SENT_TO_CASHIER_STATUS, sentToCashierAt: new Date() })
+        .where(eq(quote.id, quoteId)),
     );
     return inv;
+  });
+}
+
+// The one place an invoice total is worked out. Every path that changes it goes through here,
+// so an edit can never take the total below what has already been collected
+// An unchanged total passes, which leaves invoices that are already overpaid as they are.
+function settleInvoiceTotals(
+  invoiceId: string,
+  previousTotal: number,
+  parts: { subtotal: number; discount: number; tax: number },
+) {
+  return Effect.gen(function* () {
+    const [paidRow] = yield* Effect.tryPromise(() =>
+      db
+        .select({ paid: sum(payment.amount) })
+        .from(payment)
+        .where(eq(payment.invoiceId, invoiceId)),
+    );
+    const paid = Number(paidRow?.paid ?? 0);
+    const total = parts.subtotal - parts.discount + parts.tax;
+
+    if (total < paid && total !== previousTotal) {
+      return yield* Effect.fail(new InvoiceTotalBelowPaid({ invoiceId, paid }));
+    }
+
+    const status: InvoiceStatus =
+      paid >= total && total > 0 ? "paid" : paid > 0 ? "partially_paid" : "unpaid";
+    return { ...parts, total, status };
   });
 }
 
@@ -105,6 +150,11 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
     }
 
     const invoiceId = found.invoice.id;
+    const totals = yield* settleInvoiceTotals(invoiceId, found.invoice.total, {
+      subtotal,
+      discount: discountAmount,
+      tax: found.invoice.tax,
+    });
 
     const result = yield* Effect.tryPromise(() =>
       db.transaction(async (tx) => {
@@ -133,17 +183,9 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
           })),
         );
 
-        const [paymentResult] = await tx
-          .select({ paid: sum(payment.amount) })
-          .from(payment)
-          .where(eq(payment.invoiceId, invoiceId));
-
-        const paid = Number(paymentResult?.paid ?? 0);
-        const status = paid >= total && total > 0 ? "paid" : paid > 0 ? "partially_paid" : "unpaid";
-
         const [inv] = await tx
           .update(invoice)
-          .set({ subtotal, discount: discountAmount, total, status })
+          .set(totals)
           .where(eq(invoice.id, invoiceId))
           .returning();
 
@@ -153,79 +195,6 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
 
     return result;
   });
-}
-
-// Surgical alternative to syncInvoiceFromQuote: touches only the one row and the invoice
-// totals, avoiding a full re-sync that would recreate jobs and overwrite the cashier's discount.
-export async function mirrorQuoteItemPrice(
-  quoteItemId: string,
-  unitCost: number,
-  priceOverridden: boolean,
-  previousQuoteDiscount: number,
-): Promise<void> {
-  const [row] = await db
-    .select({ invoiceId: invoiceItem.invoiceId, quoteId: invoice.quoteId })
-    .from(invoiceItem)
-    .innerJoin(invoice, eq(invoice.id, invoiceItem.invoiceId))
-    .where(eq(invoiceItem.quoteItemId, quoteItemId))
-    .limit(1);
-
-  if (!row) return;
-
-  await db
-    .update(invoiceItem)
-    .set({ unitCost, priceOverridden })
-    .where(eq(invoiceItem.quoteItemId, quoteItemId));
-
-  // Follows the quote discount only while it still equals the previous quote-derived value;
-  // a cashier-typed discount survives.
-  const [q] = await db
-    .select({ discountAmount: quote.discountAmount })
-    .from(quote)
-    .where(eq(quote.id, row.quoteId));
-
-  if (q) {
-    await db
-      .update(invoice)
-      .set({ discount: q.discountAmount })
-      .where(and(eq(invoice.id, row.invoiceId), eq(invoice.discount, previousQuoteDiscount)));
-  }
-
-  await recalcInvoiceTotals(row.invoiceId);
-}
-
-export async function recalcInvoiceTotals(invoiceId: string): Promise<void> {
-  const items = await db
-    .select({
-      itemType: invoiceItem.itemType,
-      quantity: invoiceItem.quantity,
-      unitCost: invoiceItem.unitCost,
-      inches: invoiceItem.inches,
-      priceOverridden: invoiceItem.priceOverridden,
-    })
-    .from(invoiceItem)
-    .where(eq(invoiceItem.invoiceId, invoiceId));
-
-  const subtotal = items.reduce((sum, item) => sum + lineTotalCents(item), 0);
-
-  const [found] = await db
-    .select({ discount: invoice.discount, tax: invoice.tax })
-    .from(invoice)
-    .where(eq(invoice.id, invoiceId));
-
-  if (!found) return;
-
-  const total = subtotal - found.discount + found.tax;
-
-  const [paymentResult] = await db
-    .select({ paid: sum(payment.amount) })
-    .from(payment)
-    .where(eq(payment.invoiceId, invoiceId));
-
-  const paid = Number(paymentResult?.paid ?? 0);
-  const status = paid >= total && total > 0 ? "paid" : paid > 0 ? "partially_paid" : "unpaid";
-
-  await db.update(invoice).set({ subtotal, total, status }).where(eq(invoice.id, invoiceId));
 }
 
 export function updateInvoice(
@@ -241,19 +210,16 @@ export function updateInvoice(
       return yield* Effect.fail(new InvoiceNotFound({ id: invoiceId }));
     }
 
-    const discount = fields.discount ?? found.discount;
-    const tax = fields.tax ?? found.tax;
-    const total = found.subtotal - discount + tax;
+    const totals = yield* settleInvoiceTotals(invoiceId, found.total, {
+      subtotal: found.subtotal,
+      discount: fields.discount ?? found.discount,
+      tax: fields.tax ?? found.tax,
+    });
 
     const [updated] = yield* Effect.tryPromise(() =>
       db
         .update(invoice)
-        .set({
-          notes: fields.notes ?? found.notes,
-          discount,
-          tax,
-          total,
-        })
+        .set({ notes: fields.notes ?? found.notes, ...totals })
         .where(eq(invoice.id, invoiceId))
         .returning(),
     );
@@ -298,7 +264,10 @@ export function deleteInvoice(invoiceId: string) {
       db.transaction(async (tx) => {
         await tx.delete(invoiceItem).where(eq(invoiceItem.invoiceId, invoiceId));
         await tx.delete(invoice).where(eq(invoice.id, invoiceId));
-        await tx.update(quote).set({ status: "pending" }).where(eq(quote.id, found.quoteId));
+        await tx
+          .update(quote)
+          .set({ status: "pending", sentToCashierAt: null })
+          .where(eq(quote.id, found.quoteId));
       }),
     );
 

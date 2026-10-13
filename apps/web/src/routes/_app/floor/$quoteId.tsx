@@ -7,14 +7,12 @@ import {
   CornerDownLeft,
   CornerDownRight,
   FileCheck,
-  FileSignature,
   Mail,
   MapPin,
   Pencil,
   Phone,
   Plus,
   Printer,
-  Save,
   Send,
   SendHorizonal,
   Trash2,
@@ -26,6 +24,7 @@ import { toast } from "sonner";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
 import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
 import { DISCOUNT_CAP_PERCENT, exceedsDiscountCap } from "@rim-genie/db/discount";
+import { canFinalizeQuote, isQuoteEditable } from "@rim-genie/db/quote-status";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -38,7 +37,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { SignatureModal } from "@/components/terms/signature-modal";
 import { LinePriceCell } from "@/components/pricing/line-price-cell";
@@ -116,7 +114,8 @@ function QuoteEditorPage() {
 
   const quoteQuery = useQuery(orpc.floor.quotes.get.queryOptions({ input: { id: quoteId } }));
   const quote = quoteQuery.data;
-  const isReadOnly = quote?.status === "completed" && !isAdmin;
+  const isReadOnly = !!quote && !isQuoteEditable(quote.status);
+  const canFinalize = !!quote && canFinalizeQuote(quote.status);
   const includedItems = (quote?.items ?? []).filter((i) => !i.isExcluded);
   const excludedItems = (quote?.items ?? []).filter((i) => i.isExcluded);
 
@@ -222,6 +221,16 @@ function QuoteEditorPage() {
   );
   const isSigned = !!termsSignatureData;
 
+  const finalizeQuote = useMutation({
+    ...orpc.floor.quotes.finalize.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateQuote();
+      await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
+      toast.success("Quote finalized");
+    },
+    onError: (err: Error) => toast.error(`Failed to finalize: ${err.message}`),
+  });
+
   const signDisclaimer = useMutation({
     ...orpc.floor.termsSignature.sign.mutationOptions(),
     onSuccess: async () => {
@@ -230,6 +239,7 @@ function QuoteEditorPage() {
       });
       toast.success("Disclaimer signed successfully");
       setSignModalOpen(false);
+      finalizeQuote.mutate({ quoteId });
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -293,13 +303,33 @@ function QuoteEditorPage() {
     );
   }
 
-  function handleSave() {
-    updateQuote.mutate(
-      { id: quoteId, comments, customerReason },
-      {
-        onSuccess: () => toast.success("Quote saved"),
-      },
-    );
+  // The quote is kept as a draft while the user works on it: items save as they are added, and
+  // the free-text fields save shortly after typing stops or when the field loses focus.
+  const notesDirty =
+    !!quote &&
+    !isReadOnly &&
+    (comments !== (quote.comments ?? "") || customerReason !== (quote.customerReason ?? ""));
+
+  function saveNotes() {
+    if (notesDirty) updateQuote.mutate({ id: quoteId, comments, customerReason });
+  }
+
+  useEffect(() => {
+    if (!notesDirty) return;
+    const timer = setTimeout(saveNotes, 800);
+    return () => clearTimeout(timer);
+  }, [comments, customerReason, notesDirty]);
+
+  async function handleFinalize() {
+    if (notesDirty) {
+      try {
+        await updateQuote.mutateAsync({ id: quoteId, comments, customerReason });
+      } catch {
+        return;
+      }
+    }
+    if (isSigned) finalizeQuote.mutate({ quoteId });
+    else setSignModalOpen(true);
   }
 
   const [discountStr, setDiscountStr] = useState("");
@@ -435,32 +465,25 @@ function QuoteEditorPage() {
           )}
 
           <div className="flex items-center gap-2">
-            {!isReadOnly && (
-              <Tooltip>
-                <TooltipTrigger delay={200} render={<span />}>
-                  <Button
-                    onClick={() => setSendToCashierConfirm(true)}
-                    disabled={!isSigned || sendToCashier.isPending}
-                  >
-                    <SendHorizonal />
-                    Send to Cashier
-                  </Button>
-                </TooltipTrigger>
-                {!isSigned && (
-                  <TooltipContent>
-                    The customer must sign the disclaimer before the quote can go to the cashier.
-                  </TooltipContent>
-                )}
-              </Tooltip>
+            {quote?.status === "finalized" && (
+              <Button
+                onClick={() => setSendToCashierConfirm(true)}
+                disabled={sendToCashier.isPending}
+              >
+                <SendHorizonal />
+                Send to Cashier
+              </Button>
             )}
-            <Button
-              color="success"
-              onClick={handleSave}
-              disabled={isReadOnly || updateQuote.isPending}
-            >
-              <Save />
-              {updateQuote.isPending ? "Saving" : "Save"}
-            </Button>
+            {canFinalize && (
+              <Button
+                color="success"
+                onClick={() => void handleFinalize()}
+                disabled={includedItems.length === 0 || finalizeQuote.isPending}
+              >
+                <FileCheck />
+                Finalize Quote
+              </Button>
+            )}
             <MoreDropdown
               quoteId={quoteId}
               customerEmail={quote?.customer?.email}
@@ -517,6 +540,7 @@ function QuoteEditorPage() {
                   id="customer-reason"
                   value={customerReason}
                   onChange={(e) => setCustomerReason(e.target.value)}
+                  onBlur={saveNotes}
                   placeholder="Enter reason"
                   disabled={isReadOnly}
                   className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 py-1 text-sm leading-[18px] text-body transition-colors outline-none placeholder:text-ghost hover:border-field-line focus:border-blue disabled:cursor-not-allowed disabled:opacity-50"
@@ -715,6 +739,7 @@ function QuoteEditorPage() {
             <textarea
               value={comments}
               onChange={(e) => setComments(e.target.value)}
+              onBlur={saveNotes}
               placeholder="Enter note"
               rows={3}
               disabled={isReadOnly}
@@ -725,26 +750,18 @@ function QuoteEditorPage() {
           <div className="h-px bg-field-line" />
 
           {/* Action Buttons */}
-          {!isReadOnly && (
-            <div className="flex flex-wrap gap-2">
-              {!isSigned && (
-                <Button variant="outline" onClick={() => setSignModalOpen(true)}>
-                  <FileSignature />
-                  Sign Disclaimer
-                </Button>
-              )}
-              <Button variant="outline" onClick={() => setSendQuoteConfirm(true)}>
-                <Send />
-                Send Quote
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setSendQuoteConfirm(true)}>
+              <Send />
+              Send Quote
+            </Button>
+            {isSigned && (
+              <Button variant="outline" onClick={() => setSignedDocOpen(true)}>
+                <FileCheck />
+                Signed Doc
               </Button>
-              {isSigned && (
-                <Button variant="outline" onClick={() => setSignedDocOpen(true)}>
-                  <FileCheck />
-                  Signed Doc
-                </Button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="h-px bg-field-line" />
 

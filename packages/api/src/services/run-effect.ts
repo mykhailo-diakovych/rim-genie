@@ -1,9 +1,15 @@
 import { Cause, Effect, Exit, Option } from "effect";
 import { ORPCError } from "@orpc/server";
 
+const formatPaid = (cents: number) =>
+  `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 const TAG_MAP: Record<
   string,
-  { code: ConstructorParameters<typeof ORPCError>[0]; message: string }
+  {
+    code: ConstructorParameters<typeof ORPCError>[0];
+    message: string | ((error: Record<string, unknown>) => string);
+  }
 > = {
   InvoiceNotFound: { code: "NOT_FOUND", message: "Invoice not found" },
   QuoteNotFound: { code: "NOT_FOUND", message: "Quote not found" },
@@ -87,6 +93,23 @@ const TAG_MAP: Record<
   },
   UnknownJobType: { code: "BAD_REQUEST", message: "Service is not available" },
   PriceNotFound: { code: "BAD_REQUEST", message: "No price set" },
+  QuoteNotEditable: {
+    code: "CONFLICT",
+    message: "This quote has been sent to the cashier and can no longer be edited",
+  },
+  QuoteNotFinalized: {
+    code: "PRECONDITION_FAILED",
+    message: "Finalize the quote before sending it to the cashier",
+  },
+  DisclaimerNotSigned: {
+    code: "PRECONDITION_FAILED",
+    message: "The customer must sign the disclaimer before the quote can be finalized",
+  },
+  InvoiceTotalBelowPaid: {
+    code: "BAD_REQUEST",
+    message: (error) =>
+      `The invoice total cannot be less than the amount already paid (${formatPaid(Number(error.paid))}). Please adjust the invoice amount before continuing.`,
+  },
 };
 
 // Failures caused by an external provider carry the provider's own explanation.
@@ -109,7 +132,10 @@ export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): 
   if (Option.isSome(failure)) {
     const error = failure.value;
     const mapped = TAG_MAP[error._tag];
-    const base = mapped?.message ?? "Something went wrong";
+    const base =
+      typeof mapped?.message === "function"
+        ? mapped.message(error as Record<string, unknown>)
+        : (mapped?.message ?? "Something went wrong");
     const reason = (error as { reason?: unknown }).reason;
     const message =
       TAGS_WITH_REASON.has(error._tag) && typeof reason === "string" && reason.trim()

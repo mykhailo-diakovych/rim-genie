@@ -1,9 +1,11 @@
 import { Effect } from "effect";
 import { z } from "zod";
 import { and, eq, gte, ilike, isNull, lte, or, sql, sum } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
-import { customer, invoice, payment } from "@rim-genie/db/schema";
+import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
+import { customer, invoice, payment, quote } from "@rim-genie/db/schema";
 
 import { cashierProcedure } from "../index";
 import * as InvoiceService from "../services/invoice.service";
@@ -30,7 +32,8 @@ export const cashierRouter = {
         }),
       )
       .handler(async ({ input, context }) => {
-        const conditions = [];
+        // Only invoices the floor explicitly sent to the cashier (RIM-5 item 10).
+        const conditions: (SQL | undefined)[] = [eq(quote.status, SENT_TO_CASHIER_STATUS)];
         const locId = context.locationId;
 
         if (locId) {
@@ -60,7 +63,7 @@ export const cashierRouter = {
           );
         }
 
-        const where = conditions.length > 0 ? and(...conditions) : undefined;
+        const where = and(...conditions);
 
         const rows = await db
           .select({
@@ -79,6 +82,7 @@ export const cashierRouter = {
             paid: sql<number>`coalesce(${sum(payment.amount)}, 0)::int`,
           })
           .from(invoice)
+          .innerJoin(quote, eq(invoice.quoteId, quote.id))
           .innerJoin(customer, eq(invoice.customerId, customer.id))
           .leftJoin(payment, eq(payment.invoiceId, invoice.id))
           .where(where)
@@ -90,6 +94,7 @@ export const cashierRouter = {
         const [countResult] = await db
           .select({ count: sql<number>`count(distinct ${invoice.id})::int` })
           .from(invoice)
+          .innerJoin(quote, eq(invoice.quoteId, quote.id))
           .innerJoin(customer, eq(invoice.customerId, customer.id))
           .where(where);
 
@@ -125,12 +130,6 @@ export const cashierRouter = {
         },
       });
     }),
-
-    createFromQuote: cashierProcedure
-      .input(z.object({ quoteId: z.string() }))
-      .handler(async ({ input, context }) => {
-        return runEffect(InvoiceService.createFromQuote(input.quoteId, context.session.user.id));
-      }),
 
     update: cashierProcedure
       .input(

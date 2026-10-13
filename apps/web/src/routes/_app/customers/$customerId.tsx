@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { AppRouterClient } from "@rim-genie/api/routers/index";
+import { isQuoteEditable } from "@rim-genie/db/quote-status";
 import type { UserRole } from "@rim-genie/db/schema";
 
 import { authClient } from "@/lib/auth-client";
@@ -751,7 +752,7 @@ function QuotesTable({
                         <IconSendQuote />
                         Send Quote
                       </Button>
-                      {q.status !== "completed" && (
+                      {q.status === "finalized" && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -762,7 +763,7 @@ function QuotesTable({
                           To Cashier
                         </Button>
                       )}
-                      {isAdmin && (
+                      {isAdmin && isQuoteEditable(q.status) && (
                         <Button
                           size="sm"
                           variant="outline"

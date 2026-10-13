@@ -148,6 +148,13 @@
       "when": 1791876288110,
       "tag": "0020_drop_general_service",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791888812406,
+      "tag": "0021_quote_finalized",
+      "breakpoints": true
     }
   ]
 }

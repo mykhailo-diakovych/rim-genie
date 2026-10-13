@@ -20,6 +20,7 @@ import {
   powderCoatScopeEnum,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
+import { canFinalizeQuote } from "@rim-genie/db/quote-status";
 import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
@@ -39,7 +40,10 @@ import {
   CustomerHasNoPhone,
   CustomerHasInvoices,
   CustomerHasJobs,
+  DisclaimerNotSigned,
   PriceNotFound,
+  QuoteHasNoItems,
+  QuoteNotEditable,
   QuoteNotFound,
   UnknownJobType,
 } from "../services/errors";
@@ -50,17 +54,9 @@ import {
   lookupPrice,
   lookupRimPrice,
 } from "../services/pricing.service";
-import { recalcQuoteTotal } from "../services/quote.service";
+import { assertQuoteEditable, recalcQuoteTotal } from "../services/quote.service";
 import { getQuotePdf } from "../pdf/get-quote-pdf";
 import { createQuoteEmail } from "../emails/quote-email";
-
-async function quoteDiscountAmount(quoteId: string): Promise<number> {
-  const [row] = await db
-    .select({ discountAmount: quote.discountAmount })
-    .from(quote)
-    .where(eq(quote.id, quoteId));
-  return row?.discountAmount ?? 0;
-}
 
 type ItemPriceParams = Parameters<typeof computeItemPrice>[0];
 
@@ -534,6 +530,7 @@ export const floorRouter = {
       )
       .handler(async ({ input, context }) => {
         const { id, discountPercent, discountType, discountFixedCents, ...fields } = input;
+        await assertQuoteEditable(id);
         const isAdmin = context.session.user.role === "admin";
         const touchesDiscount =
           discountPercent !== undefined ||
@@ -573,15 +570,6 @@ export const floorRouter = {
               requestedById: context.session.user.id,
             }),
           );
-        }
-
-        const itemCount = await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(quoteItem)
-          .where(eq(quoteItem.quoteId, id));
-
-        if (itemCount[0] && itemCount[0].count > 0) {
-          await runEffect(InvoiceService.syncInvoiceFromQuote(id, context.session.user.id));
         }
 
         return rows[0]!;
@@ -628,6 +616,7 @@ export const floorRouter = {
         }),
       )
       .handler(async ({ input }) => {
+        await assertQuoteEditable(input.quoteId);
         const priceParams = {
           itemType: input.itemType,
           jobTypes: input.jobTypes,
@@ -703,6 +692,7 @@ export const floorRouter = {
         if (!current) {
           throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
         }
+        await assertQuoteEditable(current.quoteId);
 
         const mergedItemType = fields.itemType ?? current.itemType;
         const mergedJobTypes = fields.jobTypes ?? current.jobTypes;
@@ -760,23 +750,9 @@ export const floorRouter = {
           .where(eq(quoteItem.id, id))
           .returning();
 
-        const prevDiscount = await quoteDiscountAmount(current.quoteId);
         await recalcQuoteTotal(current.quoteId);
 
-        const updated = rows[0]!;
-        if (
-          updated.unitCost !== current.unitCost ||
-          updated.priceOverridden !== current.priceOverridden
-        ) {
-          await InvoiceService.mirrorQuoteItemPrice(
-            updated.id,
-            updated.unitCost,
-            updated.priceOverridden,
-            prevDiscount,
-          );
-        }
-
-        return updated;
+        return rows[0]!;
       }),
 
     // Hand-typed whole-line total in cents; gated server-side, not just in the UI.
@@ -798,6 +774,7 @@ export const floorRouter = {
         if (!current) {
           throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
         }
+        await assertQuoteEditable(current.quoteId);
 
         const quantity = current.quantity > 0 ? current.quantity : 1;
         const unitCost = Math.round(input.totalCents / quantity);
@@ -808,9 +785,7 @@ export const floorRouter = {
           .where(eq(quoteItem.id, input.itemId))
           .returning();
 
-        const prevDiscount = await quoteDiscountAmount(current.quoteId);
         await recalcQuoteTotal(current.quoteId);
-        await InvoiceService.mirrorQuoteItemPrice(input.itemId, unitCost, true, prevDiscount);
 
         return rows[0]!;
       }),
@@ -828,6 +803,7 @@ export const floorRouter = {
         if (!current) {
           throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
         }
+        await assertQuoteEditable(current.quoteId);
 
         const computedPrice = await priceItemOrFail({
           itemType: current.itemType,
@@ -844,18 +820,9 @@ export const floorRouter = {
           .where(eq(quoteItem.id, input.itemId))
           .returning();
 
-        const prevDiscount = await quoteDiscountAmount(current.quoteId);
         await recalcQuoteTotal(current.quoteId);
 
-        const updated = rows[0]!;
-        await InvoiceService.mirrorQuoteItemPrice(
-          updated.id,
-          updated.unitCost,
-          false,
-          prevDiscount,
-        );
-
-        return updated;
+        return rows[0]!;
       }),
 
     removeItem: protectedProcedure
@@ -865,6 +832,7 @@ export const floorRouter = {
 
         const item = existing[0];
         if (!item) return { success: true as const };
+        await assertQuoteEditable(item.quoteId);
 
         await db.delete(quoteItem).where(eq(quoteItem.id, input.id));
         await recalcQuoteTotal(item.quoteId);
@@ -877,18 +845,22 @@ export const floorRouter = {
     setItemExcluded: protectedProcedure
       .input(z.object({ id: z.string(), excluded: z.boolean() }))
       .handler(async ({ input }) => {
+        const [existing] = await db
+          .select({ quoteId: quoteItem.quoteId })
+          .from(quoteItem)
+          .where(eq(quoteItem.id, input.id));
+        if (!existing) throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
+        await assertQuoteEditable(existing.quoteId);
+
         const rows = await db
           .update(quoteItem)
           .set({ isExcluded: input.excluded })
           .where(eq(quoteItem.id, input.id))
           .returning();
 
-        const item = rows[0];
-        if (!item) throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
+        await recalcQuoteTotal(existing.quoteId);
 
-        await recalcQuoteTotal(item.quoteId);
-
-        return item;
+        return rows[0]!;
       }),
 
     send: floorManagerProcedure
@@ -955,18 +927,46 @@ export const floorRouter = {
         );
       }),
 
+    // The disclaimer is the final step: a quote cannot be finalized until it is signed, and the
+    // signature is captured once per quote, so later edits never ask for it again (RIM-5 item 3).
+    finalize: floorManagerProcedure
+      .input(z.object({ quoteId: z.string() }))
+      .handler(async ({ input, context }) => {
+        const found = await db.query.quote.findFirst({
+          where: eq(quote.id, input.quoteId),
+          columns: { status: true },
+          with: {
+            items: { columns: { id: true }, where: (i, { eq }) => eq(i.isExcluded, false) },
+            termsSignature: { columns: { id: true } },
+          },
+        });
+        if (!found) return runEffect(Effect.fail(new QuoteNotFound({ id: input.quoteId })));
+        if (!canFinalizeQuote(found.status)) {
+          return runEffect(Effect.fail(new QuoteNotEditable({ quoteId: input.quoteId })));
+        }
+        if (found.items.length === 0) {
+          return runEffect(Effect.fail(new QuoteHasNoItems({ quoteId: input.quoteId })));
+        }
+        if (!found.termsSignature) {
+          return runEffect(Effect.fail(new DisclaimerNotSigned({ quoteId: input.quoteId })));
+        }
+
+        const rows = await db
+          .update(quote)
+          .set({
+            status: "finalized",
+            finalizedAt: new Date(),
+            finalizedById: context.session.user.id,
+          })
+          .where(eq(quote.id, input.quoteId))
+          .returning();
+        return rows[0]!;
+      }),
+
     sendToCashier: floorManagerProcedure
       .input(z.object({ quoteId: z.string() }))
       .handler(async ({ input, context }) => {
-        const sig = await db.query.termsSignature.findFirst({
-          where: eq(termsSignature.quoteId, input.quoteId),
-        });
-        if (!sig) {
-          throw new ORPCError("PRECONDITION_FAILED", {
-            message: "Disclaimer must be signed before sending to cashier",
-          });
-        }
-        return runEffect(InvoiceService.createFromQuote(input.quoteId, context.session.user.id));
+        return runEffect(InvoiceService.sendQuoteToCashier(input.quoteId, context.session.user.id));
       }),
   },
 

@@ -21,6 +21,7 @@ import { quoteVehicleTypeEnum, rimMaterialEnum } from "./manage";
 
 export const quoteStatusEnum = pgEnum("quote_status", [
   "draft",
+  "finalized",
   "pending",
   "in_progress",
   "completed",
@@ -108,6 +109,9 @@ export const quote = pgTable(
     rewardDiscountPercent: integer("reward_discount_percent").default(0).notNull(),
     discountAmount: integer("discount_amount").default(0).notNull(),
     total: integer("total").default(0).notNull(),
+    finalizedAt: timestamp("finalized_at"),
+    finalizedById: text("finalized_by_id").references(() => user.id, { onDelete: "restrict" }),
+    sentToCashierAt: timestamp("sent_to_cashier_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
