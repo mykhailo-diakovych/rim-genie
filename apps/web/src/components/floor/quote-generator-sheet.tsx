@@ -245,7 +245,6 @@ export function QuoteGeneratorSheet({
   const { data: rimGroups } = useQuery(
     orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "rims" } }),
   );
-  const { data: pricingConfig } = useQuery(orpc.catalog.config.get.queryOptions());
 
   const { data: jobExclusions } = useQuery(orpc.catalog.exclusions.list.queryOptions());
 
@@ -273,17 +272,6 @@ export function QuoteGeneratorSheet({
       conflictsByKey.get(kb)!.add(ka);
     }
   }
-
-  const applyRimModifier = (base: number) => {
-    let p = base;
-    if (mappedMaterial === "steel" && pricingConfig) {
-      p = Math.round((p * (100 - pricingConfig.steelDiscountPercent)) / 100);
-    }
-    if (mappedVehicleType === "truck" && pricingConfig) {
-      p = Math.round((p * (100 + pricingConfig.truckMarkupPercent)) / 100);
-    }
-    return p;
-  };
 
   const { data: rimPrices, isFetching: rimPricesFetching } = useQuery(
     orpc.floor.pricing.lookup.queryOptions({
@@ -319,18 +307,45 @@ export function QuoteGeneratorSheet({
   };
 
   // Mirrors the server's rim branch in computeItemPrice: each selected option is priced
-  // on its own and every one is multiplied by the group's occurrence count.
+  // on its own and every one is multiplied by the group's occurrence count. Rim prices
+  // arrive with the steel/truck modifiers already applied.
   const rimJobLineCost = (root: (typeof rimJobList)[number]) => {
     const qty = parseInt(rimJobQty(root.key), 10) || 1;
     if (root.key === "spot-polish") {
       return (spotPrice?.found ? spotPrice.unitCost : 0) * qty;
     }
     const base = selectedLeaves(root).reduce(
-      (sum, leaf) => sum + applyRimModifier(rimPrices?.[leaf.key]?.unitCost ?? 0),
+      (sum, leaf) => sum + (rimPrices?.[leaf.key]?.unitCost ?? 0),
       0,
     );
     return base * qty;
   };
+
+  // Options with no price at the chosen size cannot be quoted (RIM-5 item 13): the job
+  // is not done on that size, so the line is blocked until another size is picked.
+  const rimUnpriced =
+    rimSize == null || rimPricesFetching || spotPriceFetching
+      ? []
+      : rimJobList
+          .filter((root) => checkedJobs[root.key])
+          .flatMap((root) => {
+            if (root.key === "spot-polish") {
+              return spotPrice && !spotPrice.found ? [root.label] : [];
+            }
+            return selectedLeaves(root)
+              .filter((leaf) => rimPrices && !rimPrices[leaf.key]?.found)
+              .map((leaf) =>
+                !leaf.label
+                  ? root.label
+                  : leaf.label.startsWith(root.label)
+                    ? leaf.label
+                    : `${root.label} (${leaf.label})`,
+              );
+          });
+  const rimPriceError =
+    rimUnpriced.length > 0
+      ? `No price for ${rimSize}" rims: ${rimUnpriced.join(", ")}. Choose another size.`
+      : null;
 
   const { data: weldingMaterials } = useQuery(orpc.catalog.weldingMaterials.list.queryOptions());
   const { data: weldingPrices } = useQuery(
@@ -359,6 +374,10 @@ export function QuoteGeneratorSheet({
     }),
     enabled: !!(pcSize && pcSelects.scope && pcColorCount),
   });
+  const powderPriceError =
+    powderPrice && !powderPrice.found && !powderPriceFetching
+      ? "No price for this rim size, scope and number of colors. Choose another option."
+      : null;
 
   const { data: tireGroups } = useQuery(
     orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "tire-service" } }),
@@ -392,6 +411,32 @@ export function QuoteGeneratorSheet({
     brakeCombos?.find((c) => c.unit === brakeUnit[key] && c.removalIncluded === brakeRemoval[key]);
   const brakePriceFor = (key: string) => brakeComboFor(key)?.unitCost ?? 0;
 
+  const tireUnpriced =
+    tireSize == null || tirePricesFetching || !tirePrices
+      ? []
+      : tireLeaves.filter((t) => checkedServices[t.key] && !tirePrices[t.key]?.found);
+  const brakeUnpriced =
+    !generalSelects.vehicleSize || brakeCombosFetching || !brakeCombos
+      ? []
+      : BRAKE_SERVICE_TYPES.filter(
+          (s) =>
+            checkedServices[s.value] &&
+            brakeUnit[s.value] &&
+            brakeRemoval[s.value] !== undefined &&
+            !brakeComboFor(s.value),
+        );
+  const generalPriceError =
+    [
+      tireUnpriced.length > 0
+        ? `No price for ${tireSize}" tires: ${tireUnpriced.map((t) => t.label).join(", ")}. Choose another tire size.`
+        : null,
+      brakeUnpriced.length > 0
+        ? `No price for ${generalSelects.vehicleSize}: ${brakeUnpriced.map((b) => b.label).join(", ")}. Choose another vehicle size or option.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
+
   const rimForm = useForm({
     defaultValues: RIM_DEFAULTS,
     onSubmit: ({ value }) => {
@@ -411,6 +456,7 @@ export function QuoteGeneratorSheet({
         }
       }
       setJobTypeError(null);
+      if (rimPriceError) return;
 
       const jobTypes: JobTypeEntry[] = selectedRoots.flatMap((root) =>
         selectedLeaves(root).map((leaf) => {
@@ -507,7 +553,7 @@ export function QuoteGeneratorSheet({
     defaultValues: POWDER_COATING_DEFAULTS,
     onSubmit: ({ value }) => {
       const colorCount = parseInt(value.colorCount, 10);
-      if (pcColors.length !== colorCount) return;
+      if (pcColors.length !== colorCount || powderPriceError) return;
       const scope = value.scope as "set" | "rim";
       const qty = scope === "rim" ? Math.max(1, parseInt(pcQty, 10) || 1) : 1;
       const unit = powderPrice?.unitCost ?? editItem?.unitCost ?? 0;
@@ -598,6 +644,7 @@ export function QuoteGeneratorSheet({
         return;
       }
       setServiceQuantityErrors({});
+      if (generalPriceError) return;
 
       const desc = [
         `General: ${value.vehicleSize}`,
@@ -876,7 +923,9 @@ export function QuoteGeneratorSheet({
                             field.handleChange(val);
                           }}
                         >
-                          <SelectTrigger error={field.state.meta.errors.length > 0}>
+                          <SelectTrigger
+                            error={field.state.meta.errors.length > 0 || rimPriceError != null}
+                          >
                             <SelectValue placeholder="Select rim size" />
                           </SelectTrigger>
                           <SelectPopup>
@@ -1047,7 +1096,7 @@ export function QuoteGeneratorSheet({
                                     />
                                     {leafPrice?.found ? (
                                       <span className="shrink-0 font-rubik text-xs font-medium text-body">
-                                        {formatCents(applyRimModifier(leafPrice.unitCost))}
+                                        {formatCents(leafPrice.unitCost)}
                                       </span>
                                     ) : rimSize ? (
                                       rimPricesFetching ? (
@@ -1124,6 +1173,11 @@ export function QuoteGeneratorSheet({
                   })}
                 </div>
                 {jobTypeError && <p className="px-3 font-rubik text-xs text-red">{jobTypeError}</p>}
+                {rimPriceError && (
+                  <p role="alert" className="px-3 font-rubik text-xs text-red">
+                    {rimPriceError}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1 px-3">
@@ -1449,6 +1503,10 @@ export function QuoteGeneratorSheet({
                     <span className="font-rubik text-xs text-label">Price</span>
                     <Loader2 className="size-4 shrink-0 animate-spin text-label" />
                   </div>
+                ) : powderPriceError ? (
+                  <p role="alert" className="font-rubik text-xs text-red">
+                    {powderPriceError}
+                  </p>
                 ) : null}
 
                 <powderCoatingForm.Field name="comments">
@@ -1802,6 +1860,11 @@ export function QuoteGeneratorSheet({
                   {serviceTypeError && (
                     <p className="px-3 font-rubik text-xs text-red">{serviceTypeError}</p>
                   )}
+                  {generalPriceError && (
+                    <p role="alert" className="px-3 font-rubik text-xs text-red">
+                      {generalPriceError}
+                    </p>
+                  )}
                 </div>
               </form>
 
@@ -1893,7 +1956,7 @@ export function QuoteGeneratorSheet({
                   color="success"
                   type="submit"
                   form="rim-form"
-                  disabled={isAdding || !canSubmit}
+                  disabled={isAdding || !canSubmit || rimPriceError != null}
                   className="w-32"
                 >
                   {!editItem && !isAdding && <Plus />}
@@ -1935,7 +1998,7 @@ export function QuoteGeneratorSheet({
                   color="success"
                   type="submit"
                   form="powder-coating-form"
-                  disabled={isAdding || !canSubmit}
+                  disabled={isAdding || !canSubmit || powderPriceError != null}
                   className="w-32"
                 >
                   {!editItem && !isAdding && <Plus />}
@@ -1956,7 +2019,7 @@ export function QuoteGeneratorSheet({
                   color="success"
                   type="submit"
                   form="general-form"
-                  disabled={isAdding || !canSubmit}
+                  disabled={isAdding || !canSubmit || generalPriceError != null}
                   className="w-32"
                 >
                   {!editItem && !isAdding && <Plus />}
