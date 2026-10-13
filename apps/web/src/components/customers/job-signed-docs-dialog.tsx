@@ -16,7 +16,7 @@ import { SignedDisclaimerNotice } from "@/components/terms/signed-disclaimer-not
 import { orpc } from "@/utils/orpc";
 
 export interface SignedDocsJob {
-  id: string;
+  invoiceId: string;
   quoteId: string;
   isPickedUp: boolean;
 }
@@ -90,9 +90,9 @@ function DisclaimerProof({ quoteId }: { quoteId: string }) {
   );
 }
 
-function PickupProof({ jobId }: { jobId: string }) {
+function PickupProof({ invoiceId }: { invoiceId: string }) {
   const { data, isLoading } = useQuery(
-    orpc.inventory.pickups.getByJobId.queryOptions({ input: { jobId } }),
+    orpc.inventory.pickups.getByInvoiceId.queryOptions({ input: { invoiceId } }),
   );
 
   return (
@@ -136,7 +136,7 @@ export function JobSignedDocsDialog({
             <DisclaimerProof quoteId={job.quoteId} />
             <div className="h-px bg-field-line" />
             {job.isPickedUp ? (
-              <PickupProof jobId={job.id} />
+              <PickupProof invoiceId={job.invoiceId} />
             ) : (
               <Section title="Pickup">
                 <EmptyNote>Not picked up yet.</EmptyNote>

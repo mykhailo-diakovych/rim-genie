@@ -4,10 +4,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 
 import {
+  InventoryInvoiceCard,
   InventoryJobCard,
   InventoryJobCardSkeleton,
 } from "@/components/inventory/inventory-job-card";
-import { TAB_CONFIG, type TabValue } from "@/components/inventory/types";
+import { TAB_CONFIG, type ApiJob, type TabValue } from "@/components/inventory/types";
 import { useInventoryCounts, useInventoryJobs } from "@/components/inventory/use-inventory";
 import {
   DateRangeFilter,
@@ -132,6 +133,16 @@ function InventoryJobList({
     );
   }
 
+  if (tab === "readyForPickup") {
+    return (
+      <div className="flex flex-col gap-2">
+        {groupByInvoice(jobs).map((invoiceJobs) => (
+          <InventoryInvoiceCard key={invoiceJobs[0]!.invoiceId} jobs={invoiceJobs} tab={tab} />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2">
       {jobs.map((job) => (
@@ -139,4 +150,12 @@ function InventoryJobList({
       ))}
     </div>
   );
+}
+
+function groupByInvoice(jobs: ApiJob[]) {
+  const groups = new Map<string, ApiJob[]>();
+  for (const job of jobs) {
+    groups.set(job.invoiceId, [...(groups.get(job.invoiceId) ?? []), job]);
+  }
+  return Array.from(groups.values());
 }

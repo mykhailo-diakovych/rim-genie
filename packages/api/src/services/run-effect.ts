@@ -34,12 +34,16 @@ const TAG_MAP: Record<
     code: "TOO_MANY_REQUESTS",
     message: "Too many wrong codes for this technician. Try again in 15 minutes.",
   },
-  JobHasOutstandingBalance: {
+  InvoiceHasOutstandingBalance: {
     code: "BAD_REQUEST",
     message:
-      "This job cannot be picked up while there is an outstanding balance. Collect the final payment first.",
+      "This invoice cannot be picked up while there is an outstanding balance. Collect the final payment first.",
   },
-  JobAlreadyPickedUp: { code: "CONFLICT", message: "This job has already been picked up" },
+  InvoiceAlreadyPickedUp: { code: "CONFLICT", message: "This invoice has already been picked up" },
+  InvoiceJobsNotReady: {
+    code: "BAD_REQUEST",
+    message: "Every job on this invoice must be completed before pickup",
+  },
   PickupSignatureRequired: {
     code: "BAD_REQUEST",
     message: "A valid customer signature is required to complete the pickup",

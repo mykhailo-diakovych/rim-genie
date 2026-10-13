@@ -55,6 +55,29 @@ function buildJobFilter({ dateFrom, dateTo, search }: z.infer<typeof jobFilterSc
   );
 }
 
+// Invoices whose every job is either completed or already out the door. Pickup is per invoice,
+// so a job only counts as ready for pickup once its whole invoice is.
+const readyInvoiceIds = db
+  .select({ id: job.invoiceId })
+  .from(job)
+  .groupBy(job.invoiceId)
+  .having(sql`bool_and(${job.status} = 'completed' or ${job.isPickedUp})`);
+
+const jobListWith = {
+  invoiceItem: true,
+  invoice: {
+    with: {
+      customer: true,
+      payments: true,
+      jobs: {
+        columns: { id: true, status: true, isPickedUp: true },
+        with: { invoiceItem: { columns: { sortOrder: true, description: true } } },
+      },
+    },
+  },
+  technician: true,
+} as const;
+
 export const inventoryRouter = {
   jobs: {
     list: inventoryClerkProcedure
@@ -77,11 +100,7 @@ export const inventoryRouter = {
           return db.query.job.findMany({
             where: (j, { inArray }) => inArray(j.id, jobIds),
             orderBy: (j, { desc: descOp }) => [descOp(j.createdAt)],
-            with: {
-              invoiceItem: true,
-              invoice: { with: { customer: true, payments: true } },
-              technician: true,
-            },
+            with: jobListWith,
           });
         }
 
@@ -92,7 +111,11 @@ export const inventoryRouter = {
                 case "overnight":
                   return andOp(eqOp(j.isOvernight, true), eqOp(j.isPickedUp, false));
                 case "readyForPickup":
-                  return andOp(eqOp(j.status, "completed"), eqOp(j.isPickedUp, false));
+                  return andOp(
+                    eqOp(j.status, "completed"),
+                    eqOp(j.isPickedUp, false),
+                    inArray(j.invoiceId, readyInvoiceIds),
+                  );
                 case "missing":
                   return andOp(eqOp(j.isMissing, true), eqOp(j.isPickedUp, false));
                 case "pickedUp":
@@ -102,11 +125,7 @@ export const inventoryRouter = {
             return andOp(tabCondition, jobFilter);
           },
           orderBy: (j, { desc: descOp }) => [descOp(j.createdAt)],
-          with: {
-            invoiceItem: true,
-            invoice: { with: { customer: true, payments: true } },
-            technician: true,
-          },
+          with: jobListWith,
         });
       }),
 
@@ -120,9 +139,16 @@ export const inventoryRouter = {
             .from(job)
             .where(and(eq(job.isOvernight, true), eq(job.isPickedUp, false), jobFilter)),
           db
-            .select({ count: sql<number>`count(*)::int` })
+            .select({ count: sql<number>`count(distinct ${job.invoiceId})::int` })
             .from(job)
-            .where(and(eq(job.status, "completed"), eq(job.isPickedUp, false), jobFilter)),
+            .where(
+              and(
+                eq(job.status, "completed"),
+                eq(job.isPickedUp, false),
+                inArray(job.invoiceId, readyInvoiceIds),
+                jobFilter,
+              ),
+            ),
           db
             .select({ count: sql<number>`count(*)::int` })
             .from(job)
@@ -147,17 +173,17 @@ export const inventoryRouter = {
       };
     }),
 
-    markPickup: inventoryClerkProcedure
+    markInvoicePickup: inventoryClerkProcedure
       .input(
         z.object({
-          jobId: z.string(),
+          invoiceId: z.string(),
           signatureDataUrl: z.string(),
           notes: z.string().max(2000).optional(),
         }),
       )
       .handler(async ({ input, context }) => {
         return runEffect(
-          JobService.markAsPickedUp({ ...input, pickedUpById: context.session.user.id }),
+          JobService.markInvoicePickedUp({ ...input, pickedUpById: context.session.user.id }),
         );
       }),
 
@@ -200,10 +226,10 @@ export const inventoryRouter = {
   },
 
   pickups: {
-    getByJobId: requireRole("admin", "floorManager", "cashier", "inventoryClerk")
-      .input(z.object({ jobId: z.string() }))
+    getByInvoiceId: requireRole("admin", "floorManager", "cashier", "inventoryClerk")
+      .input(z.object({ invoiceId: z.string() }))
       .handler(async ({ input }) => {
-        return runEffect(JobService.getPickupByJobId(input.jobId));
+        return runEffect(JobService.getPickupByInvoiceId(input.invoiceId));
       }),
   },
 

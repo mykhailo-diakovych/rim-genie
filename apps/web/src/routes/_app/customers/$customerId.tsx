@@ -441,7 +441,12 @@ function CustomerProfilePage() {
 
   const allJobs = invoices
     .flatMap((inv) =>
-      inv.jobs.map((j) => ({ ...j, quoteId: inv.quoteId, invoiceNumber: inv.invoiceNumber })),
+      inv.jobs.map((j) => ({
+        ...j,
+        quoteId: inv.quoteId,
+        invoiceNumber: inv.invoiceNumber,
+        pickup: j.isPickedUp ? inv.pickup : null,
+      })),
     )
     .sort(
       (a, b) =>
@@ -1007,7 +1012,7 @@ function JobsTable({ jobs }: { jobs: JobRow[] }) {
                           variant="outline"
                           onClick={() =>
                             setSignedDocsJob({
-                              id: job.id,
+                              invoiceId: job.invoiceId,
                               quoteId: job.quoteId,
                               isPickedUp: job.isPickedUp,
                             })

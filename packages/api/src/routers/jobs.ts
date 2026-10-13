@@ -18,6 +18,10 @@ export const jobsRouter = {
         columns: { id: true, invoiceNumber: true, status: true, createdAt: true },
         with: {
           customer: { columns: { id: true, name: true } },
+          pickup: {
+            columns: { pickedUpAt: true, notes: true },
+            with: { pickedUpBy: { columns: { id: true, name: true } } },
+          },
           jobs: {
             orderBy: (j, { asc }) => [asc(j.createdAt)],
             columns: {
@@ -47,10 +51,6 @@ export const jobsRouter = {
                 },
               },
               technician: { columns: { id: true, name: true } },
-              pickup: {
-                columns: { pickedUpAt: true, notes: true },
-                with: { pickedUpBy: { columns: { id: true, name: true } } },
-              },
             },
           },
         },
@@ -58,9 +58,12 @@ export const jobsRouter = {
 
       if (!row) throw new ORPCError("NOT_FOUND", { message: "Job not found" });
 
+      const { pickup, ...rest } = row;
       return {
-        ...row,
-        jobs: [...row.jobs].sort((a, b) => a.invoiceItem.sortOrder - b.invoiceItem.sortOrder),
+        ...rest,
+        jobs: row.jobs
+          .map((j) => ({ ...j, pickup: j.isPickedUp ? pickup : null }))
+          .sort((a, b) => a.invoiceItem.sortOrder - b.invoiceItem.sortOrder),
       };
     }),
 };

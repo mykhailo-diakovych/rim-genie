@@ -50,17 +50,21 @@ export class JobCannotBeReversed extends Data.TaggedError("JobCannotBeReversed")
   jobId: string;
 }> {}
 
-export class JobHasOutstandingBalance extends Data.TaggedError("JobHasOutstandingBalance")<{
-  jobId: string;
+export class InvoiceHasOutstandingBalance extends Data.TaggedError("InvoiceHasOutstandingBalance")<{
+  invoiceId: string;
   balance: number;
 }> {}
 
-export class JobAlreadyPickedUp extends Data.TaggedError("JobAlreadyPickedUp")<{
-  jobId: string;
+export class InvoiceAlreadyPickedUp extends Data.TaggedError("InvoiceAlreadyPickedUp")<{
+  invoiceId: string;
+}> {}
+
+export class InvoiceJobsNotReady extends Data.TaggedError("InvoiceJobsNotReady")<{
+  invoiceId: string;
 }> {}
 
 export class PickupSignatureRequired extends Data.TaggedError("PickupSignatureRequired")<{
-  jobId: string;
+  invoiceId: string;
 }> {}
 
 export class EODAlreadyExists extends Data.TaggedError("EODAlreadyExists")<{

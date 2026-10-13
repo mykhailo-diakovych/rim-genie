@@ -287,14 +287,14 @@ export const floorRouter = {
             with: {
               quote: { columns: { id: true }, with: { createdBy: { columns: { name: true } } } },
               payments: { columns: { amount: true } },
+              pickup: {
+                columns: { pickedUpAt: true },
+                with: { pickedUpBy: { columns: { name: true } } },
+              },
               jobs: {
                 with: {
                   invoiceItem: true,
                   technician: { columns: { id: true, name: true } },
-                  pickup: {
-                    columns: { pickedUpAt: true },
-                    with: { pickedUpBy: { columns: { name: true } } },
-                  },
                 },
               },
             },
