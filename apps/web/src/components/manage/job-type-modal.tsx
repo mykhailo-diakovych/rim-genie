@@ -167,7 +167,7 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>{(val: QuoteJobSection) => SECTION_LABELS[val] ?? val}</SelectValue>
                 </SelectTrigger>
                 <SelectPopup>
                   {(Object.keys(SECTION_LABELS) as QuoteJobSection[]).map((s) => (
@@ -193,7 +193,11 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
               <Label>Parent group (optional)</Label>
               <Select value={parentId} onValueChange={(val) => setParentId(val ?? "")}>
                 <SelectTrigger>
-                  <SelectValue placeholder="None (top-level)" />
+                  <SelectValue placeholder="None (top-level)">
+                    {(val: string | null) =>
+                      parentOptions.find((p) => p.id === val)?.label ?? "None (top-level)"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectPopup>
                   <SelectOption value="">None (top-level)</SelectOption>

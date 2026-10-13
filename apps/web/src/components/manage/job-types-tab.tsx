@@ -58,7 +58,7 @@ export function JobTypesTab() {
             onValueChange={(val) => setSection((val ?? "rims") as QuoteJobSection)}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>{(val: QuoteJobSection) => SECTION_LABELS[val] ?? val}</SelectValue>
             </SelectTrigger>
             <SelectPopup>
               {(Object.keys(SECTION_LABELS) as QuoteJobSection[]).map((s) => (
