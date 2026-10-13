@@ -23,6 +23,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PinInput } from "@/components/ui/pin-input";
 import { Select, SelectOption, SelectPopup, SelectTrigger } from "@/components/ui/select";
 import {
   DropdownMenu,
@@ -67,8 +68,8 @@ const baseFieldsSchema = z.object({
 const createEmployeeSchema = baseFieldsSchema.extend({
   pin: z
     .string()
-    .length(4, m.validation_pin_six_digits())
-    .regex(/^\d+$/, m.validation_pin_six_digits()),
+    .length(4, m.validation_pin_four_digits())
+    .regex(/^\d+$/, m.validation_pin_four_digits()),
 });
 
 const editEmployeeSchema = baseFieldsSchema;
@@ -379,15 +380,11 @@ export function EmployeeModal({ trigger, employee }: EmployeeModalProps) {
               <form.Field name="pin">
                 {(field) => (
                   <div className="flex flex-col gap-1">
-                    <Label htmlFor={field.name}>{m.employees_label_pin()}</Label>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      type="password"
+                    <Label>{m.employees_label_pin()}</Label>
+                    <PinInput
                       value={field.state.value}
+                      onChange={field.handleChange}
                       error={field.state.meta.errors.length > 0}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
                     />
                     {field.state.meta.errors.length > 0 && (
                       <p className="font-rubik text-xs text-red">
