@@ -4,10 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import type { JobTypeSection } from "@rim-genie/db/schema";
-
 import { JobTypeModal, SECTION_LABELS } from "@/components/manage/job-type-modal";
-import type { JobTypeRow } from "@/components/manage/job-type-modal";
+import type { JobTypeRow, QuoteJobSection } from "@/components/manage/job-type-modal";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
@@ -21,7 +19,7 @@ import { client, orpc } from "@/utils/orpc";
 
 export function JobTypesTab() {
   const queryClient = useQueryClient();
-  const [section, setSection] = useState<JobTypeSection>("rims");
+  const [section, setSection] = useState<QuoteJobSection>("rims");
   const [addOpen, setAddOpen] = useState(false);
   const [editRow, setEditRow] = useState<JobTypeRow | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -32,6 +30,7 @@ export function JobTypesTab() {
   );
   const rows = useMemo(() => data?.items ?? [], [data]);
   const labelById = useMemo(() => new Map(rows.map((r) => [r.id, r.label])), [rows]);
+  const parentIds = useMemo(() => new Set(rows.map((r) => r.parentId)), [rows]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => client.catalog.jobTypes.delete({ id }),
@@ -48,7 +47,7 @@ export function JobTypesTab() {
     setDeleteOpen(true);
   };
 
-  const deleteHasChildren = !!deleteRow && rows.some((r) => r.parentId === deleteRow.id);
+  const deleteHasChildren = !!deleteRow && parentIds.has(deleteRow.id);
 
   return (
     <div className="flex flex-col gap-3">
@@ -56,13 +55,13 @@ export function JobTypesTab() {
         <div className="w-56">
           <Select
             value={section}
-            onValueChange={(val) => setSection((val ?? "rims") as JobTypeSection)}
+            onValueChange={(val) => setSection((val ?? "rims") as QuoteJobSection)}
           >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectPopup>
-              {(Object.keys(SECTION_LABELS) as JobTypeSection[]).map((s) => (
+              {(Object.keys(SECTION_LABELS) as QuoteJobSection[]).map((s) => (
                 <SelectOption key={s} value={s}>
                   {SECTION_LABELS[s]}
                 </SelectOption>
@@ -113,7 +112,7 @@ export function JobTypesTab() {
                   <span className={row.parentId ? "pl-4 text-label" : "font-medium"}>
                     {row.label}
                   </span>
-                  {row.config?.hasSubType && (
+                  {parentIds.has(row.id) && (
                     <span className="ml-2 rounded bg-blue/10 px-1.5 py-0.5 text-xs text-blue">
                       group
                     </span>

@@ -22,28 +22,12 @@ import { and, asc, count, eq, gte, ilike, lte, ne } from "drizzle-orm";
 
 import { adminProcedure, protectedProcedure } from "../index";
 
-const jobTypeConfigSchema = z
-  .object({
-    hasSubType: z.boolean().optional(),
-    subTypeLabel: z.string().optional(),
-    hasQuantity: z.boolean().optional(),
-    quantityLabel: z.string().optional(),
-    hasRemovalOption: z.boolean().optional(),
-    hasInchesInput: z.boolean().optional(),
-    hasExpandedOptions: z.boolean().optional(),
-    sizeMode: z.enum(["none", "individual", "range", "bucket"]).optional(),
-    colorMode: z.enum(["none", "single", "multi"]).optional(),
-  })
-  .default({});
-
 const jobTypeBodySchema = z.object({
   category: z.enum(serviceCategoryEnum.enumValues),
   section: z.enum(jobTypeSectionEnum.enumValues),
   parentId: z.string().min(1).nullable().optional(),
   key: z.string().min(1),
   label: z.string().min(1),
-  description: z.string().nullable().optional(),
-  config: jobTypeConfigSchema,
   sortOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
 });

@@ -25,22 +25,17 @@ import {
 } from "@/components/ui/select";
 import { orpc } from "@/utils/orpc";
 
-export const SECTION_LABELS: Record<JobTypeSection, string> = {
+// Only these sections feed the quote generator's option lists; the others are hard-coded there.
+export type QuoteJobSection = Extract<JobTypeSection, "rims" | "tire-service">;
+
+export const SECTION_LABELS: Record<QuoteJobSection, string> = {
   rims: "Rims",
   "tire-service": "Tire Service",
-  "brake-service": "Brake Service",
-  "other-welding": "Other Welding",
-  "powder-coating": "Powder Coating",
-  "spot-polish": "Spot Polish",
 };
 
-const SECTION_TO_CATEGORY: Record<JobTypeSection, ServiceCategory> = {
+const SECTION_TO_CATEGORY: Record<QuoteJobSection, ServiceCategory> = {
   rims: "rim",
   "tire-service": "general",
-  "brake-service": "general",
-  "other-welding": "welding",
-  "powder-coating": "powder_coating",
-  "spot-polish": "rim",
 };
 
 const slug = (s: string) =>
@@ -57,8 +52,6 @@ export interface JobTypeRow {
   parentId: string | null;
   key: string;
   label: string;
-  description: string | null;
-  config: { hasSubType?: boolean } | null;
   sortOrder: number;
   isActive: boolean;
 }
@@ -67,37 +60,31 @@ interface JobTypeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   jobType?: JobTypeRow;
-  defaultSection: JobTypeSection;
+  defaultSection: QuoteJobSection;
 }
 
 export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: JobTypeModalProps) {
   const isEdit = !!jobType;
   const queryClient = useQueryClient();
 
-  const [section, setSection] = useState<JobTypeSection>(defaultSection);
+  const [section, setSection] = useState<QuoteJobSection>(defaultSection);
   const [label, setLabel] = useState("");
   const [parentId, setParentId] = useState("");
-  const [hasSubType, setHasSubType] = useState(false);
-  const [description, setDescription] = useState("");
   const [sortOrder, setSortOrder] = useState("0");
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
     if (!open) return;
     if (jobType) {
-      setSection(jobType.section);
+      setSection(jobType.section as QuoteJobSection);
       setLabel(jobType.label);
       setParentId(jobType.parentId ?? "");
-      setHasSubType(jobType.config?.hasSubType ?? false);
-      setDescription(jobType.description ?? "");
       setSortOrder(String(jobType.sortOrder));
       setIsActive(jobType.isActive);
     } else {
       setSection(defaultSection);
       setLabel("");
       setParentId("");
-      setHasSubType(false);
-      setDescription("");
       setSortOrder("0");
       setIsActive(true);
     }
@@ -148,8 +135,6 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
       parentId: parentId || null,
       key: effectiveKey,
       label: label.trim(),
-      description: description.trim() || null,
-      config: { hasSubType: parentId ? false : hasSubType },
       sortOrder: Number.parseInt(sortOrder, 10) || 0,
       isActive,
     };
@@ -177,7 +162,7 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
               <Select
                 value={section}
                 onValueChange={(val) => {
-                  setSection((val ?? "rims") as JobTypeSection);
+                  setSection((val ?? "rims") as QuoteJobSection);
                   setParentId("");
                 }}
               >
@@ -185,16 +170,13 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
                   <SelectValue />
                 </SelectTrigger>
                 <SelectPopup>
-                  {(Object.keys(SECTION_LABELS) as JobTypeSection[]).map((s) => (
+                  {(Object.keys(SECTION_LABELS) as QuoteJobSection[]).map((s) => (
                     <SelectOption key={s} value={s}>
                       {SECTION_LABELS[s]}
                     </SelectOption>
                   ))}
                 </SelectPopup>
               </Select>
-              <span className="font-rubik text-xs text-label">
-                Category: {SECTION_TO_CATEGORY[section]}
-              </span>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -222,24 +204,6 @@ export function JobTypeModal({ open, onOpenChange, jobType, defaultSection }: Jo
                   ))}
                 </SelectPopup>
               </Select>
-            </div>
-
-            {!parentId && (
-              <label className="flex items-center gap-2">
-                <Checkbox checked={hasSubType} onCheckedChange={(c) => setHasSubType(c === true)} />
-                <span className="font-rubik text-xs text-body">
-                  Group header — reveals sub-types when selected
-                </span>
-              </label>
-            )}
-
-            <div className="flex flex-col gap-1">
-              <Label>Description (optional)</Label>
-              <input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none placeholder:text-ghost"
-              />
             </div>
 
             <div className="flex items-end gap-3">
