@@ -126,3 +126,11 @@ export class InvalidTechnicianCode extends Data.TaggedError("InvalidTechnicianCo
 export class TechnicianCodeLocked extends Data.TaggedError("TechnicianCodeLocked")<{
   userId: string;
 }> {}
+
+export class UnknownJobType extends Data.TaggedError("UnknownJobType")<{
+  reason: string;
+}> {}
+
+export class PriceNotFound extends Data.TaggedError("PriceNotFound")<{
+  reason: string;
+}> {}

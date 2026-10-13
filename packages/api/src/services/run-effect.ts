@@ -81,13 +81,20 @@ const TAG_MAP: Record<
     code: "CONFLICT",
     message: "A discount request is already pending for this item",
   },
+  UnknownJobType: { code: "BAD_REQUEST", message: "Service is not available" },
+  PriceNotFound: { code: "BAD_REQUEST", message: "No price set" },
 };
 
 // Failures caused by an external provider carry the provider's own explanation.
 // Collapsing those to a fixed string ("Failed to send SMS") leaves the operator
 // with nothing to act on — whether it was an unapproved sender ID, no credit or a
-// bad number is exactly the part they need.
-const TAGS_WITH_REASON = new Set(["EmailSendFailed", "SmsSendFailed"]);
+// bad number is exactly the part they need. Catalog rejections name the service at fault.
+const TAGS_WITH_REASON = new Set([
+  "EmailSendFailed",
+  "SmsSendFailed",
+  "UnknownJobType",
+  "PriceNotFound",
+]);
 
 export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): Promise<A> {
   const exit = await Effect.runPromiseExit(effect);

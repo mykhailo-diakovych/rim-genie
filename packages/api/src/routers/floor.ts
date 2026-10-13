@@ -12,6 +12,7 @@ import {
   loyaltyConfig,
   payment,
   job,
+  jobType,
   service,
   serviceTypeEnum,
   serviceCategoryEnum,
@@ -22,6 +23,7 @@ import {
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
 import { and, asc, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import {
   adminProcedure,
@@ -39,10 +41,17 @@ import {
   CustomerHasNoPhone,
   CustomerHasInvoices,
   CustomerHasJobs,
+  PriceNotFound,
   QuoteNotFound,
+  UnknownJobType,
 } from "../services/errors";
 import { runEffect } from "../services/run-effect";
-import { computeItemPrice, lookupPrice } from "../services/pricing.service";
+import {
+  computeItemPrice,
+  getPricingConfig,
+  lookupPrice,
+  lookupRimPrice,
+} from "../services/pricing.service";
 import { recalcQuoteTotal } from "../services/quote.service";
 import { getQuotePdf } from "../pdf/get-quote-pdf";
 import { createQuoteEmail } from "../emails/quote-email";
@@ -53,6 +62,60 @@ async function quoteDiscountAmount(quoteId: string): Promise<number> {
     .from(quote)
     .where(eq(quote.id, quoteId));
   return row?.discountAmount ?? 0;
+}
+
+type ItemPriceParams = Parameters<typeof computeItemPrice>[0];
+
+// Catalog keys a line's job types are checked against: rim options, tire services and
+// brake services live in `job_type`; welding materials and powder coating do not.
+function catalogKeys(params: ItemPriceParams): string[] {
+  if (params.itemType === "rim") return params.jobTypes.map((jt) => jt.type);
+  if (params.itemType === "general") {
+    return params.jobTypes.map((jt) => (jt.unit ? jt.type : (jt.subType ?? jt.type)));
+  }
+  return [];
+}
+
+async function assertActiveJobTypes(keys: string[]) {
+  if (keys.length === 0) return;
+  const parent = alias(jobType, "parent");
+  const rows = await db
+    .select({ key: jobType.key })
+    .from(jobType)
+    .leftJoin(parent, eq(jobType.parentId, parent.id))
+    .where(
+      and(
+        inArray(jobType.key, keys),
+        eq(jobType.isActive, true),
+        or(isNull(jobType.parentId), eq(parent.isActive, true)),
+      ),
+    );
+  const active = new Set(rows.map((r) => r.key));
+  const missing = [...new Set(keys.filter((k) => !active.has(k)))];
+  if (missing.length > 0) {
+    await runEffect(Effect.fail(new UnknownJobType({ reason: missing.join(", ") })));
+  }
+}
+
+// A line with no catalog price would be saved at $0 and reach the cashier that way, so
+// it is rejected instead: the job is not done at that size (RIM-5 item 13).
+async function priceItemOrFail(params: ItemPriceParams): Promise<number> {
+  const { unitCost, unpriced } = await computeItemPrice(params);
+  if (unpriced.length === 0) return unitCost;
+
+  const rows = await db
+    .select({ key: jobType.key, label: jobType.label })
+    .from(jobType)
+    .where(inArray(jobType.key, unpriced));
+  const labelByKey = new Map(rows.map((r) => [r.key, r.label]));
+  const labels = [...new Set(unpriced.map((k) => labelByKey.get(k) ?? k))].join(", ");
+  const sized = params.itemType === "rim" || params.itemType === "powder-coating";
+  const hint = sized
+    ? ` for ${params.vehicleSize}" rims. Choose a different size`
+    : params.tireSize
+      ? ` for ${params.tireSize}" tires. Choose a different size or option`
+      : ". Choose a different option";
+  return runEffect(Effect.fail(new PriceNotFound({ reason: `${labels}${hint}` })));
 }
 
 // Touching any of these is a composition change, which retires a manual price.
@@ -111,15 +174,20 @@ export const floorRouter = {
       )
       .handler(async ({ input }) => {
         const result: Record<string, { unitCost: number; found: boolean }> = {};
+        // Rim prices come back with the steel/truck modifiers applied, exactly as
+        // computeItemPrice saves them, so the sheet shows the price that will be stored.
+        const config = input.category === "rim" ? await getPricingConfig() : null;
 
         for (const jt of input.jobTypes) {
-          const unitCost = await lookupPrice({
-            category: input.category,
+          const params = {
             jobType: jt,
             vehicleType: input.vehicleType,
             rimMaterial: input.rimMaterial,
             size: input.size,
-          });
+          };
+          const unitCost = config
+            ? await lookupRimPrice(params, config)
+            : ((await lookupPrice({ ...params, category: input.category }))?.unitCost ?? null);
           result[jt] = unitCost != null ? { unitCost, found: true } : { unitCost: 0, found: false };
         }
 
@@ -569,11 +637,22 @@ export const floorRouter = {
           unitCost: z.number().int().min(0).default(0),
           inches: z.number().int().min(1).optional(),
           tireSize: z.number().int().min(1).optional(),
-          jobTypes: z.array(jobTypeEntrySchema).default([]),
+          jobTypes: z.array(jobTypeEntrySchema).min(1),
           description: z.string().optional(),
         }),
       )
       .handler(async ({ input }) => {
+        const priceParams = {
+          itemType: input.itemType,
+          jobTypes: input.jobTypes,
+          vehicleType: input.vehicleType,
+          rimMaterial: input.rimMaterial,
+          vehicleSize: input.vehicleSize,
+          tireSize: input.tireSize,
+        };
+        await assertActiveJobTypes(catalogKeys(priceParams));
+        const unitCost = await priceItemOrFail(priceParams);
+
         const existing = await db
           .select({ sortOrder: quoteItem.sortOrder })
           .from(quoteItem)
@@ -585,16 +664,6 @@ export const floorRouter = {
 
         // inches is welding-only; dropped for other item types to avoid a silent price multiply.
         const inches = input.itemType === "welding" ? (input.inches ?? null) : null;
-
-        const computedPrice = await computeItemPrice({
-          itemType: input.itemType,
-          jobTypes: input.jobTypes,
-          vehicleType: input.vehicleType,
-          rimMaterial: input.rimMaterial,
-          vehicleSize: input.vehicleSize,
-          tireSize: input.tireSize,
-        });
-        const unitCost = computedPrice > 0 ? computedPrice : input.unitCost;
 
         const rows = await db
           .insert(quoteItem)
@@ -662,30 +731,39 @@ export const floorRouter = {
         const mergedTireSize =
           fields.tireSize !== undefined ? fields.tireSize : (current.tireSize ?? null);
 
-        const computedPrice = await computeItemPrice({
+        const priceParams = {
           itemType: mergedItemType,
-          jobTypes: mergedJobTypes as { type: string; subType?: string; input?: string }[],
+          jobTypes: mergedJobTypes,
           vehicleType: mergedVehicleType,
           rimMaterial: mergedRimMaterial,
           vehicleSize: mergedVehicleSize,
           tireSize: mergedTireSize,
-        });
+        };
 
-        // A composition change (see PRICING_INPUT_FIELDS) retires a manual price.
+        // A composition change (see PRICING_INPUT_FIELDS) retires a manual price and must
+        // land on a priced combination; other edits leave a legacy line's price alone.
         const compositionChanged = PRICING_INPUT_FIELDS.some(
           (field) => fields[field] !== undefined,
         );
         const keepOverride = current.priceOverridden && !compositionChanged;
 
+        let computedPrice: number | null = null;
+        if (compositionChanged) {
+          if (fields.jobTypes) await assertActiveJobTypes(catalogKeys(priceParams));
+          computedPrice = await priceItemOrFail(priceParams);
+        } else {
+          const computed = await computeItemPrice(priceParams);
+          if (computed.unpriced.length === 0) computedPrice = computed.unitCost;
+        }
+
         const updateFields = { ...fields } as Partial<typeof quoteItem.$inferInsert>;
         updateFields.inches = mergedInches;
         updateFields.tireSize = mergedTireSize;
+        delete updateFields.unitCost;
 
-        if (keepOverride) {
-          delete updateFields.unitCost;
-        } else {
+        if (!keepOverride) {
           updateFields.priceOverridden = false;
-          if (computedPrice > 0) {
+          if (computedPrice != null) {
             updateFields.unitCost = computedPrice;
           }
         }
@@ -765,9 +843,9 @@ export const floorRouter = {
           throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
         }
 
-        const computedPrice = await computeItemPrice({
+        const computedPrice = await priceItemOrFail({
           itemType: current.itemType,
-          jobTypes: current.jobTypes as { type: string; subType?: string; input?: string }[],
+          jobTypes: current.jobTypes,
           vehicleType: current.vehicleType,
           rimMaterial: current.rimMaterial,
           vehicleSize: current.vehicleSize,
@@ -776,10 +854,7 @@ export const floorRouter = {
 
         const rows = await db
           .update(quoteItem)
-          .set({
-            priceOverridden: false,
-            ...(computedPrice > 0 ? { unitCost: computedPrice } : {}),
-          })
+          .set({ priceOverridden: false, unitCost: computedPrice })
           .where(eq(quoteItem.id, input.itemId))
           .returning();
 
