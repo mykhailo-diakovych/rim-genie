@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import type { AppRouterClient } from "@rim-genie/api/routers/index";
 
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
+import { JobProofsSection, jobProofLabel } from "@/components/technician/job-proofs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -52,7 +53,17 @@ function JobTimeline({ job }: { job: InvoiceJob }) {
   );
 }
 
-function JobItem({ job }: { job: InvoiceJob }) {
+function JobItem({
+  job,
+  invoiceId,
+  customer,
+  invoiceNumber,
+}: {
+  job: InvoiceJob;
+  invoiceId: string;
+  customer: string;
+  invoiceNumber: number;
+}) {
   const item = job.invoiceItem;
   return (
     <div className="flex flex-col gap-1 font-rubik text-sm leading-4.5">
@@ -88,6 +99,14 @@ function JobItem({ job }: { job: InvoiceJob }) {
           Overnight
         </span>
       )}
+      <div className="mt-2">
+        <JobProofsSection
+          invoiceId={invoiceId}
+          customer={customer}
+          invoiceNumber={invoiceNumber}
+          jobLabel={jobProofLabel(item)}
+        />
+      </div>
     </div>
   );
 }
@@ -168,7 +187,12 @@ export function CustomerJobView({
                 <span className="hidden font-rubik text-sm leading-4.5 text-body sm:block">
                   {idx + 1}
                 </span>
-                <JobItem job={job} />
+                <JobItem
+                  job={job}
+                  invoiceId={invoiceId}
+                  customer={found.customer.name}
+                  invoiceNumber={found.invoiceNumber}
+                />
                 <div className="flex flex-col gap-1 font-rubik text-sm leading-4.5">
                   <span className="text-xs leading-3.5 text-label sm:hidden">Technician</span>
                   <span className="text-body">{job.technician?.name ?? "Unassigned"}</span>

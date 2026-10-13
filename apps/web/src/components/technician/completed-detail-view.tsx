@@ -3,6 +3,7 @@ import { ChevronLeft, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 
+import { JobProofsSection, jobProofLabel } from "./job-proofs";
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { type JobGroup } from "./types";
 import { formatHours } from "./use-jobs";
@@ -87,6 +88,14 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
                   {job.technician.name}
                 </span>
               )}
+              <div className="mt-2">
+                <JobProofsSection
+                  invoiceId={group.invoiceId}
+                  customer={group.customer}
+                  invoiceNumber={group.invoiceNumber}
+                  jobLabel={jobProofLabel(job.invoiceItem)}
+                />
+              </div>
             </div>
 
             <div className="hidden items-start pt-0.5 sm:flex">
