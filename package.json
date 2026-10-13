@@ -37,6 +37,7 @@
     "db:stop": "turbo -F @rim-genie/db db:stop",
     "db:down": "turbo -F @rim-genie/db db:down",
     "db:seed": "turbo -F @rim-genie/db db:seed",
+    "proofs:cleanup": "bun run --cwd packages/api proofs:cleanup",
     "check": "oxlint && oxfmt --write"
   },
   "dependencies": {

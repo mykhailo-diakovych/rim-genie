@@ -8,11 +8,13 @@ import { job, user } from "@rim-genie/db/schema";
 import { protectedProcedure, technicianProcedure } from "../index";
 import * as JobService from "../services/job.service";
 import * as NotificationService from "../services/notification.service";
+import * as ProofService from "../services/proof.service";
 import * as EmailService from "../services/email.service";
 import * as SmsService from "../services/sms.service";
 import { verifyJobTechnicianCode, verifyTechnicianCode } from "../services/technician-code.service";
 import { runEffect } from "../services/run-effect";
 import { createJobCompletedEmail } from "../emails/job-completed-email";
+import { proofFileSchema } from "./proofs";
 
 const technicianCode = z.string().regex(/^\d{4}$/);
 
@@ -86,12 +88,30 @@ export const technicianRouter = {
       }),
 
     complete: technicianProcedure
-      .input(z.object({ jobId: z.string(), code: technicianCode, notes: z.string().optional() }))
-      .handler(async ({ input }) => {
+      .input(
+        z.object({
+          jobId: z.string(),
+          code: technicianCode,
+          notes: z.string().optional(),
+          afterProofs: z.array(proofFileSchema).default([]),
+        }),
+      )
+      .handler(async ({ input, context }) => {
         const notes = input.notes?.trim();
         const result = await runEffect(
           Effect.gen(function* () {
             yield* verifyJobTechnicianCode(input.jobId, input.code);
+            const invoiceId = yield* ProofService.invoiceIdOfJob(input.jobId);
+            if (input.afterProofs.length > 0) {
+              yield* ProofService.registerProofs({
+                invoiceId,
+                jobId: input.jobId,
+                stage: "after",
+                files: input.afterProofs,
+                uploadedById: context.session.user.id,
+              });
+            }
+            yield* ProofService.requireAfterProof(invoiceId);
             const completed = yield* JobService.completeJob(input.jobId);
             return notes ? yield* JobService.addNote(input.jobId, notes) : completed;
           }),

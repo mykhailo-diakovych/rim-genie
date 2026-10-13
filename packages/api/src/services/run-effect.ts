@@ -110,6 +110,16 @@ const TAG_MAP: Record<
     message: (error) =>
       `The invoice total cannot be less than the amount already paid (${formatPaid(Number(error.paid))}). Please adjust the invoice amount before continuing.`,
   },
+  ProofUploadNotAllowed: {
+    code: "BAD_REQUEST",
+    message: "Proofs can only be uploaded while the job is in progress",
+  },
+  ProofFileInvalid: { code: "BAD_REQUEST", message: "File rejected" },
+  AfterProofRequired: {
+    code: "BAD_REQUEST",
+    message: "Upload at least one photo or video of the completed work before completing the job",
+  },
+  ProofNotFound: { code: "NOT_FOUND", message: "Proof not found" },
 };
 
 // Failures caused by an external provider carry the provider's own explanation.
@@ -121,6 +131,7 @@ const TAGS_WITH_REASON = new Set([
   "SmsSendFailed",
   "UnknownJobType",
   "PriceNotFound",
+  "ProofFileInvalid",
 ]);
 
 export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): Promise<A> {

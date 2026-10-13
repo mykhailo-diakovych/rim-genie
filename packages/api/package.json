@@ -24,7 +24,9 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "proofs:cleanup": "bunx @dotenvx/dotenvx run -f ../../apps/web/.env -- bun run src/scripts/cleanup-proofs.ts"
+  },
   "dependencies": {
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
@@ -35,6 +37,7 @@
     "@rim-genie/auth": "workspace:*",
     "@rim-genie/db": "workspace:*",
     "@rim-genie/env": "workspace:*",
+    "aws4fetch": "^1.0.20",
     "dotenv": "catalog:",
     "drizzle-orm": "catalog:",
     "effect": "catalog:",

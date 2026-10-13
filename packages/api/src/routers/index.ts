@@ -16,6 +16,7 @@ import { jobsRouter } from "./jobs";
 import { loyaltyRouter } from "./loyalty";
 import { manageRouter } from "./manage";
 import { notificationRouter } from "./notification";
+import { proofsRouter } from "./proofs";
 import { reportRouter } from "./report";
 import { searchRouter } from "./search";
 import { technicianRouter } from "./technician";
@@ -44,6 +45,7 @@ export const appRouter = {
   loyalty: loyaltyRouter,
   manage: manageRouter,
   notifications: notificationRouter,
+  proofs: proofsRouter,
   report: reportRouter,
   search: searchRouter,
   technician: technicianRouter,

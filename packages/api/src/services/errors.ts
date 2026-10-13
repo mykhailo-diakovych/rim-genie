@@ -155,3 +155,19 @@ export class InvoiceTotalBelowPaid extends Data.TaggedError("InvoiceTotalBelowPa
   invoiceId: string;
   paid: number;
 }> {}
+
+export class ProofUploadNotAllowed extends Data.TaggedError("ProofUploadNotAllowed")<{
+  invoiceId: string;
+}> {}
+
+export class ProofFileInvalid extends Data.TaggedError("ProofFileInvalid")<{
+  reason: string;
+}> {}
+
+export class AfterProofRequired extends Data.TaggedError("AfterProofRequired")<{
+  invoiceId: string;
+}> {}
+
+export class ProofNotFound extends Data.TaggedError("ProofNotFound")<{
+  id: string;
+}> {}
