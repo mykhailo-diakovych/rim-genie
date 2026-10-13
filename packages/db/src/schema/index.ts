@@ -9,3 +9,4 @@ export * from "./loyalty";
 export * from "./manage";
 export * from "./notification";
 export * from "./pricing";
+export * from "./proof";
