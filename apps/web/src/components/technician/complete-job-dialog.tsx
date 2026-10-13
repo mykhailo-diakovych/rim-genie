@@ -14,6 +14,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { PinInput } from "@/components/ui/pin-input";
 import { client, orpc } from "@/utils/orpc";
 
 import { DialogCustomerRow } from "./dialog-shared";
@@ -36,26 +38,13 @@ export function CompleteJobDialog({
   const targets = group.jobs.filter(
     (j) => j.status !== "completed" && (!jobIds || jobIds.includes(j.id)),
   );
-  // Verify against the technician actually assigned to the work being completed,
-  // not whoever happens to be first in the group.
-  const technicianId = targets[0]?.technician?.id ?? group.jobs[0]?.technician?.id;
 
   const completeMutation = useMutation({
     mutationFn: async () => {
-      if (!techCode.trim()) throw new Error("Please enter the technician code");
-      if (!technicianId) throw new Error("No technician assigned");
-
-      const { valid } = await client.technician.jobs.verifyPin({
-        userId: technicianId,
-        pin: techCode,
-      });
-      if (!valid) throw new Error("Invalid technician code");
+      if (techCode.length !== 4) throw new Error("Please enter a complete 4-digit code");
 
       for (const j of targets) {
-        if (notes.trim()) {
-          await client.technician.jobs.addNote({ jobId: j.id, specialNotes: notes });
-        }
-        await client.technician.jobs.complete({ jobId: j.id });
+        await client.technician.jobs.complete({ jobId: j.id, code: techCode, notes });
       }
     },
     onSuccess: async () => {
@@ -127,13 +116,8 @@ export function CompleteJobDialog({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-rubik text-xs leading-3.5 text-label">Technician Code:</label>
-              <input
-                type="text"
-                value={techCode}
-                onChange={(e) => setTechCode(e.target.value)}
-                className="h-9 w-full rounded-md border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none focus:border-blue"
-              />
+              <Label>Technician Code:</Label>
+              <PinInput value={techCode} onChange={setTechCode} />
             </div>
           </div>
 

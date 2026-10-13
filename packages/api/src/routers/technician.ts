@@ -1,18 +1,20 @@
 import { Effect } from "effect";
 import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
-import { verifyPassword } from "@rim-genie/auth/crypto";
 
 import { db } from "@rim-genie/db";
-import { account, job, user } from "@rim-genie/db/schema";
+import { job, user } from "@rim-genie/db/schema";
 
 import { protectedProcedure, technicianProcedure } from "../index";
 import * as JobService from "../services/job.service";
 import * as NotificationService from "../services/notification.service";
 import * as EmailService from "../services/email.service";
 import * as SmsService from "../services/sms.service";
+import { verifyJobTechnicianCode, verifyTechnicianCode } from "../services/technician-code.service";
 import { runEffect } from "../services/run-effect";
 import { createJobCompletedEmail } from "../emails/job-completed-email";
+
+const technicianCode = z.string().regex(/^\d{4}$/);
 
 export const technicianRouter = {
   technicians: {
@@ -66,16 +68,34 @@ export const technicianRouter = {
     }),
 
     accept: technicianProcedure
-      .input(z.object({ jobId: z.string(), technicianId: z.string().optional() }))
+      .input(
+        z.object({
+          jobId: z.string(),
+          technicianId: z.string().optional(),
+          code: technicianCode,
+        }),
+      )
       .handler(async ({ input, context }) => {
         const assigneeId = input.technicianId ?? context.session.user.id;
-        return runEffect(JobService.acceptJob(input.jobId, assigneeId));
+        return runEffect(
+          Effect.gen(function* () {
+            yield* verifyTechnicianCode(assigneeId, input.code);
+            return yield* JobService.acceptJob(input.jobId, assigneeId);
+          }),
+        );
       }),
 
     complete: technicianProcedure
-      .input(z.object({ jobId: z.string() }))
+      .input(z.object({ jobId: z.string(), code: technicianCode, notes: z.string().optional() }))
       .handler(async ({ input }) => {
-        const result = await runEffect(JobService.completeJob(input.jobId));
+        const notes = input.notes?.trim();
+        const result = await runEffect(
+          Effect.gen(function* () {
+            yield* verifyJobTechnicianCode(input.jobId, input.code);
+            const completed = yield* JobService.completeJob(input.jobId);
+            return notes ? yield* JobService.addNote(input.jobId, notes) : completed;
+          }),
+        );
 
         // Fire-and-forget: notify admins about job completion
         try {
@@ -148,36 +168,15 @@ export const technicianRouter = {
         );
       }),
 
-    addNote: technicianProcedure
-      .input(
-        z.object({
-          jobId: z.string(),
-          specialNotes: z.string(),
-        }),
-      )
-      .handler(async ({ input }) => {
-        return runEffect(JobService.addNote(input.jobId, input.specialNotes));
-      }),
-
     reverse: technicianProcedure
-      .input(z.object({ jobId: z.string(), reason: z.string() }))
+      .input(z.object({ jobId: z.string(), reason: z.string(), code: technicianCode }))
       .handler(async ({ input }) => {
-        return runEffect(JobService.reverseJob(input.jobId, input.reason));
-      }),
-
-    verifyPin: protectedProcedure
-      .input(z.object({ userId: z.string(), pin: z.string() }))
-      .handler(async ({ input }) => {
-        const found = await db.query.account.findFirst({
-          where: eq(account.userId, input.userId),
-        });
-
-        if (!found?.password) {
-          return { valid: false };
-        }
-
-        const valid = await verifyPassword({ hash: found.password, password: input.pin });
-        return { valid };
+        return runEffect(
+          Effect.gen(function* () {
+            yield* verifyJobTechnicianCode(input.jobId, input.code);
+            return yield* JobService.reverseJob(input.jobId, input.reason);
+          }),
+        );
       }),
   },
 };

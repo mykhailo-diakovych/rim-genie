@@ -118,3 +118,11 @@ export class DiscountRequestAlreadyPending extends Data.TaggedError(
 )<{
   targetId: string;
 }> {}
+
+export class InvalidTechnicianCode extends Data.TaggedError("InvalidTechnicianCode")<{
+  userId: string;
+}> {}
+
+export class TechnicianCodeLocked extends Data.TaggedError("TechnicianCodeLocked")<{
+  userId: string;
+}> {}

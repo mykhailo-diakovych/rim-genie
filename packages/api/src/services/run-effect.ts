@@ -29,6 +29,11 @@ const TAG_MAP: Record<
   },
   JobNotAccepted: { code: "BAD_REQUEST", message: "This job has not been accepted yet" },
   JobCannotBeReversed: { code: "BAD_REQUEST", message: "This job cannot be reversed" },
+  InvalidTechnicianCode: { code: "BAD_REQUEST", message: "Invalid technician code" },
+  TechnicianCodeLocked: {
+    code: "TOO_MANY_REQUESTS",
+    message: "Too many wrong codes for this technician. Try again in 15 minutes.",
+  },
   JobHasOutstandingBalance: {
     code: "BAD_REQUEST",
     message:

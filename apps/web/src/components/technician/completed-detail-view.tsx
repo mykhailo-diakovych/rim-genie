@@ -38,7 +38,6 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
           customer={group.customer}
           jobId={String(group.invoiceNumber)}
           jobIds={group.jobs.map((j) => j.id)}
-          technicianId={group.jobs[0]!.technician!.id}
           triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
           triggerContent={
             <>
@@ -102,7 +101,6 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
                   customer={group.customer}
                   jobId={String(group.invoiceNumber)}
                   jobIds={[job.id]}
-                  technicianId={job.technician.id}
                   triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
                   triggerContent={
                     <>
