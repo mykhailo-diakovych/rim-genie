@@ -8,6 +8,7 @@ import { deleteSessionCookie } from "better-auth/cookies";
 import { admin as adminPlugin } from "better-auth/plugins";
 import { username } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { ac, admin, cashier, floorManager, inventoryClerk, technician } from "./permissions";
 
@@ -87,6 +88,11 @@ export const auth = betterAuth({
         }
         throw error;
       }
+
+      await db
+        .update(schema.user)
+        .set({ firstLoginAt: new Date() })
+        .where(and(eq(schema.user.id, newSession.user.id), isNull(schema.user.firstLoginAt)));
 
       ctx.setCookie(LOCATION_COOKIE, locationId, {
         path: "/",

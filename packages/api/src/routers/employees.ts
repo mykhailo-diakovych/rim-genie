@@ -89,8 +89,7 @@ async function issueInviteToken(userId: string): Promise<string> {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
 
-  // One invite per user: a resend must invalidate the previous link. Expired rows are kept
-  // on purpose so the employee list can still show the invite as unaccepted.
+  // One invite per user: a resend must invalidate the previous link.
   await clearInviteTokens(userId);
 
   await db.insert(verification).values({
@@ -170,6 +169,7 @@ export const employeesRouter = {
         canAdjustPrices: user.canAdjustPrices,
         banned: user.banned,
         createdAt: user.createdAt,
+        firstLoginAt: user.firstLoginAt,
       })
       .from(user)
       .orderBy(desc(user.createdAt));
@@ -198,25 +198,10 @@ export const employeesRouter = {
       byUser.set(row.userId, list);
     }
 
-    // An invite token (live or expired) means the employee has not set a PIN yet:
-    // `setPin` and `resetPin` delete it, and a failed send never leaves one behind.
-    const liveInvites = await db
-      .select({ value: verification.value })
-      .from(verification)
-      .where(
-        inArray(
-          verification.value,
-          users.map((u) => `${INVITE_PREFIX}${u.id}`),
-        ),
-      );
-    const invitePendingIds = new Set(
-      liveInvites.map((row) => row.value.slice(INVITE_PREFIX.length)),
-    );
-
-    return users.map((u) => ({
+    return users.map(({ firstLoginAt, ...u }) => ({
       ...u,
       locations: byUser.get(u.id) ?? [],
-      invitePending: invitePendingIds.has(u.id),
+      neverSignedIn: firstLoginAt === null,
     }));
   }),
 

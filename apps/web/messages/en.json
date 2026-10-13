@@ -90,7 +90,7 @@
   "employees_email_not_provided": "Not provided",
   "employees_location_none": "Not assigned",
   "employees_status_active": "Active",
-  "employees_status_pending_invite": "Pending Invitation",
+  "employees_status_pending_invite": "Pending Invite",
   "employees_more_actions": "More actions",
   "employees_btn_add": "Add Employee",
   "employees_label_user_id": "User ID:",

@@ -18,14 +18,14 @@ export interface EmployeeCardData {
   banned: boolean | null;
   canAdjustPrices?: boolean;
   locations?: { id: string; name: string }[];
-  invitePending?: boolean;
+  neverSignedIn?: boolean;
 }
 
 export type EmployeeStatus = "active" | "pendingInvite" | "deactivated";
 
 export function getEmployeeStatus(employee: EmployeeCardData): EmployeeStatus {
   if (employee.banned === true) return "deactivated";
-  if (employee.invitePending) return "pendingInvite";
+  if (employee.neverSignedIn) return "pendingInvite";
   return "active";
 }
 
