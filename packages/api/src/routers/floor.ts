@@ -13,8 +13,6 @@ import {
   payment,
   job,
   jobType,
-  service,
-  serviceTypeEnum,
   serviceCategoryEnum,
   quoteVehicleTypeEnum,
   rimMaterialEnum,
@@ -22,7 +20,7 @@ import {
   powderCoatScopeEnum,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { and, asc, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import {
@@ -149,18 +147,6 @@ const jobTypeEntrySchema = z.object({
 });
 
 export const floorRouter = {
-  services: {
-    list: protectedProcedure
-      .input(z.object({ type: z.enum(serviceTypeEnum.enumValues) }))
-      .handler(async ({ input }) => {
-        return db
-          .select()
-          .from(service)
-          .where(eq(service.type, input.type))
-          .orderBy(asc(service.name));
-      }),
-  },
-
   pricing: {
     lookup: protectedProcedure
       .input(
