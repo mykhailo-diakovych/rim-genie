@@ -28,7 +28,14 @@ export function JobTypesTab() {
   const { data, isLoading } = useQuery(
     orpc.catalog.jobTypes.list.queryOptions({ input: { section, page: 1, pageSize: 100 } }),
   );
-  const rows = useMemo(() => data?.items ?? [], [data]);
+  // Each group is followed by its options so a new option shows up under its parent.
+  const rows = useMemo(() => {
+    const items = data?.items ?? [];
+    const ids = new Set(items.map((r) => r.id));
+    return items
+      .filter((r) => !r.parentId || !ids.has(r.parentId))
+      .flatMap((r) => [r, ...items.filter((c) => c.parentId === r.id)]);
+  }, [data]);
   const labelById = useMemo(() => new Map(rows.map((r) => [r.id, r.label])), [rows]);
   const parentIds = useMemo(() => new Set(rows.map((r) => r.parentId)), [rows]);
 
