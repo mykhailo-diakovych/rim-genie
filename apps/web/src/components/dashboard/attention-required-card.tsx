@@ -1,13 +1,19 @@
+import { useState } from "react";
+
+import { AttentionListDialog } from "@/components/dashboard/attention-list-dialog";
 import { IconAlert, IconArrowRight, IconDiscount } from "@/components/ui/nav-icons";
 import { m } from "@/paraglide/messages";
 
 type Severity = "high" | "medium";
 
+type AttentionKind = "overdue" | "inventory" | "unassigned" | "invoices";
+
 interface AttentionItem {
-  id: string;
+  id: AttentionKind;
   label: string;
   count: number;
   severity: Severity;
+  canList: boolean;
 }
 
 interface AttentionRequiredCardProps {
@@ -34,6 +40,9 @@ function SeverityIcon({ severity }: { severity: Severity }) {
 }
 
 export function AttentionRequiredCard({ items }: AttentionRequiredCardProps) {
+  const [openItem, setOpenItem] = useState<AttentionItem | null>(null);
+  const openLabelFn = openItem ? LABEL_MAP[openItem.label] : undefined;
+
   return (
     <div className="flex flex-col gap-3 overflow-hidden rounded-xl border border-[rgba(219,62,33,0.5)] bg-white p-3 shadow-card">
       <p className="font-rubik text-sm leading-4.5 font-medium text-body">
@@ -45,7 +54,12 @@ export function AttentionRequiredCard({ items }: AttentionRequiredCardProps) {
           const labelFn = LABEL_MAP[item.label];
           return (
             <div key={item.id} className="flex flex-col gap-[8px]">
-              <div className="flex w-full items-center gap-3">
+              <button
+                type="button"
+                disabled={!item.canList}
+                onClick={() => setOpenItem(item)}
+                className="flex w-full items-center gap-3 rounded-sm text-left enabled:cursor-pointer enabled:hover:bg-page"
+              >
                 <div className="flex min-w-0 flex-1 items-center gap-[4px]">
                   <div
                     className="flex shrink-0 items-center rounded-full p-[4px]"
@@ -66,12 +80,17 @@ export function AttentionRequiredCard({ items }: AttentionRequiredCardProps) {
                   </span>
                   <IconArrowRight className="size-3" />
                 </div>
-              </div>
+              </button>
               {idx < items.length - 1 && <div className="h-px w-full bg-[rgba(219,62,33,0.08)]" />}
             </div>
           );
         })}
       </div>
+      <AttentionListDialog
+        kind={openItem?.id ?? null}
+        title={openItem ? (openLabelFn ? openLabelFn() : openItem.label) : ""}
+        onOpenChange={(open) => !open && setOpenItem(null)}
+      />
     </div>
   );
 }
