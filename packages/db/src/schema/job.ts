@@ -53,14 +53,15 @@ export const job = pgTable(
   ],
 );
 
+// One signature releases every job of the invoice at once.
 export const jobPickup = pgTable(
   "job_pickup",
   {
     id: text("id")
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    // Nullable so that re-syncing or deleting a quote (which recreates its jobs) keeps the signed proof.
-    jobId: text("job_id").references(() => job.id, { onDelete: "set null" }),
+    // Nullable so that deleting a quote (which deletes its invoice) keeps the signed proof.
+    invoiceId: text("invoice_id").references(() => invoice.id, { onDelete: "set null" }),
     customerId: text("customer_id")
       .notNull()
       .references(() => customer.id, { onDelete: "restrict" }),
@@ -73,7 +74,7 @@ export const jobPickup = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    unique("job_pickup_jobId_unique").on(table.jobId),
+    unique("job_pickup_invoiceId_unique").on(table.invoiceId),
     index("job_pickup_customerId_idx").on(table.customerId),
   ],
 );
@@ -91,13 +92,12 @@ export const jobRelations = relations(job, ({ one }) => ({
     fields: [job.technicianId],
     references: [user.id],
   }),
-  pickup: one(jobPickup),
 }));
 
 export const jobPickupRelations = relations(jobPickup, ({ one }) => ({
-  job: one(job, {
-    fields: [jobPickup.jobId],
-    references: [job.id],
+  invoice: one(invoice, {
+    fields: [jobPickup.invoiceId],
+    references: [invoice.id],
   }),
   customer: one(customer, {
     fields: [jobPickup.customerId],
