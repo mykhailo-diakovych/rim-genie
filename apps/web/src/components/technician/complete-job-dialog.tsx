@@ -1,9 +1,10 @@
 import { useState } from "react";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,8 +19,13 @@ import { Label } from "@/components/ui/label";
 import { PinInput } from "@/components/ui/pin-input";
 import { client, orpc } from "@/utils/orpc";
 
-import { DialogCustomerRow } from "./dialog-shared";
+import { ProofFilePicker } from "./proof-file-picker";
+import { useProofFiles } from "./proof-files";
+import { ProofJobFields } from "./proof-job-fields";
 import { type JobGroup } from "./types";
+
+const AFTER_PROOF_REQUIRED =
+  "Upload at least one photo or video of the completed work before completing the job";
 
 export function CompleteJobDialog({
   group,
@@ -33,46 +39,54 @@ export function CompleteJobDialog({
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [techCode, setTechCode] = useState("");
+  const proofs = useProofFiles();
   const queryClient = useQueryClient();
 
   const targets = group.jobs.filter(
     (j) => j.status !== "completed" && (!jobIds || jobIds.includes(j.id)),
   );
 
+  const { data: savedProofs } = useQuery({
+    ...orpc.proofs.list.queryOptions({ input: { invoiceId: group.invoiceId } }),
+    enabled: open,
+  });
+  const hasAfterProof = savedProofs?.some((p) => p.stage === "after") ?? false;
+
   const completeMutation = useMutation({
     mutationFn: async () => {
+      if (proofs.files.length === 0 && !hasAfterProof) throw new Error(AFTER_PROOF_REQUIRED);
       if (techCode.length !== 4) throw new Error("Please enter a complete 4-digit code");
 
+      const afterProofs = await proofs.upload({
+        invoiceId: group.invoiceId,
+        jobId: targets.length === 1 ? targets[0]!.id : undefined,
+      });
       for (const j of targets) {
-        await client.technician.jobs.complete({ jobId: j.id, code: techCode, notes });
+        await client.technician.jobs.complete({ jobId: j.id, code: techCode, notes, afterProofs });
       }
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: orpc.technician.jobs.list.key() });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: orpc.technician.jobs.list.key() }),
+        queryClient.invalidateQueries({ queryKey: orpc.proofs.list.key() }),
+      ]);
       toast.success("Job completed");
-      resetForm();
-      setOpen(false);
+      handleOpenChange(false);
     },
     onError: (err: Error) => toast.error(err.message),
   });
 
-  function resetForm() {
-    setNotes("");
-    setTechCode("");
-  }
-
-  function handleConfirm() {
-    completeMutation.mutate();
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setNotes("");
+      setTechCode("");
+      proofs.clear();
+    }
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (!nextOpen) resetForm();
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger render={<Button color="success" />}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
@@ -85,49 +99,44 @@ export function CompleteJobDialog({
         Done
       </DialogTrigger>
 
-      <DialogContent className="overflow-hidden sm:max-w-[340px]">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-5xl">
         <DialogHeader>
           <DialogTitle>Complete Job</DialogTitle>
         </DialogHeader>
 
-        <div className="flex items-start gap-4 bg-[#fee4e2] px-3 py-2">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#f2cecc]">
-            <AlertCircle className="size-6 text-[#d92d20]" />
-          </div>
-          <div className="flex flex-col gap-0.5 py-1">
-            <p className="font-rubik text-sm leading-4.5 font-medium text-body">Please Remember</p>
-            <p className="font-rubik text-xs leading-3.5 text-label">
-              Please remember to upload all photos and videos of the job before completing
+        <div className="flex flex-col gap-4 px-3 pb-3">
+          <Banner icon={<AlertCircle />}>
+            <p>Please Remember</p>
+            <p className="text-sm leading-5 font-normal">
+              Upload photos or videos showing the completed work before marking this job as done.
             </p>
+          </Banner>
+
+          <div className="grid gap-4 md:grid-cols-[2fr_3fr]">
+            <ProofJobFields
+              group={group}
+              notes={notes}
+              onNotesChange={setNotes}
+              notesPlaceholder="Add any notes about the completed job..."
+            >
+              <div className="flex flex-col gap-1">
+                <Label>Technician Code</Label>
+                <PinInput value={techCode} onChange={setTechCode} />
+              </div>
+            </ProofJobFields>
+            <ProofFilePicker
+              title="Completion Photos & Videos"
+              proofs={proofs}
+              disabled={completeMutation.isPending}
+            />
           </div>
-        </div>
 
-        <div className="flex flex-col gap-6 px-3 pb-3">
-          <div className="flex flex-col gap-3">
-            <DialogCustomerRow customer={group.customer} jobId={String(group.invoiceNumber)} />
-
-            <div className="flex flex-col gap-1">
-              <label className="font-rubik text-xs leading-3.5 text-label">Notes:</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="h-[70px] w-full resize-none rounded-md border border-field-line bg-white p-2 font-rubik text-sm leading-4.5 text-body outline-none placeholder:text-label focus:border-blue"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <Label>Technician Code:</Label>
-              <PinInput value={techCode} onChange={setTechCode} />
-            </div>
-          </div>
-
-          <DialogFooter className="p-0">
-            <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+          <DialogFooter className="justify-end p-0">
+            <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
             <Button
               color="success"
-              className="w-32"
               disabled={completeMutation.isPending}
-              onClick={handleConfirm}
+              onClick={() => completeMutation.mutate()}
             >
               {completeMutation.isPending ? "Completing..." : "Done"}
             </Button>
