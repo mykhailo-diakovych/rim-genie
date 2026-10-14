@@ -40,7 +40,7 @@ function JobCompletedEmail({
         />
         <Row
           label={<span style={{ color: "#4b5563" }}>Description</span>}
-          value={jobDescription}
+          value={<span style={{ whiteSpace: "normal" }}>{jobDescription}</span>}
           noBorder
         />
       </div>
