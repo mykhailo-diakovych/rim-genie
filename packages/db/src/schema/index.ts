@@ -4,6 +4,7 @@ export * from "./floor";
 export * from "./location";
 export * from "./inventory";
 export * from "./invoice";
+export * from "./invoice-modification";
 export * from "./job";
 export * from "./loyalty";
 export * from "./manage";

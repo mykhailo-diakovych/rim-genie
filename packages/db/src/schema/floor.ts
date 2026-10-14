@@ -25,6 +25,7 @@ export const quoteStatusEnum = pgEnum("quote_status", [
   "pending",
   "in_progress",
   "completed",
+  "pending_finalization",
 ]);
 
 export const quoteDiscountTypeEnum = pgEnum("quote_discount_type", ["percent", "fixed"]);

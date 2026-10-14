@@ -162,6 +162,7 @@ export const invoiceItemRelations = relations(invoiceItem, ({ one }) => ({
     fields: [invoiceItem.invoiceId],
     references: [invoice.id],
   }),
+  job: one(job),
 }));
 
 export const paymentRelations = relations(payment, ({ one }) => ({

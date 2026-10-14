@@ -10,6 +10,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "discount_rejected",
   "job_completed",
   "job_overnight",
+  "invoice_modification_request",
 ]);
 
 export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
