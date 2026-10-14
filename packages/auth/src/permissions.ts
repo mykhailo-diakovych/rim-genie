@@ -26,15 +26,19 @@ export const cashier = ac.newRole({
   invoice: ["create", "read", "update"],
   job: ["read", "assign"],
   customer: ["read"],
+  inventory: ["read", "verify"],
 });
 
 export const technician = ac.newRole({
   job: ["read", "update", "complete"],
 });
 
-export const inventoryClerk = ac.newRole({
+export const manager = ac.newRole({
+  quote: ["read"],
+  invoice: ["create", "read", "update"],
+  job: ["read", "assign"],
+  customer: ["read"],
   inventory: ["read", "verify"],
-  job: ["read"],
 });
 
 export const admin = ac.newRole({

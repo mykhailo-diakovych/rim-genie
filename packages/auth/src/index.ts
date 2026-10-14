@@ -10,7 +10,7 @@ import { username } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { and, eq, isNull } from "drizzle-orm";
 
-import { ac, admin, cashier, floorManager, inventoryClerk, technician } from "./permissions";
+import { ac, admin, cashier, floorManager, manager, technician } from "./permissions";
 
 const LOCATION_HEADER = "x-rim-genie-location";
 const LOCATION_COOKIE = "rim-genie-location";
@@ -111,7 +111,7 @@ export const auth = betterAuth({
         floorManager,
         cashier,
         technician,
-        inventoryClerk,
+        manager,
       },
     }),
   ],
