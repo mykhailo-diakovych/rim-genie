@@ -169,6 +169,13 @@
       "when": 1791894949649,
       "tag": "0023_invoice_modification",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791984283152,
+      "tag": "0024_roles_manager",
+      "breakpoints": true
     }
   ]
 }
