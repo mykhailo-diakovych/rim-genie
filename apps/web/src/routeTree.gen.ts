@@ -29,6 +29,7 @@ import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppTechnicianInvoiceIdRouteImport } from './routes/_app/technician/$invoiceId'
 import { Route as AppReportsDailyRouteImport } from './routes/_app/reports/daily'
+import { Route as AppModificationRequestsRequestIdRouteImport } from './routes/_app/modification-requests/$requestId'
 import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
 import { Route as AppDiscountApprovalsRequestIdRouteImport } from './routes/_app/discount-approvals/$requestId'
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/customers/$customerId'
@@ -138,6 +139,12 @@ const AppReportsDailyRoute = AppReportsDailyRouteImport.update({
   path: '/reports/daily',
   getParentRoute: () => AppRoute,
 } as any)
+const AppModificationRequestsRequestIdRoute =
+  AppModificationRequestsRequestIdRouteImport.update({
+    id: '/modification-requests/$requestId',
+    path: '/modification-requests/$requestId',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
   id: '/$quoteId',
   path: '/$quoteId',
@@ -208,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/discount-approvals/$requestId': typeof AppDiscountApprovalsRequestIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/modification-requests/$requestId': typeof AppModificationRequestsRequestIdRoute
   '/reports/daily': typeof AppReportsDailyRoute
   '/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -235,6 +243,7 @@ export interface FileRoutesByTo {
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/discount-approvals/$requestId': typeof AppDiscountApprovalsRequestIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/modification-requests/$requestId': typeof AppModificationRequestsRequestIdRoute
   '/reports/daily': typeof AppReportsDailyRoute
   '/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -268,6 +277,7 @@ export interface FileRoutesById {
   '/_app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/_app/discount-approvals/$requestId': typeof AppDiscountApprovalsRequestIdRoute
   '/_app/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/_app/modification-requests/$requestId': typeof AppModificationRequestsRequestIdRoute
   '/_app/reports/daily': typeof AppReportsDailyRoute
   '/_app/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -300,6 +310,7 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/discount-approvals/$requestId'
     | '/floor/$quoteId'
+    | '/modification-requests/$requestId'
     | '/reports/daily'
     | '/technician/$invoiceId'
     | '/api/auth/$'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/discount-approvals/$requestId'
     | '/floor/$quoteId'
+    | '/modification-requests/$requestId'
     | '/reports/daily'
     | '/technician/$invoiceId'
     | '/api/auth/$'
@@ -359,6 +371,7 @@ export interface FileRouteTypes {
     | '/_app/customers/$customerId'
     | '/_app/discount-approvals/$requestId'
     | '/_app/floor/$quoteId'
+    | '/_app/modification-requests/$requestId'
     | '/_app/reports/daily'
     | '/_app/technician/$invoiceId'
     | '/api/auth/$'
@@ -528,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsDailyRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/modification-requests/$requestId': {
+      id: '/_app/modification-requests/$requestId'
+      path: '/modification-requests/$requestId'
+      fullPath: '/modification-requests/$requestId'
+      preLoaderRoute: typeof AppModificationRequestsRequestIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/floor/$quoteId': {
       id: '/_app/floor/$quoteId'
       path: '/$quoteId'
@@ -653,6 +673,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppCustomersCustomerIdRoute: typeof AppCustomersCustomerIdRoute
   AppDiscountApprovalsRequestIdRoute: typeof AppDiscountApprovalsRequestIdRoute
+  AppModificationRequestsRequestIdRoute: typeof AppModificationRequestsRequestIdRoute
   AppReportsDailyRoute: typeof AppReportsDailyRoute
   AppTechnicianInvoiceIdRoute: typeof AppTechnicianInvoiceIdRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
@@ -671,6 +692,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppCustomersCustomerIdRoute: AppCustomersCustomerIdRoute,
   AppDiscountApprovalsRequestIdRoute: AppDiscountApprovalsRequestIdRoute,
+  AppModificationRequestsRequestIdRoute: AppModificationRequestsRequestIdRoute,
   AppReportsDailyRoute: AppReportsDailyRoute,
   AppTechnicianInvoiceIdRoute: AppTechnicianInvoiceIdRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,

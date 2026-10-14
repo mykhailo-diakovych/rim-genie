@@ -4,6 +4,7 @@ import {
   Building2,
   ChevronLeft,
   CircleDollarSign,
+  FilePenLine,
   Info,
   MapPin,
   Phone,
@@ -16,7 +17,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
+import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
 
+import { ModificationHistory } from "@/components/cashier/modification-history";
+import { RequestModificationDialog } from "@/components/cashier/request-modification-dialog";
 import { Button } from "@/components/ui/button";
 import {
   RowActionsMenu,
@@ -117,6 +121,7 @@ function InvoiceDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRequestModification, setShowRequestModification] = useState(false);
 
   const invoiceQuery = useQuery(
     orpc.cashier.invoices.get.queryOptions({ input: { id: invoiceId } }),
@@ -157,7 +162,12 @@ function InvoiceDetailPage() {
     onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
   });
 
-  const canPay = inv?.status !== "paid";
+  const { data: pendingModification } = useQuery(
+    orpc.invoiceModification.pendingForInvoice.queryOptions({ input: { invoiceId } }),
+  );
+  const inCashierQueue = inv?.quote?.status === SENT_TO_CASHIER_STATUS;
+
+  const canPay = inv?.status !== "paid" && inCashierQueue;
   const hasJobs = (inv?.jobs?.length ?? 0) > 0;
 
   const jobStatusCounts = inv?.jobs?.reduce(
@@ -188,6 +198,16 @@ function InvoiceDetailPage() {
         )}
 
         <div className="flex flex-1 items-center justify-end gap-2">
+          {inCashierQueue && (
+            <Button
+              variant="outline"
+              onClick={() => setShowRequestModification(true)}
+              disabled={!!pendingModification}
+            >
+              <FilePenLine />
+              Request Modification
+            </Button>
+          )}
           <Button
             color="success"
             disabled={!canPay}
@@ -217,6 +237,17 @@ function InvoiceDetailPage() {
           />
         </div>
       </StickyActionBar>
+
+      {pendingModification && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-amber-100 px-3 py-2 font-rubik text-xs text-amber-700 print:hidden">
+          <span className="font-medium">Modification request pending</span>
+          <span>
+            Awaiting {pendingModification.assignedAdmin?.name ?? "admin"} · requested by{" "}
+            {pendingModification.requestedBy?.name ?? "cashier"} on{" "}
+            {formatDate(pendingModification.createdAt)}
+          </span>
+        </div>
+      )}
 
       {hasJobs && jobStatusCounts && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-page px-3 py-2 font-rubik text-xs text-body print:hidden">
@@ -539,6 +570,8 @@ function InvoiceDetailPage() {
         </div>
       )}
 
+      <ModificationHistory invoiceId={invoiceId} />
+
       <div className="flex items-center gap-3 rounded-md bg-[#ebf5ff] px-3 py-3 print:border print:border-field-line print:bg-transparent">
         <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#cbe5fc] print:bg-transparent">
           <Info className="size-3 text-blue" />
@@ -548,6 +581,20 @@ function InvoiceDetailPage() {
           <strong>$500 daily</strong>
         </p>
       </div>
+
+      {inv && (
+        <RequestModificationDialog
+          open={showRequestModification}
+          onOpenChange={setShowRequestModification}
+          invoice={{
+            id: inv.id,
+            invoiceNumber: inv.invoiceNumber,
+            customerName: inv.customer?.name ?? "",
+            total: inv.total,
+            paid: totalPaid,
+          }}
+        />
+      )}
 
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>

@@ -10,6 +10,7 @@ const STATUS_BG: Record<string, string> = {
   accepted: "bg-badge-cyan",
   in_progress: "bg-badge-orange",
   completed: "bg-badge-green",
+  pending_finalization: "bg-badge-orange",
 };
 
 function toLabel(status: string): string {

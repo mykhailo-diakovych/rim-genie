@@ -117,6 +117,11 @@ function QuoteEditorPage() {
   const isReadOnly = !!quote && !isQuoteEditable(quote.status);
   const canFinalize = !!quote && canFinalizeQuote(quote.status);
   const includedItems = (quote?.items ?? []).filter((i) => !i.isExcluded);
+  // Mirrors the server rule: once money is collected the revised total may not drop below it.
+  const amountPaid = quote?.amountPaid ?? 0;
+  const revisedTotal = (quote?.total ?? 0) + (quote?.invoice?.tax ?? 0);
+  const totalBelowPaid =
+    !isReadOnly && revisedTotal < amountPaid && revisedTotal !== quote?.invoice?.total;
   const excludedItems = (quote?.items ?? []).filter((i) => i.isExcluded);
 
   const { data: pendingDiscount } = useQuery(
@@ -478,7 +483,7 @@ function QuoteEditorPage() {
               <Button
                 color="success"
                 onClick={() => void handleFinalize()}
-                disabled={includedItems.length === 0 || finalizeQuote.isPending}
+                disabled={includedItems.length === 0 || totalBelowPaid || finalizeQuote.isPending}
               >
                 <FileCheck />
                 Finalize Quote
@@ -875,6 +880,18 @@ function QuoteEditorPage() {
                 <span>Total:</span>
                 <span className="font-medium">{formatDollars(total)}</span>
               </div>
+              {amountPaid > 0 && (
+                <div className="flex items-center justify-end gap-3 px-3 font-rubik text-base leading-5">
+                  <span className="text-label">Amount paid:</span>
+                  <span className="text-body">{formatCents(amountPaid)}</span>
+                </div>
+              )}
+              {totalBelowPaid && (
+                <p role="alert" className="max-w-sm px-3 text-right font-rubik text-sm text-red">
+                  The invoice total cannot be less than the amount already paid (
+                  {formatCents(amountPaid)}). Please adjust the invoice amount before continuing.
+                </p>
+              )}
             </div>
           </div>
         </div>
