@@ -20,6 +20,7 @@ async function seed() {
   const cashierId = crypto.randomUUID();
   const technicianId = crypto.randomUUID();
   const floorManagerId = crypto.randomUUID();
+  const managerId = crypto.randomUUID();
 
   await db.insert(user).values([
     {
@@ -58,6 +59,15 @@ async function seed() {
       role: "floorManager",
       emailVerified: true,
     },
+    {
+      id: managerId,
+      name: "Mark Manager",
+      email: "manager@rimgenie.com",
+      username: "manager",
+      displayUsername: "manager",
+      role: "manager",
+      emailVerified: true,
+    },
   ]);
 
   await db.insert(account).values([
@@ -89,9 +99,16 @@ async function seed() {
       providerId: "credential",
       password: hashedPassword,
     },
+    {
+      id: crypto.randomUUID(),
+      userId: managerId,
+      accountId: managerId,
+      providerId: "credential",
+      password: hashedPassword,
+    },
   ]);
 
-  console.log("Seeded 4 users (all password: admin1234)");
+  console.log("Seeded 5 users (all password: admin1234)");
 
   const [vipCustomer] = await db
     .insert(customer)
@@ -262,6 +279,7 @@ async function seed() {
   console.log("  cashier  → cashier@rimgenie.com");
   console.log("  tech     → tech@rimgenie.com");
   console.log("  floor    → floor@rimgenie.com");
+  console.log("  manager  → manager@rimgenie.com");
 }
 
 seed()
