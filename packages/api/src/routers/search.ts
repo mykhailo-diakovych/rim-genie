@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { db } from "@rim-genie/db";
+import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
 import { customer, quote, invoice, user } from "@rim-genie/db/schema";
 import { and, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 
@@ -101,16 +102,20 @@ export const searchRouter = {
                 customerName: customer.name,
               })
               .from(invoice)
+              .innerJoin(quote, eq(quote.id, invoice.quoteId))
               .innerJoin(customer, eq(customer.id, invoice.customerId))
               .where(
-                isNumericQuery
-                  ? sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`
-                  : or(
-                      sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
-                      ilike(customer.name, pattern),
-                      ilike(customer.phone, pattern),
-                      ilike(customer.email, pattern),
-                    ),
+                and(
+                  eq(quote.status, SENT_TO_CASHIER_STATUS),
+                  isNumericQuery
+                    ? sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`
+                    : or(
+                        sql`${invoice.invoiceNumber}::text ILIKE ${pattern}`,
+                        ilike(customer.name, pattern),
+                        ilike(customer.phone, pattern),
+                        ilike(customer.email, pattern),
+                      ),
+                ),
               )
               .orderBy(desc(invoice.createdAt))
               .limit(filter === "invoice" ? 20 : 5)

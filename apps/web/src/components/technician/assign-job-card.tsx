@@ -1,12 +1,14 @@
 import { Eye, SquareCheckBig } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useCanWorkJobs } from "@/lib/use-can-work-jobs";
 
 import { AcceptJobDialog } from "./accept-job-dialog";
 import { PartialInvoiceNote } from "./partial-invoice-note";
 import { type JobGroup } from "./types";
 
 export function AssignJobCard({ group, onView }: { group: JobGroup; onView: () => void }) {
+  const canWorkJobs = useCanWorkJobs();
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center">
       <div className="flex flex-1 flex-col gap-1">
@@ -30,18 +32,20 @@ export function AssignJobCard({ group, onView }: { group: JobGroup; onView: () =
           <Eye />
           View
         </Button>
-        <AcceptJobDialog
-          customer={group.customer}
-          jobId={String(group.invoiceNumber)}
-          jobIds={group.jobs.filter((j) => j.status === "pending").map((j) => j.id)}
-          triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md border border-green font-rubik text-xs leading-3.5 text-green transition-colors hover:bg-green/5"
-          triggerContent={
-            <>
-              <SquareCheckBig className="size-4" />
-              Accept
-            </>
-          }
-        />
+        {canWorkJobs && (
+          <AcceptJobDialog
+            customer={group.customer}
+            jobId={String(group.invoiceNumber)}
+            jobIds={group.jobs.filter((j) => j.status === "pending").map((j) => j.id)}
+            triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md border border-green font-rubik text-xs leading-3.5 text-green transition-colors hover:bg-green/5"
+            triggerContent={
+              <>
+                <SquareCheckBig className="size-4" />
+                Accept
+              </>
+            }
+          />
+        )}
       </div>
     </div>
   );

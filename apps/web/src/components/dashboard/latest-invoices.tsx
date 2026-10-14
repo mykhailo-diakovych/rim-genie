@@ -3,8 +3,12 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight, Mail } from "lucide-react";
 import { toast } from "sonner";
 
+import type { UserRole } from "@rim-genie/db/schema";
+
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 import { formatCents } from "@/lib/format-currency";
+import { hasRouteAccess } from "@/lib/route-permissions";
 import { orpc } from "@/utils/orpc";
 
 type InvoiceStatus = "unpaid" | "partially_paid" | "paid";
@@ -36,6 +40,8 @@ const STATUS_LABEL: Record<InvoiceStatus, string> = {
 };
 
 export function LatestInvoices({ invoices }: LatestInvoicesProps) {
+  const { data: session } = authClient.useSession();
+  const canOpenCashier = hasRouteAccess("/cashier", session?.user.role as UserRole | undefined);
   const sendReceipt = useMutation({
     ...orpc.cashier.invoices.sendReceipt.mutationOptions(),
     onSuccess: () => toast.success("Receipt sent successfully"),
@@ -46,15 +52,17 @@ export function LatestInvoices({ invoices }: LatestInvoicesProps) {
     <div className="flex flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card">
       <div className="flex items-center justify-between">
         <p className="font-rubik text-sm leading-4.5 font-medium text-body">Latest Invoices</p>
-        <Button
-          nativeButton={false}
-          variant="ghost"
-          render={<Link to="/cashier" />}
-          className="flex items-center gap-0.5 text-xs text-label"
-        >
-          View all
-          <ChevronRight />
-        </Button>
+        {canOpenCashier && (
+          <Button
+            nativeButton={false}
+            variant="ghost"
+            render={<Link to="/cashier" />}
+            className="flex items-center gap-0.5 text-xs text-label"
+          >
+            View all
+            <ChevronRight />
+          </Button>
+        )}
       </div>
 
       {invoices.length === 0 ? (
@@ -119,15 +127,17 @@ export function LatestInvoices({ invoices }: LatestInvoicesProps) {
                 <div
                   className={`border-t border-r border-l ${borderBottom} flex h-8 w-12 items-center justify-center border-field-line px-2`}
                 >
-                  <button
-                    type="button"
-                    disabled={sendReceipt.isPending}
-                    onClick={() => sendReceipt.mutate({ invoiceId: inv.id })}
-                    className="flex items-center justify-center rounded p-1 text-label transition-colors hover:bg-page hover:text-body disabled:opacity-50"
-                    title="Send invoice"
-                  >
-                    <Mail className="size-3.5" />
-                  </button>
+                  {canOpenCashier && (
+                    <button
+                      type="button"
+                      disabled={sendReceipt.isPending}
+                      onClick={() => sendReceipt.mutate({ invoiceId: inv.id })}
+                      className="flex items-center justify-center rounded p-1 text-label transition-colors hover:bg-page hover:text-body disabled:opacity-50"
+                      title="Send invoice"
+                    >
+                      <Mail className="size-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );

@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { m } from "@/paraglide/messages";
 
-import { IconDelete } from "./service-table";
+import { IconDelete } from "./action-icons";
 
 interface DeleteServiceModalProps {
   open: boolean;

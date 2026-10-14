@@ -1,10 +1,29 @@
+import { ORPCError } from "@orpc/server";
 import { z } from "zod";
-import { and, count, desc, eq, gte, isNull, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@rim-genie/db";
-import { customer, inventoryRecord, invoice, job, payment, user } from "@rim-genie/db/schema";
+import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
+import {
+  customer,
+  inventoryRecord,
+  invoice,
+  job,
+  payment,
+  quote,
+  user,
+  type UserRole,
+} from "@rim-genie/db/schema";
 
 import { protectedProcedure } from "../index";
+
+// Only invoices the floor explicitly sent to the cashier.
+const sentInvoice = () =>
+  inArray(
+    invoice.quoteId,
+    db.select({ id: quote.id }).from(quote).where(eq(quote.status, SENT_TO_CASHIER_STATUS)),
+  );
 
 const dateFromSchema = z.object({
   dateFrom: z.string().optional(),
@@ -84,6 +103,55 @@ async function jobCountSparkline(
   `);
   return result.rows.map((r) => Number(r.val));
 }
+
+const ATTENTION_KINDS = ["overdue", "inventory", "unassigned", "invoices"] as const;
+
+type AttentionKind = (typeof ATTENTION_KINDS)[number];
+
+// The badge counts stay visible to every role; the records behind them only to roles
+// that can already see that data elsewhere in the app.
+const ATTENTION_LIST_ROLES: Record<AttentionKind, UserRole[] | null> = {
+  overdue: null,
+  unassigned: null,
+  invoices: ["admin", "floorManager", "cashier", "manager"],
+  inventory: ["admin", "cashier", "manager"],
+};
+
+function canListAttention(kind: AttentionKind, role: string | null | undefined): boolean {
+  const roles = ATTENTION_LIST_ROLES[kind];
+  return roles === null || (!!role && roles.includes(role as UserRole));
+}
+
+const attentionWhere = {
+  overdue: () =>
+    and(ne(job.status, "completed"), lt(job.dueDate, new Date()), sql`${job.dueDate} IS NOT NULL`),
+  inventory: () => eq(inventoryRecord.hasDiscrepancy, true),
+  unassigned: () => and(isNull(job.technicianId), ne(job.status, "completed")),
+  invoices: () => and(eq(invoice.status, "unpaid"), sentInvoice()),
+};
+
+function attentionJobs(kind: "overdue" | "unassigned") {
+  return db
+    .select({
+      id: job.id,
+      invoiceId: job.invoiceId,
+      invoiceNumber: invoice.invoiceNumber,
+      customerId: customer.id,
+      customerName: customer.name,
+      status: job.status,
+      technicianName: user.name,
+      dueDate: job.dueDate,
+      createdAt: job.createdAt,
+    })
+    .from(job)
+    .innerJoin(invoice, eq(job.invoiceId, invoice.id))
+    .innerJoin(customer, eq(invoice.customerId, customer.id))
+    .leftJoin(user, eq(job.technicianId, user.id))
+    .where(attentionWhere[kind]())
+    .orderBy(kind === "overdue" ? asc(job.dueDate) : asc(job.createdAt));
+}
+
+const previousEod = alias(inventoryRecord, "previous_eod");
 
 export const dashboardRouter = {
   metrics: protectedProcedure.input(dateFromSchema).handler(async ({ input }) => {
@@ -236,7 +304,7 @@ export const dashboardRouter = {
     const { start } = dateRange(input.dateFrom);
     const locId = context.locationId;
 
-    const conditions = [gte(invoice.createdAt, start)];
+    const conditions = [gte(invoice.createdAt, start), sentInvoice()];
     if (locId) {
       // Same fix as the cashier list — filter on the invoice's own branch.
       conditions.push(or(eq(invoice.locationId, locId), isNull(invoice.locationId))!);
@@ -261,54 +329,96 @@ export const dashboardRouter = {
     return rows;
   }),
 
-  attentionRequired: protectedProcedure.input(dateFromSchema).handler(async () => {
-    const now = new Date();
-
+  attentionRequired: protectedProcedure.input(dateFromSchema).handler(async ({ context }) => {
     const [overdueRows, lowInventoryRows, unassignedRows, pendingRows] = await Promise.all([
-      db
-        .select({ count: count() })
-        .from(job)
-        .where(
-          and(ne(job.status, "completed"), lt(job.dueDate, now), sql`${job.dueDate} IS NOT NULL`),
-        ),
-      db
-        .select({ count: count() })
-        .from(inventoryRecord)
-        .where(eq(inventoryRecord.hasDiscrepancy, true)),
-      db
-        .select({ count: count() })
-        .from(job)
-        .where(and(isNull(job.technicianId), ne(job.status, "completed"))),
-      db.select({ count: count() }).from(invoice).where(eq(invoice.status, "unpaid")),
+      db.select({ count: count() }).from(job).where(attentionWhere.overdue()),
+      db.select({ count: count() }).from(inventoryRecord).where(attentionWhere.inventory()),
+      db.select({ count: count() }).from(job).where(attentionWhere.unassigned()),
+      db.select({ count: count() }).from(invoice).where(attentionWhere.invoices()),
     ]);
+    const role = context.session.user.role;
 
     return {
       items: [
         {
-          id: "overdue",
+          id: "overdue" as const,
           label: "attention_overdue_jobs",
           count: overdueRows[0]?.count ?? 0,
           severity: "high" as const,
+          canList: canListAttention("overdue", role),
         },
         {
-          id: "inventory",
+          id: "inventory" as const,
           label: "attention_low_inventory",
           count: lowInventoryRows[0]?.count ?? 0,
           severity: "medium" as const,
+          canList: canListAttention("inventory", role),
         },
         {
-          id: "unassigned",
+          id: "unassigned" as const,
           label: "attention_unassigned_jobs",
           count: unassignedRows[0]?.count ?? 0,
           severity: "high" as const,
+          canList: canListAttention("unassigned", role),
         },
         {
-          id: "invoices",
+          id: "invoices" as const,
           label: "attention_pending_invoices",
           count: pendingRows[0]?.count ?? 0,
           severity: "medium" as const,
+          canList: canListAttention("invoices", role),
         },
       ],
     };
   }),
+
+  attentionList: protectedProcedure
+    .input(z.object({ kind: z.enum(ATTENTION_KINDS) }))
+    .handler(async ({ input, context }) => {
+      if (!canListAttention(input.kind, context.session.user.role)) {
+        throw new ORPCError("FORBIDDEN");
+      }
+
+      switch (input.kind) {
+        case "overdue":
+          return { kind: "overdue" as const, rows: await attentionJobs("overdue") };
+        case "unassigned":
+          return { kind: "unassigned" as const, rows: await attentionJobs("unassigned") };
+        case "invoices":
+          return {
+            kind: "invoices" as const,
+            rows: await db
+              .select({
+                id: invoice.id,
+                invoiceNumber: invoice.invoiceNumber,
+                customerId: customer.id,
+                customerName: customer.name,
+                total: invoice.total,
+                createdAt: invoice.createdAt,
+              })
+              .from(invoice)
+              .innerJoin(customer, eq(invoice.customerId, customer.id))
+              .where(attentionWhere.invoices())
+              .orderBy(asc(invoice.createdAt)),
+          };
+        case "inventory":
+          return {
+            kind: "inventory" as const,
+            rows: await db
+              .select({
+                id: inventoryRecord.id,
+                recordDate: inventoryRecord.recordDate,
+                rimCount: inventoryRecord.rimCount,
+                eodRimCount: previousEod.rimCount,
+                discrepancyNotes: inventoryRecord.discrepancyNotes,
+                recordedByName: user.name,
+              })
+              .from(inventoryRecord)
+              .innerJoin(user, eq(inventoryRecord.recordedById, user.id))
+              .leftJoin(previousEod, eq(inventoryRecord.previousEodId, previousEod.id))
+              .where(attentionWhere.inventory())
+              .orderBy(desc(inventoryRecord.recordDate)),
+          };
+      }
+    }),
 };

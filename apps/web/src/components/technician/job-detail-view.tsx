@@ -16,9 +16,11 @@ function ReverseIcon() {
 
 import { Button } from "@/components/ui/button";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
+import { useCanWorkJobs } from "@/lib/use-can-work-jobs";
 import { cn } from "@/lib/utils";
 
 import { CompleteJobDialog } from "./complete-job-dialog";
+import { JobProofsSection, jobProofLabel } from "./job-proofs";
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { type ApiJob, type JobGroup } from "./types";
 import { UploadProofsDialog } from "./upload-proofs-dialog";
@@ -38,6 +40,7 @@ function formatJobStatus(status: ApiJob["status"]) {
 }
 
 export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
+  const canWorkJobs = useCanWorkJobs();
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <StickyActionBar>
@@ -57,19 +60,26 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
             <span className="font-medium text-body">{group.invoiceNumber}</span>
           </div>
         </div>
-        <ReverseJobDialog
+        <JobProofsSection
+          invoiceId={group.invoiceId}
           customer={group.customer}
-          jobId={String(group.invoiceNumber)}
-          jobIds={group.jobs.filter((j) => j.status !== "pending").map((j) => j.id)}
-          technicianId={group.jobs[0]!.technician!.id}
-          triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
-          triggerContent={
-            <>
-              <ReverseIcon />
-              Reverse all
-            </>
-          }
+          invoiceNumber={group.invoiceNumber}
+          jobLabel={group.jobs.map((j) => jobProofLabel(j.invoiceItem)).join(", ")}
         />
+        {canWorkJobs && (
+          <ReverseJobDialog
+            customer={group.customer}
+            jobId={String(group.invoiceNumber)}
+            jobIds={group.jobs.filter((j) => j.status !== "pending").map((j) => j.id)}
+            triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
+            triggerContent={
+              <>
+                <ReverseIcon />
+                Reverse all
+              </>
+            }
+          />
+        )}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-card-line bg-white shadow-card">
@@ -140,17 +150,20 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
             </div>
 
             <div className="flex flex-col gap-2 px-3 py-3">
-              {job.status === "accepted" && <UploadProofsDialog group={group} />}
+              {canWorkJobs && job.status === "accepted" && (
+                <UploadProofsDialog group={group} jobId={job.id} />
+              )}
               {/* Was a bare <Button> with no handler, gated on "in_progress" — a status
                   nothing in the app ever sets, so it never even rendered. Now a working
                   PIN-confirmed completion for whichever jobs are actually finishable. */}
-              {isCompletable(job) && <CompleteJobDialog group={group} jobIds={[job.id]} />}
-              {job.status !== "pending" && job.technician && (
+              {canWorkJobs && isCompletable(job) && (
+                <CompleteJobDialog group={group} jobIds={[job.id]} />
+              )}
+              {canWorkJobs && job.status !== "pending" && job.technician && (
                 <ReverseJobDialog
                   customer={group.customer}
                   jobId={String(group.invoiceNumber)}
                   jobIds={[job.id]}
-                  technicianId={job.technician.id}
                   triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md font-rubik text-xs leading-3.5 transition-colors border border-[#db3e21] text-[#db3e21] hover:bg-[#db3e21]/5"
                   triggerContent={
                     <>

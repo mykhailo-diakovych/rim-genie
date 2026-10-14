@@ -69,15 +69,9 @@ export function AcceptJobDialog({
         throw new Error("Please fill in all fields");
       }
 
-      const { valid } = await client.technician.jobs.verifyPin({
-        userId: technician,
-        pin,
-      });
-      if (!valid) throw new Error("Invalid technician code");
-
       const dueDate = getDateValue(completionDate);
       for (const id of jobIds) {
-        await client.technician.jobs.accept({ jobId: id, technicianId: technician });
+        await client.technician.jobs.accept({ jobId: id, technicianId: technician, code: pin });
         await client.technician.jobs.setDueDate({
           jobId: id,
           dueDate,

@@ -24,7 +24,7 @@ import { client, orpc } from "@/utils/orpc";
 const CAN_EDIT_ROLES: UserRole[] = ["admin", "floorManager"];
 
 export const Route = createFileRoute("/_app/customers/")({
-  beforeLoad: requireRoles(["admin", "floorManager", "cashier"]),
+  beforeLoad: requireRoles(["admin", "floorManager", "cashier", "manager"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Customers" }],
   }),

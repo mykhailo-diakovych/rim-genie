@@ -2,16 +2,17 @@ import { Effect } from "effect";
 import { and, eq } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
+import { isQuoteEditable } from "@rim-genie/db/quote-status";
 import { discountRequest, quote, customer } from "@rim-genie/db/schema";
 
 import {
   DiscountRequestNotFound,
   DiscountRequestAlreadyResolved,
   DiscountRequestAlreadyPending,
+  QuoteNotEditable,
   QuoteNotFound,
 } from "./errors";
 import * as NotificationService from "./notification.service";
-import * as InvoiceService from "./invoice.service";
 import { recalcQuoteTotal } from "./quote.service";
 
 export function requestQuoteDiscount(input: {
@@ -43,6 +44,9 @@ export function requestQuoteDiscount(input: {
 
     if (!found) {
       return yield* Effect.fail(new QuoteNotFound({ id: input.quoteId }));
+    }
+    if (!isQuoteEditable(found.status)) {
+      return yield* Effect.fail(new QuoteNotEditable({ quoteId: input.quoteId }));
     }
 
     const [request] = yield* Effect.tryPromise(() =>
@@ -149,6 +153,10 @@ export function approve(input: {
       return yield* Effect.fail(new DiscountRequestAlreadyResolved({ id: input.requestId }));
     }
 
+    if (request.quote && !isQuoteEditable(request.quote.status)) {
+      return yield* Effect.fail(new QuoteNotEditable({ quoteId: request.quote.id }));
+    }
+
     const finalPercent = input.approvedPercent ?? request.requestedPercent;
 
     const [updated] = yield* Effect.tryPromise(() =>
@@ -173,9 +181,6 @@ export function approve(input: {
           .where(eq(quote.id, request.quoteId!)),
       );
       yield* Effect.tryPromise(() => recalcQuoteTotal(request.quoteId!));
-      yield* InvoiceService.syncInvoiceFromQuote(request.quoteId!, input.adminId).pipe(
-        Effect.catchAll(() => Effect.succeed(null)),
-      );
     }
 
     if (request.type === "customer" && request.customerId) {

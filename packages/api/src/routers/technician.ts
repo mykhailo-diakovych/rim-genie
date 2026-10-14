@@ -1,18 +1,83 @@
 import { Effect } from "effect";
 import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
-import { verifyPassword } from "@rim-genie/auth/crypto";
 
 import { db } from "@rim-genie/db";
-import { account, job, user } from "@rim-genie/db/schema";
+import { invoice, job, user } from "@rim-genie/db/schema";
 
-import { protectedProcedure, technicianProcedure } from "../index";
+import { jobBoardProcedure, protectedProcedure, technicianProcedure } from "../index";
 import * as JobService from "../services/job.service";
 import * as NotificationService from "../services/notification.service";
+import * as ProofService from "../services/proof.service";
 import * as EmailService from "../services/email.service";
 import * as SmsService from "../services/sms.service";
-import { runEffect } from "../services/run-effect";
+import { verifyJobTechnicianCode, verifyTechnicianCode } from "../services/technician-code.service";
+import { errorMessage, runEffect } from "../services/run-effect";
 import { createJobCompletedEmail } from "../emails/job-completed-email";
+import { formatCents } from "../lib/format-currency";
+import { proofFileSchema } from "./proofs";
+
+const technicianCode = z.string().regex(/^\d{4}$/);
+
+// The customer hears once per invoice, when its last job is done. A failed send never
+// undoes the completion: it is logged and returned so the technician sees why.
+function notifyCustomerInvoiceCompleted(invoiceId: string): Promise<string | null> {
+  const send = Effect.gen(function* () {
+    const inv = yield* Effect.tryPromise(() =>
+      db.query.invoice.findFirst({
+        where: eq(invoice.id, invoiceId),
+        with: {
+          customer: true,
+          quote: { columns: { quoteNumber: true } },
+          items: { orderBy: (i, { asc }) => [asc(i.sortOrder)] },
+        },
+      }),
+    );
+    const cust = inv?.customer;
+    if (!inv || !cust) return;
+
+    const pref = cust.communicationPreference ?? "sms";
+    const jobDesc = inv.items.map((item) => item.description ?? "Rim Job").join(", ");
+    const quoteRef = inv.quote
+      ? `QUO-${String(inv.quote.quoteNumber).padStart(4, "0")}`
+      : `INV-${String(inv.invoiceNumber).padStart(4, "0")}`;
+
+    if (pref === "email" && cust.email) {
+      yield* EmailService.send({
+        to: cust.email,
+        subject: "Your Rim Repair is Complete — Rim Genie",
+        react: createJobCompletedEmail({
+          customerName: cust.name,
+          jobDescription: jobDesc,
+          invoiceNumber: inv.invoiceNumber,
+        }),
+      });
+    } else if (pref === "sms" && cust.phone) {
+      yield* SmsService.send({
+        to: cust.phone,
+        text: `Hi ${cust.name}, your rim repair for quote ${quoteRef} (${formatCents(inv.total)}) is complete and ready for pickup! - Rim Genie`,
+      });
+    }
+  });
+
+  const fail = (message: string, ...details: unknown[]) =>
+    Effect.sync(() => {
+      console.error(`Invoice ${invoiceId} completion notice failed: ${message}`, ...details);
+      return message;
+    });
+
+  return Effect.runPromise(
+    send.pipe(
+      Effect.as(null),
+      Effect.catchTags({
+        EmailSendFailed: (error) => fail(errorMessage(error)),
+        SmsSendFailed: (error) => fail(errorMessage(error)),
+      }),
+      Effect.catchAll((error) => fail(errorMessage(error), error)),
+      Effect.catchAllDefect((defect) => fail("Something went wrong", defect)),
+    ),
+  );
+}
 
 export const technicianRouter = {
   technicians: {
@@ -26,7 +91,7 @@ export const technicianRouter = {
   },
 
   jobs: {
-    list: technicianProcedure
+    list: jobBoardProcedure
       .input(
         z.object({
           status: z.enum(["pending", "accepted", "in_progress", "completed"]).optional(),
@@ -52,7 +117,7 @@ export const technicianRouter = {
         });
       }),
 
-    get: technicianProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+    get: jobBoardProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       return db.query.job.findFirst({
         where: eq(job.id, input.id),
         with: {
@@ -66,16 +131,53 @@ export const technicianRouter = {
     }),
 
     accept: technicianProcedure
-      .input(z.object({ jobId: z.string(), technicianId: z.string().optional() }))
+      .input(
+        z.object({
+          jobId: z.string(),
+          technicianId: z.string().optional(),
+          code: technicianCode,
+        }),
+      )
       .handler(async ({ input, context }) => {
         const assigneeId = input.technicianId ?? context.session.user.id;
-        return runEffect(JobService.acceptJob(input.jobId, assigneeId));
+        return runEffect(
+          Effect.gen(function* () {
+            yield* verifyTechnicianCode(assigneeId, input.code);
+            return yield* JobService.acceptJob(input.jobId, assigneeId);
+          }),
+        );
       }),
 
     complete: technicianProcedure
-      .input(z.object({ jobId: z.string() }))
-      .handler(async ({ input }) => {
-        const result = await runEffect(JobService.completeJob(input.jobId));
+      .input(
+        z.object({
+          jobId: z.string(),
+          code: technicianCode,
+          notes: z.string().optional(),
+          afterProofs: z.array(proofFileSchema).default([]),
+        }),
+      )
+      .handler(async ({ input, context }) => {
+        const notes = input.notes?.trim();
+        const { job: completed, invoiceCompleted } = await runEffect(
+          Effect.gen(function* () {
+            yield* verifyJobTechnicianCode(input.jobId, input.code);
+            const invoiceId = yield* ProofService.invoiceIdOfJob(input.jobId);
+            if (input.afterProofs.length > 0) {
+              yield* ProofService.registerProofs({
+                invoiceId,
+                jobId: input.jobId,
+                stage: "after",
+                files: input.afterProofs,
+                uploadedById: context.session.user.id,
+              });
+            }
+            yield* ProofService.requireAfterProof(invoiceId);
+            const outcome = yield* JobService.completeJob(input.jobId);
+            if (!notes) return outcome;
+            return { ...outcome, job: yield* JobService.addNote(input.jobId, notes) };
+          }),
+        );
 
         // Fire-and-forget: notify admins about job completion
         try {
@@ -100,38 +202,15 @@ export const technicianRouter = {
               }),
             ).catch(() => {});
           }
-
-          const cust = completedJob?.invoice?.customer;
-          if (completedJob && cust) {
-            const pref = cust.communicationPreference ?? "sms";
-            const jobDesc = completedJob.invoiceItem?.description ?? "Rim Job";
-
-            if (pref === "email" && cust.email) {
-              Effect.runPromise(
-                EmailService.send({
-                  to: cust.email,
-                  subject: "Your Rim Repair is Complete — Rim Genie",
-                  react: createJobCompletedEmail({
-                    customerName: cust.name,
-                    jobDescription: jobDesc,
-                    invoiceNumber: completedJob.invoice!.invoiceNumber,
-                  }),
-                }),
-              ).catch(() => {});
-            } else if (pref === "sms" && cust.phone) {
-              Effect.runPromise(
-                SmsService.send({
-                  to: cust.phone,
-                  text: `Hi ${cust.name}, your rim repair (${jobDesc}) is complete and ready for pickup! - Rim Genie`,
-                }),
-              ).catch(() => {});
-            }
-          }
         } catch {
-          // Email failure must not block job completion
+          // Notification failure must not block job completion
         }
 
-        return result;
+        const customerNotificationError = invoiceCompleted
+          ? await notifyCustomerInvoiceCompleted(completed.invoiceId)
+          : null;
+
+        return { ...completed, customerNotificationError };
       }),
 
     setDueDate: technicianProcedure
@@ -148,36 +227,15 @@ export const technicianRouter = {
         );
       }),
 
-    addNote: technicianProcedure
-      .input(
-        z.object({
-          jobId: z.string(),
-          specialNotes: z.string(),
-        }),
-      )
-      .handler(async ({ input }) => {
-        return runEffect(JobService.addNote(input.jobId, input.specialNotes));
-      }),
-
     reverse: technicianProcedure
-      .input(z.object({ jobId: z.string(), reason: z.string() }))
+      .input(z.object({ jobId: z.string(), reason: z.string(), code: technicianCode }))
       .handler(async ({ input }) => {
-        return runEffect(JobService.reverseJob(input.jobId, input.reason));
-      }),
-
-    verifyPin: protectedProcedure
-      .input(z.object({ userId: z.string(), pin: z.string() }))
-      .handler(async ({ input }) => {
-        const found = await db.query.account.findFirst({
-          where: eq(account.userId, input.userId),
-        });
-
-        if (!found?.password) {
-          return { valid: false };
-        }
-
-        const valid = await verifyPassword({ hash: found.password, password: input.pin });
-        return { valid };
+        return runEffect(
+          Effect.gen(function* () {
+            yield* verifyJobTechnicianCode(input.jobId, input.code);
+            return yield* JobService.reverseJob(input.jobId, input.reason);
+          }),
+        );
       }),
   },
 };

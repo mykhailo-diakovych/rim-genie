@@ -100,8 +100,20 @@
       "isGeneric": false,
       "subTypes": [
         {
-          "key": "edge-back-edge-front-sprong-hole",
-          "label": "Edge Back/ Edge Front/ Sprong/ Hole"
+          "key": "build-up-edge-back",
+          "label": "Edge Back"
+        },
+        {
+          "key": "build-up-edge-front",
+          "label": "Edge Front"
+        },
+        {
+          "key": "build-up-sprong",
+          "label": "Sprong"
+        },
+        {
+          "key": "build-up-hole",
+          "label": "Hole"
         }
       ]
     },
@@ -410,7 +422,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 10,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 10,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 10,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 10,
       "unitCostCents": 85000
     },
@@ -606,7 +639,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 11,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 11,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 11,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 11,
       "unitCostCents": 85000
     },
@@ -802,7 +856,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 12,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 12,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 12,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 12,
       "unitCostCents": 85000
     },
@@ -998,7 +1073,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 13,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 13,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 13,
+      "unitCostCents": 85000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 13,
       "unitCostCents": 85000
     },
@@ -1194,7 +1290,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 14,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 14,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 14,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 14,
       "unitCostCents": 130000
     },
@@ -1390,7 +1507,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 15,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 15,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 15,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 15,
       "unitCostCents": 130000
     },
@@ -1586,7 +1724,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 16,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 16,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 16,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 16,
       "unitCostCents": 130000
     },
@@ -1782,7 +1941,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 17,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 17,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 17,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 17,
       "unitCostCents": 130000
     },
@@ -1978,7 +2158,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 18,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 18,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 18,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 18,
       "unitCostCents": 130000
     },
@@ -2174,7 +2375,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 19,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 19,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 19,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 19,
       "unitCostCents": 130000
     },
@@ -2370,7 +2592,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 20,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 20,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 20,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 20,
       "unitCostCents": 130000
     },
@@ -2566,7 +2809,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 21,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 21,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 21,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 21,
       "unitCostCents": 130000
     },
@@ -2762,7 +3026,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 22,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 22,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 22,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 22,
       "unitCostCents": 130000
     },
@@ -2958,7 +3243,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 23,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 23,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 23,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 23,
       "unitCostCents": 130000
     },
@@ -3154,7 +3460,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 24,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 24,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 24,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 24,
       "unitCostCents": 130000
     },
@@ -3350,7 +3677,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 25,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 25,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 25,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 25,
       "unitCostCents": 130000
     },
@@ -3546,7 +3894,28 @@
     {
       "category": "rim",
       "section": "rims",
-      "jobType": "edge-back-edge-front-sprong-hole",
+      "jobType": "build-up-edge-back",
+      "rimSize": 26,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-edge-front",
+      "rimSize": 26,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-sprong",
+      "rimSize": 26,
+      "unitCostCents": 130000
+    },
+    {
+      "category": "rim",
+      "section": "rims",
+      "jobType": "build-up-hole",
       "rimSize": 26,
       "unitCostCents": 130000
     },

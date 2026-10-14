@@ -9,12 +9,11 @@ import {
   quoteItem,
   termsSignature,
   invoice,
+  invoiceAuditEvent,
   loyaltyConfig,
   payment,
   job,
-  service,
-  servicePrice,
-  serviceTypeEnum,
+  jobType,
   serviceCategoryEnum,
   quoteVehicleTypeEnum,
   rimMaterialEnum,
@@ -22,7 +21,9 @@ import {
   powderCoatScopeEnum,
 } from "@rim-genie/db/schema";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
-import { and, asc, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { canFinalizeQuote } from "@rim-genie/db/quote-status";
+import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import {
   adminProcedure,
@@ -40,20 +41,76 @@ import {
   CustomerHasNoPhone,
   CustomerHasInvoices,
   CustomerHasJobs,
+  DisclaimerNotSigned,
+  PriceNotFound,
+  QuoteHasNoItems,
+  QuoteNotEditable,
   QuoteNotFound,
+  UnknownJobType,
 } from "../services/errors";
 import { runEffect } from "../services/run-effect";
-import { computeItemPrice } from "../services/pricing.service";
-import { recalcQuoteTotal } from "../services/quote.service";
+import {
+  computeItemPrice,
+  getPricingConfig,
+  lookupPrice,
+  lookupRimPrice,
+} from "../services/pricing.service";
+import { assertQuoteEditable, recalcQuoteTotal } from "../services/quote.service";
 import { getQuotePdf } from "../pdf/get-quote-pdf";
 import { createQuoteEmail } from "../emails/quote-email";
 
-async function quoteDiscountAmount(quoteId: string): Promise<number> {
-  const [row] = await db
-    .select({ discountAmount: quote.discountAmount })
-    .from(quote)
-    .where(eq(quote.id, quoteId));
-  return row?.discountAmount ?? 0;
+type ItemPriceParams = Parameters<typeof computeItemPrice>[0];
+
+// Catalog keys a line's job types are checked against: rim options, tire services and
+// brake services live in `job_type`; welding materials and powder coating do not.
+function catalogKeys(params: ItemPriceParams): string[] {
+  if (params.itemType === "rim") return params.jobTypes.map((jt) => jt.type);
+  if (params.itemType === "general") {
+    return params.jobTypes.map((jt) => (jt.unit ? jt.type : (jt.subType ?? jt.type)));
+  }
+  return [];
+}
+
+async function assertActiveJobTypes(keys: string[]) {
+  if (keys.length === 0) return;
+  const parent = alias(jobType, "parent");
+  const rows = await db
+    .select({ key: jobType.key })
+    .from(jobType)
+    .leftJoin(parent, eq(jobType.parentId, parent.id))
+    .where(
+      and(
+        inArray(jobType.key, keys),
+        eq(jobType.isActive, true),
+        or(isNull(jobType.parentId), eq(parent.isActive, true)),
+      ),
+    );
+  const active = new Set(rows.map((r) => r.key));
+  const missing = [...new Set(keys.filter((k) => !active.has(k)))];
+  if (missing.length > 0) {
+    await runEffect(Effect.fail(new UnknownJobType({ reason: missing.join(", ") })));
+  }
+}
+
+// A line with no catalog price would be saved at $0 and reach the cashier that way, so
+// it is rejected instead: the job is not done at that size (RIM-5 item 13).
+async function priceItemOrFail(params: ItemPriceParams): Promise<number> {
+  const { unitCost, unpriced } = await computeItemPrice(params);
+  if (unpriced.length === 0) return unitCost;
+
+  const rows = await db
+    .select({ key: jobType.key, label: jobType.label })
+    .from(jobType)
+    .where(inArray(jobType.key, unpriced));
+  const labelByKey = new Map(rows.map((r) => [r.key, r.label]));
+  const labels = [...new Set(unpriced.map((k) => labelByKey.get(k) ?? k))].join(", ");
+  const sized = params.itemType === "rim" || params.itemType === "powder-coating";
+  const hint = sized
+    ? ` for ${params.vehicleSize}" rims. Choose a different size`
+    : params.tireSize
+      ? ` for ${params.tireSize}" tires. Choose a different size or option`
+      : ". Choose a different option";
+  return runEffect(Effect.fail(new PriceNotFound({ reason: `${labels}${hint}` })));
 }
 
 // Touching any of these is a composition change, which retires a manual price.
@@ -87,18 +144,6 @@ const jobTypeEntrySchema = z.object({
 });
 
 export const floorRouter = {
-  services: {
-    list: protectedProcedure
-      .input(z.object({ type: z.enum(serviceTypeEnum.enumValues) }))
-      .handler(async ({ input }) => {
-        return db
-          .select()
-          .from(service)
-          .where(eq(service.type, input.type))
-          .orderBy(asc(service.name));
-      }),
-  },
-
   pricing: {
     lookup: protectedProcedure
       .input(
@@ -112,48 +157,21 @@ export const floorRouter = {
       )
       .handler(async ({ input }) => {
         const result: Record<string, { unitCost: number; found: boolean }> = {};
+        // Rim prices come back with the steel/truck modifiers applied, exactly as
+        // computeItemPrice saves them, so the sheet shows the price that will be stored.
+        const config = input.category === "rim" ? await getPricingConfig() : null;
 
         for (const jt of input.jobTypes) {
-          const conditions = [
-            eq(servicePrice.category, input.category),
-            eq(servicePrice.jobType, jt),
-          ];
-
-          if (input.vehicleType) {
-            conditions.push(
-              or(
-                isNull(servicePrice.vehicleType),
-                eq(servicePrice.vehicleType, input.vehicleType),
-              )!,
-            );
-          }
-          if (input.rimMaterial) {
-            conditions.push(
-              or(
-                isNull(servicePrice.rimMaterial),
-                eq(servicePrice.rimMaterial, input.rimMaterial),
-              )!,
-            );
-          }
-          if (input.size != null) {
-            conditions.push(
-              or(isNull(servicePrice.minSize), lte(servicePrice.minSize, input.size))!,
-            );
-            conditions.push(
-              or(isNull(servicePrice.maxSize), gte(servicePrice.maxSize, input.size))!,
-            );
-          }
-
-          const rows = await db
-            .select({ unitCost: servicePrice.unitCost })
-            .from(servicePrice)
-            .where(and(...conditions))
-            .limit(1);
-
-          result[jt] =
-            rows.length > 0
-              ? { unitCost: rows[0]!.unitCost, found: true }
-              : { unitCost: 0, found: false };
+          const params = {
+            jobType: jt,
+            vehicleType: input.vehicleType,
+            rimMaterial: input.rimMaterial,
+            size: input.size,
+          };
+          const unitCost = config
+            ? await lookupRimPrice(params, config)
+            : ((await lookupPrice({ ...params, category: input.category }))?.unitCost ?? null);
+          result[jt] = unitCost != null ? { unitCost, found: true } : { unitCost: 0, found: false };
         }
 
         return result;
@@ -198,7 +216,7 @@ export const floorRouter = {
         return rows[0]!;
       }),
 
-    list: requireRole("admin", "floorManager", "cashier")
+    list: requireRole("admin", "floorManager", "cashier", "manager")
       .input(
         z.object({ dateFrom: z.string().optional(), dateTo: z.string().optional() }).optional(),
       )
@@ -235,7 +253,7 @@ export const floorRouter = {
       }),
 
     getById: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
-      return db.query.customer.findFirst({
+      const row = await db.query.customer.findFirst({
         where: and(eq(customer.id, input.id), isNull(customer.deletedAt)),
         with: {
           quotes: {
@@ -248,7 +266,14 @@ export const floorRouter = {
             },
           },
           invoices: {
+            orderBy: (i, { desc }) => [desc(i.createdAt)],
             with: {
+              quote: { columns: { id: true }, with: { createdBy: { columns: { name: true } } } },
+              payments: { columns: { amount: true } },
+              pickup: {
+                columns: { pickedUpAt: true },
+                with: { pickedUpBy: { columns: { name: true } } },
+              },
               jobs: {
                 with: {
                   invoiceItem: true,
@@ -259,6 +284,21 @@ export const floorRouter = {
           },
         },
       });
+      if (!row) return undefined;
+
+      return {
+        ...row,
+        invoices: row.invoices.map(({ quote, payments, ...inv }) => {
+          const paid = payments.reduce((sum, p) => sum + p.amount, 0);
+          return {
+            ...inv,
+            paid,
+            balance: inv.total - paid,
+            // Same rule as the invoice PDF: the quote's author, not whoever converted it.
+            preparedByName: quote.createdBy.name,
+          };
+        }),
+      };
     }),
 
     update: floorManagerProcedure
@@ -408,7 +448,7 @@ export const floorRouter = {
       }),
 
     get: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
-      return db.query.quote.findFirst({
+      const found = await db.query.quote.findFirst({
         where: eq(quote.id, input.id),
         with: {
           customer: true,
@@ -418,9 +458,20 @@ export const floorRouter = {
           items: {
             orderBy: (i, { asc }) => [asc(i.sortOrder)],
           },
-          invoice: true,
+          invoice: { with: { payments: { columns: { amount: true } } } },
         },
       });
+      if (!found) return found;
+
+      // The floor needs the amount already collected to keep a modified quote above it.
+      const { invoice: inv, ...rest } = found;
+      if (!inv) return { ...rest, invoice: null, amountPaid: 0 };
+      const { payments, ...invoiceRow } = inv;
+      return {
+        ...rest,
+        invoice: invoiceRow,
+        amountPaid: payments.reduce((s, p) => s + p.amount, 0),
+      };
     }),
 
     create: protectedProcedure
@@ -491,6 +542,7 @@ export const floorRouter = {
       )
       .handler(async ({ input, context }) => {
         const { id, discountPercent, discountType, discountFixedCents, ...fields } = input;
+        await assertQuoteEditable(id);
         const isAdmin = context.session.user.role === "admin";
         const touchesDiscount =
           discountPercent !== undefined ||
@@ -532,15 +584,6 @@ export const floorRouter = {
           );
         }
 
-        const itemCount = await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(quoteItem)
-          .where(eq(quoteItem.quoteId, id));
-
-        if (itemCount[0] && itemCount[0].count > 0) {
-          await runEffect(InvoiceService.syncInvoiceFromQuote(id, context.session.user.id));
-        }
-
         return rows[0]!;
       }),
 
@@ -580,11 +623,23 @@ export const floorRouter = {
           unitCost: z.number().int().min(0).default(0),
           inches: z.number().int().min(1).optional(),
           tireSize: z.number().int().min(1).optional(),
-          jobTypes: z.array(jobTypeEntrySchema).default([]),
+          jobTypes: z.array(jobTypeEntrySchema).min(1),
           description: z.string().optional(),
         }),
       )
       .handler(async ({ input }) => {
+        await assertQuoteEditable(input.quoteId);
+        const priceParams = {
+          itemType: input.itemType,
+          jobTypes: input.jobTypes,
+          vehicleType: input.vehicleType,
+          rimMaterial: input.rimMaterial,
+          vehicleSize: input.vehicleSize,
+          tireSize: input.tireSize,
+        };
+        await assertActiveJobTypes(catalogKeys(priceParams));
+        const unitCost = await priceItemOrFail(priceParams);
+
         const existing = await db
           .select({ sortOrder: quoteItem.sortOrder })
           .from(quoteItem)
@@ -596,16 +651,6 @@ export const floorRouter = {
 
         // inches is welding-only; dropped for other item types to avoid a silent price multiply.
         const inches = input.itemType === "welding" ? (input.inches ?? null) : null;
-
-        const computedPrice = await computeItemPrice({
-          itemType: input.itemType,
-          jobTypes: input.jobTypes,
-          vehicleType: input.vehicleType,
-          rimMaterial: input.rimMaterial,
-          vehicleSize: input.vehicleSize,
-          tireSize: input.tireSize,
-        });
-        const unitCost = computedPrice > 0 ? computedPrice : input.unitCost;
 
         const rows = await db
           .insert(quoteItem)
@@ -659,6 +704,7 @@ export const floorRouter = {
         if (!current) {
           throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
         }
+        await assertQuoteEditable(current.quoteId);
 
         const mergedItemType = fields.itemType ?? current.itemType;
         const mergedJobTypes = fields.jobTypes ?? current.jobTypes;
@@ -673,30 +719,39 @@ export const floorRouter = {
         const mergedTireSize =
           fields.tireSize !== undefined ? fields.tireSize : (current.tireSize ?? null);
 
-        const computedPrice = await computeItemPrice({
+        const priceParams = {
           itemType: mergedItemType,
-          jobTypes: mergedJobTypes as { type: string; subType?: string; input?: string }[],
+          jobTypes: mergedJobTypes,
           vehicleType: mergedVehicleType,
           rimMaterial: mergedRimMaterial,
           vehicleSize: mergedVehicleSize,
           tireSize: mergedTireSize,
-        });
+        };
 
-        // A composition change (see PRICING_INPUT_FIELDS) retires a manual price.
+        // A composition change (see PRICING_INPUT_FIELDS) retires a manual price and must
+        // land on a priced combination; other edits leave a legacy line's price alone.
         const compositionChanged = PRICING_INPUT_FIELDS.some(
           (field) => fields[field] !== undefined,
         );
         const keepOverride = current.priceOverridden && !compositionChanged;
 
+        let computedPrice: number | null = null;
+        if (compositionChanged) {
+          if (fields.jobTypes) await assertActiveJobTypes(catalogKeys(priceParams));
+          computedPrice = await priceItemOrFail(priceParams);
+        } else {
+          const computed = await computeItemPrice(priceParams);
+          if (computed.unpriced.length === 0) computedPrice = computed.unitCost;
+        }
+
         const updateFields = { ...fields } as Partial<typeof quoteItem.$inferInsert>;
         updateFields.inches = mergedInches;
         updateFields.tireSize = mergedTireSize;
+        delete updateFields.unitCost;
 
-        if (keepOverride) {
-          delete updateFields.unitCost;
-        } else {
+        if (!keepOverride) {
           updateFields.priceOverridden = false;
-          if (computedPrice > 0) {
+          if (computedPrice != null) {
             updateFields.unitCost = computedPrice;
           }
         }
@@ -707,23 +762,9 @@ export const floorRouter = {
           .where(eq(quoteItem.id, id))
           .returning();
 
-        const prevDiscount = await quoteDiscountAmount(current.quoteId);
         await recalcQuoteTotal(current.quoteId);
 
-        const updated = rows[0]!;
-        if (
-          updated.unitCost !== current.unitCost ||
-          updated.priceOverridden !== current.priceOverridden
-        ) {
-          await InvoiceService.mirrorQuoteItemPrice(
-            updated.id,
-            updated.unitCost,
-            updated.priceOverridden,
-            prevDiscount,
-          );
-        }
-
-        return updated;
+        return rows[0]!;
       }),
 
     // Hand-typed whole-line total in cents; gated server-side, not just in the UI.
@@ -745,6 +786,7 @@ export const floorRouter = {
         if (!current) {
           throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
         }
+        await assertQuoteEditable(current.quoteId);
 
         const quantity = current.quantity > 0 ? current.quantity : 1;
         const unitCost = Math.round(input.totalCents / quantity);
@@ -755,9 +797,7 @@ export const floorRouter = {
           .where(eq(quoteItem.id, input.itemId))
           .returning();
 
-        const prevDiscount = await quoteDiscountAmount(current.quoteId);
         await recalcQuoteTotal(current.quoteId);
-        await InvoiceService.mirrorQuoteItemPrice(input.itemId, unitCost, true, prevDiscount);
 
         return rows[0]!;
       }),
@@ -775,10 +815,11 @@ export const floorRouter = {
         if (!current) {
           throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
         }
+        await assertQuoteEditable(current.quoteId);
 
-        const computedPrice = await computeItemPrice({
+        const computedPrice = await priceItemOrFail({
           itemType: current.itemType,
-          jobTypes: current.jobTypes as { type: string; subType?: string; input?: string }[],
+          jobTypes: current.jobTypes,
           vehicleType: current.vehicleType,
           rimMaterial: current.rimMaterial,
           vehicleSize: current.vehicleSize,
@@ -787,25 +828,13 @@ export const floorRouter = {
 
         const rows = await db
           .update(quoteItem)
-          .set({
-            priceOverridden: false,
-            ...(computedPrice > 0 ? { unitCost: computedPrice } : {}),
-          })
+          .set({ priceOverridden: false, unitCost: computedPrice })
           .where(eq(quoteItem.id, input.itemId))
           .returning();
 
-        const prevDiscount = await quoteDiscountAmount(current.quoteId);
         await recalcQuoteTotal(current.quoteId);
 
-        const updated = rows[0]!;
-        await InvoiceService.mirrorQuoteItemPrice(
-          updated.id,
-          updated.unitCost,
-          false,
-          prevDiscount,
-        );
-
-        return updated;
+        return rows[0]!;
       }),
 
     removeItem: protectedProcedure
@@ -815,6 +844,8 @@ export const floorRouter = {
 
         const item = existing[0];
         if (!item) return { success: true as const };
+        await assertQuoteEditable(item.quoteId);
+        await runEffect(InvoiceService.assertQuoteItemRemovable(item.id));
 
         await db.delete(quoteItem).where(eq(quoteItem.id, input.id));
         await recalcQuoteTotal(item.quoteId);
@@ -827,18 +858,23 @@ export const floorRouter = {
     setItemExcluded: protectedProcedure
       .input(z.object({ id: z.string(), excluded: z.boolean() }))
       .handler(async ({ input }) => {
+        const [existing] = await db
+          .select({ quoteId: quoteItem.quoteId })
+          .from(quoteItem)
+          .where(eq(quoteItem.id, input.id));
+        if (!existing) throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
+        await assertQuoteEditable(existing.quoteId);
+        if (input.excluded) await runEffect(InvoiceService.assertQuoteItemRemovable(input.id));
+
         const rows = await db
           .update(quoteItem)
           .set({ isExcluded: input.excluded })
           .where(eq(quoteItem.id, input.id))
           .returning();
 
-        const item = rows[0];
-        if (!item) throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
+        await recalcQuoteTotal(existing.quoteId);
 
-        await recalcQuoteTotal(item.quoteId);
-
-        return item;
+        return rows[0]!;
       }),
 
     send: floorManagerProcedure
@@ -905,18 +941,58 @@ export const floorRouter = {
         );
       }),
 
+    // The disclaimer is the final step: a quote cannot be finalized until it is signed, and the
+    // signature is captured once per quote, so later edits never ask for it again (RIM-5 item 3).
+    finalize: floorManagerProcedure
+      .input(z.object({ quoteId: z.string() }))
+      .handler(async ({ input, context }) => {
+        const found = await db.query.quote.findFirst({
+          where: eq(quote.id, input.quoteId),
+          columns: { status: true },
+          with: {
+            items: { columns: { id: true }, where: (i, { eq }) => eq(i.isExcluded, false) },
+            termsSignature: { columns: { id: true } },
+            invoice: { columns: { id: true } },
+          },
+        });
+        if (!found) return runEffect(Effect.fail(new QuoteNotFound({ id: input.quoteId })));
+        if (!canFinalizeQuote(found.status)) {
+          return runEffect(Effect.fail(new QuoteNotEditable({ quoteId: input.quoteId })));
+        }
+        if (found.items.length === 0) {
+          return runEffect(Effect.fail(new QuoteHasNoItems({ quoteId: input.quoteId })));
+        }
+        if (!found.termsSignature) {
+          return runEffect(Effect.fail(new DisclaimerNotSigned({ quoteId: input.quoteId })));
+        }
+        await runEffect(InvoiceService.assertQuoteTotalCoversPaid(input.quoteId));
+
+        const rows = await db
+          .update(quote)
+          .set({
+            status: "finalized",
+            finalizedAt: new Date(),
+            finalizedById: context.session.user.id,
+          })
+          .where(eq(quote.id, input.quoteId))
+          .returning();
+
+        if (found.invoice) {
+          await db.insert(invoiceAuditEvent).values({
+            invoiceId: found.invoice.id,
+            type: "refinalized",
+            actorId: context.session.user.id,
+            fromStatus: found.status,
+            toStatus: "finalized",
+          });
+        }
+        return rows[0]!;
+      }),
+
     sendToCashier: floorManagerProcedure
       .input(z.object({ quoteId: z.string() }))
       .handler(async ({ input, context }) => {
-        const sig = await db.query.termsSignature.findFirst({
-          where: eq(termsSignature.quoteId, input.quoteId),
-        });
-        if (!sig) {
-          throw new ORPCError("PRECONDITION_FAILED", {
-            message: "Disclaimer must be signed before sending to cashier",
-          });
-        }
-        return runEffect(InvoiceService.createFromQuote(input.quoteId, context.session.user.id));
+        return runEffect(InvoiceService.sendQuoteToCashier(input.quoteId, context.session.user.id));
       }),
   },
 

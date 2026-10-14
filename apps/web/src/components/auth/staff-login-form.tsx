@@ -2,12 +2,13 @@ import { useState } from "react";
 
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { MapPin, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { safeRedirect } from "@/lib/safe-redirect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ import { orpc } from "@/utils/orpc";
 
 export function StaffLoginForm() {
   const navigate = useNavigate();
+  const { redirect } = useSearch({ strict: false });
   const [pin, setPin] = useState("");
 
   const { data: locations } = useQuery(orpc.locations.queryOptions({}));
@@ -30,7 +32,8 @@ export function StaffLoginForm() {
         {
           headers: { "x-rim-genie-location": value.locationId },
           onSuccess: () => {
-            navigate({ to: "/dashboard" });
+            const target = safeRedirect(redirect);
+            void (target ? navigate({ href: target }) : navigate({ to: "/dashboard" }));
             toast.success(m.toast_signed_in());
           },
           onError: (error) => {

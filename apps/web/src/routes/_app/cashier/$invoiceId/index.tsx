@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Building2,
-  ChevronDown,
   ChevronLeft,
   CircleDollarSign,
+  FilePenLine,
   Info,
   MapPin,
   Phone,
@@ -17,12 +17,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
+import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
 
+import { ModificationHistory } from "@/components/cashier/modification-history";
+import { RequestModificationDialog } from "@/components/cashier/request-modification-dialog";
 import { Button } from "@/components/ui/button";
-import { LinePriceCell } from "@/components/pricing/line-price-cell";
+import {
+  RowActionsMenu,
+  RowActionsMenuItem,
+  RowActionsMenuSeparator,
+} from "@/components/ui/row-actions-menu";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { formatCents } from "@/lib/format-currency";
-import { useCanAdjustPrices } from "@/lib/use-can-adjust-prices";
 import {
   Dialog,
   DialogClose,
@@ -31,9 +37,11 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { validateInvoiceOrigin } from "@/lib/invoice-origin";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/cashier/$invoiceId/")({
+  validateSearch: validateInvoiceOrigin,
   head: () => ({
     meta: [{ title: "Rim-Genie | Invoice" }],
   }),
@@ -79,88 +87,41 @@ function MoreDropdown({
   onDelete: () => void;
   isDeleting: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
   const sendReceipt = useMutation({
     ...orpc.cashier.invoices.sendReceipt.mutationOptions(),
     onSuccess: () => toast.success("Receipt sent successfully"),
     onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
   });
 
-  useEffect(() => {
-    if (!open) return;
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [open]);
-
   return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-9 items-center justify-center gap-2 rounded-md border border-field-line bg-white px-3 font-rubik text-xs text-body transition-colors hover:bg-page"
+    <RowActionsMenu label="More actions" className="size-9.5">
+      <RowActionsMenuItem onClick={onPrint}>
+        <Printer className="text-blue" />
+        Print
+      </RowActionsMenuItem>
+      <RowActionsMenuItem
+        disabled={(!customerEmail && !customerPhone) || sendReceipt.isPending}
+        onClick={() => sendReceipt.mutate({ invoiceId })}
       >
-        More
-        <ChevronDown className="size-4 text-ghost" />
-      </button>
-
-      {open && (
-        <div className="absolute top-full right-0 z-10 mt-1 w-44 overflow-clip rounded-md bg-white pb-1 shadow-[0px_0px_32px_0px_rgba(10,13,18,0.1)]">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onPrint();
-            }}
-            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page"
-          >
-            <Printer className="size-4 text-blue" />
-            Print
-          </button>
-          <button
-            type="button"
-            disabled={(!customerEmail && !customerPhone) || sendReceipt.isPending}
-            onClick={() => {
-              setOpen(false);
-              sendReceipt.mutate({ invoiceId });
-            }}
-            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-body transition-colors hover:bg-page disabled:opacity-50"
-          >
-            <Send className="size-4 text-blue" />
-            Send (Email/SMS)
-          </button>
-          <div className="h-px bg-field-line" />
-          <button
-            type="button"
-            disabled={isDeleting}
-            onClick={() => {
-              setOpen(false);
-              onDelete();
-            }}
-            className="flex w-full items-center gap-1.5 px-2 py-2.5 font-rubik text-xs text-destructive transition-colors hover:bg-page disabled:opacity-50"
-          >
-            <Trash2 className="size-4" />
-            Delete
-          </button>
-        </div>
-      )}
-    </div>
+        <Send className="text-blue" />
+        Send (Email/SMS)
+      </RowActionsMenuItem>
+      <RowActionsMenuSeparator />
+      <RowActionsMenuItem destructive disabled={isDeleting} onClick={onDelete}>
+        <Trash2 />
+        Delete
+      </RowActionsMenuItem>
+    </RowActionsMenu>
   );
 }
 
 function InvoiceDetailPage() {
   const { invoiceId } = Route.useParams();
+  const { from } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const canAdjustPrices = useCanAdjustPrices();
+  const [showRequestModification, setShowRequestModification] = useState(false);
 
   const invoiceQuery = useQuery(
     orpc.cashier.invoices.get.queryOptions({ input: { id: invoiceId } }),
@@ -178,30 +139,6 @@ function InvoiceDetailPage() {
       queryKey: orpc.cashier.invoices.list.key(),
     });
   };
-
-  // Edits go through the floor procedure so quote and invoice stay in sync.
-  const invalidatePricing = async () => {
-    await invalidateInvoice();
-    await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
-  };
-
-  const setItemPrice = useMutation({
-    ...orpc.floor.quotes.setItemPrice.mutationOptions(),
-    onSuccess: async () => {
-      await invalidatePricing();
-      toast.success("Price updated");
-    },
-    onError: (err: Error) => toast.error(`Failed to update price: ${err.message}`),
-  });
-
-  const clearItemPrice = useMutation({
-    ...orpc.floor.quotes.clearItemPrice.mutationOptions(),
-    onSuccess: async () => {
-      await invalidatePricing();
-      toast.success("Generated price restored");
-    },
-    onError: (err: Error) => toast.error(`Failed to restore price: ${err.message}`),
-  });
 
   const deleteInvoice = useMutation({
     ...orpc.cashier.invoices.delete.mutationOptions(),
@@ -225,7 +162,12 @@ function InvoiceDetailPage() {
     onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
   });
 
-  const canPay = inv?.status !== "paid";
+  const { data: pendingModification } = useQuery(
+    orpc.invoiceModification.pendingForInvoice.queryOptions({ input: { invoiceId } }),
+  );
+  const inCashierQueue = inv?.quote?.status === SENT_TO_CASHIER_STATUS;
+
+  const canPay = inv?.status !== "paid" && inCashierQueue;
   const hasJobs = (inv?.jobs?.length ?? 0) > 0;
 
   const jobStatusCounts = inv?.jobs?.reduce(
@@ -239,17 +181,40 @@ function InvoiceDetailPage() {
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <StickyActionBar className="print:hidden">
-        <Button variant="outline" nativeButton={false} render={<Link to="/cashier" />}>
-          <ChevronLeft />
-          Back to list
-        </Button>
+        {from === "customer" && inv?.customer ? (
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link to="/customers/$customerId" params={{ customerId: inv.customer.id }} />}
+          >
+            <ChevronLeft />
+            Back to customer
+          </Button>
+        ) : (
+          <Button variant="outline" nativeButton={false} render={<Link to="/cashier" />}>
+            <ChevronLeft />
+            Back to list
+          </Button>
+        )}
 
         <div className="flex flex-1 items-center justify-end gap-2">
+          {inCashierQueue && (
+            <Button
+              variant="outline"
+              onClick={() => setShowRequestModification(true)}
+              disabled={!!pendingModification}
+            >
+              <FilePenLine />
+              Request Modification
+            </Button>
+          )}
           <Button
             color="success"
             disabled={!canPay}
             nativeButton={false}
-            render={<Link to="/cashier/$invoiceId/checkout" params={{ invoiceId }} />}
+            render={
+              <Link to="/cashier/$invoiceId/checkout" params={{ invoiceId }} search={{ from }} />
+            }
           >
             <CircleDollarSign />
             Pay
@@ -272,6 +237,17 @@ function InvoiceDetailPage() {
           />
         </div>
       </StickyActionBar>
+
+      {pendingModification && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-amber-100 px-3 py-2 font-rubik text-xs text-amber-700 print:hidden">
+          <span className="font-medium">Modification request pending</span>
+          <span>
+            Awaiting {pendingModification.assignedAdmin?.name ?? "admin"} · requested by{" "}
+            {pendingModification.requestedBy?.name ?? "cashier"} on{" "}
+            {formatDate(pendingModification.createdAt)}
+          </span>
+        </div>
+      )}
 
       {hasJobs && jobStatusCounts && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-page px-3 py-2 font-rubik text-xs text-body print:hidden">
@@ -424,22 +400,7 @@ function InvoiceDetailPage() {
                       {formatCents(item.unitCost)}
                     </td>
                     <td className="border-r border-l border-field-line px-2 py-2">
-                      <LinePriceCell
-                        totalCents={lineTotalCents(item)}
-                        priceOverridden={item.priceOverridden}
-                        // Read-only for older invoices with no quote-item link.
-                        canEdit={canAdjustPrices && !!item.quoteItemId}
-                        isSaving={
-                          (setItemPrice.isPending &&
-                            setItemPrice.variables?.itemId === item.quoteItemId) ||
-                          (clearItemPrice.isPending &&
-                            clearItemPrice.variables?.itemId === item.quoteItemId)
-                        }
-                        onSave={(totalCents) =>
-                          setItemPrice.mutate({ itemId: item.quoteItemId!, totalCents })
-                        }
-                        onReset={() => clearItemPrice.mutate({ itemId: item.quoteItemId! })}
-                      />
+                      <span className="text-sm text-body">{formatCents(lineTotalCents(item))}</span>
                     </td>
                   </tr>
                 ))
@@ -609,6 +570,8 @@ function InvoiceDetailPage() {
         </div>
       )}
 
+      <ModificationHistory invoiceId={invoiceId} />
+
       <div className="flex items-center gap-3 rounded-md bg-[#ebf5ff] px-3 py-3 print:border print:border-field-line print:bg-transparent">
         <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#cbe5fc] print:bg-transparent">
           <Info className="size-3 text-blue" />
@@ -618,6 +581,20 @@ function InvoiceDetailPage() {
           <strong>$500 daily</strong>
         </p>
       </div>
+
+      {inv && (
+        <RequestModificationDialog
+          open={showRequestModification}
+          onOpenChange={setShowRequestModification}
+          invoice={{
+            id: inv.id,
+            invoiceNumber: inv.invoiceNumber,
+            customerName: inv.customer?.name ?? "",
+            total: inv.total,
+            paid: totalPaid,
+          }}
+        />
+      )}
 
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>

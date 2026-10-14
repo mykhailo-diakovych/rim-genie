@@ -23,7 +23,6 @@ interface ReverseJobDialogProps {
   customer: string;
   jobId: string;
   jobIds: string[];
-  technicianId: string;
   triggerClassName: string;
   triggerContent: React.ReactNode;
 }
@@ -32,7 +31,6 @@ export function ReverseJobDialog({
   customer,
   jobId,
   jobIds,
-  technicianId,
   triggerClassName,
   triggerContent,
 }: ReverseJobDialogProps) {
@@ -46,14 +44,8 @@ export function ReverseJobDialog({
       if (!reason.trim()) throw new Error("Please enter a reversal reason");
       if (pin.length !== 4) throw new Error("Please enter a complete 4-digit code");
 
-      const { valid } = await client.technician.jobs.verifyPin({
-        userId: technicianId,
-        pin,
-      });
-      if (!valid) throw new Error("Invalid technician code");
-
       for (const id of jobIds) {
-        await client.technician.jobs.reverse({ jobId: id, reason: reason.trim() });
+        await client.technician.jobs.reverse({ jobId: id, reason: reason.trim(), code: pin });
       }
     },
     onSuccess: async () => {

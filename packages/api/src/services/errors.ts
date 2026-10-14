@@ -50,9 +50,21 @@ export class JobCannotBeReversed extends Data.TaggedError("JobCannotBeReversed")
   jobId: string;
 }> {}
 
-export class JobHasOutstandingBalance extends Data.TaggedError("JobHasOutstandingBalance")<{
-  jobId: string;
+export class InvoiceHasOutstandingBalance extends Data.TaggedError("InvoiceHasOutstandingBalance")<{
+  invoiceId: string;
   balance: number;
+}> {}
+
+export class InvoiceAlreadyPickedUp extends Data.TaggedError("InvoiceAlreadyPickedUp")<{
+  invoiceId: string;
+}> {}
+
+export class InvoiceJobsNotReady extends Data.TaggedError("InvoiceJobsNotReady")<{
+  invoiceId: string;
+}> {}
+
+export class PickupSignatureRequired extends Data.TaggedError("PickupSignatureRequired")<{
+  invoiceId: string;
 }> {}
 
 export class EODAlreadyExists extends Data.TaggedError("EODAlreadyExists")<{
@@ -109,4 +121,88 @@ export class DiscountRequestAlreadyPending extends Data.TaggedError(
   "DiscountRequestAlreadyPending",
 )<{
   targetId: string;
+}> {}
+
+export class InvalidTechnicianCode extends Data.TaggedError("InvalidTechnicianCode")<{
+  userId: string;
+}> {}
+
+export class TechnicianCodeLocked extends Data.TaggedError("TechnicianCodeLocked")<{
+  userId: string;
+}> {}
+
+export class UnknownJobType extends Data.TaggedError("UnknownJobType")<{
+  reason: string;
+}> {}
+
+export class PriceNotFound extends Data.TaggedError("PriceNotFound")<{
+  reason: string;
+}> {}
+
+export class QuoteNotEditable extends Data.TaggedError("QuoteNotEditable")<{
+  quoteId: string;
+}> {}
+
+export class QuoteNotFinalized extends Data.TaggedError("QuoteNotFinalized")<{
+  quoteId: string;
+}> {}
+
+export class DisclaimerNotSigned extends Data.TaggedError("DisclaimerNotSigned")<{
+  quoteId: string;
+}> {}
+
+export class InvoiceTotalBelowPaid extends Data.TaggedError("InvoiceTotalBelowPaid")<{
+  invoiceId: string;
+  paid: number;
+}> {}
+
+export class ProofUploadNotAllowed extends Data.TaggedError("ProofUploadNotAllowed")<{
+  invoiceId: string;
+}> {}
+
+export class ProofFileInvalid extends Data.TaggedError("ProofFileInvalid")<{
+  reason: string;
+}> {}
+
+export class AfterProofRequired extends Data.TaggedError("AfterProofRequired")<{
+  invoiceId: string;
+}> {}
+
+export class ProofNotFound extends Data.TaggedError("ProofNotFound")<{
+  id: string;
+}> {}
+
+export class InvoiceLinesHaveStartedJobs extends Data.TaggedError("InvoiceLinesHaveStartedJobs")<{
+  invoiceId: string;
+  lines: string[];
+}> {}
+
+export class InvoiceNotInCashierQueue extends Data.TaggedError("InvoiceNotInCashierQueue")<{
+  invoiceId: string;
+}> {}
+
+export class InvoiceModificationAlreadyPending extends Data.TaggedError(
+  "InvoiceModificationAlreadyPending",
+)<{
+  invoiceId: string;
+}> {}
+
+export class InvoiceModificationNotFound extends Data.TaggedError("InvoiceModificationNotFound")<{
+  id: string;
+}> {}
+
+export class InvoiceModificationAlreadyResolved extends Data.TaggedError(
+  "InvoiceModificationAlreadyResolved",
+)<{
+  id: string;
+}> {}
+
+export class InvoiceModificationNotAssigned extends Data.TaggedError(
+  "InvoiceModificationNotAssigned",
+)<{
+  id: string;
+}> {}
+
+export class InvalidModificationApprover extends Data.TaggedError("InvalidModificationApprover")<{
+  userId: string;
 }> {}

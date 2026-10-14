@@ -15,11 +15,13 @@ async function seed() {
   }
 
   const hashedPassword = await hashPassword("admin1234");
+  const technicianPin = await hashPassword("1234");
 
   const adminId = crypto.randomUUID();
   const cashierId = crypto.randomUUID();
   const technicianId = crypto.randomUUID();
   const floorManagerId = crypto.randomUUID();
+  const managerId = crypto.randomUUID();
 
   await db.insert(user).values([
     {
@@ -58,6 +60,15 @@ async function seed() {
       role: "floorManager",
       emailVerified: true,
     },
+    {
+      id: managerId,
+      name: "Mark Manager",
+      email: "manager@rimgenie.com",
+      username: "manager",
+      displayUsername: "manager",
+      role: "manager",
+      emailVerified: true,
+    },
   ]);
 
   await db.insert(account).values([
@@ -80,7 +91,7 @@ async function seed() {
       userId: technicianId,
       accountId: technicianId,
       providerId: "credential",
-      password: hashedPassword,
+      password: technicianPin,
     },
     {
       id: crypto.randomUUID(),
@@ -89,9 +100,16 @@ async function seed() {
       providerId: "credential",
       password: hashedPassword,
     },
+    {
+      id: crypto.randomUUID(),
+      userId: managerId,
+      accountId: managerId,
+      providerId: "credential",
+      password: hashedPassword,
+    },
   ]);
 
-  console.log("Seeded 4 users (all password: admin1234)");
+  console.log("Seeded 5 users (password: admin1234, technician PIN: 1234)");
 
   const [vipCustomer] = await db
     .insert(customer)
@@ -257,11 +275,12 @@ async function seed() {
 
   console.log("Seeded 2 jobs (1 accepted, 1 pending)");
   console.log("\nSeed complete!");
-  console.log("Login credentials (all users): password = admin1234");
+  console.log("Login credentials: password = admin1234 (technician: PIN = 1234)");
   console.log("  admin    → admin@rimgenie.com");
   console.log("  cashier  → cashier@rimgenie.com");
-  console.log("  tech     → tech@rimgenie.com");
+  console.log("  tech     → tech@rimgenie.com (Staff tab: Employee ID tech, PIN 1234)");
   console.log("  floor    → floor@rimgenie.com");
+  console.log("  manager  → manager@rimgenie.com");
 }
 
 seed()

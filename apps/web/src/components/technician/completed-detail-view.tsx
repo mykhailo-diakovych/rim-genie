@@ -2,13 +2,16 @@ import { ChevronLeft, Undo2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
+import { useCanWorkJobs } from "@/lib/use-can-work-jobs";
 
+import { JobProofsSection, jobProofLabel } from "./job-proofs";
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { type JobGroup } from "./types";
 import { formatHours } from "./use-jobs";
 
 export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
   const hoursLabel = formatHours(group.hoursSpent);
+  const canWorkJobs = useCanWorkJobs();
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <StickyActionBar>
@@ -34,19 +37,20 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
             </div>
           )}
         </div>
-        <ReverseJobDialog
-          customer={group.customer}
-          jobId={String(group.invoiceNumber)}
-          jobIds={group.jobs.map((j) => j.id)}
-          technicianId={group.jobs[0]!.technician!.id}
-          triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
-          triggerContent={
-            <>
-              <Undo2 className="size-4" />
-              Reverse all
-            </>
-          }
-        />
+        {canWorkJobs && (
+          <ReverseJobDialog
+            customer={group.customer}
+            jobId={String(group.invoiceNumber)}
+            jobIds={group.jobs.map((j) => j.id)}
+            triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
+            triggerContent={
+              <>
+                <Undo2 className="size-4" />
+                Reverse all
+              </>
+            }
+          />
+        )}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-card-line bg-white shadow-card">
@@ -88,6 +92,14 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
                   {job.technician.name}
                 </span>
               )}
+              <div className="mt-2">
+                <JobProofsSection
+                  invoiceId={group.invoiceId}
+                  customer={group.customer}
+                  invoiceNumber={group.invoiceNumber}
+                  jobLabel={jobProofLabel(job.invoiceItem)}
+                />
+              </div>
             </div>
 
             <div className="hidden items-start pt-0.5 sm:flex">
@@ -97,12 +109,11 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
             </div>
 
             <div className="flex items-start pt-0.5">
-              {job.technician && (
+              {canWorkJobs && job.technician && (
                 <ReverseJobDialog
                   customer={group.customer}
                   jobId={String(group.invoiceNumber)}
                   jobIds={[job.id]}
-                  technicianId={job.technician.id}
                   triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
                   triggerContent={
                     <>

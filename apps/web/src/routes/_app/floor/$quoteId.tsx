@@ -7,14 +7,12 @@ import {
   CornerDownLeft,
   CornerDownRight,
   FileCheck,
-  FileSignature,
   Mail,
   MapPin,
   Pencil,
   Phone,
   Plus,
   Printer,
-  Save,
   Send,
   SendHorizonal,
   Trash2,
@@ -26,8 +24,10 @@ import { toast } from "sonner";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
 import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
 import { DISCOUNT_CAP_PERCENT, exceedsDiscountCap } from "@rim-genie/db/discount";
+import { canFinalizeQuote, isQuoteEditable } from "@rim-genie/db/quote-status";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogClose,
@@ -37,7 +37,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
 import { SignatureModal } from "@/components/terms/signature-modal";
 import { LinePriceCell } from "@/components/pricing/line-price-cell";
@@ -52,6 +51,7 @@ import {
 import { client, orpc } from "@/utils/orpc";
 import { QuoteGeneratorSheet } from "@/components/floor/quote-generator-sheet";
 import { SendQuoteDialog } from "@/components/floor/send-quote-dialog";
+import { SignedDisclaimerNotice } from "@/components/terms/signed-disclaimer-notice";
 import type {
   QuoteGeneratorSheetData,
   QuoteGeneratorEditItem,
@@ -63,6 +63,12 @@ import type {
 // navigable comes out of the query string.
 const QUOTE_ORIGINS = ["floor", "customer"] as const;
 type QuoteOrigin = (typeof QUOTE_ORIGINS)[number];
+
+type DiscountPatch = {
+  discountType: "percent" | "fixed";
+  discountPercent: number;
+  discountFixedCents: number;
+};
 
 export const Route = createFileRoute("/_app/floor/$quoteId")({
   // Optional: links that don't care (global search, redirects) omit it and get the
@@ -108,8 +114,14 @@ function QuoteEditorPage() {
 
   const quoteQuery = useQuery(orpc.floor.quotes.get.queryOptions({ input: { id: quoteId } }));
   const quote = quoteQuery.data;
-  const isReadOnly = quote?.status === "completed" && !isAdmin;
+  const isReadOnly = !!quote && !isQuoteEditable(quote.status);
+  const canFinalize = !!quote && canFinalizeQuote(quote.status);
   const includedItems = (quote?.items ?? []).filter((i) => !i.isExcluded);
+  // Mirrors the server rule: once money is collected the revised total may not drop below it.
+  const amountPaid = quote?.amountPaid ?? 0;
+  const revisedTotal = (quote?.total ?? 0) + (quote?.invoice?.tax ?? 0);
+  const totalBelowPaid =
+    !isReadOnly && revisedTotal < amountPaid && revisedTotal !== quote?.invoice?.total;
   const excludedItems = (quote?.items ?? []).filter((i) => i.isExcluded);
 
   const { data: pendingDiscount } = useQuery(
@@ -214,6 +226,16 @@ function QuoteEditorPage() {
   );
   const isSigned = !!termsSignatureData;
 
+  const finalizeQuote = useMutation({
+    ...orpc.floor.quotes.finalize.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateQuote();
+      await queryClient.invalidateQueries({ queryKey: orpc.floor.quotes.key() });
+      toast.success("Quote finalized");
+    },
+    onError: (err: Error) => toast.error(`Failed to finalize: ${err.message}`),
+  });
+
   const signDisclaimer = useMutation({
     ...orpc.floor.termsSignature.sign.mutationOptions(),
     onSuccess: async () => {
@@ -222,6 +244,7 @@ function QuoteEditorPage() {
       });
       toast.success("Disclaimer signed successfully");
       setSignModalOpen(false);
+      finalizeQuote.mutate({ quoteId });
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -285,18 +308,43 @@ function QuoteEditorPage() {
     );
   }
 
-  function handleSave() {
-    updateQuote.mutate(
-      { id: quoteId, comments, customerReason },
-      {
-        onSuccess: () => toast.success("Quote saved"),
-      },
-    );
+  // The quote is kept as a draft while the user works on it: items save as they are added, and
+  // the free-text fields save shortly after typing stops or when the field loses focus.
+  const notesDirty =
+    !!quote &&
+    !isReadOnly &&
+    (comments !== (quote.comments ?? "") || customerReason !== (quote.customerReason ?? ""));
+
+  function saveNotes() {
+    if (notesDirty) updateQuote.mutate({ id: quoteId, comments, customerReason });
+  }
+
+  useEffect(() => {
+    if (!notesDirty) return;
+    const timer = setTimeout(saveNotes, 800);
+    return () => clearTimeout(timer);
+  }, [comments, customerReason, notesDirty]);
+
+  async function handleFinalize() {
+    if (notesDirty) {
+      try {
+        await updateQuote.mutateAsync({ id: quoteId, comments, customerReason });
+      } catch {
+        return;
+      }
+    }
+    if (isSigned) finalizeQuote.mutate({ quoteId });
+    else setSignModalOpen(true);
   }
 
   const [discountStr, setDiscountStr] = useState("");
   const [discountMode, setDiscountMode] = useState<"percent" | "fixed">("percent");
   const [lastDiscountKey, setLastDiscountKey] = useState<string | null>(null);
+  const [overCapOpen, setOverCapOpen] = useState(false);
+  const [overCapDiscount, setOverCapDiscount] = useState<{
+    label: string;
+    patch: DiscountPatch;
+  } | null>(null);
 
   const subtotalCents = quote?.subtotal ?? quote?.total ?? 0;
   const subtotal = subtotalCents / 100;
@@ -327,10 +375,13 @@ function QuoteEditorPage() {
     setDiscountStr(discountInputValue());
   }
 
-  function confirmOverCap(label: string): boolean {
-    return window.confirm(
-      `${label} exceeds the ${DISCOUNT_CAP_PERCENT}% discount limit for this quote. Apply it anyway?`,
-    );
+  function applyDiscount(patch: DiscountPatch, overCapLabel: string | null) {
+    if (overCapLabel) {
+      setOverCapDiscount({ label: overCapLabel, patch });
+      setOverCapOpen(true);
+      return;
+    }
+    updateQuote.mutate({ id: quoteId, ...patch });
   }
 
   function commitDiscount() {
@@ -348,16 +399,10 @@ function QuoteEditorPage() {
         discountPercent: 0,
         discountFixedCents: cents,
       });
-      if (overCap && !confirmOverCap(formatCents(cents))) {
-        resetDiscountInput();
-        return;
-      }
-      updateQuote.mutate({
-        id: quoteId,
-        discountType: "fixed",
-        discountFixedCents: cents,
-        discountPercent: 0,
-      });
+      applyDiscount(
+        { discountType: "fixed", discountFixedCents: cents, discountPercent: 0 },
+        overCap ? formatCents(cents) : null,
+      );
       return;
     }
 
@@ -369,16 +414,10 @@ function QuoteEditorPage() {
     if (quoteDiscountType === "percent" && val === discountPercent) return;
 
     if (isAdmin) {
-      if (val > DISCOUNT_CAP_PERCENT && !confirmOverCap(`${val}%`)) {
-        resetDiscountInput();
-        return;
-      }
-      updateQuote.mutate({
-        id: quoteId,
-        discountType: "percent",
-        discountPercent: val,
-        discountFixedCents: 0,
-      });
+      applyDiscount(
+        { discountType: "percent", discountPercent: val, discountFixedCents: 0 },
+        val > DISCOUNT_CAP_PERCENT ? `${val}%` : null,
+      );
       return;
     }
 
@@ -431,32 +470,25 @@ function QuoteEditorPage() {
           )}
 
           <div className="flex items-center gap-2">
-            {!isReadOnly && (
-              <Tooltip>
-                <TooltipTrigger delay={200} render={<span />}>
-                  <Button
-                    onClick={() => setSendToCashierConfirm(true)}
-                    disabled={!isSigned || sendToCashier.isPending}
-                  >
-                    <SendHorizonal />
-                    Send to Cashier
-                  </Button>
-                </TooltipTrigger>
-                {!isSigned && (
-                  <TooltipContent>
-                    The customer must sign the disclaimer before the quote can go to the cashier.
-                  </TooltipContent>
-                )}
-              </Tooltip>
+            {quote?.status === "finalized" && (
+              <Button
+                onClick={() => setSendToCashierConfirm(true)}
+                disabled={sendToCashier.isPending}
+              >
+                <SendHorizonal />
+                Send to Cashier
+              </Button>
             )}
-            <Button
-              color="success"
-              onClick={handleSave}
-              disabled={isReadOnly || updateQuote.isPending}
-            >
-              <Save />
-              {updateQuote.isPending ? "Saving" : "Save"}
-            </Button>
+            {canFinalize && (
+              <Button
+                color="success"
+                onClick={() => void handleFinalize()}
+                disabled={includedItems.length === 0 || totalBelowPaid || finalizeQuote.isPending}
+              >
+                <FileCheck />
+                Finalize Quote
+              </Button>
+            )}
             <MoreDropdown
               quoteId={quoteId}
               customerEmail={quote?.customer?.email}
@@ -513,6 +545,7 @@ function QuoteEditorPage() {
                   id="customer-reason"
                   value={customerReason}
                   onChange={(e) => setCustomerReason(e.target.value)}
+                  onBlur={saveNotes}
                   placeholder="Enter reason"
                   disabled={isReadOnly}
                   className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 py-1 text-sm leading-[18px] text-body transition-colors outline-none placeholder:text-ghost hover:border-field-line focus:border-blue disabled:cursor-not-allowed disabled:opacity-50"
@@ -600,9 +633,7 @@ function QuoteEditorPage() {
                         {/* Full Diagnostic Consent row */}
                         {quote && (
                           <tr className="border-b border-field-line align-top">
-                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                              1
-                            </td>
+                            <td className="border-l border-field-line px-2 py-2" />
                             <td className="border-l border-field-line px-2 py-2">
                               <div className="flex flex-col gap-2">
                                 <span className="text-sm leading-[18px] text-body">
@@ -619,12 +650,8 @@ function QuoteEditorPage() {
                             <td className="border-l border-field-line px-2 py-2 text-sm text-body">
                               —
                             </td>
-                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                              $0.00
-                            </td>
-                            <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                              $0.00
-                            </td>
+                            <td className="border-l border-field-line px-2 py-2" />
+                            <td className="border-l border-field-line px-2 py-2" />
                             <td className="border-r border-l border-field-line px-2 py-2">
                               {!isReadOnly && (
                                 <Button
@@ -643,7 +670,7 @@ function QuoteEditorPage() {
                           <ItemRow
                             key={item.id}
                             item={item}
-                            index={idx + 1}
+                            index={idx}
                             onRemove={() => setRemoveConfirm(item.id)}
                             onExclude={() =>
                               setItemExcluded.mutate({ id: item.id, excluded: true })
@@ -717,6 +744,7 @@ function QuoteEditorPage() {
             <textarea
               value={comments}
               onChange={(e) => setComments(e.target.value)}
+              onBlur={saveNotes}
               placeholder="Enter note"
               rows={3}
               disabled={isReadOnly}
@@ -727,26 +755,18 @@ function QuoteEditorPage() {
           <div className="h-px bg-field-line" />
 
           {/* Action Buttons */}
-          {!isReadOnly && (
-            <div className="flex flex-wrap gap-2">
-              {!isSigned && (
-                <Button variant="outline" onClick={() => setSignModalOpen(true)}>
-                  <FileSignature />
-                  Sign Disclaimer
-                </Button>
-              )}
-              <Button variant="outline" onClick={() => setSendQuoteConfirm(true)}>
-                <Send />
-                Send Quote
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setSendQuoteConfirm(true)}>
+              <Send />
+              Send Quote
+            </Button>
+            {isSigned && (
+              <Button variant="outline" onClick={() => setSignedDocOpen(true)}>
+                <FileCheck />
+                Signed Doc
               </Button>
-              {isSigned && (
-                <Button variant="outline" onClick={() => setSignedDocOpen(true)}>
-                  <FileCheck />
-                  Signed Doc
-                </Button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="h-px bg-field-line" />
 
@@ -860,6 +880,18 @@ function QuoteEditorPage() {
                 <span>Total:</span>
                 <span className="font-medium">{formatDollars(total)}</span>
               </div>
+              {amountPaid > 0 && (
+                <div className="flex items-center justify-end gap-3 px-3 font-rubik text-base leading-5">
+                  <span className="text-label">Amount paid:</span>
+                  <span className="text-body">{formatCents(amountPaid)}</span>
+                </div>
+              )}
+              {totalBelowPaid && (
+                <p role="alert" className="max-w-sm px-3 text-right font-rubik text-sm text-red">
+                  The invoice total cannot be less than the amount already paid (
+                  {formatCents(amountPaid)}). Please adjust the invoice amount before continuing.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -875,6 +907,22 @@ function QuoteEditorPage() {
         onEdit={handleEditItem}
         editItem={editingItem}
         isAdding={addItem.isPending || updateItem.isPending}
+      />
+
+      <ConfirmDialog
+        open={overCapOpen}
+        onOpenChange={(open) => {
+          if (open) return;
+          setOverCapOpen(false);
+          resetDiscountInput();
+        }}
+        title="Discount over limit"
+        description={`${overCapDiscount?.label} exceeds the ${DISCOUNT_CAP_PERCENT}% discount limit for this quote. Apply it anyway?`}
+        confirmLabel="Apply anyway"
+        onConfirm={() => {
+          if (overCapDiscount) updateQuote.mutate({ id: quoteId, ...overCapDiscount.patch });
+          setOverCapOpen(false);
+        }}
       />
 
       <Dialog
@@ -1045,13 +1093,7 @@ function QuoteEditorPage() {
             <DialogTitle>Signed Disclaimer</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 p-3">
-            <div className="rounded-md border border-field-line bg-page p-3">
-              <p className="font-rubik text-sm leading-5 text-body">
-                The customer has reviewed and accepted the service conditions for this quote. By
-                signing, they acknowledge the services to be performed and agree to the terms
-                outlined.
-              </p>
-            </div>
+            <SignedDisclaimerNotice />
             {termsSignatureData && (
               <>
                 <div className="flex flex-col gap-1">

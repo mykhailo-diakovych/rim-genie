@@ -5,9 +5,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EmailLoginForm } from "@/components/auth/email-login-form";
 import { StaffLoginForm } from "@/components/auth/staff-login-form";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { validateRedirectSearch } from "@/lib/safe-redirect";
 import { m } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/_auth/login")({
+  validateSearch: validateRedirectSearch,
   head: () => ({
     meta: [{ title: "Rim-Genie | Login" }],
   }),

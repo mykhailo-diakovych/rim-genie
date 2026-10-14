@@ -18,7 +18,7 @@ import { orpc } from "@/utils/orpc";
 const TAB_VALUES = TAB_CONFIG.map((t) => t.value);
 
 export const Route = createFileRoute("/_app/technician/")({
-  beforeLoad: requireRoles(["admin", "technician"]),
+  beforeLoad: requireRoles(["admin", "technician", "manager"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Technician" }],
   }),

@@ -113,6 +113,69 @@
       "when": 1789466459695,
       "tag": "0015_ancient_valkyrie",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791793562078,
+      "tag": "0016_smiling_jetstream",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791876079545,
+      "tag": "0017_invoice_pickup",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791876146851,
+      "tag": "0018_job_overnight_notification",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791876195302,
+      "tag": "0019_user_first_login_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791876288110,
+      "tag": "0020_drop_general_service",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791888812406,
+      "tag": "0021_quote_finalized",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791888813640,
+      "tag": "0022_job_proof",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791894949649,
+      "tag": "0023_invoice_modification",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791984283152,
+      "tag": "0024_roles_manager",
+      "breakpoints": true
     }
   ]
 }

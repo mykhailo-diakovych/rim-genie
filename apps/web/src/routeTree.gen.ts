@@ -9,47 +9,49 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SetPinRouteImport } from './routes/set-pin'
-import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as SetPinRouteImport } from './routes/set-pin'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AuthLoginRouteImport } from './routes/_auth/login'
-import { Route as AppTermsRouteImport } from './routes/_app/terms'
-import { Route as AppManageRouteImport } from './routes/_app/manage'
-import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
-import { Route as AppFloorRouteImport } from './routes/_app/floor'
-import { Route as AppEmployeesRouteImport } from './routes/_app/employees'
-import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCashierRouteImport } from './routes/_app/cashier'
-import { Route as AppTechnicianIndexRouteImport } from './routes/_app/technician/index'
-import { Route as AppFloorIndexRouteImport } from './routes/_app/floor/index'
-import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/index'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppEmployeesRouteImport } from './routes/_app/employees'
+import { Route as AppFloorRouteImport } from './routes/_app/floor'
+import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
+import { Route as AppManageRouteImport } from './routes/_app/manage'
+import { Route as AppTermsRouteImport } from './routes/_app/terms'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AppCashierIndexRouteImport } from './routes/_app/cashier/index'
-import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AppTechnicianInvoiceIdRouteImport } from './routes/_app/technician/$invoiceId'
-import { Route as AppReportsDailyRouteImport } from './routes/_app/reports/daily'
-import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
-import { Route as AppDiscountApprovalsRequestIdRouteImport } from './routes/_app/discount-approvals/$requestId'
-import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/customers/$customerId'
 import { Route as AppCashierInvoiceIdRouteImport } from './routes/_app/cashier/$invoiceId'
+import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/index'
+import { Route as AppCustomersCustomerIdRouteImport } from './routes/_app/customers/$customerId'
+import { Route as AppDiscountApprovalsRequestIdRouteImport } from './routes/_app/discount-approvals/$requestId'
+import { Route as AppFloorIndexRouteImport } from './routes/_app/floor/index'
+import { Route as AppFloorQuoteIdRouteImport } from './routes/_app/floor/$quoteId'
+import { Route as AppModificationRequestsRequestIdRouteImport } from './routes/_app/modification-requests/$requestId'
+import { Route as AppReportsDailyRouteImport } from './routes/_app/reports/daily'
+import { Route as AppTechnicianIndexRouteImport } from './routes/_app/technician/index'
+import { Route as AppTechnicianInvoiceIdRouteImport } from './routes/_app/technician/$invoiceId'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as AppCashierInvoiceIdIndexRouteImport } from './routes/_app/cashier/$invoiceId/index'
-import { Route as ApiReportsDailyDateRouteImport } from './routes/api/reports/daily.$date'
-import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$quoteId/pdf'
-import { Route as ApiInvoicesInvoiceIdPdfRouteImport } from './routes/api/invoices/$invoiceId/pdf'
 import { Route as AppCashierInvoiceIdCheckoutRouteImport } from './routes/_app/cashier/$invoiceId/checkout'
+import { Route as ApiInvoicesInvoiceIdPdfRouteImport } from './routes/api/invoices/$invoiceId/pdf'
+import { Route as ApiQuotesQuoteIdPdfRouteImport } from './routes/api/quotes/$quoteId/pdf'
+import { Route as ApiReportsDailyDateRouteImport } from './routes/api/reports/daily.$date'
+import { Route as AppCustomersCustomerIdJobsInvoiceIdRouteImport } from './routes/_app/customers/$customerId_.jobs.$invoiceId'
 
-const SetPinRoute = SetPinRouteImport.update({
-  id: '/set-pin',
-  path: '/set-pin',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const SetPinRoute = SetPinRouteImport.update({
+  id: '/set-pin',
+  path: '/set-pin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -57,34 +59,9 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AppTermsRoute = AppTermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppManageRoute = AppManageRouteImport.update({
-  id: '/manage',
-  path: '/manage',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppInventoryRoute = AppInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFloorRoute = AppFloorRouteImport.update({
-  id: '/floor',
-  path: '/floor',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppEmployeesRoute = AppEmployeesRouteImport.update({
-  id: '/employees',
-  path: '/employees',
+const AppCashierRoute = AppCashierRouteImport.update({
+  id: '/cashier',
+  path: '/cashier',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -92,55 +69,55 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCashierRoute = AppCashierRouteImport.update({
-  id: '/cashier',
-  path: '/cashier',
+const AppEmployeesRoute = AppEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
   getParentRoute: () => AppRoute,
 } as any)
-const AppTechnicianIndexRoute = AppTechnicianIndexRouteImport.update({
-  id: '/technician/',
-  path: '/technician/',
+const AppFloorRoute = AppFloorRouteImport.update({
+  id: '/floor',
+  path: '/floor',
   getParentRoute: () => AppRoute,
 } as any)
-const AppFloorIndexRoute = AppFloorIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppFloorRoute,
-} as any)
-const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
-  id: '/customers/',
-  path: '/customers/',
+const AppInventoryRoute = AppInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => AppRoute,
+} as any)
+const AppManageRoute = AppManageRouteImport.update({
+  id: '/manage',
+  path: '/manage',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTermsRoute = AppTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => AppRoute,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AppCashierIndexRoute = AppCashierIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppCashierRoute,
 } as any)
-const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
-  id: '/api/rpc/$',
-  path: '/api/rpc/$',
-  getParentRoute: () => rootRouteImport,
+const AppCashierInvoiceIdRoute = AppCashierInvoiceIdRouteImport.update({
+  id: '/$invoiceId',
+  path: '/$invoiceId',
+  getParentRoute: () => AppCashierRoute,
 } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppTechnicianInvoiceIdRoute = AppTechnicianInvoiceIdRouteImport.update({
-  id: '/technician/$invoiceId',
-  path: '/technician/$invoiceId',
+const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppReportsDailyRoute = AppReportsDailyRouteImport.update({
-  id: '/reports/daily',
-  path: '/reports/daily',
+const AppCustomersCustomerIdRoute = AppCustomersCustomerIdRouteImport.update({
+  id: '/customers/$customerId',
+  path: '/customers/$customerId',
   getParentRoute: () => AppRoute,
-} as any)
-const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
-  id: '/$quoteId',
-  path: '/$quoteId',
-  getParentRoute: () => AppFloorRoute,
 } as any)
 const AppDiscountApprovalsRequestIdRoute =
   AppDiscountApprovalsRequestIdRouteImport.update({
@@ -148,15 +125,46 @@ const AppDiscountApprovalsRequestIdRoute =
     path: '/discount-approvals/$requestId',
     getParentRoute: () => AppRoute,
   } as any)
-const AppCustomersCustomerIdRoute = AppCustomersCustomerIdRouteImport.update({
-  id: '/customers/$customerId',
-  path: '/customers/$customerId',
+const AppFloorIndexRoute = AppFloorIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppFloorRoute,
+} as any)
+const AppFloorQuoteIdRoute = AppFloorQuoteIdRouteImport.update({
+  id: '/$quoteId',
+  path: '/$quoteId',
+  getParentRoute: () => AppFloorRoute,
+} as any)
+const AppModificationRequestsRequestIdRoute =
+  AppModificationRequestsRequestIdRouteImport.update({
+    id: '/modification-requests/$requestId',
+    path: '/modification-requests/$requestId',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppReportsDailyRoute = AppReportsDailyRouteImport.update({
+  id: '/reports/daily',
+  path: '/reports/daily',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCashierInvoiceIdRoute = AppCashierInvoiceIdRouteImport.update({
-  id: '/$invoiceId',
-  path: '/$invoiceId',
-  getParentRoute: () => AppCashierRoute,
+const AppTechnicianIndexRoute = AppTechnicianIndexRouteImport.update({
+  id: '/technician/',
+  path: '/technician/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTechnicianInvoiceIdRoute = AppTechnicianInvoiceIdRouteImport.update({
+  id: '/technician/$invoiceId',
+  path: '/technician/$invoiceId',
+  getParentRoute: () => AppRoute,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
+  id: '/api/rpc/$',
+  path: '/api/rpc/$',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppCashierInvoiceIdIndexRoute =
   AppCashierInvoiceIdIndexRouteImport.update({
@@ -164,9 +172,15 @@ const AppCashierInvoiceIdIndexRoute =
     path: '/',
     getParentRoute: () => AppCashierInvoiceIdRoute,
   } as any)
-const ApiReportsDailyDateRoute = ApiReportsDailyDateRouteImport.update({
-  id: '/api/reports/daily/$date',
-  path: '/api/reports/daily/$date',
+const AppCashierInvoiceIdCheckoutRoute =
+  AppCashierInvoiceIdCheckoutRouteImport.update({
+    id: '/checkout',
+    path: '/checkout',
+    getParentRoute: () => AppCashierInvoiceIdRoute,
+  } as any)
+const ApiInvoicesInvoiceIdPdfRoute = ApiInvoicesInvoiceIdPdfRouteImport.update({
+  id: '/api/invoices/$invoiceId/pdf',
+  path: '/api/invoices/$invoiceId/pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiQuotesQuoteIdPdfRoute = ApiQuotesQuoteIdPdfRouteImport.update({
@@ -174,16 +188,16 @@ const ApiQuotesQuoteIdPdfRoute = ApiQuotesQuoteIdPdfRouteImport.update({
   path: '/api/quotes/$quoteId/pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiInvoicesInvoiceIdPdfRoute = ApiInvoicesInvoiceIdPdfRouteImport.update({
-  id: '/api/invoices/$invoiceId/pdf',
-  path: '/api/invoices/$invoiceId/pdf',
+const ApiReportsDailyDateRoute = ApiReportsDailyDateRouteImport.update({
+  id: '/api/reports/daily/$date',
+  path: '/api/reports/daily/$date',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppCashierInvoiceIdCheckoutRoute =
-  AppCashierInvoiceIdCheckoutRouteImport.update({
-    id: '/checkout',
-    path: '/checkout',
-    getParentRoute: () => AppCashierInvoiceIdRoute,
+const AppCustomersCustomerIdJobsInvoiceIdRoute =
+  AppCustomersCustomerIdJobsInvoiceIdRouteImport.update({
+    id: '/customers/$customerId_/jobs/$invoiceId',
+    path: '/customers/$customerId/jobs/$invoiceId',
+    getParentRoute: () => AppRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -201,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/discount-approvals/$requestId': typeof AppDiscountApprovalsRequestIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/modification-requests/$requestId': typeof AppModificationRequestsRequestIdRoute
   '/reports/daily': typeof AppReportsDailyRoute
   '/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -214,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/api/reports/daily/$date': typeof ApiReportsDailyDateRoute
   '/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
+  '/customers/$customerId/jobs/$invoiceId': typeof AppCustomersCustomerIdJobsInvoiceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -227,6 +243,7 @@ export interface FileRoutesByTo {
   '/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/discount-approvals/$requestId': typeof AppDiscountApprovalsRequestIdRoute
   '/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/modification-requests/$requestId': typeof AppModificationRequestsRequestIdRoute
   '/reports/daily': typeof AppReportsDailyRoute
   '/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -240,6 +257,7 @@ export interface FileRoutesByTo {
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/api/reports/daily/$date': typeof ApiReportsDailyDateRoute
   '/cashier/$invoiceId': typeof AppCashierInvoiceIdIndexRoute
+  '/customers/$customerId/jobs/$invoiceId': typeof AppCustomersCustomerIdJobsInvoiceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -259,6 +277,7 @@ export interface FileRoutesById {
   '/_app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/_app/discount-approvals/$requestId': typeof AppDiscountApprovalsRequestIdRoute
   '/_app/floor/$quoteId': typeof AppFloorQuoteIdRoute
+  '/_app/modification-requests/$requestId': typeof AppModificationRequestsRequestIdRoute
   '/_app/reports/daily': typeof AppReportsDailyRoute
   '/_app/technician/$invoiceId': typeof AppTechnicianInvoiceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -272,6 +291,7 @@ export interface FileRoutesById {
   '/api/quotes/$quoteId/pdf': typeof ApiQuotesQuoteIdPdfRoute
   '/api/reports/daily/$date': typeof ApiReportsDailyDateRoute
   '/_app/cashier/$invoiceId/': typeof AppCashierInvoiceIdIndexRoute
+  '/_app/customers/$customerId_/jobs/$invoiceId': typeof AppCustomersCustomerIdJobsInvoiceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -290,6 +310,7 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/discount-approvals/$requestId'
     | '/floor/$quoteId'
+    | '/modification-requests/$requestId'
     | '/reports/daily'
     | '/technician/$invoiceId'
     | '/api/auth/$'
@@ -303,6 +324,7 @@ export interface FileRouteTypes {
     | '/api/quotes/$quoteId/pdf'
     | '/api/reports/daily/$date'
     | '/cashier/$invoiceId/'
+    | '/customers/$customerId/jobs/$invoiceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -316,6 +338,7 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/discount-approvals/$requestId'
     | '/floor/$quoteId'
+    | '/modification-requests/$requestId'
     | '/reports/daily'
     | '/technician/$invoiceId'
     | '/api/auth/$'
@@ -329,6 +352,7 @@ export interface FileRouteTypes {
     | '/api/quotes/$quoteId/pdf'
     | '/api/reports/daily/$date'
     | '/cashier/$invoiceId'
+    | '/customers/$customerId/jobs/$invoiceId'
   id:
     | '__root__'
     | '/_app'
@@ -347,6 +371,7 @@ export interface FileRouteTypes {
     | '/_app/customers/$customerId'
     | '/_app/discount-approvals/$requestId'
     | '/_app/floor/$quoteId'
+    | '/_app/modification-requests/$requestId'
     | '/_app/reports/daily'
     | '/_app/technician/$invoiceId'
     | '/api/auth/$'
@@ -360,6 +385,7 @@ export interface FileRouteTypes {
     | '/api/quotes/$quoteId/pdf'
     | '/api/reports/daily/$date'
     | '/_app/cashier/$invoiceId/'
+    | '/_app/customers/$customerId_/jobs/$invoiceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -375,11 +401,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/set-pin': {
-      id: '/set-pin'
-      path: '/set-pin'
-      fullPath: '/set-pin'
-      preLoaderRoute: typeof SetPinRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth': {
@@ -389,11 +415,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+    '/set-pin': {
+      id: '/set-pin'
+      path: '/set-pin'
+      fullPath: '/set-pin'
+      preLoaderRoute: typeof SetPinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -403,46 +429,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_auth/login': {
-      id: '/_auth/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof AuthLoginRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_app/terms': {
-      id: '/_app/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof AppTermsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/manage': {
-      id: '/_app/manage'
-      path: '/manage'
-      fullPath: '/manage'
-      preLoaderRoute: typeof AppManageRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/inventory': {
-      id: '/_app/inventory'
-      path: '/inventory'
-      fullPath: '/inventory'
-      preLoaderRoute: typeof AppInventoryRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/floor': {
-      id: '/_app/floor'
-      path: '/floor'
-      fullPath: '/floor'
-      preLoaderRoute: typeof AppFloorRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/employees': {
-      id: '/_app/employees'
-      path: '/employees'
-      fullPath: '/employees'
-      preLoaderRoute: typeof AppEmployeesRouteImport
+    '/_app/cashier': {
+      id: '/_app/cashier'
+      path: '/cashier'
+      fullPath: '/cashier'
+      preLoaderRoute: typeof AppCashierRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -452,33 +443,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/cashier': {
-      id: '/_app/cashier'
-      path: '/cashier'
-      fullPath: '/cashier'
-      preLoaderRoute: typeof AppCashierRouteImport
+    '/_app/employees': {
+      id: '/_app/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof AppEmployeesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/technician/': {
-      id: '/_app/technician/'
-      path: '/technician'
-      fullPath: '/technician/'
-      preLoaderRoute: typeof AppTechnicianIndexRouteImport
+    '/_app/floor': {
+      id: '/_app/floor'
+      path: '/floor'
+      fullPath: '/floor'
+      preLoaderRoute: typeof AppFloorRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/floor/': {
-      id: '/_app/floor/'
-      path: '/'
-      fullPath: '/floor/'
-      preLoaderRoute: typeof AppFloorIndexRouteImport
-      parentRoute: typeof AppFloorRoute
-    }
-    '/_app/customers/': {
-      id: '/_app/customers/'
-      path: '/customers'
-      fullPath: '/customers/'
-      preLoaderRoute: typeof AppCustomersIndexRouteImport
+    '/_app/inventory': {
+      id: '/_app/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AppInventoryRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/manage': {
+      id: '/_app/manage'
+      path: '/manage'
+      fullPath: '/manage'
+      preLoaderRoute: typeof AppManageRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/terms': {
+      id: '/_app/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof AppTermsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_app/cashier/': {
       id: '/_app/cashier/'
@@ -487,46 +492,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCashierIndexRouteImport
       parentRoute: typeof AppCashierRoute
     }
-    '/api/rpc/$': {
-      id: '/api/rpc/$'
-      path: '/api/rpc/$'
-      fullPath: '/api/rpc/$'
-      preLoaderRoute: typeof ApiRpcSplatRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_app/cashier/$invoiceId': {
+      id: '/_app/cashier/$invoiceId'
+      path: '/$invoiceId'
+      fullPath: '/cashier/$invoiceId'
+      preLoaderRoute: typeof AppCashierInvoiceIdRouteImport
+      parentRoute: typeof AppCashierRoute
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/technician/$invoiceId': {
-      id: '/_app/technician/$invoiceId'
-      path: '/technician/$invoiceId'
-      fullPath: '/technician/$invoiceId'
-      preLoaderRoute: typeof AppTechnicianInvoiceIdRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/reports/daily': {
-      id: '/_app/reports/daily'
-      path: '/reports/daily'
-      fullPath: '/reports/daily'
-      preLoaderRoute: typeof AppReportsDailyRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/floor/$quoteId': {
-      id: '/_app/floor/$quoteId'
-      path: '/$quoteId'
-      fullPath: '/floor/$quoteId'
-      preLoaderRoute: typeof AppFloorQuoteIdRouteImport
-      parentRoute: typeof AppFloorRoute
-    }
-    '/_app/discount-approvals/$requestId': {
-      id: '/_app/discount-approvals/$requestId'
-      path: '/discount-approvals/$requestId'
-      fullPath: '/discount-approvals/$requestId'
-      preLoaderRoute: typeof AppDiscountApprovalsRequestIdRouteImport
+    '/_app/customers/': {
+      id: '/_app/customers/'
+      path: '/customers'
+      fullPath: '/customers/'
+      preLoaderRoute: typeof AppCustomersIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/customers/$customerId': {
@@ -536,12 +513,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersCustomerIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/cashier/$invoiceId': {
-      id: '/_app/cashier/$invoiceId'
-      path: '/$invoiceId'
-      fullPath: '/cashier/$invoiceId'
-      preLoaderRoute: typeof AppCashierInvoiceIdRouteImport
-      parentRoute: typeof AppCashierRoute
+    '/_app/discount-approvals/$requestId': {
+      id: '/_app/discount-approvals/$requestId'
+      path: '/discount-approvals/$requestId'
+      fullPath: '/discount-approvals/$requestId'
+      preLoaderRoute: typeof AppDiscountApprovalsRequestIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/floor/': {
+      id: '/_app/floor/'
+      path: '/'
+      fullPath: '/floor/'
+      preLoaderRoute: typeof AppFloorIndexRouteImport
+      parentRoute: typeof AppFloorRoute
+    }
+    '/_app/floor/$quoteId': {
+      id: '/_app/floor/$quoteId'
+      path: '/$quoteId'
+      fullPath: '/floor/$quoteId'
+      preLoaderRoute: typeof AppFloorQuoteIdRouteImport
+      parentRoute: typeof AppFloorRoute
+    }
+    '/_app/modification-requests/$requestId': {
+      id: '/_app/modification-requests/$requestId'
+      path: '/modification-requests/$requestId'
+      fullPath: '/modification-requests/$requestId'
+      preLoaderRoute: typeof AppModificationRequestsRequestIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports/daily': {
+      id: '/_app/reports/daily'
+      path: '/reports/daily'
+      fullPath: '/reports/daily'
+      preLoaderRoute: typeof AppReportsDailyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/technician/': {
+      id: '/_app/technician/'
+      path: '/technician'
+      fullPath: '/technician/'
+      preLoaderRoute: typeof AppTechnicianIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/technician/$invoiceId': {
+      id: '/_app/technician/$invoiceId'
+      path: '/technician/$invoiceId'
+      fullPath: '/technician/$invoiceId'
+      preLoaderRoute: typeof AppTechnicianInvoiceIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rpc/$': {
+      id: '/api/rpc/$'
+      path: '/api/rpc/$'
+      fullPath: '/api/rpc/$'
+      preLoaderRoute: typeof ApiRpcSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/cashier/$invoiceId/': {
       id: '/_app/cashier/$invoiceId/'
@@ -550,11 +583,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCashierInvoiceIdIndexRouteImport
       parentRoute: typeof AppCashierInvoiceIdRoute
     }
-    '/api/reports/daily/$date': {
-      id: '/api/reports/daily/$date'
-      path: '/api/reports/daily/$date'
-      fullPath: '/api/reports/daily/$date'
-      preLoaderRoute: typeof ApiReportsDailyDateRouteImport
+    '/_app/cashier/$invoiceId/checkout': {
+      id: '/_app/cashier/$invoiceId/checkout'
+      path: '/checkout'
+      fullPath: '/cashier/$invoiceId/checkout'
+      preLoaderRoute: typeof AppCashierInvoiceIdCheckoutRouteImport
+      parentRoute: typeof AppCashierInvoiceIdRoute
+    }
+    '/api/invoices/$invoiceId/pdf': {
+      id: '/api/invoices/$invoiceId/pdf'
+      path: '/api/invoices/$invoiceId/pdf'
+      fullPath: '/api/invoices/$invoiceId/pdf'
+      preLoaderRoute: typeof ApiInvoicesInvoiceIdPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/quotes/$quoteId/pdf': {
@@ -564,19 +604,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiQuotesQuoteIdPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/invoices/$invoiceId/pdf': {
-      id: '/api/invoices/$invoiceId/pdf'
-      path: '/api/invoices/$invoiceId/pdf'
-      fullPath: '/api/invoices/$invoiceId/pdf'
-      preLoaderRoute: typeof ApiInvoicesInvoiceIdPdfRouteImport
+    '/api/reports/daily/$date': {
+      id: '/api/reports/daily/$date'
+      path: '/api/reports/daily/$date'
+      fullPath: '/api/reports/daily/$date'
+      preLoaderRoute: typeof ApiReportsDailyDateRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/cashier/$invoiceId/checkout': {
-      id: '/_app/cashier/$invoiceId/checkout'
-      path: '/checkout'
-      fullPath: '/cashier/$invoiceId/checkout'
-      preLoaderRoute: typeof AppCashierInvoiceIdCheckoutRouteImport
-      parentRoute: typeof AppCashierInvoiceIdRoute
+    '/_app/customers/$customerId_/jobs/$invoiceId': {
+      id: '/_app/customers/$customerId_/jobs/$invoiceId'
+      path: '/customers/$customerId/jobs/$invoiceId'
+      fullPath: '/customers/$customerId/jobs/$invoiceId'
+      preLoaderRoute: typeof AppCustomersCustomerIdJobsInvoiceIdRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
@@ -633,10 +673,12 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppCustomersCustomerIdRoute: typeof AppCustomersCustomerIdRoute
   AppDiscountApprovalsRequestIdRoute: typeof AppDiscountApprovalsRequestIdRoute
+  AppModificationRequestsRequestIdRoute: typeof AppModificationRequestsRequestIdRoute
   AppReportsDailyRoute: typeof AppReportsDailyRoute
   AppTechnicianInvoiceIdRoute: typeof AppTechnicianInvoiceIdRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppTechnicianIndexRoute: typeof AppTechnicianIndexRoute
+  AppCustomersCustomerIdJobsInvoiceIdRoute: typeof AppCustomersCustomerIdJobsInvoiceIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -650,10 +692,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppCustomersCustomerIdRoute: AppCustomersCustomerIdRoute,
   AppDiscountApprovalsRequestIdRoute: AppDiscountApprovalsRequestIdRoute,
+  AppModificationRequestsRequestIdRoute: AppModificationRequestsRequestIdRoute,
   AppReportsDailyRoute: AppReportsDailyRoute,
   AppTechnicianInvoiceIdRoute: AppTechnicianInvoiceIdRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppTechnicianIndexRoute: AppTechnicianIndexRoute,
+  AppCustomersCustomerIdJobsInvoiceIdRoute:
+    AppCustomersCustomerIdJobsInvoiceIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

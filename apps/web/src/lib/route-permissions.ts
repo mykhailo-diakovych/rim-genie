@@ -5,11 +5,11 @@ import type { UserRole } from "@rim-genie/db/schema";
 const ROUTE_PERMISSIONS: Record<string, UserRole[] | null> = {
   "/dashboard": null,
   "/floor": ["admin", "floorManager"],
-  "/cashier": ["admin", "cashier"],
-  "/technician": ["admin", "technician"],
-  "/inventory": ["admin", "inventoryClerk"],
+  "/cashier": ["admin", "cashier", "manager"],
+  "/technician": ["admin", "technician", "manager"],
+  "/inventory": ["admin", "cashier", "manager"],
   "/employees": ["admin"],
-  "/customers": ["admin", "floorManager", "cashier"],
+  "/customers": ["admin", "floorManager", "cashier", "manager"],
   "/manage": ["admin"],
   "/reports/daily": ["admin"],
 };

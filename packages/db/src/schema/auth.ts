@@ -9,7 +9,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "floorManager",
   "cashier",
   "technician",
-  "inventoryClerk",
+  "manager",
 ]);
 
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
@@ -34,6 +34,8 @@ export const user = pgTable("user", {
   locationId: text("location_id"),
   // Lets a non-admin type line prices by hand; admins ignore this flag.
   canAdjustPrices: boolean("can_adjust_prices").default(false).notNull(),
+  // Null until the employee's own first successful sign-in; the Employees page shows them as pending.
+  firstLoginAt: timestamp("first_login_at"),
 });
 
 export type User = InferSelectModel<typeof user>;

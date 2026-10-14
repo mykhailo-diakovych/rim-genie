@@ -17,7 +17,7 @@ import { customer, quote, quoteItem } from "./floor";
 import { user } from "./auth";
 import { location } from "./location";
 import { quoteVehicleTypeEnum, rimMaterialEnum } from "./manage";
-import { job } from "./job";
+import { job, jobPickup } from "./job";
 
 export const invoiceStatusEnum = pgEnum("invoice_status", ["unpaid", "partially_paid", "paid"]);
 
@@ -154,6 +154,7 @@ export const invoiceRelations = relations(invoice, ({ one, many }) => ({
   items: many(invoiceItem),
   payments: many(payment),
   jobs: many(job),
+  pickup: one(jobPickup),
 }));
 
 export const invoiceItemRelations = relations(invoiceItem, ({ one }) => ({
@@ -161,6 +162,7 @@ export const invoiceItemRelations = relations(invoiceItem, ({ one }) => ({
     fields: [invoiceItem.invoiceId],
     references: [invoice.id],
   }),
+  job: one(job),
 }));
 
 export const paymentRelations = relations(payment, ({ one }) => ({

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { orpc } from "@/utils/orpc";
 
-const SIZE_OPTIONS = Array.from({ length: 16 }, (_, i) => String(i + 13));
+const SIZE_OPTIONS = Array.from({ length: 21 }, (_, i) => String(i + 10));
 
 const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   rim: "Rim",
@@ -43,49 +43,22 @@ const VEHICLE_TYPE_LABELS: Record<string, string> = {
   motorcycle: "Motorcycle",
 };
 
-const RIM_JOB_TYPE_OPTIONS = [
-  { value: "bend-fix", label: "Bend Fix" },
-  { value: "crack-fix", label: "Crack Fix" },
-  { value: "straighten", label: "Straighten" },
-  { value: "twist", label: "Twist" },
-  { value: "reconstruct", label: "Reconstruct" },
-  { value: "sprung", label: "Sprong" },
-  { value: "build-up", label: "Build Up" },
-  { value: "platinum-resurfacing", label: "Platinum Resurfacing" },
-  { value: "polishing", label: "Spot Polishing" },
-];
+type JobTypeOption = { value: string; label: string };
 
-const WELDING_JOB_TYPE_OPTIONS = [
-  { value: "aluminium", label: "Aluminium" },
-  { value: "steel", label: "Steel" },
-  { value: "stainless-steel", label: "Stainless Steel" },
-  { value: "cast-iron", label: "Cast Iron" },
-];
+type JobTypeGroup = {
+  key: string;
+  label: string;
+  children: { key: string; label: string }[];
+};
 
-const POWDER_COATING_JOB_TYPE_OPTIONS = [{ value: "powder-coating", label: "Powder Coating" }];
-
-const GENERAL_JOB_TYPE_OPTIONS = [
-  { value: "disc-rotor-skimming", label: "Disc Rotor Skimming" },
-  { value: "brake-drum-skimming", label: "Brake Drum Skimming" },
-  { value: "computerized-balancing", label: "Computerized Balancing" },
-  { value: "dismount-mount-tire", label: "Dismount and Mount Tire" },
-  { value: "dismount-only", label: "Dismount (Remove) Only" },
-  { value: "mount-only", label: "Mount (Replace) Tire Only" },
-  { value: "tire-plug", label: "Tire Plug" },
-  { value: "change-valve", label: "Change of Valve" },
-];
-
-function getJobTypeOptions(category: ServiceCategory) {
-  switch (category) {
-    case "rim":
-      return RIM_JOB_TYPE_OPTIONS;
-    case "welding":
-      return WELDING_JOB_TYPE_OPTIONS;
-    case "powder_coating":
-      return POWDER_COATING_JOB_TYPE_OPTIONS;
-    case "general":
-      return GENERAL_JOB_TYPE_OPTIONS;
-  }
+function leafOptions(groups: JobTypeGroup[] | undefined): JobTypeOption[] {
+  return (groups ?? [])
+    .filter((g) => g.key !== "spot-polish")
+    .flatMap((g) =>
+      g.children.length
+        ? g.children.map((c) => ({ value: c.key, label: `${g.label} — ${c.label}` }))
+        : [{ value: g.key, label: g.label }],
+    );
 }
 
 const schema = z.object({
@@ -122,6 +95,36 @@ interface PricingModalProps {
 export function PricingModal({ open, onOpenChange, price, defaultCategory }: PricingModalProps) {
   const isEdit = !!price;
   const queryClient = useQueryClient();
+
+  const { data: rimGroups } = useQuery({
+    ...orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "rims" } }),
+    enabled: open,
+  });
+  const { data: tireGroups } = useQuery({
+    ...orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "tire-service" } }),
+    enabled: open,
+  });
+  const { data: weldingMaterials } = useQuery({
+    ...orpc.catalog.weldingMaterials.list.queryOptions(),
+    enabled: open,
+  });
+
+  const jobTypeOptionsFor = (category: ServiceCategory): JobTypeOption[] => {
+    switch (category) {
+      case "rim":
+        return leafOptions(rimGroups);
+      case "general":
+        return leafOptions(tireGroups);
+      case "welding":
+        return (weldingMaterials ?? []).map((w) => ({ value: w.key, label: w.label }));
+      case "powder_coating":
+        return [];
+    }
+  };
+
+  const categoryOptions = (Object.keys(CATEGORY_LABELS) as ServiceCategory[]).filter(
+    (cat) => isEdit || cat !== "powder_coating",
+  );
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: orpc.manage.pricing.list.key() });
@@ -231,12 +234,13 @@ export function PricingModal({ open, onOpenChange, price, defaultCategory }: Pri
                       form.setFieldValue("maxSize", "");
                     }}
                     disabled={isEdit}
+                    items={CATEGORY_LABELS}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectPopup>
-                      {(Object.keys(CATEGORY_LABELS) as ServiceCategory[]).map((cat) => (
+                      {categoryOptions.map((cat) => (
                         <SelectOption key={cat} value={cat}>
                           {CATEGORY_LABELS[cat]}
                         </SelectOption>
@@ -249,10 +253,10 @@ export function PricingModal({ open, onOpenChange, price, defaultCategory }: Pri
 
             <form.Subscribe selector={(s) => s.values.category as ServiceCategory}>
               {(currentCategory) => {
-                const jobTypeOptions = getJobTypeOptions(currentCategory);
+                const jobTypeOptions = jobTypeOptionsFor(currentCategory);
                 const showVehicleType = currentCategory === "rim";
                 const showMaterial = currentCategory === "rim";
-                const showSize = currentCategory === "rim" || currentCategory === "powder_coating";
+                const showSize = currentCategory === "rim" || currentCategory === "general";
 
                 return (
                   <>
@@ -263,6 +267,7 @@ export function PricingModal({ open, onOpenChange, price, defaultCategory }: Pri
                           <Select
                             value={field.state.value}
                             onValueChange={(val) => field.handleChange(val ?? "")}
+                            items={jobTypeOptions}
                           >
                             <SelectTrigger error={field.state.meta.errors.length > 0}>
                               <SelectValue placeholder="Select job type" />

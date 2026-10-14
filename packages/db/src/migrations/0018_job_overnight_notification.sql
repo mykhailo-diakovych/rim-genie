@@ -1,0 +1,1 @@
+ALTER TYPE "public"."notification_type" ADD VALUE 'job_overnight';

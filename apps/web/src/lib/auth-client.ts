@@ -2,14 +2,7 @@ import { createAuthClient } from "better-auth/react";
 import { adminClient, inferAdditionalFields } from "better-auth/client/plugins";
 import { usernameClient } from "better-auth/client/plugins";
 
-import {
-  ac,
-  admin,
-  cashier,
-  floorManager,
-  inventoryClerk,
-  technician,
-} from "@rim-genie/auth/permissions";
+import { ac, admin, cashier, floorManager, manager, technician } from "@rim-genie/auth/permissions";
 
 export const authClient = createAuthClient({
   plugins: [
@@ -20,7 +13,7 @@ export const authClient = createAuthClient({
     usernameClient(),
     adminClient({
       ac,
-      roles: { admin, floorManager, cashier, technician, inventoryClerk },
+      roles: { admin, floorManager, cashier, technician, manager },
     }),
   ],
 });

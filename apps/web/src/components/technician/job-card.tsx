@@ -1,6 +1,7 @@
 import { Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useCanWorkJobs } from "@/lib/use-can-work-jobs";
 
 import { CompleteJobDialog } from "./complete-job-dialog";
 import { PartialInvoiceNote } from "./partial-invoice-note";
@@ -10,6 +11,7 @@ import { canCompleteGroup, formatStartedAt, getGroupAction } from "./use-jobs";
 
 export function JobCard({ group, onView }: { group: JobGroup; onView: () => void }) {
   const action = getGroupAction(group);
+  const canWorkJobs = useCanWorkJobs();
   const startedLabel = formatStartedAt(group.startedAt);
 
   return (
@@ -51,8 +53,8 @@ export function JobCard({ group, onView }: { group: JobGroup; onView: () => void
         {/* Proofs keeps its existing condition; Complete is no longer the *alternative*
             to it. The two were mutually exclusive, so any group with an accepted job —
             the normal state — could never be completed from here. */}
-        {action === "proofs" && <UploadProofsDialog group={group} />}
-        {canCompleteGroup(group) && <CompleteJobDialog group={group} />}
+        {canWorkJobs && action === "proofs" && <UploadProofsDialog group={group} />}
+        {canWorkJobs && canCompleteGroup(group) && <CompleteJobDialog group={group} />}
       </div>
     </div>
   );

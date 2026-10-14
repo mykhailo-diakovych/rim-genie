@@ -1,6 +1,15 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Bell, Percent, ThumbsDown, ThumbsUp, Wrench } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  FilePenLine,
+  Moon,
+  Percent,
+  ThumbsDown,
+  ThumbsUp,
+  Wrench,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { orpc, client } from "@/utils/orpc";
@@ -12,6 +21,8 @@ const typeConfig: Record<string, { icon: React.ElementType; className: string }>
   discount_approved: { icon: ThumbsUp, className: "text-emerald-600 bg-emerald-50" },
   discount_rejected: { icon: ThumbsDown, className: "text-red-500 bg-red-50" },
   job_completed: { icon: Wrench, className: "text-emerald-600 bg-emerald-50" },
+  job_overnight: { icon: Moon, className: "text-blue bg-blue/10" },
+  invoice_modification_request: { icon: FilePenLine, className: "text-amber-500 bg-amber-50" },
 };
 
 function getRelativeTime(date: Date): string {
@@ -39,12 +50,16 @@ function getNavigationTarget(
       return { to: "/cashier/$invoiceId", params: { invoiceId: referenceId } };
     case "discount_request":
       return { to: "/discount-approvals/$requestId", params: { requestId: referenceId } };
+    case "invoice_modification_request":
+      return { to: "/modification-requests/$requestId", params: { requestId: referenceId } };
     case "quote":
       return { to: "/floor/$quoteId", params: { quoteId: referenceId } };
     case "customer":
       return { to: "/customers/$customerId", params: { customerId: referenceId } };
     case "job":
       return { to: "/technician" };
+    case "inventory_job":
+      return { to: "/inventory" };
     default:
       return null;
   }

@@ -23,16 +23,28 @@ import type { DialogTriggerProps } from "@base-ui/react";
 
 const pinField = z
   .string()
-  .length(4, m.validation_pin_six_digits())
-  .regex(/^\d+$/, m.validation_pin_six_digits());
+  .length(4, m.validation_pin_four_digits())
+  .regex(/^\d+$/, m.validation_pin_four_digits());
 
 interface ResetPinModalProps {
   employeeId: string;
-  trigger: DialogTriggerProps["render"];
+  trigger?: DialogTriggerProps["render"];
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
-  const [open, setOpen] = useState(false);
+export function ResetPinModal({
+  employeeId,
+  trigger,
+  open: controlledOpen,
+  onOpenChange,
+}: ResetPinModalProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (nextOpen: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
 
   const resetPin = useMutation(orpc.employees.resetPin.mutationOptions());
 
@@ -72,7 +84,7 @@ export function ResetPinModal({ employeeId, trigger }: ResetPinModalProps) {
         if (!nextOpen) form.reset();
       }}
     >
-      <DialogTrigger render={trigger} />
+      {trigger && <DialogTrigger render={trigger} />}
 
       <DialogContent>
         <DialogHeader>

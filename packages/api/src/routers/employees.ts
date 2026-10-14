@@ -16,7 +16,7 @@ import {
   user,
   verification,
 } from "@rim-genie/db/schema";
-import { desc, eq, and, ne, like, inArray, lt } from "drizzle-orm";
+import { desc, eq, and, ne, like, inArray } from "drizzle-orm";
 
 import { adminProcedure, publicProcedure } from "../index";
 import * as EmailService from "../services/email.service";
@@ -78,17 +78,19 @@ const ROLE_LABELS: Record<string, string> = {
   floorManager: "Floor Manager",
   cashier: "Cashier",
   technician: "Technician",
-  inventoryClerk: "Inventory Clerk",
+  manager: "Manager",
 };
+
+async function clearInviteTokens(userId: string) {
+  await db.delete(verification).where(eq(verification.value, `${INVITE_PREFIX}${userId}`));
+}
 
 async function issueInviteToken(userId: string): Promise<string> {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
 
-  // One live invite per user: a resend must invalidate the previous link.
-  await db.delete(verification).where(eq(verification.value, `${INVITE_PREFIX}${userId}`));
-  // Opportunistically drop expired invites so the table does not grow forever.
-  await db.delete(verification).where(lt(verification.expiresAt, new Date()));
+  // One invite per user: a resend must invalidate the previous link.
+  await clearInviteTokens(userId);
 
   await db.insert(verification).values({
     id: crypto.randomUUID(),
@@ -110,19 +112,24 @@ async function sendInvite(row: {
   const token = await issueInviteToken(row.id);
   const inviteUrl = `${env.BETTER_AUTH_URL}/set-pin?token=${token}`;
 
-  await runEffect(
-    EmailService.send({
-      to: row.email,
-      subject: "Set up your Rim Genie account",
-      react: createStaffInviteEmail({
-        name: row.name,
-        employeeId: row.username ?? row.email,
-        roleLabel: ROLE_LABELS[row.role ?? ""] ?? "Staff",
-        inviteUrl,
-        expiresInDays: INVITE_TTL_DAYS,
+  try {
+    await runEffect(
+      EmailService.send({
+        to: row.email,
+        subject: "Set up your Rim Genie account",
+        react: createStaffInviteEmail({
+          name: row.name,
+          employeeId: row.username ?? row.email,
+          roleLabel: ROLE_LABELS[row.role ?? ""] ?? "Staff",
+          inviteUrl,
+          expiresInDays: INVITE_TTL_DAYS,
+        }),
       }),
-    }),
-  );
+    );
+  } catch (error) {
+    await clearInviteTokens(row.id);
+    throw error;
+  }
 }
 
 async function resolveInvite(token: string) {
@@ -162,6 +169,7 @@ export const employeesRouter = {
         canAdjustPrices: user.canAdjustPrices,
         banned: user.banned,
         createdAt: user.createdAt,
+        firstLoginAt: user.firstLoginAt,
       })
       .from(user)
       .orderBy(desc(user.createdAt));
@@ -190,7 +198,11 @@ export const employeesRouter = {
       byUser.set(row.userId, list);
     }
 
-    return users.map((u) => ({ ...u, locations: byUser.get(u.id) ?? [] }));
+    return users.map(({ firstLoginAt, ...u }) => ({
+      ...u,
+      locations: byUser.get(u.id) ?? [],
+      neverSignedIn: firstLoginAt === null,
+    }));
   }),
 
   create: adminProcedure.input(createEmployeeSchema).handler(async ({ input }) => {
@@ -240,8 +252,8 @@ export const employeesRouter = {
             role: input.role,
           });
           inviteSent = true;
-        } catch {
-          inviteSent = false;
+        } catch (error) {
+          console.error("Employee invite email failed", { userId: created.user.id, error });
         }
       }
 
@@ -397,6 +409,7 @@ export const employeesRouter = {
         body: { userId: input.userId, newPassword: input.newPin },
         headers: context.headers,
       });
+      await clearInviteTokens(input.userId);
       return { success: true };
     }),
 

@@ -1,9 +1,15 @@
 import { Cause, Effect, Exit, Option } from "effect";
 import { ORPCError } from "@orpc/server";
 
+const formatPaid = (cents: number) =>
+  `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 const TAG_MAP: Record<
   string,
-  { code: ConstructorParameters<typeof ORPCError>[0]; message: string }
+  {
+    code: ConstructorParameters<typeof ORPCError>[0];
+    message: string | ((error: Record<string, unknown>) => string);
+  }
 > = {
   InvoiceNotFound: { code: "NOT_FOUND", message: "Invoice not found" },
   QuoteNotFound: { code: "NOT_FOUND", message: "Quote not found" },
@@ -29,10 +35,24 @@ const TAG_MAP: Record<
   },
   JobNotAccepted: { code: "BAD_REQUEST", message: "This job has not been accepted yet" },
   JobCannotBeReversed: { code: "BAD_REQUEST", message: "This job cannot be reversed" },
-  JobHasOutstandingBalance: {
+  InvalidTechnicianCode: { code: "BAD_REQUEST", message: "Invalid technician code" },
+  TechnicianCodeLocked: {
+    code: "TOO_MANY_REQUESTS",
+    message: "Too many wrong codes for this technician. Try again in 15 minutes.",
+  },
+  InvoiceHasOutstandingBalance: {
     code: "BAD_REQUEST",
     message:
-      "This job cannot be picked up while there is an outstanding balance. Collect the final payment first.",
+      "This invoice cannot be picked up while there is an outstanding balance. Collect the final payment first.",
+  },
+  InvoiceAlreadyPickedUp: { code: "CONFLICT", message: "This invoice has already been picked up" },
+  InvoiceJobsNotReady: {
+    code: "BAD_REQUEST",
+    message: "Every job on this invoice must be completed before pickup",
+  },
+  PickupSignatureRequired: {
+    code: "BAD_REQUEST",
+    message: "A valid customer signature is required to complete the pickup",
   },
   EODAlreadyExists: { code: "CONFLICT", message: "An EOD record already exists for this date" },
   SODAlreadyExists: { code: "CONFLICT", message: "An SOD record already exists for this date" },
@@ -71,13 +91,86 @@ const TAG_MAP: Record<
     code: "CONFLICT",
     message: "A discount request is already pending for this item",
   },
+  UnknownJobType: { code: "BAD_REQUEST", message: "Service is not available" },
+  PriceNotFound: { code: "BAD_REQUEST", message: "No price set" },
+  QuoteNotEditable: {
+    code: "CONFLICT",
+    message: "This quote has been sent to the cashier and can no longer be edited",
+  },
+  QuoteNotFinalized: {
+    code: "PRECONDITION_FAILED",
+    message: "Finalize the quote before sending it to the cashier",
+  },
+  DisclaimerNotSigned: {
+    code: "PRECONDITION_FAILED",
+    message: "The customer must sign the disclaimer before the quote can be finalized",
+  },
+  InvoiceTotalBelowPaid: {
+    code: "BAD_REQUEST",
+    message: (error) =>
+      `The invoice total cannot be less than the amount already paid (${formatPaid(Number(error.paid))}). Please adjust the invoice amount before continuing.`,
+  },
+  ProofUploadNotAllowed: {
+    code: "BAD_REQUEST",
+    message: "Proofs can only be uploaded while the job is in progress",
+  },
+  ProofFileInvalid: { code: "BAD_REQUEST", message: "File rejected" },
+  AfterProofRequired: {
+    code: "BAD_REQUEST",
+    message: "Upload at least one photo or video of the completed work before completing the job",
+  },
+  ProofNotFound: { code: "NOT_FOUND", message: "Proof not found" },
+  InvoiceLinesHaveStartedJobs: {
+    code: "CONFLICT",
+    message: (error) =>
+      `Work has already started on these services, so they cannot be removed from the invoice: ${(error.lines as string[]).join(", ")}`,
+  },
+  InvoiceNotInCashierQueue: {
+    code: "CONFLICT",
+    message: "This invoice is not in the cashier queue",
+  },
+  InvoiceModificationAlreadyPending: {
+    code: "CONFLICT",
+    message: "A modification request is already pending for this invoice",
+  },
+  InvoiceModificationNotFound: { code: "NOT_FOUND", message: "Modification request not found" },
+  InvoiceModificationAlreadyResolved: {
+    code: "CONFLICT",
+    message: "This modification request has already been resolved",
+  },
+  InvoiceModificationNotAssigned: {
+    code: "FORBIDDEN",
+    message: "Only the admin assigned to this request can respond to it",
+  },
+  InvalidModificationApprover: {
+    code: "BAD_REQUEST",
+    message: "Select an active admin to review this request",
+  },
 };
 
 // Failures caused by an external provider carry the provider's own explanation.
 // Collapsing those to a fixed string ("Failed to send SMS") leaves the operator
 // with nothing to act on — whether it was an unapproved sender ID, no credit or a
-// bad number is exactly the part they need.
-const TAGS_WITH_REASON = new Set(["EmailSendFailed", "SmsSendFailed"]);
+// bad number is exactly the part they need. Catalog rejections name the service at fault.
+const TAGS_WITH_REASON = new Set([
+  "EmailSendFailed",
+  "SmsSendFailed",
+  "UnknownJobType",
+  "PriceNotFound",
+  "ProofFileInvalid",
+]);
+
+export function errorMessage(error: { _tag: string }): string {
+  const mapped = TAG_MAP[error._tag];
+  const base =
+    typeof mapped?.message === "function"
+      ? mapped.message(error as Record<string, unknown>)
+      : (mapped?.message ?? "Something went wrong");
+  const reason = (error as { reason?: unknown }).reason;
+  return TAGS_WITH_REASON.has(error._tag) && typeof reason === "string" && reason.trim()
+    ? `${base}: ${reason}`
+    : base;
+}
 
 export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): Promise<A> {
   const exit = await Effect.runPromiseExit(effect);
@@ -87,16 +180,8 @@ export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): 
   const failure = Cause.failureOption(exit.cause);
   if (Option.isSome(failure)) {
     const error = failure.value;
-    const mapped = TAG_MAP[error._tag];
-    const base = mapped?.message ?? "Something went wrong";
-    const reason = (error as { reason?: unknown }).reason;
-    const message =
-      TAGS_WITH_REASON.has(error._tag) && typeof reason === "string" && reason.trim()
-        ? `${base}: ${reason}`
-        : base;
-
-    throw new ORPCError(mapped?.code ?? "INTERNAL_SERVER_ERROR", {
-      message,
+    throw new ORPCError(TAG_MAP[error._tag]?.code ?? "INTERNAL_SERVER_ERROR", {
+      message: errorMessage(error),
       data: { ...error },
     });
   }

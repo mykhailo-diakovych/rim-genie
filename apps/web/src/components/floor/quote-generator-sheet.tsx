@@ -8,6 +8,7 @@ import { Radio } from "@base-ui/react/radio";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { NumberStepper } from "@/components/ui/number-stepper";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
@@ -16,6 +17,7 @@ import {
   SelectPopup,
   SelectOption,
 } from "@/components/ui/select";
+import { formatCents } from "@/lib/format-currency";
 import { cn } from "@/lib/utils";
 import { orpc } from "@/utils/orpc";
 
@@ -71,6 +73,9 @@ const BRAKE_SERVICE_TYPES = [
   { value: "disc-rotor-skimming", label: "Disc Rotor Skimming", quantityLabel: "How many pairs?" },
   { value: "brake-drum-skimming", label: "Brake Drum Skimming", quantityLabel: "How many pairs?" },
 ];
+
+// Groups where several options can apply to one rim; their prices are summed.
+const MULTI_SELECT_RIM_GROUPS = new Set(["build-up", "crack-fix", "sprong"]);
 
 const VEHICLE_TYPE_MAP: Record<string, "truck" | "car_suv" | "motorcycle"> = {
   Truck: "truck",
@@ -139,7 +144,9 @@ export function FloorCheckbox({
   // Pass the label through rather than sitting it in a sibling <span>: wrapping both
   // in a <label> makes the text a hit target too, instead of just the 20px box.
   return (
-    <label className={cn("flex cursor-pointer items-center gap-1.5", className)}>
+    <label
+      className={cn("flex cursor-pointer items-center gap-1.5 pointer-coarse:min-h-11", className)}
+    >
       {box}
       <span className="font-rubik text-sm leading-[18px] text-body">{label}</span>
     </label>
@@ -191,9 +198,9 @@ export function QuoteGeneratorSheet({
   isAdding,
 }: QuoteGeneratorSheetProps) {
   const [tab, setTab] = useState("rims");
-  // Rims: selected groups by root key + chosen sub-type leaf key per group
+  // Rims: selected groups by root key + chosen sub-type leaf keys per group
   const [checkedJobs, setCheckedJobs] = useState<Record<string, boolean>>({});
-  const [jobSubTypes, setJobSubTypes] = useState<Record<string, string>>({});
+  const [jobSubTypes, setJobSubTypes] = useState<Record<string, string[]>>({});
   const [jobTypeError, setJobTypeError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState<string | null>(null);
 
@@ -238,7 +245,6 @@ export function QuoteGeneratorSheet({
   const { data: rimGroups } = useQuery(
     orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "rims" } }),
   );
-  const { data: pricingConfig } = useQuery(orpc.catalog.config.get.queryOptions());
 
   const { data: jobExclusions } = useQuery(orpc.catalog.exclusions.list.queryOptions());
 
@@ -267,17 +273,6 @@ export function QuoteGeneratorSheet({
     }
   }
 
-  const applyRimModifier = (base: number) => {
-    let p = base;
-    if (mappedMaterial === "steel" && pricingConfig) {
-      p = Math.round((p * (100 - pricingConfig.steelDiscountPercent)) / 100);
-    }
-    if (mappedVehicleType === "truck" && pricingConfig) {
-      p = Math.round((p * (100 + pricingConfig.truckMarkupPercent)) / 100);
-    }
-    return p;
-  };
-
   const { data: rimPrices, isFetching: rimPricesFetching } = useQuery(
     orpc.floor.pricing.lookup.queryOptions({
       input: {
@@ -292,7 +287,7 @@ export function QuoteGeneratorSheet({
 
   // Spot polish is a Rims group priced by size bucket × qty (its own price table).
   const spotBucket = rimSize != null ? (rimSize >= 21 ? "ge21" : "le20") : undefined;
-  const spotLeafKey = jobSubTypes["spot-polish"];
+  const spotLeafKey = jobSubTypes["spot-polish"]?.[0];
   const { data: spotPrice, isFetching: spotPriceFetching } = useQuery({
     ...orpc.catalog.spotPrices.lookup.queryOptions({
       input: {
@@ -305,16 +300,52 @@ export function QuoteGeneratorSheet({
 
   const rimJobQty = (rootKey: string) => rimJobQuantities[rootKey] ?? "1";
 
-  // Mirrors the server's rim branch in computeItemPrice: base rate × occurrences.
+  const selectedLeaves = (root: (typeof rimJobList)[number]) => {
+    if (!root.children.length) return [{ key: root.key, label: undefined }];
+    const picked = jobSubTypes[root.key] ?? [];
+    return root.children.filter((c) => picked.includes(c.key));
+  };
+
+  // Mirrors the server's rim branch in computeItemPrice: each selected option is priced
+  // on its own and every one is multiplied by the group's occurrence count. Rim prices
+  // arrive with the steel/truck modifiers already applied.
   const rimJobLineCost = (root: (typeof rimJobList)[number]) => {
     const qty = parseInt(rimJobQty(root.key), 10) || 1;
     if (root.key === "spot-polish") {
       return (spotPrice?.found ? spotPrice.unitCost : 0) * qty;
     }
-    const leafKey = root.children.length ? jobSubTypes[root.key] : root.key;
-    const base = leafKey ? (rimPrices?.[leafKey]?.unitCost ?? 0) : 0;
-    return applyRimModifier(base) * qty;
+    const base = selectedLeaves(root).reduce(
+      (sum, leaf) => sum + (rimPrices?.[leaf.key]?.unitCost ?? 0),
+      0,
+    );
+    return base * qty;
   };
+
+  // Options with no price at the chosen size cannot be quoted (RIM-5 item 13): the job
+  // is not done on that size, so the line is blocked until another size is picked.
+  const rimUnpriced =
+    rimSize == null || rimPricesFetching || spotPriceFetching
+      ? []
+      : rimJobList
+          .filter((root) => checkedJobs[root.key])
+          .flatMap((root) => {
+            if (root.key === "spot-polish") {
+              return spotPrice && !spotPrice.found ? [root.label] : [];
+            }
+            return selectedLeaves(root)
+              .filter((leaf) => rimPrices && !rimPrices[leaf.key]?.found)
+              .map((leaf) =>
+                !leaf.label
+                  ? root.label
+                  : leaf.label.startsWith(root.label)
+                    ? leaf.label
+                    : `${root.label} (${leaf.label})`,
+              );
+          });
+  const rimPriceError =
+    rimUnpriced.length > 0
+      ? `No price for ${rimSize}" rims: ${rimUnpriced.join(", ")}. Choose another size.`
+      : null;
 
   const { data: weldingMaterials } = useQuery(orpc.catalog.weldingMaterials.list.queryOptions());
   const { data: weldingPrices } = useQuery(
@@ -343,6 +374,10 @@ export function QuoteGeneratorSheet({
     }),
     enabled: !!(pcSize && pcSelects.scope && pcColorCount),
   });
+  const powderPriceError =
+    powderPrice && !powderPrice.found && !powderPriceFetching
+      ? "No price for this rim size, scope and number of colors. Choose another option."
+      : null;
 
   const { data: tireGroups } = useQuery(
     orpc.catalog.jobTypes.bySection.queryOptions({ input: { section: "tire-service" } }),
@@ -372,9 +407,35 @@ export function QuoteGeneratorSheet({
     }),
     enabled: !!generalSelects.vehicleSize,
   });
-  const brakePriceFor = (key: string) =>
-    brakeCombos?.find((c) => c.unit === brakeUnit[key] && c.removalIncluded === brakeRemoval[key])
-      ?.unitCost ?? 0;
+  const brakeComboFor = (key: string) =>
+    brakeCombos?.find((c) => c.unit === brakeUnit[key] && c.removalIncluded === brakeRemoval[key]);
+  const brakePriceFor = (key: string) => brakeComboFor(key)?.unitCost ?? 0;
+
+  const tireUnpriced =
+    tireSize == null || tirePricesFetching || !tirePrices
+      ? []
+      : tireLeaves.filter((t) => checkedServices[t.key] && !tirePrices[t.key]?.found);
+  const brakeUnpriced =
+    !generalSelects.vehicleSize || brakeCombosFetching || !brakeCombos
+      ? []
+      : BRAKE_SERVICE_TYPES.filter(
+          (s) =>
+            checkedServices[s.value] &&
+            brakeUnit[s.value] &&
+            brakeRemoval[s.value] !== undefined &&
+            !brakeComboFor(s.value),
+        );
+  const generalPriceError =
+    [
+      tireUnpriced.length > 0
+        ? `No price for ${tireSize}" tires: ${tireUnpriced.map((t) => t.label).join(", ")}. Choose another tire size.`
+        : null,
+      brakeUnpriced.length > 0
+        ? `No price for ${generalSelects.vehicleSize}: ${brakeUnpriced.map((b) => b.label).join(", ")}. Choose another vehicle size or option.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
 
   const rimForm = useForm({
     defaultValues: RIM_DEFAULTS,
@@ -385,21 +446,25 @@ export function QuoteGeneratorSheet({
         return;
       }
       for (const root of selectedRoots) {
-        if (root.children.length > 0 && !jobSubTypes[root.key]) {
-          setJobTypeError(`Select an option for ${root.label}`);
+        if (selectedLeaves(root).length === 0) {
+          setJobTypeError(
+            MULTI_SELECT_RIM_GROUPS.has(root.key)
+              ? `Select at least one option for ${root.label}`
+              : `Select an option for ${root.label}`,
+          );
           return;
         }
       }
       setJobTypeError(null);
+      if (rimPriceError) return;
 
-      const jobTypes: JobTypeEntry[] = selectedRoots.map((root) => {
-        const leafKey = root.children.length ? jobSubTypes[root.key]! : root.key;
-        const childLabel = root.children.find((c) => c.key === leafKey)?.label;
-        const entry: JobTypeEntry = { type: leafKey as JobType };
-        if (childLabel) entry.subType = childLabel;
-        entry.input = rimJobQty(root.key);
-        return entry;
-      });
+      const jobTypes: JobTypeEntry[] = selectedRoots.flatMap((root) =>
+        selectedLeaves(root).map((leaf) => {
+          const entry: JobTypeEntry = { type: leaf.key, input: rimJobQty(root.key) };
+          if (leaf.label) entry.subType = leaf.label;
+          return entry;
+        }),
+      );
 
       const description = [
         `${value.rimSize}" Rims`,
@@ -408,9 +473,8 @@ export function QuoteGeneratorSheet({
           const qty = rimJobQty(root.key);
           const suffix = qty === "1" ? "" : ` x${qty}`;
           if (root.children.length) {
-            const leafKey = jobSubTypes[root.key];
-            const childLabel = root.children.find((c) => c.key === leafKey)?.label;
-            return `${root.label}: ${childLabel ?? ""}${suffix}`;
+            const labels = selectedLeaves(root).map((leaf) => leaf.label);
+            return `${root.label}: ${labels.join(" + ")}${suffix}`;
           }
           return `${root.label}${suffix}`;
         }),
@@ -489,7 +553,7 @@ export function QuoteGeneratorSheet({
     defaultValues: POWDER_COATING_DEFAULTS,
     onSubmit: ({ value }) => {
       const colorCount = parseInt(value.colorCount, 10);
-      if (pcColors.length !== colorCount) return;
+      if (pcColors.length !== colorCount || powderPriceError) return;
       const scope = value.scope as "set" | "rim";
       const qty = scope === "rim" ? Math.max(1, parseInt(pcQty, 10) || 1) : 1;
       const unit = powderPrice?.unitCost ?? editItem?.unitCost ?? 0;
@@ -580,10 +644,11 @@ export function QuoteGeneratorSheet({
         return;
       }
       setServiceQuantityErrors({});
+      if (generalPriceError) return;
 
       const desc = [
         `General: ${value.vehicleSize}`,
-        `Tire: ${value.tireSize}"`,
+        value.tireSize ? `Tire: ${value.tireSize}"` : null,
         ...selectedServices.map((s) => `${s.label} x${serviceQuantities[s.key] ?? "1"}`),
         generalComments.trim() || null,
       ]
@@ -693,7 +758,7 @@ export function QuoteGeneratorSheet({
     }
 
     const checked: Record<string, boolean> = {};
-    const subTypes: Record<string, string> = {};
+    const subTypes: Record<string, string[]> = {};
     const quantities: Record<string, string> = {};
     for (const jt of editItem.jobTypes) {
       const root = rimJobList.find(
@@ -701,7 +766,7 @@ export function QuoteGeneratorSheet({
       );
       if (root) {
         checked[root.key] = true;
-        if (root.children.length) subTypes[root.key] = jt.type;
+        if (root.children.length) subTypes[root.key] = [...(subTypes[root.key] ?? []), jt.type];
         if (jt.input) quantities[root.key] = jt.input;
       } else {
         checked[jt.type] = true;
@@ -728,6 +793,14 @@ export function QuoteGeneratorSheet({
         return next;
       });
     }
+    if (checked) setJobTypeError(null);
+  }
+
+  function toggleRimLeaf(rootKey: string, leafKey: string, checked: boolean) {
+    setJobSubTypes((prev) => {
+      const current = (prev[rootKey] ?? []).filter((k) => k !== leafKey);
+      return { ...prev, [rootKey]: checked ? [...current, leafKey] : current };
+    });
     if (checked) setJobTypeError(null);
   }
 
@@ -791,20 +864,20 @@ export function QuoteGeneratorSheet({
         </div>
 
         {/* Scrollable content */}
-        <div className="flex flex-1 flex-col overflow-y-auto pb-10">
+        <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto pb-10">
           <Tabs value={tab} onValueChange={(v) => setTab(String(v))}>
             <div className="border-b border-field-line px-3">
-              <TabsList className="border-0">
-                <TabsTrigger value="rims" className="px-2 whitespace-nowrap">
+              <TabsList className="justify-between border-0">
+                <TabsTrigger value="rims" className="px-1.5 whitespace-nowrap">
                   Rims
                 </TabsTrigger>
-                <TabsTrigger value="other-welding" className="px-2 whitespace-nowrap">
+                <TabsTrigger value="other-welding" className="px-1.5 whitespace-nowrap">
                   Other Welding
                 </TabsTrigger>
-                <TabsTrigger value="powder-coating" className="px-2 whitespace-nowrap">
+                <TabsTrigger value="powder-coating" className="px-1.5 whitespace-nowrap">
                   Powder Coating
                 </TabsTrigger>
-                <TabsTrigger value="general" className="px-2 whitespace-nowrap">
+                <TabsTrigger value="general" className="px-1.5 whitespace-nowrap">
                   General
                 </TabsTrigger>
               </TabsList>
@@ -850,7 +923,9 @@ export function QuoteGeneratorSheet({
                             field.handleChange(val);
                           }}
                         >
-                          <SelectTrigger error={field.state.meta.errors.length > 0}>
+                          <SelectTrigger
+                            error={field.state.meta.errors.length > 0 || rimPriceError != null}
+                          >
                             <SelectValue placeholder="Select rim size" />
                           </SelectTrigger>
                           <SelectPopup>
@@ -923,7 +998,7 @@ export function QuoteGeneratorSheet({
                         className="flex gap-4"
                         disabled={rimSelects.vehicleType === "Motorcycle"}
                       >
-                        <label className="flex cursor-pointer items-center gap-2">
+                        <label className="flex cursor-pointer items-center gap-2 pointer-coarse:min-h-11">
                           <Radio.Root
                             value="Steel"
                             className="flex size-5 items-center justify-center rounded-full border-[1.2px] border-[#cdcfd1] bg-white data-checked:border-blue"
@@ -933,7 +1008,7 @@ export function QuoteGeneratorSheet({
                           </Radio.Root>
                           <span className="font-rubik text-sm text-body">Steel</span>
                         </label>
-                        <label className="flex cursor-pointer items-center gap-2">
+                        <label className="flex cursor-pointer items-center gap-2 pointer-coarse:min-h-11">
                           <Radio.Root
                             value="Aluminum"
                             className="flex size-5 items-center justify-center rounded-full border-[1.2px] border-[#cdcfd1] bg-white data-checked:border-blue"
@@ -961,23 +1036,20 @@ export function QuoteGeneratorSheet({
                 <div className="flex flex-col gap-1">
                   {rimJobList.map((job) => {
                     const isChecked = !!checkedJobs[job.key];
-                    const leafKey = job.children.length ? jobSubTypes[job.key] : job.key;
+                    const leaves = selectedLeaves(job);
                     const isSpot = job.key === "spot-polish";
+                    const isMulti = MULTI_SELECT_RIM_GROUPS.has(job.key);
                     const priceLoading = isSpot ? spotPriceFetching : rimPricesFetching;
-                    const priceRow = leafKey && !isSpot ? rimPrices?.[leafKey] : undefined;
-                    const qty = parseInt(rimJobQty(job.key), 10) || 1;
-                    const displayUnit = isSpot
-                      ? spotPrice?.found && leafKey
-                        ? spotPrice.unitCost * qty
-                        : undefined
-                      : priceRow?.found
-                        ? applyRimModifier(priceRow.unitCost) * qty
-                        : undefined;
+                    const priced = isSpot
+                      ? !!spotPrice?.found
+                      : leaves.some((leaf) => rimPrices?.[leaf.key]?.found);
+                    const displayUnit =
+                      leaves.length > 0 && priced ? rimJobLineCost(job) : undefined;
                     return (
                       <div key={job.key}>
                         <div
                           className={cn(
-                            "flex items-center gap-4 px-3 py-2",
+                            "flex items-center gap-4 px-3 py-2 pointer-coarse:py-0",
                             isChecked && "bg-page",
                           )}
                         >
@@ -995,7 +1067,7 @@ export function QuoteGeneratorSheet({
                                   minimumFractionDigits: 2,
                                 })}
                               </span>
-                            ) : isChecked && leafKey && rimSize ? (
+                            ) : isChecked && leaves.length > 0 && rimSize ? (
                               priceLoading ? (
                                 <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-label" />
                               ) : (
@@ -1006,15 +1078,50 @@ export function QuoteGeneratorSheet({
                             ) : null}
                           </div>
                         </div>
-                        {job.children.length > 0 && isChecked && (
+                        {job.children.length > 0 && isChecked && isMulti && (
+                          <div className="flex flex-col gap-1 bg-page px-3 pb-2">
+                            <p className="font-rubik text-xs leading-3.5 text-label">
+                              Select one or more options:
+                            </p>
+                            <div className="flex flex-col divide-y divide-field-line rounded-lg border border-field-line bg-white">
+                              {job.children.map((c) => {
+                                const leafPrice = rimPrices?.[c.key];
+                                return (
+                                  <div key={c.key} className="flex items-center gap-2 pr-2">
+                                    <FloorCheckbox
+                                      checked={leaves.some((leaf) => leaf.key === c.key)}
+                                      onCheckedChange={(v) => toggleRimLeaf(job.key, c.key, !!v)}
+                                      label={c.label}
+                                      className="min-h-11 flex-1 px-2"
+                                    />
+                                    {leafPrice?.found ? (
+                                      <span className="shrink-0 font-rubik text-xs font-medium text-body">
+                                        {formatCents(leafPrice.unitCost)}
+                                      </span>
+                                    ) : rimSize ? (
+                                      rimPricesFetching ? (
+                                        <Loader2 className="size-4 shrink-0 animate-spin text-label" />
+                                      ) : (
+                                        <span className="shrink-0 font-rubik text-xs text-red">
+                                          No price set
+                                        </span>
+                                      )
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {job.children.length > 0 && isChecked && !isMulti && (
                           <div className="flex flex-col gap-1 bg-page px-3 pb-2">
                             <label className="font-rubik text-xs leading-3.5 text-label">
                               Select option:
                             </label>
                             <Select
-                              value={jobSubTypes[job.key] ?? null}
+                              value={jobSubTypes[job.key]?.[0] ?? null}
                               onValueChange={(v) => {
-                                setJobSubTypes((prev) => ({ ...prev, [job.key]: v as string }));
+                                setJobSubTypes((prev) => ({ ...prev, [job.key]: [v as string] }));
                                 setJobTypeError(null);
                               }}
                             >
@@ -1033,7 +1140,7 @@ export function QuoteGeneratorSheet({
                                 ))}
                               </SelectPopup>
                             </Select>
-                            {isSpot && leafKey && rimSize != null && (
+                            {isSpot && leaves.length > 0 && rimSize != null && (
                               <span className="mt-1 font-rubik text-xs text-label">
                                 Rim size band:{" "}
                                 <span className="font-medium text-body">
@@ -1045,20 +1152,19 @@ export function QuoteGeneratorSheet({
                         )}
                         {isChecked && (
                           <div className="flex flex-col gap-1 bg-page px-3 pb-2">
-                            <label className="font-rubik text-xs leading-3.5 text-label">
+                            <label
+                              htmlFor={`rim-qty-${job.key}`}
+                              className="font-rubik text-xs leading-3.5 text-label"
+                            >
                               {isSpot ? "How many rims?" : "How many on this rim?"}
                             </label>
-                            <input
-                              type="number"
+                            <NumberStepper
+                              id={`rim-qty-${job.key}`}
                               min={1}
-                              value={rimJobQty(job.key)}
-                              onChange={(e) =>
-                                setRimJobQuantities((prev) => ({
-                                  ...prev,
-                                  [job.key]: e.target.value.replace(/\D/g, "") || "1",
-                                }))
+                              value={parseInt(rimJobQty(job.key), 10) || 1}
+                              onChange={(n) =>
+                                setRimJobQuantities((prev) => ({ ...prev, [job.key]: String(n) }))
                               }
-                              className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none"
                             />
                           </div>
                         )}
@@ -1067,6 +1173,11 @@ export function QuoteGeneratorSheet({
                   })}
                 </div>
                 {jobTypeError && <p className="px-3 font-rubik text-xs text-red">{jobTypeError}</p>}
+                {rimPriceError && (
+                  <p role="alert" className="px-3 font-rubik text-xs text-red">
+                    {rimPriceError}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1 px-3">
@@ -1140,24 +1251,30 @@ export function QuoteGeneratorSheet({
                 <weldingForm.Field name="lengthOfWeld">
                   {(field) => (
                     <div className="flex flex-col gap-1">
-                      <label className="font-rubik text-xs leading-3.5 text-label">
+                      <label
+                        htmlFor="weld-length"
+                        className="font-rubik text-xs leading-3.5 text-label"
+                      >
                         Length of weld (in inches):
                       </label>
                       <input
-                        type="number"
-                        min="1"
+                        id="weld-length"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={(e) => {
-                          field.handleChange(e.target.value);
+                          const digits = e.target.value.replace(/\D/g, "");
+                          field.handleChange(digits);
                           setWeldingSelects((prev) => ({
                             ...prev,
-                            lengthOfWeld: e.target.value,
+                            lengthOfWeld: digits,
                           }));
                         }}
                         placeholder="Enter length"
                         className={cn(
-                          "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
+                          "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost pointer-coarse:h-11 pointer-coarse:text-base pointer-coarse:leading-6",
                           field.state.meta.errors.length > 0
                             ? "border-red/50"
                             : "border-field-line",
@@ -1332,7 +1449,7 @@ export function QuoteGeneratorSheet({
                               })
                             }
                             className={cn(
-                              "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 font-rubik text-xs text-body",
+                              "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 font-rubik text-xs text-body pointer-coarse:min-h-11",
                               selected ? "border-blue bg-blue/5" : "border-field-line bg-white",
                             )}
                           >
@@ -1357,15 +1474,14 @@ export function QuoteGeneratorSheet({
 
                 {pcSelects.scope === "rim" && (
                   <div className="flex flex-col gap-1">
-                    <label className="font-rubik text-xs leading-3.5 text-label">
+                    <label htmlFor="pc-qty" className="font-rubik text-xs leading-3.5 text-label">
                       How many rims?
                     </label>
-                    <input
-                      type="number"
+                    <NumberStepper
+                      id="pc-qty"
                       min={1}
-                      value={pcQty}
-                      onChange={(e) => setPcQty(e.target.value.replace(/\D/g, "") || "1")}
-                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs text-body outline-none"
+                      value={parseInt(pcQty, 10) || 1}
+                      onChange={(n) => setPcQty(String(n))}
                     />
                   </div>
                 )}
@@ -1387,6 +1503,10 @@ export function QuoteGeneratorSheet({
                     <span className="font-rubik text-xs text-label">Price</span>
                     <Loader2 className="size-4 shrink-0 animate-spin text-label" />
                   </div>
+                ) : powderPriceError ? (
+                  <p role="alert" className="font-rubik text-xs text-red">
+                    {powderPriceError}
+                  </p>
                 ) : null}
 
                 <powderCoatingForm.Field name="comments">
@@ -1430,7 +1550,7 @@ export function QuoteGeneratorSheet({
               >
                 <div className="flex gap-3 px-3">
                   {generalSubTab === "brake-service" ? (
-                    <generalForm.Field name="vehicleSize">
+                    <generalForm.Field key="vehicleSize" name="vehicleSize">
                       {(field) => (
                         <div className="flex flex-1 flex-col gap-1">
                           <label className="font-rubik text-xs leading-3.5 text-label">
@@ -1459,7 +1579,7 @@ export function QuoteGeneratorSheet({
                       )}
                     </generalForm.Field>
                   ) : (
-                    <generalForm.Field name="tireSize">
+                    <generalForm.Field key="tireSize" name="tireSize">
                       {(field) => (
                         <div className="flex flex-1 flex-col gap-1">
                           <label className="font-rubik text-xs leading-3.5 text-label">
@@ -1515,7 +1635,7 @@ export function QuoteGeneratorSheet({
                             <div key={svc.key} className="flex flex-col">
                               <div
                                 className={cn(
-                                  "flex items-center gap-1.5 px-3 py-2",
+                                  "flex items-center gap-1.5 px-3 py-2 pointer-coarse:py-0",
                                   isChecked && "bg-page",
                                 )}
                               >
@@ -1559,20 +1679,20 @@ export function QuoteGeneratorSheet({
                               </div>
                               {isChecked && (
                                 <div className="flex flex-col gap-1 bg-page px-3 pb-2">
-                                  <label className="font-rubik text-xs leading-3.5 text-label">
+                                  <label
+                                    htmlFor={`tire-qty-${svc.key}`}
+                                    className="font-rubik text-xs leading-3.5 text-label"
+                                  >
                                     How many?
                                   </label>
-                                  <input
-                                    type="number"
-                                    inputMode="numeric"
-                                    pattern="[0-9]*"
+                                  <NumberStepper
+                                    id={`tire-qty-${svc.key}`}
                                     min={1}
-                                    value={serviceQuantities[svc.key] ?? "1"}
-                                    onChange={(e) => {
-                                      const raw = e.target.value.replace(/\D/g, "");
+                                    value={parseInt(serviceQuantities[svc.key] ?? "1", 10) || 1}
+                                    onChange={(n) => {
                                       setServiceQuantities((prev) => ({
                                         ...prev,
-                                        [svc.key]: raw === "" ? "1" : raw,
+                                        [svc.key]: String(n),
                                       }));
                                       setServiceQuantityErrors((prev) => {
                                         const next = { ...prev };
@@ -1580,17 +1700,8 @@ export function QuoteGeneratorSheet({
                                         return next;
                                       });
                                     }}
-                                    onKeyDown={(e) => {
-                                      if (["e", "E", "+", "-", "."].includes(e.key)) {
-                                        e.preventDefault();
-                                      }
-                                    }}
-                                    placeholder="Enter number"
                                     className={cn(
-                                      "flex h-9 w-full rounded-lg border bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost",
-                                      serviceQuantityErrors[svc.key]
-                                        ? "border-red/50"
-                                        : "border-field-line",
+                                      serviceQuantityErrors[svc.key] && "border-red/50",
                                     )}
                                   />
                                   {serviceQuantityErrors[svc.key] && (
@@ -1618,12 +1729,12 @@ export function QuoteGeneratorSheet({
                             removal !== undefined &&
                             generalSelects.vehicleSize
                           );
-                          const brakeUnitCost = priceReady ? brakePriceFor(svc.value) : 0;
+                          const brakeCombo = priceReady ? brakeComboFor(svc.value) : undefined;
                           return (
                             <div key={svc.value} className="flex flex-col">
                               <div
                                 className={cn(
-                                  "flex items-center gap-1.5 px-3 py-2",
+                                  "flex items-center gap-1.5 px-3 py-2 pointer-coarse:py-0",
                                   isChecked && "bg-page",
                                 )}
                               >
@@ -1636,15 +1747,25 @@ export function QuoteGeneratorSheet({
                                   label={svc.label}
                                   className="flex-1"
                                 />
-                                {priceReady && brakeUnitCost > 0 ? (
+                                {brakeCombo ? (
                                   <span className="ml-auto font-rubik text-base font-semibold text-body">
                                     $
-                                    {((brakeUnitCost * qty) / 100).toLocaleString("en-US", {
+                                    {((brakeCombo.unitCost * qty) / 100).toLocaleString("en-US", {
                                       minimumFractionDigits: 2,
                                     })}
                                   </span>
-                                ) : priceReady && brakeCombosFetching ? (
-                                  <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-label" />
+                                ) : isChecked && !generalSelects.vehicleSize ? (
+                                  <span className="ml-auto font-rubik text-xs text-red">
+                                    Select vehicle size
+                                  </span>
+                                ) : priceReady ? (
+                                  brakeCombosFetching ? (
+                                    <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-label" />
+                                  ) : (
+                                    <span className="ml-auto font-rubik text-xs text-red">
+                                      No price set
+                                    </span>
+                                  )
                                 ) : null}
                               </div>
                               {isChecked && (
@@ -1693,7 +1814,13 @@ export function QuoteGeneratorSheet({
                                       <SelectTrigger>
                                         <SelectValue placeholder="Select">
                                           {(v) =>
-                                            v === "include" ? "Include Removal" : "Without Removal"
+                                            v === "include" ? (
+                                              "Include Removal"
+                                            ) : v === "without" ? (
+                                              "Without Removal"
+                                            ) : (
+                                              <span className="text-ghost">Select</span>
+                                            )
                                           }
                                         </SelectValue>
                                       </SelectTrigger>
@@ -1704,22 +1831,22 @@ export function QuoteGeneratorSheet({
                                     </Select>
                                   </div>
                                   <div className="flex flex-col gap-1">
-                                    <label className="font-rubik text-xs leading-3.5 text-label">
+                                    <label
+                                      htmlFor={`brake-qty-${svc.value}`}
+                                      className="font-rubik text-xs leading-3.5 text-label"
+                                    >
                                       How many?
                                     </label>
-                                    <input
-                                      type="number"
-                                      inputMode="numeric"
+                                    <NumberStepper
+                                      id={`brake-qty-${svc.value}`}
                                       min={1}
-                                      value={serviceQuantities[svc.value] ?? "1"}
-                                      onChange={(e) => {
-                                        const raw = e.target.value.replace(/\D/g, "");
+                                      value={qty}
+                                      onChange={(n) =>
                                         setServiceQuantities((prev) => ({
                                           ...prev,
-                                          [svc.value]: raw === "" ? "1" : raw,
-                                        }));
-                                      }}
-                                      className="flex h-9 w-full rounded-lg border border-field-line bg-white px-2 font-rubik text-xs leading-3.5 text-body outline-none"
+                                          [svc.value]: String(n),
+                                        }))
+                                      }
                                     />
                                   </div>
                                 </div>
@@ -1732,6 +1859,11 @@ export function QuoteGeneratorSheet({
                   </Tabs>
                   {serviceTypeError && (
                     <p className="px-3 font-rubik text-xs text-red">{serviceTypeError}</p>
+                  )}
+                  {generalPriceError && (
+                    <p role="alert" className="px-3 font-rubik text-xs text-red">
+                      {generalPriceError}
+                    </p>
                   )}
                 </div>
               </form>
@@ -1824,7 +1956,7 @@ export function QuoteGeneratorSheet({
                   color="success"
                   type="submit"
                   form="rim-form"
-                  disabled={isAdding || !canSubmit}
+                  disabled={isAdding || !canSubmit || rimPriceError != null}
                   className="w-32"
                 >
                   {!editItem && !isAdding && <Plus />}
@@ -1866,7 +1998,7 @@ export function QuoteGeneratorSheet({
                   color="success"
                   type="submit"
                   form="powder-coating-form"
-                  disabled={isAdding || !canSubmit}
+                  disabled={isAdding || !canSubmit || powderPriceError != null}
                   className="w-32"
                 >
                   {!editItem && !isAdding && <Plus />}
@@ -1887,7 +2019,7 @@ export function QuoteGeneratorSheet({
                   color="success"
                   type="submit"
                   form="general-form"
-                  disabled={isAdding || !canSubmit}
+                  disabled={isAdding || !canSubmit || generalPriceError != null}
                   className="w-32"
                 >
                   {!editItem && !isAdding && <Plus />}

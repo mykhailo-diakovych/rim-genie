@@ -56,6 +56,7 @@ export const priceAdjustProcedure = protectedProcedure.use(async ({ context, nex
 
 export const adminProcedure = requireRole("admin");
 export const floorManagerProcedure = requireRole("admin", "floorManager");
-export const cashierProcedure = requireRole("admin", "cashier");
+export const cashierProcedure = requireRole("admin", "cashier", "manager");
 export const technicianProcedure = requireRole("admin", "technician");
-export const inventoryClerkProcedure = requireRole("admin", "inventoryClerk");
+export const jobBoardProcedure = requireRole("admin", "technician", "manager");
+export const inventoryProcedure = requireRole("admin", "cashier", "manager");

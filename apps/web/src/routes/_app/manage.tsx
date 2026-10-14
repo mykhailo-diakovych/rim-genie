@@ -2,30 +2,21 @@ import { useEffect, useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { MapPin, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { MapPin, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import type { ServiceType } from "@rim-genie/db/schema";
-
 import { ColorsTab } from "@/components/manage/colors-tab";
-import { DeleteServiceModal } from "@/components/manage/delete-service-modal";
 import { JobTypesTab } from "@/components/manage/job-types-tab";
 import { PricingConfigTab } from "@/components/manage/pricing-config-tab";
 import { PricingTab } from "@/components/manage/pricing-tab";
 import { VehicleSizesTab } from "@/components/manage/vehicle-sizes-tab";
-import { ServiceModal } from "@/components/manage/service-modal";
-import { ServiceTable, ServiceTableSkeleton } from "@/components/manage/service-table";
-import type { ServiceRow } from "@/components/manage/service-table";
-import { ServicesPagination } from "@/components/manage/services-pagination";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireRoles } from "@/lib/route-permissions";
-import { usePersistedState } from "@/lib/use-persisted-state";
 import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
 
 type ManageTab =
-  | "general"
   | "pricing"
   | "job-types"
   | "pricing-config"
@@ -38,7 +29,6 @@ export const Route = createFileRoute("/_app/manage")({
   validateSearch: (search: Record<string, unknown>): { tab: ManageTab } => ({
     tab: (
       [
-        "general",
         "pricing",
         "job-types",
         "pricing-config",
@@ -49,7 +39,7 @@ export const Route = createFileRoute("/_app/manage")({
       ] as const
     ).includes(search.tab as ManageTab)
       ? (search.tab as ManageTab)
-      : "general",
+      : "job-types",
   }),
   beforeLoad: requireRoles(["admin"]),
   head: () => ({
@@ -57,123 +47,6 @@ export const Route = createFileRoute("/_app/manage")({
   }),
   component: ManagePage,
 });
-
-function ServicesTab({ type }: { type: ServiceType }) {
-  const [addOpen, setAddOpen] = useState(false);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = usePersistedState<number>("manage.servicesPageSize", 10, (v) =>
-    typeof v === "number" && Number.isInteger(v) && v > 0 ? v : null,
-  );
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [editService, setEditService] = useState<ServiceRow | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<ServiceRow | null>(null);
-
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  const { data, isLoading } = useQuery(
-    orpc.manage.services.list.queryOptions({ input: { type, page, pageSize, search } }),
-  );
-
-  const deleteService = useMutation({
-    ...orpc.manage.services.delete.mutationOptions(),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: orpc.manage.services.list.key() });
-      toast.success(m.manage_toast_deleted());
-      setDeleteConfirm(null);
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const services = data?.items ?? [];
-  const total = data?.total ?? 0;
-
-  return (
-    <>
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative w-full sm:w-80">
-            <input
-              type="text"
-              placeholder={m.manage_search_placeholder()}
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-field-line bg-white px-3 py-2.5 pr-9 font-rubik text-xs leading-3.5 text-body outline-none placeholder:text-ghost"
-            />
-            <Search className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ghost" />
-          </div>
-
-          <Button className="sm:ml-auto" onClick={() => setAddOpen(true)}>
-            <Plus />
-            {m.manage_btn_add_service()}
-          </Button>
-        </div>
-
-        <div className="overflow-hidden rounded-lg border border-field-line bg-white">
-          {isLoading ? (
-            <ServiceTableSkeleton showVehicleType={type === "general"} />
-          ) : services.length === 0 ? (
-            <>
-              <ServiceTableSkeleton rows={null} showVehicleType={type === "general"} />
-              <p className="py-10 text-center font-rubik text-sm text-label">{m.manage_empty()}</p>
-            </>
-          ) : (
-            <>
-              <ServiceTable
-                services={services}
-                onEdit={setEditService}
-                onDelete={setDeleteConfirm}
-                isDeleting={deleteService.isPending ? deleteService.variables?.id : undefined}
-                showVehicleType={type === "general"}
-              />
-              <div className="border-t border-field-line">
-                <ServicesPagination
-                  page={page}
-                  pageSize={pageSize}
-                  total={total}
-                  onPageChange={setPage}
-                  onPageSizeChange={(size) => {
-                    setPageSize(size);
-                    setPage(1);
-                  }}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      <ServiceModal open={addOpen} onOpenChange={setAddOpen} serviceType={type} />
-
-      <ServiceModal
-        open={!!editService}
-        onOpenChange={(open) => {
-          if (!open) setEditService(null);
-        }}
-        serviceType={type}
-        service={editService ?? undefined}
-      />
-
-      <DeleteServiceModal
-        open={!!deleteConfirm}
-        onOpenChange={(open) => {
-          if (!open) setDeleteConfirm(null);
-        }}
-        serviceName={deleteConfirm?.name ?? ""}
-        onConfirm={() => deleteConfirm && deleteService.mutate({ id: deleteConfirm.id })}
-        isPending={deleteService.isPending}
-      />
-    </>
-  );
-}
 
 function LoyaltyTab() {
   const queryClient = useQueryClient();
@@ -526,7 +399,6 @@ function ManagePage() {
             without carrying the section nav off-screen with it. */}
         <TabsList className="shrink-0 lg:sticky lg:top-0 lg:w-56 lg:self-start">
           <TabGroupLabel label="Services" />
-          <TabsTrigger value="general">{m.manage_tab_general()}</TabsTrigger>
           <TabsTrigger value="job-types">Job Types</TabsTrigger>
           <TabsTrigger value="vehicle-sizes">Vehicle Sizes</TabsTrigger>
           <TabsTrigger value="colors">Colors</TabsTrigger>
@@ -539,10 +411,6 @@ function ManagePage() {
         </TabsList>
 
         <div className="min-w-0 flex-1">
-          <TabsContent value="general">
-            <ServicesTab type="general" />
-          </TabsContent>
-
           <TabsContent value="job-types">
             <JobTypesTab />
           </TabsContent>

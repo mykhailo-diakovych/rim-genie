@@ -22,7 +22,7 @@ import { orpc } from "@/utils/orpc";
 import { DeleteServiceModal } from "./delete-service-modal";
 import { PricingModal } from "./pricing-modal";
 import type { PricingRow } from "./pricing-modal";
-import { IconDelete, IconEdit } from "./service-table";
+import { IconDelete, IconEdit } from "./action-icons";
 import { ServicesPagination } from "./services-pagination";
 
 const CATEGORY_LABELS: Record<ServiceCategory, string> = {
