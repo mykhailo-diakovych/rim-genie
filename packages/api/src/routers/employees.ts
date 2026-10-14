@@ -78,7 +78,7 @@ const ROLE_LABELS: Record<string, string> = {
   floorManager: "Floor Manager",
   cashier: "Cashier",
   technician: "Technician",
-  inventoryClerk: "Inventory Clerk",
+  manager: "Manager",
 };
 
 async function clearInviteTokens(userId: string) {

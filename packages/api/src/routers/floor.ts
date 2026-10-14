@@ -216,7 +216,7 @@ export const floorRouter = {
         return rows[0]!;
       }),
 
-    list: requireRole("admin", "floorManager", "cashier")
+    list: requireRole("admin", "floorManager", "cashier", "manager")
       .input(
         z.object({ dateFrom: z.string().optional(), dateTo: z.string().optional() }).optional(),
       )

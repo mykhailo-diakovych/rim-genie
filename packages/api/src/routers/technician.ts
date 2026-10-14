@@ -5,7 +5,7 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@rim-genie/db";
 import { job, user } from "@rim-genie/db/schema";
 
-import { protectedProcedure, technicianProcedure } from "../index";
+import { jobBoardProcedure, protectedProcedure, technicianProcedure } from "../index";
 import * as JobService from "../services/job.service";
 import * as NotificationService from "../services/notification.service";
 import * as ProofService from "../services/proof.service";
@@ -30,7 +30,7 @@ export const technicianRouter = {
   },
 
   jobs: {
-    list: technicianProcedure
+    list: jobBoardProcedure
       .input(
         z.object({
           status: z.enum(["pending", "accepted", "in_progress", "completed"]).optional(),
@@ -56,7 +56,7 @@ export const technicianRouter = {
         });
       }),
 
-    get: technicianProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
+    get: jobBoardProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
       return db.query.job.findFirst({
         where: eq(job.id, input.id),
         with: {

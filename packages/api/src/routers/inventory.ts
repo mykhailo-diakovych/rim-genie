@@ -4,7 +4,7 @@ import { and, desc, eq, gte, ilike, inArray, lte, ne, or, sql } from "drizzle-or
 import { db } from "@rim-genie/db";
 import { customer, inventoryRecord, invoice, job } from "@rim-genie/db/schema";
 
-import { inventoryClerkProcedure, requireRole } from "../index";
+import { inventoryProcedure, requireRole } from "../index";
 import * as InventoryService from "../services/inventory.service";
 import * as JobService from "../services/job.service";
 import { runEffect } from "../services/run-effect";
@@ -78,7 +78,7 @@ const jobListWith = {
 
 export const inventoryRouter = {
   jobs: {
-    list: inventoryClerkProcedure
+    list: inventoryProcedure
       .input(jobFilterSchema.extend({ tab: tabSchema }))
       .handler(async ({ input }) => {
         const jobFilter = buildJobFilter(input);
@@ -127,7 +127,7 @@ export const inventoryRouter = {
         });
       }),
 
-    counts: inventoryClerkProcedure.input(jobFilterSchema).handler(async ({ input }) => {
+    counts: inventoryProcedure.input(jobFilterSchema).handler(async ({ input }) => {
       const jobFilter = buildJobFilter(input);
 
       const [overnightResult, readyResult, missingResult, pickedUpResult, outstandingResult] =
@@ -171,7 +171,7 @@ export const inventoryRouter = {
       };
     }),
 
-    markInvoicePickup: inventoryClerkProcedure
+    markInvoicePickup: inventoryProcedure
       .input(
         z.object({
           invoiceId: z.string(),
@@ -185,19 +185,19 @@ export const inventoryRouter = {
         );
       }),
 
-    markOvernight: inventoryClerkProcedure
+    markOvernight: inventoryProcedure
       .input(z.object({ jobId: z.string(), notes: z.string().optional() }))
       .handler(async ({ input }) => {
         return runEffect(JobService.markAsOvernight(input.jobId, input.notes));
       }),
 
-    markMissing: inventoryClerkProcedure
+    markMissing: inventoryProcedure
       .input(z.object({ jobId: z.string(), notes: z.string().optional() }))
       .handler(async ({ input }) => {
         return runEffect(JobService.markAsMissing(input.jobId, input.notes));
       }),
 
-    updateNote: inventoryClerkProcedure
+    updateNote: inventoryProcedure
       .input(
         z.object({
           jobId: z.string(),
@@ -223,7 +223,7 @@ export const inventoryRouter = {
   },
 
   pickups: {
-    getByInvoiceId: requireRole("admin", "floorManager", "cashier", "inventoryClerk")
+    getByInvoiceId: requireRole("admin", "floorManager", "cashier", "manager")
       .input(z.object({ invoiceId: z.string() }))
       .handler(async ({ input }) => {
         return runEffect(JobService.getPickupByInvoiceId(input.invoiceId));
@@ -231,7 +231,7 @@ export const inventoryRouter = {
   },
 
   records: {
-    createEOD: inventoryClerkProcedure
+    createEOD: inventoryProcedure
       .input(
         z.object({
           recordDate: z.string(),
@@ -248,7 +248,7 @@ export const inventoryRouter = {
         );
       }),
 
-    createSOD: inventoryClerkProcedure
+    createSOD: inventoryProcedure
       .input(
         z.object({
           recordDate: z.string(),
@@ -266,7 +266,7 @@ export const inventoryRouter = {
         );
       }),
 
-    list: inventoryClerkProcedure
+    list: inventoryProcedure
       .input(
         z.object({
           type: z.enum(["eod", "sod"]).optional(),
@@ -287,7 +287,7 @@ export const inventoryRouter = {
         });
       }),
 
-    latest: inventoryClerkProcedure.handler(async () => {
+    latest: inventoryProcedure.handler(async () => {
       const [latestEod, latestSod] = await Promise.all([
         db.query.inventoryRecord.findFirst({
           where: eq(inventoryRecord.type, "eod"),

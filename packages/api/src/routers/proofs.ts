@@ -6,7 +6,13 @@ import { PROOF_MIME_TYPES } from "../lib/proof-limits";
 import * as ProofService from "../services/proof.service";
 import { runEffect } from "../services/run-effect";
 
-const proofViewerProcedure = requireRole("admin", "technician", "floorManager", "cashier");
+const proofViewerProcedure = requireRole(
+  "admin",
+  "technician",
+  "floorManager",
+  "cashier",
+  "manager",
+);
 
 export const proofFileSchema = z.object({
   objectKey: z.string().min(1),

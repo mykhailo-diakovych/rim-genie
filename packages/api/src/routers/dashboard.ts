@@ -113,8 +113,8 @@ type AttentionKind = (typeof ATTENTION_KINDS)[number];
 const ATTENTION_LIST_ROLES: Record<AttentionKind, UserRole[] | null> = {
   overdue: null,
   unassigned: null,
-  invoices: ["admin", "floorManager", "cashier"],
-  inventory: ["admin", "inventoryClerk"],
+  invoices: ["admin", "floorManager", "cashier", "manager"],
+  inventory: ["admin", "cashier", "manager"],
 };
 
 function canListAttention(kind: AttentionKind, role: string | null | undefined): boolean {

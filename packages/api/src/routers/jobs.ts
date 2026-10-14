@@ -7,7 +7,7 @@ import { invoice } from "@rim-genie/db/schema";
 
 import { requireRole } from "../index";
 
-const jobViewerProcedure = requireRole("admin", "floorManager", "cashier");
+const jobViewerProcedure = requireRole("admin", "floorManager", "cashier", "manager");
 
 export const jobsRouter = {
   getByInvoice: jobViewerProcedure
