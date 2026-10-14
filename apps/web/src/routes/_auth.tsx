@@ -2,12 +2,14 @@ import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 
 import { m } from "@/paraglide/messages";
 import { getUser } from "@/functions/get-user";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 export const Route = createFileRoute("/_auth")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }) => {
     const session = await getUser();
     if (session) {
-      throw redirect({ to: "/dashboard" });
+      const target = safeRedirect((search as { redirect?: unknown }).redirect);
+      throw target ? redirect({ href: target }) : redirect({ to: "/dashboard" });
     }
   },
   component: AuthLayout,
