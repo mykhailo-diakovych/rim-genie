@@ -14,6 +14,7 @@ import * as SmsService from "../services/sms.service";
 import { verifyJobTechnicianCode, verifyTechnicianCode } from "../services/technician-code.service";
 import { errorMessage, runEffect } from "../services/run-effect";
 import { createJobCompletedEmail } from "../emails/job-completed-email";
+import { formatCents } from "../lib/format-currency";
 import { proofFileSchema } from "./proofs";
 
 const technicianCode = z.string().regex(/^\d{4}$/);
@@ -25,7 +26,11 @@ function notifyCustomerInvoiceCompleted(invoiceId: string): Promise<string | nul
     const inv = yield* Effect.tryPromise(() =>
       db.query.invoice.findFirst({
         where: eq(invoice.id, invoiceId),
-        with: { customer: true, items: { orderBy: (i, { asc }) => [asc(i.sortOrder)] } },
+        with: {
+          customer: true,
+          quote: { columns: { quoteNumber: true } },
+          items: { orderBy: (i, { asc }) => [asc(i.sortOrder)] },
+        },
       }),
     );
     const cust = inv?.customer;
@@ -33,6 +38,9 @@ function notifyCustomerInvoiceCompleted(invoiceId: string): Promise<string | nul
 
     const pref = cust.communicationPreference ?? "sms";
     const jobDesc = inv.items.map((item) => item.description ?? "Rim Job").join(", ");
+    const quoteRef = inv.quote
+      ? `QUO-${String(inv.quote.quoteNumber).padStart(4, "0")}`
+      : `INV-${String(inv.invoiceNumber).padStart(4, "0")}`;
 
     if (pref === "email" && cust.email) {
       yield* EmailService.send({
@@ -47,7 +55,7 @@ function notifyCustomerInvoiceCompleted(invoiceId: string): Promise<string | nul
     } else if (pref === "sms" && cust.phone) {
       yield* SmsService.send({
         to: cust.phone,
-        text: `Hi ${cust.name}, your rim repair (${jobDesc}) is complete and ready for pickup! - Rim Genie`,
+        text: `Hi ${cust.name}, your rim repair for quote ${quoteRef} (${formatCents(inv.total)}) is complete and ready for pickup! - Rim Genie`,
       });
     }
   });
