@@ -9,6 +9,7 @@ import {
   quoteItem,
   termsSignature,
   invoice,
+  invoiceAuditEvent,
   loyaltyConfig,
   payment,
   job,
@@ -447,7 +448,7 @@ export const floorRouter = {
       }),
 
     get: protectedProcedure.input(z.object({ id: z.string() })).handler(async ({ input }) => {
-      return db.query.quote.findFirst({
+      const found = await db.query.quote.findFirst({
         where: eq(quote.id, input.id),
         with: {
           customer: true,
@@ -457,9 +458,20 @@ export const floorRouter = {
           items: {
             orderBy: (i, { asc }) => [asc(i.sortOrder)],
           },
-          invoice: true,
+          invoice: { with: { payments: { columns: { amount: true } } } },
         },
       });
+      if (!found) return found;
+
+      // The floor needs the amount already collected to keep a modified quote above it.
+      const { invoice: inv, ...rest } = found;
+      if (!inv) return { ...rest, invoice: null, amountPaid: 0 };
+      const { payments, ...invoiceRow } = inv;
+      return {
+        ...rest,
+        invoice: invoiceRow,
+        amountPaid: payments.reduce((s, p) => s + p.amount, 0),
+      };
     }),
 
     create: protectedProcedure
@@ -833,6 +845,7 @@ export const floorRouter = {
         const item = existing[0];
         if (!item) return { success: true as const };
         await assertQuoteEditable(item.quoteId);
+        await runEffect(InvoiceService.assertQuoteItemRemovable(item.id));
 
         await db.delete(quoteItem).where(eq(quoteItem.id, input.id));
         await recalcQuoteTotal(item.quoteId);
@@ -851,6 +864,7 @@ export const floorRouter = {
           .where(eq(quoteItem.id, input.id));
         if (!existing) throw new ORPCError("NOT_FOUND", { message: "Quote item not found" });
         await assertQuoteEditable(existing.quoteId);
+        if (input.excluded) await runEffect(InvoiceService.assertQuoteItemRemovable(input.id));
 
         const rows = await db
           .update(quoteItem)
@@ -938,6 +952,7 @@ export const floorRouter = {
           with: {
             items: { columns: { id: true }, where: (i, { eq }) => eq(i.isExcluded, false) },
             termsSignature: { columns: { id: true } },
+            invoice: { columns: { id: true } },
           },
         });
         if (!found) return runEffect(Effect.fail(new QuoteNotFound({ id: input.quoteId })));
@@ -950,6 +965,7 @@ export const floorRouter = {
         if (!found.termsSignature) {
           return runEffect(Effect.fail(new DisclaimerNotSigned({ quoteId: input.quoteId })));
         }
+        await runEffect(InvoiceService.assertQuoteTotalCoversPaid(input.quoteId));
 
         const rows = await db
           .update(quote)
@@ -960,6 +976,16 @@ export const floorRouter = {
           })
           .where(eq(quote.id, input.quoteId))
           .returning();
+
+        if (found.invoice) {
+          await db.insert(invoiceAuditEvent).values({
+            invoiceId: found.invoice.id,
+            type: "refinalized",
+            actorId: context.session.user.id,
+            fromStatus: found.status,
+            toStatus: "finalized",
+          });
+        }
         return rows[0]!;
       }),
 

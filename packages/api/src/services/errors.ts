@@ -171,3 +171,38 @@ export class AfterProofRequired extends Data.TaggedError("AfterProofRequired")<{
 export class ProofNotFound extends Data.TaggedError("ProofNotFound")<{
   id: string;
 }> {}
+
+export class InvoiceLinesHaveStartedJobs extends Data.TaggedError("InvoiceLinesHaveStartedJobs")<{
+  invoiceId: string;
+  lines: string[];
+}> {}
+
+export class InvoiceNotInCashierQueue extends Data.TaggedError("InvoiceNotInCashierQueue")<{
+  invoiceId: string;
+}> {}
+
+export class InvoiceModificationAlreadyPending extends Data.TaggedError(
+  "InvoiceModificationAlreadyPending",
+)<{
+  invoiceId: string;
+}> {}
+
+export class InvoiceModificationNotFound extends Data.TaggedError("InvoiceModificationNotFound")<{
+  id: string;
+}> {}
+
+export class InvoiceModificationAlreadyResolved extends Data.TaggedError(
+  "InvoiceModificationAlreadyResolved",
+)<{
+  id: string;
+}> {}
+
+export class InvoiceModificationNotAssigned extends Data.TaggedError(
+  "InvoiceModificationNotAssigned",
+)<{
+  id: string;
+}> {}
+
+export class InvalidModificationApprover extends Data.TaggedError("InvalidModificationApprover")<{
+  userId: string;
+}> {}

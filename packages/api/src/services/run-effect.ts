@@ -120,6 +120,32 @@ const TAG_MAP: Record<
     message: "Upload at least one photo or video of the completed work before completing the job",
   },
   ProofNotFound: { code: "NOT_FOUND", message: "Proof not found" },
+  InvoiceLinesHaveStartedJobs: {
+    code: "CONFLICT",
+    message: (error) =>
+      `Work has already started on these services, so they cannot be removed from the invoice: ${(error.lines as string[]).join(", ")}`,
+  },
+  InvoiceNotInCashierQueue: {
+    code: "CONFLICT",
+    message: "This invoice is not in the cashier queue",
+  },
+  InvoiceModificationAlreadyPending: {
+    code: "CONFLICT",
+    message: "A modification request is already pending for this invoice",
+  },
+  InvoiceModificationNotFound: { code: "NOT_FOUND", message: "Modification request not found" },
+  InvoiceModificationAlreadyResolved: {
+    code: "CONFLICT",
+    message: "This modification request has already been resolved",
+  },
+  InvoiceModificationNotAssigned: {
+    code: "FORBIDDEN",
+    message: "Only the admin assigned to this request can respond to it",
+  },
+  InvalidModificationApprover: {
+    code: "BAD_REQUEST",
+    message: "Select an active admin to review this request",
+  },
 };
 
 // Failures caused by an external provider carry the provider's own explanation.

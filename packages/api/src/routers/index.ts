@@ -12,6 +12,7 @@ import { discountRouter } from "./discount";
 import { employeesRouter } from "./employees";
 import { floorRouter } from "./floor";
 import { inventoryRouter } from "./inventory";
+import { invoiceModificationRouter } from "./invoice-modification";
 import { jobsRouter } from "./jobs";
 import { loyaltyRouter } from "./loyalty";
 import { manageRouter } from "./manage";
@@ -41,6 +42,7 @@ export const appRouter = {
   employees: employeesRouter,
   floor: floorRouter,
   inventory: inventoryRouter,
+  invoiceModification: invoiceModificationRouter,
   jobs: jobsRouter,
   loyalty: loyaltyRouter,
   manage: manageRouter,

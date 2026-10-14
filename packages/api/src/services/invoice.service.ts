@@ -1,11 +1,11 @@
 import { Effect } from "effect";
-import { eq, sql, sum } from "drizzle-orm";
+import { eq, inArray, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { lineTotalCents } from "@rim-genie/db/line-item";
 import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
-import { quote, invoice, invoiceItem, payment, job } from "@rim-genie/db/schema";
-import type { InvoiceStatus } from "@rim-genie/db/schema";
+import { quote, invoice, invoiceAuditEvent, invoiceItem, payment, job } from "@rim-genie/db/schema";
+import type { InvoiceLineChange, InvoiceLineSnapshot, InvoiceStatus } from "@rim-genie/db/schema";
 
 import {
   QuoteNotFound,
@@ -13,16 +13,21 @@ import {
   InvoiceNotFound,
   InvoiceHasPayments,
   InvoiceHasJobs,
+  InvoiceLinesHaveStartedJobs,
   InvoiceTotalBelowPaid,
   QuoteNotFinalized,
 } from "./errors";
 
 // The invoice (and with it anything the cashier and technicians see) only comes into being
-// here, when the floor explicitly sends a finalized quote 
+// here, when the floor explicitly sends a finalized quote
 export function sendQuoteToCashier(quoteId: string, userId: string) {
   return Effect.gen(function* () {
     const found = yield* Effect.tryPromise(() =>
-      db.query.quote.findFirst({ where: eq(quote.id, quoteId), columns: { status: true } }),
+      db.query.quote.findFirst({
+        where: eq(quote.id, quoteId),
+        columns: { status: true },
+        with: { invoice: { columns: { id: true } } },
+      }),
     );
 
     if (!found) {
@@ -32,15 +37,109 @@ export function sendQuoteToCashier(quoteId: string, userId: string) {
       return yield* Effect.fail(new QuoteNotFinalized({ quoteId }));
     }
 
-    const inv = yield* syncInvoiceFromQuote(quoteId, userId);
+    const synced = yield* syncInvoiceFromQuote(quoteId, userId);
     yield* Effect.tryPromise(() =>
       db
         .update(quote)
         .set({ status: SENT_TO_CASHIER_STATUS, sentToCashierAt: new Date() })
         .where(eq(quote.id, quoteId)),
     );
-    return inv;
+
+    // A re-send closes a modification cycle, so the floor's line changes go on the record.
+    if (found.invoice) {
+      yield* Effect.tryPromise(() =>
+        db.insert(invoiceAuditEvent).values({
+          invoiceId: synced.invoice.id,
+          type: "sent_to_cashier",
+          actorId: userId,
+          fromStatus: "finalized",
+          toStatus: SENT_TO_CASHIER_STATUS,
+          details: {
+            previousTotal: synced.previousTotal,
+            newTotal: synced.invoice.total,
+            changes: synced.changes,
+          },
+        }),
+      );
+    }
+    return synced.invoice;
   });
+}
+
+function paidOnInvoice(invoiceId: string) {
+  return Effect.tryPromise(() =>
+    db
+      .select({ paid: sum(payment.amount) })
+      .from(payment)
+      .where(eq(payment.invoiceId, invoiceId)),
+  ).pipe(Effect.map(([row]) => Number(row?.paid ?? 0)));
+}
+
+// Finalizing is where the floor commits to a total, so a quote whose invoice already holds
+// payments cannot be finalized below them.
+export function assertQuoteTotalCoversPaid(quoteId: string) {
+  return Effect.gen(function* () {
+    const found = yield* Effect.tryPromise(() =>
+      db.query.quote.findFirst({
+        where: eq(quote.id, quoteId),
+        columns: { total: true },
+        with: { invoice: { columns: { id: true, total: true, tax: true } } },
+      }),
+    );
+    if (!found?.invoice) return;
+
+    const paid = yield* paidOnInvoice(found.invoice.id);
+    const total = found.total + found.invoice.tax;
+    if (total < paid && total !== found.invoice.total) {
+      return yield* Effect.fail(new InvoiceTotalBelowPaid({ invoiceId: found.invoice.id, paid }));
+    }
+  });
+}
+
+// Stops a line from leaving the quote while a technician is already on its job, so the
+// later re-send cannot get stuck on it.
+export function assertQuoteItemRemovable(quoteItemId: string) {
+  return Effect.gen(function* () {
+    const linked = yield* Effect.tryPromise(() =>
+      db.query.invoiceItem.findFirst({
+        where: eq(invoiceItem.quoteItemId, quoteItemId),
+        with: { job: { columns: { status: true } } },
+      }),
+    );
+    if (linked?.job && linked.job.status !== "pending") {
+      return yield* Effect.fail(
+        new InvoiceLinesHaveStartedJobs({
+          invoiceId: linked.invoiceId,
+          lines: [lineSnapshot(linked).description],
+        }),
+      );
+    }
+  });
+}
+
+function lineSnapshot(item: {
+  description: string | null;
+  quantity: number;
+  unitCost: number;
+  itemType: string;
+  inches: number | null;
+  priceOverridden: boolean;
+}): InvoiceLineSnapshot {
+  return {
+    description: item.description ?? "Rim Job",
+    quantity: item.quantity,
+    unitCost: item.unitCost,
+    total: lineTotalCents(item),
+  };
+}
+
+function sameLine(a: InvoiceLineSnapshot, b: InvoiceLineSnapshot) {
+  return (
+    a.description === b.description &&
+    a.quantity === b.quantity &&
+    a.unitCost === b.unitCost &&
+    a.total === b.total
+  );
 }
 
 // The one place an invoice total is worked out. Every path that changes it goes through here,
@@ -52,13 +151,7 @@ function settleInvoiceTotals(
   parts: { subtotal: number; discount: number; tax: number },
 ) {
   return Effect.gen(function* () {
-    const [paidRow] = yield* Effect.tryPromise(() =>
-      db
-        .select({ paid: sum(payment.amount) })
-        .from(payment)
-        .where(eq(payment.invoiceId, invoiceId)),
-    );
-    const paid = Number(paidRow?.paid ?? 0);
+    const paid = yield* paidOnInvoice(invoiceId);
     const total = parts.subtotal - parts.discount + parts.tax;
 
     if (total < paid && total !== previousTotal) {
@@ -146,25 +239,58 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
         }),
       );
 
-      return result;
+      return { invoice: result, previousTotal: 0, changes: [] as InvoiceLineChange[] };
     }
 
+    // Re-sending after a modification updates the invoice in place: lines keep their ids, so
+    // jobs, payments and history stay attached and work already under way is left alone.
     const invoiceId = found.invoice.id;
+    const existingItems = yield* Effect.tryPromise(() =>
+      db.query.invoiceItem.findMany({
+        where: eq(invoiceItem.invoiceId, invoiceId),
+        with: { job: { columns: { id: true, status: true } } },
+      }),
+    );
+
+    const billableIds = new Set(billableItems.map((i) => i.id));
+    const existingByQuoteItem = new Map(
+      existingItems.filter((i) => i.quoteItemId).map((i) => [i.quoteItemId!, i]),
+    );
+    const removed = existingItems.filter((i) => !i.quoteItemId || !billableIds.has(i.quoteItemId));
+    const startedRemoved = removed.filter((i) => i.job && i.job.status !== "pending");
+
+    if (startedRemoved.length > 0) {
+      return yield* Effect.fail(
+        new InvoiceLinesHaveStartedJobs({
+          invoiceId,
+          lines: startedRemoved.map((i) => lineSnapshot(i).description),
+        }),
+      );
+    }
+
     const totals = yield* settleInvoiceTotals(invoiceId, found.invoice.total, {
       subtotal,
       discount: discountAmount,
       tax: found.invoice.tax,
     });
 
+    const hasJobs = existingItems.some((i) => i.job);
+    const changes: InvoiceLineChange[] = removed.map((i) => ({
+      kind: "removed",
+      before: lineSnapshot(i),
+    }));
+
     const result = yield* Effect.tryPromise(() =>
       db.transaction(async (tx) => {
-        await tx.delete(job).where(eq(job.invoiceId, invoiceId));
-        await tx.delete(invoiceItem).where(eq(invoiceItem.invoiceId, invoiceId));
+        const removedIds = removed.map((i) => i.id);
+        if (removedIds.length > 0) {
+          await tx.delete(job).where(inArray(job.invoiceItemId, removedIds));
+          await tx.delete(invoiceItem).where(inArray(invoiceItem.id, removedIds));
+        }
 
-        await tx.insert(invoiceItem).values(
-          billableItems.map((item) => ({
-            invoiceId,
-            quoteItemId: item.id,
+        const added: string[] = [];
+        for (const item of billableItems) {
+          const values = {
             itemType: item.itemType,
             vehicleSize: item.vehicleSize,
             sideOfVehicle: item.sideOfVehicle,
@@ -180,8 +306,28 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
             comments: item.comments,
             priceOverridden: item.priceOverridden,
             sortOrder: item.sortOrder,
-          })),
-        );
+          };
+          const current = existingByQuoteItem.get(item.id);
+          if (current) {
+            const before = lineSnapshot(current);
+            const after = lineSnapshot(item);
+            if (!sameLine(before, after)) changes.push({ kind: "changed", before, after });
+            await tx.update(invoiceItem).set(values).where(eq(invoiceItem.id, current.id));
+          } else {
+            const [inserted] = await tx
+              .insert(invoiceItem)
+              .values({ invoiceId, quoteItemId: item.id, ...values })
+              .returning({ id: invoiceItem.id });
+            added.push(inserted!.id);
+            changes.push({ kind: "added", after: lineSnapshot(item) });
+          }
+        }
+
+        // Jobs are created for the whole invoice at once, so lines added after that would
+        // otherwise never reach a technician.
+        if (hasJobs && added.length > 0) {
+          await tx.insert(job).values(added.map((invoiceItemId) => ({ invoiceId, invoiceItemId })));
+        }
 
         const [inv] = await tx
           .update(invoice)
@@ -193,7 +339,7 @@ export function syncInvoiceFromQuote(quoteId: string, userId: string) {
       }),
     );
 
-    return result;
+    return { invoice: result, previousTotal: found.invoice.total, changes };
   });
 }
 
