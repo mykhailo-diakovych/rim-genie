@@ -61,16 +61,27 @@ export function CompleteJobDialog({
         invoiceId: group.invoiceId,
         jobId: targets.length === 1 ? targets[0]!.id : undefined,
       });
+      const notificationErrors: string[] = [];
       for (const j of targets) {
-        await client.technician.jobs.complete({ jobId: j.id, code: techCode, notes, afterProofs });
+        const completed = await client.technician.jobs.complete({
+          jobId: j.id,
+          code: techCode,
+          notes,
+          afterProofs,
+        });
+        if (completed.customerNotificationError) {
+          notificationErrors.push(completed.customerNotificationError);
+        }
       }
+      return notificationErrors;
     },
-    onSuccess: async () => {
+    onSuccess: async (notificationErrors) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: orpc.technician.jobs.list.key() }),
         queryClient.invalidateQueries({ queryKey: orpc.proofs.list.key() }),
       ]);
       toast.success("Job completed");
+      for (const message of notificationErrors) toast.warning(message);
       handleOpenChange(false);
     },
     onError: (err: Error) => toast.error(err.message),

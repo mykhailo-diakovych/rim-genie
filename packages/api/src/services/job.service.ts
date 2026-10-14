@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { and, eq, sql, sum } from "drizzle-orm";
+import { and, eq, ne, sql, sum } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { invoice, job, jobPickup, payment } from "@rim-genie/db/schema";
@@ -93,34 +93,56 @@ export function acceptJob(jobId: string, technicianId: string) {
 
 export function completeJob(jobId: string) {
   return Effect.gen(function* () {
-    const found = yield* Effect.tryPromise(() =>
-      db.query.job.findFirst({ where: eq(job.id, jobId) }),
+    const outcome = yield* Effect.tryPromise(() =>
+      db.transaction(async (tx) => {
+        const [target] = await tx
+          .select({ invoiceId: job.invoiceId })
+          .from(job)
+          .where(eq(job.id, jobId));
+        if (!target) return { type: "notFound" } as const;
+
+        // Locking the invoice serializes completions of its jobs, so when the last two jobs
+        // finish at the same time exactly one of them sees the invoice as done.
+        await tx
+          .select({ id: invoice.id })
+          .from(invoice)
+          .where(eq(invoice.id, target.invoiceId))
+          .for("update");
+
+        const [found] = await tx
+          .select({ status: job.status })
+          .from(job)
+          .where(eq(job.id, jobId))
+          .for("update");
+        if (!found) return { type: "notFound" } as const;
+        if (found.status === "completed") return { type: "alreadyCompleted" } as const;
+        if (found.status === "pending") return { type: "notAccepted" } as const;
+
+        const [updated] = await tx
+          .update(job)
+          .set({ status: "completed", completedAt: new Date() })
+          .where(eq(job.id, jobId))
+          .returning();
+
+        const [open] = await tx
+          .select({ count: sql<number>`count(*)::int` })
+          .from(job)
+          .where(and(eq(job.invoiceId, target.invoiceId), ne(job.status, "completed")));
+
+        return { type: "ok", job: updated!, invoiceCompleted: open?.count === 0 } as const;
+      }),
     );
 
-    if (!found) {
-      return yield* Effect.fail(new JobNotFound({ id: jobId }));
+    switch (outcome.type) {
+      case "notFound":
+        return yield* Effect.fail(new JobNotFound({ id: jobId }));
+      case "alreadyCompleted":
+        return yield* Effect.fail(new JobAlreadyCompleted({ jobId }));
+      case "notAccepted":
+        return yield* Effect.fail(new JobNotAccepted({ jobId }));
+      case "ok":
+        return { job: outcome.job, invoiceCompleted: outcome.invoiceCompleted };
     }
-
-    if (found.status === "completed") {
-      return yield* Effect.fail(new JobAlreadyCompleted({ jobId }));
-    }
-
-    if (found.status === "pending") {
-      return yield* Effect.fail(new JobNotAccepted({ jobId }));
-    }
-
-    const [updated] = yield* Effect.tryPromise(() =>
-      db
-        .update(job)
-        .set({
-          status: "completed",
-          completedAt: new Date(),
-        })
-        .where(eq(job.id, jobId))
-        .returning(),
-    );
-
-    return updated!;
   });
 }
 

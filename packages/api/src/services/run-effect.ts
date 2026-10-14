@@ -160,6 +160,18 @@ const TAGS_WITH_REASON = new Set([
   "ProofFileInvalid",
 ]);
 
+export function errorMessage(error: { _tag: string }): string {
+  const mapped = TAG_MAP[error._tag];
+  const base =
+    typeof mapped?.message === "function"
+      ? mapped.message(error as Record<string, unknown>)
+      : (mapped?.message ?? "Something went wrong");
+  const reason = (error as { reason?: unknown }).reason;
+  return TAGS_WITH_REASON.has(error._tag) && typeof reason === "string" && reason.trim()
+    ? `${base}: ${reason}`
+    : base;
+}
+
 export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): Promise<A> {
   const exit = await Effect.runPromiseExit(effect);
 
@@ -168,19 +180,8 @@ export async function runEffect<A>(effect: Effect.Effect<A, { _tag: string }>): 
   const failure = Cause.failureOption(exit.cause);
   if (Option.isSome(failure)) {
     const error = failure.value;
-    const mapped = TAG_MAP[error._tag];
-    const base =
-      typeof mapped?.message === "function"
-        ? mapped.message(error as Record<string, unknown>)
-        : (mapped?.message ?? "Something went wrong");
-    const reason = (error as { reason?: unknown }).reason;
-    const message =
-      TAGS_WITH_REASON.has(error._tag) && typeof reason === "string" && reason.trim()
-        ? `${base}: ${reason}`
-        : base;
-
-    throw new ORPCError(mapped?.code ?? "INTERNAL_SERVER_ERROR", {
-      message,
+    throw new ORPCError(TAG_MAP[error._tag]?.code ?? "INTERNAL_SERVER_ERROR", {
+      message: errorMessage(error),
       data: { ...error },
     });
   }

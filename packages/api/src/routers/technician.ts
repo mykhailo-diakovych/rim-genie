@@ -3,7 +3,7 @@ import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
-import { job, user } from "@rim-genie/db/schema";
+import { invoice, job, user } from "@rim-genie/db/schema";
 
 import { jobBoardProcedure, protectedProcedure, technicianProcedure } from "../index";
 import * as JobService from "../services/job.service";
@@ -12,11 +12,64 @@ import * as ProofService from "../services/proof.service";
 import * as EmailService from "../services/email.service";
 import * as SmsService from "../services/sms.service";
 import { verifyJobTechnicianCode, verifyTechnicianCode } from "../services/technician-code.service";
-import { runEffect } from "../services/run-effect";
+import { errorMessage, runEffect } from "../services/run-effect";
 import { createJobCompletedEmail } from "../emails/job-completed-email";
 import { proofFileSchema } from "./proofs";
 
 const technicianCode = z.string().regex(/^\d{4}$/);
+
+// The customer hears once per invoice, when its last job is done. A failed send never
+// undoes the completion: it is logged and returned so the technician sees why.
+function notifyCustomerInvoiceCompleted(invoiceId: string): Promise<string | null> {
+  const send = Effect.gen(function* () {
+    const inv = yield* Effect.tryPromise(() =>
+      db.query.invoice.findFirst({
+        where: eq(invoice.id, invoiceId),
+        with: { customer: true, items: { orderBy: (i, { asc }) => [asc(i.sortOrder)] } },
+      }),
+    );
+    const cust = inv?.customer;
+    if (!inv || !cust) return;
+
+    const pref = cust.communicationPreference ?? "sms";
+    const jobDesc = inv.items.map((item) => item.description ?? "Rim Job").join(", ");
+
+    if (pref === "email" && cust.email) {
+      yield* EmailService.send({
+        to: cust.email,
+        subject: "Your Rim Repair is Complete — Rim Genie",
+        react: createJobCompletedEmail({
+          customerName: cust.name,
+          jobDescription: jobDesc,
+          invoiceNumber: inv.invoiceNumber,
+        }),
+      });
+    } else if (pref === "sms" && cust.phone) {
+      yield* SmsService.send({
+        to: cust.phone,
+        text: `Hi ${cust.name}, your rim repair (${jobDesc}) is complete and ready for pickup! - Rim Genie`,
+      });
+    }
+  });
+
+  const fail = (message: string, ...details: unknown[]) =>
+    Effect.sync(() => {
+      console.error(`Invoice ${invoiceId} completion notice failed: ${message}`, ...details);
+      return message;
+    });
+
+  return Effect.runPromise(
+    send.pipe(
+      Effect.as(null),
+      Effect.catchTags({
+        EmailSendFailed: (error) => fail(errorMessage(error)),
+        SmsSendFailed: (error) => fail(errorMessage(error)),
+      }),
+      Effect.catchAll((error) => fail(errorMessage(error), error)),
+      Effect.catchAllDefect((defect) => fail("Something went wrong", defect)),
+    ),
+  );
+}
 
 export const technicianRouter = {
   technicians: {
@@ -98,7 +151,7 @@ export const technicianRouter = {
       )
       .handler(async ({ input, context }) => {
         const notes = input.notes?.trim();
-        const result = await runEffect(
+        const { job: completed, invoiceCompleted } = await runEffect(
           Effect.gen(function* () {
             yield* verifyJobTechnicianCode(input.jobId, input.code);
             const invoiceId = yield* ProofService.invoiceIdOfJob(input.jobId);
@@ -112,8 +165,9 @@ export const technicianRouter = {
               });
             }
             yield* ProofService.requireAfterProof(invoiceId);
-            const completed = yield* JobService.completeJob(input.jobId);
-            return notes ? yield* JobService.addNote(input.jobId, notes) : completed;
+            const outcome = yield* JobService.completeJob(input.jobId);
+            if (!notes) return outcome;
+            return { ...outcome, job: yield* JobService.addNote(input.jobId, notes) };
           }),
         );
 
@@ -140,38 +194,15 @@ export const technicianRouter = {
               }),
             ).catch(() => {});
           }
-
-          const cust = completedJob?.invoice?.customer;
-          if (completedJob && cust) {
-            const pref = cust.communicationPreference ?? "sms";
-            const jobDesc = completedJob.invoiceItem?.description ?? "Rim Job";
-
-            if (pref === "email" && cust.email) {
-              Effect.runPromise(
-                EmailService.send({
-                  to: cust.email,
-                  subject: "Your Rim Repair is Complete — Rim Genie",
-                  react: createJobCompletedEmail({
-                    customerName: cust.name,
-                    jobDescription: jobDesc,
-                    invoiceNumber: completedJob.invoice!.invoiceNumber,
-                  }),
-                }),
-              ).catch(() => {});
-            } else if (pref === "sms" && cust.phone) {
-              Effect.runPromise(
-                SmsService.send({
-                  to: cust.phone,
-                  text: `Hi ${cust.name}, your rim repair (${jobDesc}) is complete and ready for pickup! - Rim Genie`,
-                }),
-              ).catch(() => {});
-            }
-          }
         } catch {
-          // Email failure must not block job completion
+          // Notification failure must not block job completion
         }
 
-        return result;
+        const customerNotificationError = invoiceCompleted
+          ? await notifyCustomerInvoiceCompleted(completed.invoiceId)
+          : null;
+
+        return { ...completed, customerNotificationError };
       }),
 
     setDueDate: technicianProcedure
