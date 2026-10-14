@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_app/technician/$invoiceId")({
       ? (search.source as Source)
       : "in-progress",
   }),
-  beforeLoad: requireRoles(["admin", "technician"]),
+  beforeLoad: requireRoles(["admin", "technician", "manager"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Job Details" }],
   }),

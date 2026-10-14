@@ -102,7 +102,7 @@
   "employees_role_floorManager": "Floor",
   "employees_role_cashier": "Cashier",
   "employees_role_technician": "Technician",
-  "employees_role_inventoryClerk": "Inventory",
+  "employees_role_manager": "Manager",
   "employees_modal_create_title": "Add Employee",
   "employees_modal_edit_title": "Edit Employee",
   "employees_label_first_name": "First Name:",

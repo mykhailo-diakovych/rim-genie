@@ -48,7 +48,7 @@ const AVATAR_TINTS: Record<UserRole, string> = {
   technician: "bg-blue/10",
   cashier: "bg-green/10",
   floorManager: "bg-badge-orange/10",
-  inventoryClerk: "bg-badge-magenta/10",
+  manager: "bg-badge-magenta/10",
 };
 
 const STATUS_STYLES: Record<EmployeeStatus, { dot: string; pill: string; label: () => string }> = {

@@ -7,7 +7,7 @@ export const ROLE_LABELS: Record<UserRole, () => string> = {
   floorManager: m.employees_role_floorManager,
   cashier: m.employees_role_cashier,
   technician: m.employees_role_technician,
-  inventoryClerk: m.employees_role_inventoryClerk,
+  manager: m.employees_role_manager,
 };
 
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -15,7 +15,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
   technician: "bg-blue",
   cashier: "bg-green",
   floorManager: "bg-badge-orange",
-  inventoryClerk: "bg-badge-magenta",
+  manager: "bg-badge-magenta",
 };
 
 export function RoleBadge({ role }: { role: UserRole }) {

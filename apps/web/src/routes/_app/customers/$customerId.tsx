@@ -37,7 +37,7 @@ import { m } from "@/paraglide/messages";
 import { client, orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/_app/customers/$customerId")({
-  beforeLoad: requireRoles(["admin", "floorManager", "cashier"]),
+  beforeLoad: requireRoles(["admin", "floorManager", "cashier", "manager"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Customer" }],
   }),

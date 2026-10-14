@@ -2,11 +2,13 @@ import { ChevronLeft, SquareCheckBig } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { StickyActionBar } from "@/components/layout/sticky-action-bar";
+import { useCanWorkJobs } from "@/lib/use-can-work-jobs";
 
 import { AcceptJobDialog } from "./accept-job-dialog";
 import { type JobGroup } from "./types";
 
 export function AssignDetailView({ group, onBack }: { group: JobGroup; onBack: () => void }) {
+  const canWorkJobs = useCanWorkJobs();
   return (
     <div className="flex flex-1 flex-col gap-5 p-3 sm:p-5">
       <StickyActionBar>
@@ -26,18 +28,20 @@ export function AssignDetailView({ group, onBack }: { group: JobGroup; onBack: (
             <span className="font-medium text-body">{group.invoiceNumber}</span>
           </div>
         </div>
-        <AcceptJobDialog
-          customer={group.customer}
-          jobId={String(group.invoiceNumber)}
-          jobIds={group.jobs.filter((j) => j.status === "pending").map((j) => j.id)}
-          triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-md border border-green font-rubik text-xs leading-3.5 text-green transition-colors hover:bg-green/5"
-          triggerContent={
-            <>
-              <SquareCheckBig className="size-4" />
-              Accept all
-            </>
-          }
-        />
+        {canWorkJobs && (
+          <AcceptJobDialog
+            customer={group.customer}
+            jobId={String(group.invoiceNumber)}
+            jobIds={group.jobs.filter((j) => j.status === "pending").map((j) => j.id)}
+            triggerClassName="flex h-9 w-[128px] items-center justify-center gap-1.5 rounded-md border border-green font-rubik text-xs leading-3.5 text-green transition-colors hover:bg-green/5"
+            triggerContent={
+              <>
+                <SquareCheckBig className="size-4" />
+                Accept all
+              </>
+            }
+          />
+        )}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-card-line bg-white shadow-card">
@@ -68,18 +72,20 @@ export function AssignDetailView({ group, onBack }: { group: JobGroup; onBack: (
             </div>
 
             <div className="flex items-start pt-0.5">
-              <AcceptJobDialog
-                customer={group.customer}
-                jobId={String(group.invoiceNumber)}
-                jobIds={[job.id]}
-                triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md bg-green font-rubik text-xs leading-3.5 text-white transition-opacity hover:opacity-90"
-                triggerContent={
-                  <>
-                    <SquareCheckBig className="size-4" />
-                    Accept
-                  </>
-                }
-              />
+              {canWorkJobs && (
+                <AcceptJobDialog
+                  customer={group.customer}
+                  jobId={String(group.invoiceNumber)}
+                  jobIds={[job.id]}
+                  triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md bg-green font-rubik text-xs leading-3.5 text-white transition-opacity hover:opacity-90"
+                  triggerContent={
+                    <>
+                      <SquareCheckBig className="size-4" />
+                      Accept
+                    </>
+                  }
+                />
+              )}
             </div>
           </div>
         ))}

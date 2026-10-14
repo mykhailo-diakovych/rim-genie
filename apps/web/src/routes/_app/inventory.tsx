@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { requireRoles } from "@/lib/route-permissions";
 
 export const Route = createFileRoute("/_app/inventory")({
-  beforeLoad: requireRoles(["admin", "inventoryClerk"]),
+  beforeLoad: requireRoles(["admin", "cashier", "manager"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Inventory" }],
   }),

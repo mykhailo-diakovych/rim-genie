@@ -1,6 +1,7 @@
 import { Eye, Undo2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useCanWorkJobs } from "@/lib/use-can-work-jobs";
 
 import { ReverseJobDialog } from "./reverse-job-dialog";
 import { PartialInvoiceNote } from "./partial-invoice-note";
@@ -10,6 +11,7 @@ import { formatHours, formatStartedAt } from "./use-jobs";
 export function CompletedJobCard({ group, onView }: { group: JobGroup; onView: () => void }) {
   const startedLabel = formatStartedAt(group.startedAt);
   const hoursLabel = formatHours(group.hoursSpent);
+  const canWorkJobs = useCanWorkJobs();
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-card-line bg-white p-3 shadow-card sm:flex-row sm:items-center">
       <div className="flex flex-1 flex-col gap-1">
@@ -52,18 +54,20 @@ export function CompletedJobCard({ group, onView }: { group: JobGroup; onView: (
           <Eye />
           View
         </Button>
-        <ReverseJobDialog
-          customer={group.customer}
-          jobId={String(group.invoiceNumber)}
-          jobIds={group.jobs.map((j) => j.id)}
-          triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
-          triggerContent={
-            <>
-              <Undo2 className="size-4" />
-              Reverse
-            </>
-          }
-        />
+        {canWorkJobs && (
+          <ReverseJobDialog
+            customer={group.customer}
+            jobId={String(group.invoiceNumber)}
+            jobIds={group.jobs.map((j) => j.id)}
+            triggerClassName="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-md border border-[#db3e21] font-rubik text-xs leading-3.5 text-[#db3e21] transition-colors hover:bg-[#db3e21]/5"
+            triggerContent={
+              <>
+                <Undo2 className="size-4" />
+                Reverse
+              </>
+            }
+          />
+        )}
       </div>
     </div>
   );
