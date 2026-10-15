@@ -176,6 +176,13 @@
       "when": 1791984283152,
       "tag": "0024_roles_manager",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792066314040,
+      "tag": "0025_build_up_split",
+      "breakpoints": true
     }
   ]
 }
