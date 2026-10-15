@@ -19,8 +19,7 @@
     "db:stop": "docker compose stop",
     "db:down": "docker compose down",
     "db:seed": "bunx @dotenvx/dotenvx run -f ../../apps/web/.env -- bun run src/seed.ts",
-    "db:seed:catalog": "bunx @dotenvx/dotenvx run -f ../../apps/web/.env -- bun run src/seed-catalog.ts",
-    "db:split-build-up": "bunx @dotenvx/dotenvx run -f ../../apps/web/.env -- bun run src/split-build-up.ts"
+    "db:seed:catalog": "bunx @dotenvx/dotenvx run -f ../../apps/web/.env -- bun run src/seed-catalog.ts"
   },
   "dependencies": {
     "@rim-genie/env": "workspace:*",
