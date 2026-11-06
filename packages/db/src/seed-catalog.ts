@@ -75,8 +75,7 @@ const KEY_FIXES: Record<string, string> = {
 };
 const fixKey = (k: string) => KEY_FIXES[k] ?? k;
 
-// Mutually-exclusive job-type pairs (RIM-3 K1). Kept idempotent and run on every
-// seed — including already-seeded databases — so the rule is guaranteed to exist.
+// Idempotent and run on every seed, including already-seeded databases.
 const EXCLUSION_PAIRS: [string, string][] = [["platinum-resurfacing", "spot-polish"]];
 
 async function ensureExclusions() {
