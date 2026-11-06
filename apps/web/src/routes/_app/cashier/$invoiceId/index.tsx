@@ -16,6 +16,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { formatBusinessDate, formatBusinessDateTime } from "@rim-genie/db/format-date";
 import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
 import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
 
@@ -50,15 +51,6 @@ export const Route = createFileRoute("/_app/cashier/$invoiceId/")({
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse rounded bg-page ${className}`} />;
-}
-
-function formatDate(d: Date | string | null | undefined) {
-  if (!d) return "\u2014";
-  return new Date(d).toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
 }
 
 function formatPaymentMode(mode: string) {
@@ -167,7 +159,8 @@ function InvoiceDetailPage() {
   );
   const inCashierQueue = inv?.quote?.status === SENT_TO_CASHIER_STATUS;
 
-  const canPay = inv?.status !== "paid" && inCashierQueue;
+  const hasBalance = balance > 0;
+  const hasPaymentReference = inv?.payments?.some((p) => p.reference) ?? false;
   const hasJobs = (inv?.jobs?.length ?? 0) > 0;
 
   const jobStatusCounts = inv?.jobs?.reduce(
@@ -208,17 +201,19 @@ function InvoiceDetailPage() {
               Request Modification
             </Button>
           )}
-          <Button
-            color="success"
-            disabled={!canPay}
-            nativeButton={false}
-            render={
-              <Link to="/cashier/$invoiceId/checkout" params={{ invoiceId }} search={{ from }} />
-            }
-          >
-            <CircleDollarSign />
-            Pay
-          </Button>
+          {inv && hasBalance && (
+            <Button
+              color="success"
+              disabled={!inCashierQueue}
+              nativeButton={false}
+              render={
+                <Link to="/cashier/$invoiceId/checkout" params={{ invoiceId }} search={{ from }} />
+              }
+            >
+              <CircleDollarSign />
+              Pay
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => sendToTechnician.mutate({ invoiceId })}
@@ -244,7 +239,7 @@ function InvoiceDetailPage() {
           <span>
             Awaiting {pendingModification.assignedAdmin?.name ?? "admin"} · requested by{" "}
             {pendingModification.requestedBy?.name ?? "cashier"} on{" "}
-            {formatDate(pendingModification.createdAt)}
+            {formatBusinessDate(pendingModification.createdAt)}
           </span>
         </div>
       )}
@@ -269,7 +264,7 @@ function InvoiceDetailPage() {
 
       <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card print:border-0 print:shadow-none">
         <div className="flex items-center justify-between">
-          <img src="/logo.png" alt="Rim Genie" className="h-12 w-auto" />
+          <img src="/logo.png" alt="Rim Genie" className="h-20 w-auto" />
           <h2 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
             {invoiceQuery.isLoading ? <Skeleton className="h-6 w-32" /> : "Invoice"}
           </h2>
@@ -294,7 +289,7 @@ function InvoiceDetailPage() {
                 {invoiceQuery.isLoading ? (
                   <Skeleton className="h-4 w-24" />
                 ) : (
-                  formatDate(inv?.createdAt)
+                  formatBusinessDate(inv?.createdAt)
                 )}
               </span>
             </div>
@@ -339,6 +334,7 @@ function InvoiceDetailPage() {
 
           <div className="flex items-center justify-end">
             <div className="flex flex-col gap-1 font-rubik text-sm text-body">
+              <span className="font-semibold">Rim Genie</span>
               <div className="flex items-center gap-1.5">
                 <Building2 className="size-4 shrink-0 text-ghost" />
                 <span>82c Waltham Park Rd,</span>
@@ -538,7 +534,11 @@ function InvoiceDetailPage() {
                   <th className="border-l border-field-line px-2 py-1.5 font-normal">Date</th>
                   <th className="border-l border-field-line px-2 py-1.5 font-normal">Method</th>
                   <th className="border-l border-field-line px-2 py-1.5 font-normal">Amount</th>
-                  <th className="border-l border-field-line px-2 py-1.5 font-normal">Reference</th>
+                  {hasPaymentReference && (
+                    <th className="border-l border-field-line px-2 py-1.5 font-normal">
+                      Reference
+                    </th>
+                  )}
                   <th className="border-r border-l border-field-line px-2 py-1.5 font-normal">
                     Received By
                   </th>
@@ -548,7 +548,7 @@ function InvoiceDetailPage() {
                 {inv?.payments?.map((p) => (
                   <tr key={p.id} className="border-b border-field-line">
                     <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                      {formatDate(p.createdAt)}
+                      {formatBusinessDateTime(p.createdAt)}
                     </td>
                     <td className="border-l border-field-line px-2 py-2 text-sm text-body">
                       {formatPaymentMode(p.mode)}
@@ -556,9 +556,11 @@ function InvoiceDetailPage() {
                     <td className="border-l border-field-line px-2 py-2 text-sm text-body">
                       {formatCents(p.amount)}
                     </td>
-                    <td className="border-l border-field-line px-2 py-2 text-sm text-body">
-                      {p.reference ?? "\u2014"}
-                    </td>
+                    {hasPaymentReference && (
+                      <td className="border-l border-field-line px-2 py-2 text-sm text-body">
+                        {p.reference}
+                      </td>
+                    )}
                     <td className="border-r border-l border-field-line px-2 py-2 text-sm text-body">
                       {p.receivedBy?.name ?? "\u2014"}
                     </td>
