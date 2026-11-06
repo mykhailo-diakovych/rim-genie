@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { formatBusinessDateTime } from "@rim-genie/db/format-date";
 import { EmailLayout, Row, TotalRow, styles } from "./email-layout";
 import { formatCents } from "../lib/format-currency";
 
@@ -103,10 +104,7 @@ function ReceiptEmail({
             {payments.map((p, i) => (
               <Row
                 key={i}
-                label={`${formatPaymentMode(p.mode)} — ${new Date(p.createdAt).toLocaleDateString(
-                  "en-US",
-                  { month: "short", day: "2-digit", year: "numeric" },
-                )}`}
+                label={`${formatPaymentMode(p.mode)} — ${formatBusinessDateTime(p.createdAt)}`}
                 value={formatCents(p.amount)}
               />
             ))}
