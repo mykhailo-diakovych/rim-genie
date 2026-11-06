@@ -3,9 +3,11 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight, Mail } from "lucide-react";
 import { toast } from "sonner";
 
+import { formatBusinessDateTime } from "@rim-genie/db/format-date";
 import type { UserRole } from "@rim-genie/db/schema";
 
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 import { authClient } from "@/lib/auth-client";
 import { formatCents } from "@/lib/format-currency";
 import { hasRouteAccess } from "@/lib/route-permissions";
@@ -19,12 +21,18 @@ interface InvoiceRow {
   total: number;
   status: InvoiceStatus;
   createdAt: Date;
+  paidAt: Date | string | null;
   customerName: string;
   customerEmail: string | null;
 }
 
 interface LatestInvoicesProps {
   invoices: InvoiceRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
 }
 
 const STATUS_STYLE: Record<InvoiceStatus, string> = {
@@ -39,7 +47,14 @@ const STATUS_LABEL: Record<InvoiceStatus, string> = {
   paid: "Paid",
 };
 
-export function LatestInvoices({ invoices }: LatestInvoicesProps) {
+export function LatestInvoices({
+  invoices,
+  total,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+}: LatestInvoicesProps) {
   const { data: session } = authClient.useSession();
   const canOpenCashier = hasRouteAccess("/cashier", session?.user.role as UserRole | undefined);
   const sendReceipt = useMutation({
@@ -86,6 +101,11 @@ export function LatestInvoices({ invoices }: LatestInvoicesProps) {
             <div className="flex h-8 w-16 items-center border-t border-l border-field-line px-2 py-1.5">
               <span className="font-rubik text-xs leading-3.5 font-normal text-label">Status</span>
             </div>
+            <div className="flex h-8 w-40 items-center border-t border-l border-field-line px-2 py-1.5">
+              <span className="font-rubik text-xs leading-3.5 font-normal text-label">
+                Paid Date
+              </span>
+            </div>
             <div className="flex h-8 w-12 items-center justify-center border-t border-r border-l border-field-line px-2 py-1.5">
               <span className="font-rubik text-xs leading-3.5 font-normal text-label">Send</span>
             </div>
@@ -99,9 +119,19 @@ export function LatestInvoices({ invoices }: LatestInvoicesProps) {
                 <div
                   className={`border-t border-l ${borderBottom} flex h-8 min-w-0 flex-1 items-center border-field-line px-2`}
                 >
-                  <span className="font-rubik text-xs leading-3.5 text-body">
-                    INV-{String(inv.invoiceNumber).padStart(4, "0")}
-                  </span>
+                  {canOpenCashier ? (
+                    <Link
+                      to="/cashier/$invoiceId"
+                      params={{ invoiceId: inv.id }}
+                      className="font-rubik text-xs leading-3.5 text-blue hover:underline"
+                    >
+                      INV-{String(inv.invoiceNumber).padStart(4, "0")}
+                    </Link>
+                  ) : (
+                    <span className="font-rubik text-xs leading-3.5 text-body">
+                      INV-{String(inv.invoiceNumber).padStart(4, "0")}
+                    </span>
+                  )}
                 </div>
                 <div
                   className={`border-t border-l ${borderBottom} flex h-8 min-w-0 flex-1 items-center border-field-line px-2`}
@@ -125,6 +155,13 @@ export function LatestInvoices({ invoices }: LatestInvoicesProps) {
                   </span>
                 </div>
                 <div
+                  className={`border-t border-l ${borderBottom} flex h-8 w-40 items-center border-field-line px-2`}
+                >
+                  <span className="font-rubik text-xs leading-3.5 text-body">
+                    {formatBusinessDateTime(inv.paidAt)}
+                  </span>
+                </div>
+                <div
                   className={`border-t border-r border-l ${borderBottom} flex h-8 w-12 items-center justify-center border-field-line px-2`}
                 >
                   {canOpenCashier && (
@@ -142,6 +179,13 @@ export function LatestInvoices({ invoices }: LatestInvoicesProps) {
               </div>
             );
           })}
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={onPageChange}
+            onPageSizeChange={onPageSizeChange}
+          />
         </div>
       )}
     </div>

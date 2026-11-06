@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { AttentionRequiredCard } from "@/components/dashboard/attention-required-card";
@@ -8,7 +9,9 @@ import { MetricCard } from "@/components/dashboard/metric-card";
 import { TeamActivityTable } from "@/components/dashboard/team-activity-table";
 import {
   DateRangeFilter,
+  formatDateRangeLabel,
   getDateFrom,
+  getDateTo,
   parseDateRange,
   type DateRange,
 } from "@/components/ui/date-range-filter";
@@ -25,34 +28,47 @@ export const Route = createFileRoute("/_app/dashboard")({
 });
 
 const METRIC_CONFIG = {
-  revenue: { icon: IconRevenue, color: "#6bc851", subtitle: () => m.metric_subtitle_today() },
-  open_jobs: { icon: IconInvoice, color: "#f5756a", subtitle: () => m.metric_subtitle_today() },
-  active_jobs: { icon: IconJobs, color: "#34c8e3", subtitle: () => m.metric_subtitle_currently() },
-  sleep_time: { icon: IconNight, color: "#335791", subtitle: () => m.metric_subtitle_currently() },
+  revenue: { icon: IconRevenue, color: "#6bc851" },
+  open_jobs: { icon: IconInvoice, color: "#f5756a" },
+  active_jobs: { icon: IconJobs, color: "#34c8e3" },
+  sleep_time: { icon: IconNight, color: "#335791" },
 } as const;
 
 function RouteComponent() {
-  const [dateRange, setDateRange] = usePersistedState<DateRange>(
+  const [dateRange, setDateRangeState] = usePersistedState<DateRange>(
     "dashboard.dateRange",
     "today",
     (v) => parseDateRange(v, "today"),
   );
-  const dateFrom = getDateFrom(dateRange);
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoicePageSize, setInvoicePageSize] = useState(10);
 
-  const input = { dateFrom };
-  const metricsQuery = useQuery(orpc.dashboard.metrics.queryOptions({ input }));
-  const teamQuery = useQuery(orpc.dashboard.teamActivity.queryOptions({ input }));
-  const attentionQuery = useQuery(orpc.dashboard.attentionRequired.queryOptions({ input }));
-  const latestInvoicesQuery = useQuery(orpc.dashboard.latestInvoices.queryOptions({ input }));
+  function setDateRange(next: DateRange) {
+    setDateRangeState(next);
+    setInvoicePage(1);
+  }
 
-  const isLoading =
-    (metricsQuery.isLoading && !metricsQuery.data) ||
-    (teamQuery.isLoading && !teamQuery.data) ||
-    (attentionQuery.isLoading && !attentionQuery.data);
+  const input = { dateFrom: getDateFrom(dateRange), dateTo: getDateTo(dateRange) };
+  const metricsQuery = useQuery(
+    orpc.dashboard.metrics.queryOptions({ input, placeholderData: keepPreviousData }),
+  );
+  const teamQuery = useQuery(
+    orpc.dashboard.teamActivity.queryOptions({ input, placeholderData: keepPreviousData }),
+  );
+  const attentionQuery = useQuery(orpc.dashboard.attentionRequired.queryOptions());
+  const latestInvoicesQuery = useQuery(
+    orpc.dashboard.latestInvoices.queryOptions({
+      input: { ...input, page: invoicePage, pageSize: invoicePageSize },
+      placeholderData: keepPreviousData,
+    }),
+  );
 
-  if (isLoading) {
+  // Skeleton only on first load, so the date filter stays mounted while refetching.
+  if (!metricsQuery.data && !teamQuery.data && !attentionQuery.data) {
     return <DashboardSkeleton />;
   }
+
+  const subtitle = formatDateRangeLabel(dateRange);
 
   return (
     <div className="flex flex-col gap-4 px-5 pt-4 pb-5">
@@ -70,7 +86,6 @@ function RouteComponent() {
           const config = METRIC_CONFIG[metric.key as keyof typeof METRIC_CONFIG] ?? {
             icon: IconRevenue,
             color: "#6bc851",
-            subtitle: () => "",
           };
           const titleKey = `metric_${metric.key}` as keyof typeof m;
           const titleFn = m[titleKey] as (() => string) | undefined;
@@ -78,7 +93,7 @@ function RouteComponent() {
             <MetricCard
               key={metric.key}
               title={titleFn ? titleFn() : metric.key}
-              subtitle={config.subtitle()}
+              subtitle={subtitle}
               value={metric.value}
               change={metric.change}
               sparkline={metric.sparkline}
@@ -95,7 +110,16 @@ function RouteComponent() {
         {attentionQuery.data && <AttentionRequiredCard items={attentionQuery.data.items} />}
       </div>
 
-      {latestInvoicesQuery.data && <LatestInvoices invoices={latestInvoicesQuery.data} />}
+      {latestInvoicesQuery.data && (
+        <LatestInvoices
+          invoices={latestInvoicesQuery.data.rows}
+          total={latestInvoicesQuery.data.total}
+          page={invoicePage}
+          pageSize={invoicePageSize}
+          onPageChange={setInvoicePage}
+          onPageSizeChange={setInvoicePageSize}
+        />
+      )}
     </div>
   );
 }

@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { and, desc, eq, gte, ilike, inArray, lte, ne, or, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
 import { customer, inventoryRecord, invoice, job } from "@rim-genie/db/schema";
 
 import { inventoryProcedure, requireRole } from "../index";
+import { missingJob, readyForPickupJob } from "../lib/classifications";
 import * as InventoryService from "../services/inventory.service";
 import * as JobService from "../services/job.service";
 import { runEffect } from "../services/run-effect";
@@ -53,13 +55,9 @@ function buildJobFilter({ dateFrom, dateTo, search }: z.infer<typeof jobFilterSc
   );
 }
 
-// Invoices whose every job is either completed or already out the door. Pickup is per invoice,
-// so a job only counts as ready for pickup once its whole invoice is.
-const readyInvoiceIds = db
-  .select({ id: job.invoiceId })
-  .from(job)
-  .groupBy(job.invoiceId)
-  .having(sql`bool_and(${job.status} = 'completed' or ${job.isPickedUp})`);
+// Relational queries alias the root table, so shared conditions are applied through an id subquery.
+const jobIdsWhere = (condition: SQL | undefined) =>
+  db.select({ id: job.id }).from(job).where(condition);
 
 const jobListWith = {
   invoiceItem: true,
@@ -109,13 +107,9 @@ export const inventoryRouter = {
                 case "overnight":
                   return andOp(eqOp(j.isOvernight, true), eqOp(j.isPickedUp, false));
                 case "readyForPickup":
-                  return andOp(
-                    eqOp(j.status, "completed"),
-                    eqOp(j.isPickedUp, false),
-                    inArray(j.invoiceId, readyInvoiceIds),
-                  );
+                  return inArray(j.id, jobIdsWhere(readyForPickupJob()));
                 case "missing":
-                  return andOp(eqOp(j.isMissing, true), eqOp(j.isPickedUp, false));
+                  return inArray(j.id, jobIdsWhere(missingJob()));
                 case "pickedUp":
                   return eqOp(j.isPickedUp, true);
               }
@@ -139,18 +133,11 @@ export const inventoryRouter = {
           db
             .select({ count: sql<number>`count(distinct ${job.invoiceId})::int` })
             .from(job)
-            .where(
-              and(
-                eq(job.status, "completed"),
-                eq(job.isPickedUp, false),
-                inArray(job.invoiceId, readyInvoiceIds),
-                jobFilter,
-              ),
-            ),
+            .where(and(readyForPickupJob(), jobFilter)),
           db
             .select({ count: sql<number>`count(*)::int` })
             .from(job)
-            .where(and(eq(job.isMissing, true), eq(job.isPickedUp, false), jobFilter)),
+            .where(and(missingJob(), jobFilter)),
           db
             .select({ count: sql<number>`count(*)::int` })
             .from(job)
