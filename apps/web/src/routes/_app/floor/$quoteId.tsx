@@ -275,6 +275,7 @@ function QuoteEditorPage() {
       tireSize: data.tireSize,
       jobTypes: data.jobTypes,
       description: data.description || undefined,
+      comments: data.comments || undefined,
     });
   }
 
@@ -297,6 +298,7 @@ function QuoteEditorPage() {
         tireSize: data.tireSize ?? null,
         jobTypes: data.jobTypes,
         description: data.description || undefined,
+        comments: data.comments,
       },
       {
         onSuccess: () => {
@@ -316,7 +318,12 @@ function QuoteEditorPage() {
     (comments !== (quote.comments ?? "") || customerReason !== (quote.customerReason ?? ""));
 
   function saveNotes() {
-    if (notesDirty) updateQuote.mutate({ id: quoteId, comments, customerReason });
+    if (notesDirty)
+      updateQuote.mutate({
+        id: quoteId,
+        comments,
+        customerReason: customerReason.trim() || undefined,
+      });
   }
 
   useEffect(() => {
@@ -328,7 +335,11 @@ function QuoteEditorPage() {
   async function handleFinalize() {
     if (notesDirty) {
       try {
-        await updateQuote.mutateAsync({ id: quoteId, comments, customerReason });
+        await updateQuote.mutateAsync({
+          id: quoteId,
+          comments,
+          customerReason: customerReason.trim() || undefined,
+        });
       } catch {
         return;
       }
@@ -504,7 +515,7 @@ function QuoteEditorPage() {
         <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-xl border border-card-line bg-white p-3 shadow-card">
           {/* Row 1: Logo + Title */}
           <div className="flex items-center justify-between">
-            <img src="/logo.png" alt="Rim Genie" className="h-12 w-auto" />
+            <img src="/logo.png" alt="Rim Genie" className="h-20 w-auto" />
             <h2 className="font-rubik text-[22px] leading-6.5 font-medium text-body">
               {quoteQuery.isLoading ? (
                 <Skeleton className="h-6 w-32" />
@@ -575,6 +586,7 @@ function QuoteEditorPage() {
 
             <div className="flex flex-1 justify-end">
               <div className="flex flex-col gap-1 font-rubik text-sm leading-4.5 text-body">
+                <span className="font-semibold">Rim Genie</span>
                 <div className="flex items-center gap-1.5">
                   <Building2 className="size-4 shrink-0 text-ghost" />
                   <span>82c Waltham Park Rd,</span>
@@ -635,16 +647,11 @@ function QuoteEditorPage() {
                           <tr className="border-b border-field-line align-top">
                             <td className="border-l border-field-line px-2 py-2" />
                             <td className="border-l border-field-line px-2 py-2">
-                              <div className="flex flex-col gap-2">
-                                <span className="text-sm leading-[18px] text-body">
-                                  Full Diagnostic Service
+                              <div className="flex gap-1 text-sm leading-[18px]">
+                                <span className="text-label">Full Diagnostic Service:</span>
+                                <span className="text-body">
+                                  {quote.fullDiagnosticConsent ? "Agree" : "Disagree"}
                                 </span>
-                                <div className="flex gap-1 text-sm leading-[18px]">
-                                  <span className="text-label">Comments:</span>
-                                  <span className="text-body">
-                                    {quote.fullDiagnosticConsent ? "Agree" : "Disagree"}
-                                  </span>
-                                </div>
                               </div>
                             </td>
                             <td className="border-l border-field-line px-2 py-2 text-sm text-body">
@@ -1333,10 +1340,12 @@ function ItemRow({
       <td className="border-l border-field-line px-2 py-2">
         <div className="flex flex-col gap-2">
           <span className="text-sm leading-[18px] text-body">{item.description ?? "Rim Job"}</span>
-          <div className="flex gap-1 text-sm leading-[18px]">
-            <span className="text-label">Comments:</span>
-            <span className="text-body">{item.comments || " "}</span>
-          </div>
+          {item.comments && (
+            <div className="flex gap-1 text-sm leading-[18px]">
+              <span className="text-label">Comments:</span>
+              <span className="text-body">{item.comments}</span>
+            </div>
+          )}
         </div>
       </td>
       <td className="border-l border-field-line px-2 py-2 text-sm text-body">

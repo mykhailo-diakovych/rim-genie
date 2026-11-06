@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Info, Plus, Search, Star, X } from "lucide-react";
+import { FilePenLine, Info, Plus, Search, Star, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Radio } from "@base-ui/react/radio";
 import { toast } from "sonner";
 
+import { SignatureModal } from "@/components/terms/signature-modal";
 import { Button } from "@/components/ui/button";
 import { orpc } from "@/utils/orpc";
 import { AddNewClientDialog } from "./add-new-client-dialog";
@@ -36,6 +37,8 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(lockedCustomerId);
   const [customerReason, setCustomerReason] = useState("");
   const [fullDiagnosticConsent, setFullDiagnosticConsent] = useState<boolean | null>(null);
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  const [signModalOpen, setSignModalOpen] = useState(false);
 
   useEffect(() => {
     setSelectedCustomerId(lockedCustomerId);
@@ -99,6 +102,7 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
     setSelectedCustomerId(lockedCustomerId);
     setCustomerReason("");
     setFullDiagnosticConsent(null);
+    setSignatureDataUrl(null);
     onClose();
   }
 
@@ -108,12 +112,16 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
     setShowDropdown(false);
   }
 
+  const hasReason = customerReason.trim().length > 0;
+
   function handleSubmit() {
-    if (!selectedCustomerId || fullDiagnosticConsent === null) return;
+    if (!selectedCustomerId || !hasReason || fullDiagnosticConsent === null || !signatureDataUrl)
+      return;
     createQuote.mutate({
       customerId: selectedCustomerId,
-      customerReason: customerReason.trim() || undefined,
+      customerReason: customerReason.trim(),
       fullDiagnosticConsent,
+      signatureDataUrl,
     });
   }
 
@@ -256,7 +264,7 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
           {/* Customer's reason for today's visit */}
           <div className="flex flex-col gap-1">
             <label className="font-rubik text-xs leading-3.5 text-label">
-              Customer's reason for today's visit
+              Customer's reason for today's visit <span className="text-red">*</span>
             </label>
             <textarea
               value={customerReason}
@@ -312,6 +320,30 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
               </p>
             )}
           </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="font-rubik text-xs leading-3.5 text-label">
+              Disclaimer <span className="text-red">*</span>
+            </label>
+            {signatureDataUrl ? (
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-field-line bg-white p-2">
+                <img src={signatureDataUrl} alt="Customer signature" className="h-12 w-auto" />
+                <Button variant="ghost" onClick={() => setSignModalOpen(true)}>
+                  Sign again
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setSignModalOpen(true)}>
+                  <FilePenLine />
+                  Sign Disclaimer
+                </Button>
+                <p className="font-rubik text-xs leading-3.5 text-label">
+                  The customer must sign the disclaimer to create the quote
+                </p>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
@@ -320,20 +352,31 @@ export function NewQuoteSheet({ open, onClose, customer }: NewQuoteSheetProps) {
             <Button variant="ghost" onClick={handleClose} className="w-18">
               Cancel
             </Button>
-            <Button
-              color="success"
-              className="w-32"
-              disabled={
-                !selectedCustomerId || fullDiagnosticConsent === null || createQuote.isPending
-              }
-              onClick={handleSubmit}
-            >
-              {!createQuote.isPending && <Plus />}
-              {createQuote.isPending ? "Creating..." : "Create Quote"}
-            </Button>
+            {hasReason && (
+              <Button
+                color="success"
+                className="w-32"
+                disabled={
+                  !selectedCustomerId ||
+                  fullDiagnosticConsent === null ||
+                  !signatureDataUrl ||
+                  createQuote.isPending
+                }
+                onClick={handleSubmit}
+              >
+                {!createQuote.isPending && <Plus />}
+                {createQuote.isPending ? "Creating..." : "Create Quote"}
+              </Button>
+            )}
           </div>
         </div>
       </div>
+
+      <SignatureModal
+        open={signModalOpen}
+        onOpenChange={setSignModalOpen}
+        onSign={setSignatureDataUrl}
+      />
 
       {/* Add New Customer Dialog */}
       <AddNewClientDialog
