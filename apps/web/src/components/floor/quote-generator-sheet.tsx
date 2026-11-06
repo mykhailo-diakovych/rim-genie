@@ -65,6 +65,7 @@ export interface QuoteGeneratorSheetData {
   itemType?: "rim" | "welding" | "powder-coating" | "general";
   jobTypes: JobTypeEntry[];
   description: string;
+  comments: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -76,6 +77,9 @@ const BRAKE_SERVICE_TYPES = [
 
 // Groups where several options can apply to one rim; their prices are summed.
 const MULTI_SELECT_RIM_GROUPS = new Set(["build-up", "crack-fix", "sprong"]);
+
+// Groups where each selected option carries its own quantity instead of one per group.
+const PER_OPTION_QTY_GROUPS = new Set(["crack-fix"]);
 
 const VEHICLE_TYPE_MAP: Record<string, "truck" | "car_suv" | "motorcycle"> = {
   Truck: "truck",
@@ -167,6 +171,7 @@ export interface QuoteGeneratorEditItem {
   tireSize: number | null;
   jobTypes: JobTypeEntry[];
   description: string | null;
+  comments: string | null;
 }
 
 interface QuoteGeneratorSheetProps {
@@ -206,7 +211,8 @@ export function QuoteGeneratorSheet({
 
   const [rimComments, setRimComments] = useState("");
   const [generalComments, setGeneralComments] = useState("");
-  // Occurrence count per rim job, keyed by root job key.
+  // Occurrence count per rim job, keyed by root job key (or by option key for
+  // PER_OPTION_QTY_GROUPS).
   const [rimJobQuantities, setRimJobQuantities] = useState<Record<string, string>>({});
 
   const [rimSelects, setRimSelects] = useState({
@@ -258,7 +264,7 @@ export function QuoteGeneratorSheet({
     j.children.length ? j.children.map((c) => c.key) : [j.key],
   );
 
-  // Mutually-exclusive job pairs from the DB (RIM-3 K1): key → conflicting keys.
+  // Mutually exclusive job pairs: key → conflicting keys.
   const conflictsByKey = new Map<string, Set<string>>();
   {
     const keyById = new Map(rimJobList.map((j) => [j.id, j.key]));
@@ -299,6 +305,8 @@ export function QuoteGeneratorSheet({
   });
 
   const rimJobQty = (rootKey: string) => rimJobQuantities[rootKey] ?? "1";
+  const leafQty = (rootKey: string, leafKey: string) =>
+    PER_OPTION_QTY_GROUPS.has(rootKey) ? (rimJobQuantities[leafKey] ?? "1") : rimJobQty(rootKey);
 
   const selectedLeaves = (root: (typeof rimJobList)[number]) => {
     if (!root.children.length) return [{ key: root.key, label: undefined }];
@@ -307,22 +315,22 @@ export function QuoteGeneratorSheet({
   };
 
   // Mirrors the server's rim branch in computeItemPrice: each selected option is priced
-  // on its own and every one is multiplied by the group's occurrence count. Rim prices
-  // arrive with the steel/truck modifiers already applied.
+  // on its own and multiplied by its own quantity. Rim prices arrive with the steel/truck
+  // modifiers already applied.
   const rimJobLineCost = (root: (typeof rimJobList)[number]) => {
-    const qty = parseInt(rimJobQty(root.key), 10) || 1;
     if (root.key === "spot-polish") {
+      const qty = parseInt(rimJobQty(root.key), 10) || 1;
       return (spotPrice?.found ? spotPrice.unitCost : 0) * qty;
     }
-    const base = selectedLeaves(root).reduce(
-      (sum, leaf) => sum + (rimPrices?.[leaf.key]?.unitCost ?? 0),
+    return selectedLeaves(root).reduce(
+      (sum, leaf) =>
+        sum +
+        (rimPrices?.[leaf.key]?.unitCost ?? 0) * (parseInt(leafQty(root.key, leaf.key), 10) || 1),
       0,
     );
-    return base * qty;
   };
 
-  // Options with no price at the chosen size cannot be quoted (RIM-5 item 13): the job
-  // is not done on that size, so the line is blocked until another size is picked.
+  // No price at this size means the job isn't done on it, so the line is blocked.
   const rimUnpriced =
     rimSize == null || rimPricesFetching || spotPriceFetching
       ? []
@@ -460,7 +468,7 @@ export function QuoteGeneratorSheet({
 
       const jobTypes: JobTypeEntry[] = selectedRoots.flatMap((root) =>
         selectedLeaves(root).map((leaf) => {
-          const entry: JobTypeEntry = { type: leaf.key, input: rimJobQty(root.key) };
+          const entry: JobTypeEntry = { type: leaf.key, input: leafQty(root.key, leaf.key) };
           if (leaf.label) entry.subType = leaf.label;
           return entry;
         }),
@@ -470,6 +478,13 @@ export function QuoteGeneratorSheet({
         `${value.rimSize}" Rims`,
         `Vehicle: ${value.vehicleType} - ${value.material}`,
         ...selectedRoots.map((root) => {
+          if (PER_OPTION_QTY_GROUPS.has(root.key)) {
+            const labels = selectedLeaves(root).map((leaf) => {
+              const qty = leafQty(root.key, leaf.key);
+              return qty === "1" ? leaf.label : `${leaf.label} x${qty}`;
+            });
+            return `${root.label}: ${labels.join(" + ")}`;
+          }
           const qty = rimJobQty(root.key);
           const suffix = qty === "1" ? "" : ` x${qty}`;
           if (root.children.length) {
@@ -478,7 +493,6 @@ export function QuoteGeneratorSheet({
           }
           return `${root.label}${suffix}`;
         }),
-        rimComments.trim() || null,
       ]
         .filter(Boolean)
         .join(", ");
@@ -496,6 +510,7 @@ export function QuoteGeneratorSheet({
         itemType: "rim",
         jobTypes,
         description,
+        comments: rimComments.trim(),
       };
 
       if (editItem && onEdit) {
@@ -513,13 +528,7 @@ export function QuoteGeneratorSheet({
     defaultValues: WELDING_DEFAULTS,
     onSubmit: ({ value }) => {
       const inches = parseInt(value.lengthOfWeld, 10);
-      const desc = [
-        `Welding: ${value.materialType}`,
-        `${inches}" weld`,
-        value.comments?.trim() || null,
-      ]
-        .filter(Boolean)
-        .join(", ");
+      const desc = [`Welding: ${value.materialType}`, `${inches}" weld`].filter(Boolean).join(", ");
 
       const weldingJobType = value.materialType.toLowerCase().replace(/\s+/g, "-");
       const perInch = weldingPrices?.[weldingJobType]?.unitCost ?? 0;
@@ -536,6 +545,7 @@ export function QuoteGeneratorSheet({
         itemType: "welding",
         jobTypes: [{ type: "welding", subType: value.materialType }],
         description: desc,
+        comments: value.comments?.trim() ?? "",
       };
 
       if (editItem && onEdit) {
@@ -564,7 +574,6 @@ export function QuoteGeneratorSheet({
         scope === "set" ? "Per Set of 4 Rims" : "Per Rim",
         `${colorCount} Color${colorCount > 1 ? "s" : ""}: ${pcColors.join(", ")}`,
         scope === "rim" ? `x${qty}` : null,
-        value.comments?.trim() || null,
       ]
         .filter(Boolean)
         .join(", ");
@@ -586,6 +595,7 @@ export function QuoteGeneratorSheet({
           },
         ],
         description: desc,
+        comments: value.comments?.trim() ?? "",
       };
 
       if (editItem && onEdit) {
@@ -650,7 +660,6 @@ export function QuoteGeneratorSheet({
         `General: ${value.vehicleSize}`,
         value.tireSize ? `Tire: ${value.tireSize}"` : null,
         ...selectedServices.map((s) => `${s.label} x${serviceQuantities[s.key] ?? "1"}`),
-        generalComments.trim() || null,
       ]
         .filter(Boolean)
         .join(", ");
@@ -680,6 +689,7 @@ export function QuoteGeneratorSheet({
               },
         ),
         description: desc,
+        comments: generalComments.trim(),
       };
 
       if (editItem && onEdit) {
@@ -707,7 +717,7 @@ export function QuoteGeneratorSheet({
       weldingForm.reset({
         materialType: mt,
         lengthOfWeld: String(editItem.inches ?? ""),
-        comments: "",
+        comments: editItem.comments ?? "",
       });
     } else if (editItem.itemType === "powder-coating") {
       setTab("powder-coating");
@@ -718,13 +728,19 @@ export function QuoteGeneratorSheet({
       setPcSelects({ rimSize: rs, scope: sc, colorCount: ccnt });
       setPcColors(pcEntry?.colors ?? []);
       setPcQty(pcEntry?.input ?? "1");
-      powderCoatingForm.reset({ rimSize: rs, scope: sc, colorCount: ccnt, comments: "" });
+      powderCoatingForm.reset({
+        rimSize: rs,
+        scope: sc,
+        colorCount: ccnt,
+        comments: editItem.comments ?? "",
+      });
     } else if (editItem.itemType === "general") {
       setTab("general");
       const vs = editItem.vehicleSize ?? "";
       const ts = String(editItem.tireSize ?? "");
       setGeneralSelects({ vehicleSize: vs, tireSize: ts });
       generalForm.reset({ vehicleSize: vs, tireSize: ts });
+      setGeneralComments(editItem.comments ?? "");
       const svcChecked: Partial<Record<string, boolean>> = {};
       const svcQuantities: Record<string, string> = {};
       const bUnit: Record<string, string> = {};
@@ -755,6 +771,7 @@ export function QuoteGeneratorSheet({
       rimForm.setFieldValue("rimSize", rs);
       rimForm.setFieldValue("vehicleType", vt);
       rimForm.setFieldValue("material", mat);
+      setRimComments(editItem.comments ?? "");
     }
 
     const checked: Record<string, boolean> = {};
@@ -767,7 +784,8 @@ export function QuoteGeneratorSheet({
       if (root) {
         checked[root.key] = true;
         if (root.children.length) subTypes[root.key] = [...(subTypes[root.key] ?? []), jt.type];
-        if (jt.input) quantities[root.key] = jt.input;
+        if (jt.input)
+          quantities[PER_OPTION_QTY_GROUPS.has(root.key) ? jt.type : root.key] = jt.input;
       } else {
         checked[jt.type] = true;
       }
@@ -834,7 +852,7 @@ export function QuoteGeneratorSheet({
 
   return (
     <>
-      {/* Backdrop — does not close on click; use the X button or Cancel (RIM-3 R9) */}
+      {/* Intentionally doesn't close on click: use X or Cancel */}
       <div
         className={`fixed inset-0 z-40 bg-black/75 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
       />
@@ -1039,6 +1057,7 @@ export function QuoteGeneratorSheet({
                     const leaves = selectedLeaves(job);
                     const isSpot = job.key === "spot-polish";
                     const isMulti = MULTI_SELECT_RIM_GROUPS.has(job.key);
+                    const perOptionQty = PER_OPTION_QTY_GROUPS.has(job.key);
                     const priceLoading = isSpot ? spotPriceFetching : rimPricesFetching;
                     const priced = isSpot
                       ? !!spotPrice?.found
@@ -1086,10 +1105,11 @@ export function QuoteGeneratorSheet({
                             <div className="flex flex-col divide-y divide-field-line rounded-lg border border-field-line bg-white">
                               {job.children.map((c) => {
                                 const leafPrice = rimPrices?.[c.key];
+                                const leafChecked = leaves.some((leaf) => leaf.key === c.key);
                                 return (
                                   <div key={c.key} className="flex items-center gap-2 pr-2">
                                     <FloorCheckbox
-                                      checked={leaves.some((leaf) => leaf.key === c.key)}
+                                      checked={leafChecked}
                                       onCheckedChange={(v) => toggleRimLeaf(job.key, c.key, !!v)}
                                       label={c.label}
                                       className="min-h-11 flex-1 px-2"
@@ -1107,6 +1127,20 @@ export function QuoteGeneratorSheet({
                                         </span>
                                       )
                                     ) : null}
+                                    {perOptionQty && leafChecked && (
+                                      <NumberStepper
+                                        aria-label={`${c.label} quantity`}
+                                        min={1}
+                                        value={parseInt(leafQty(job.key, c.key), 10) || 1}
+                                        onChange={(n) =>
+                                          setRimJobQuantities((prev) => ({
+                                            ...prev,
+                                            [c.key]: String(n),
+                                          }))
+                                        }
+                                        className="h-9 w-28 shrink-0"
+                                      />
+                                    )}
                                   </div>
                                 );
                               })}
@@ -1150,7 +1184,7 @@ export function QuoteGeneratorSheet({
                             )}
                           </div>
                         )}
-                        {isChecked && (
+                        {isChecked && !perOptionQty && (
                           <div className="flex flex-col gap-1 bg-page px-3 pb-2">
                             <label
                               htmlFor={`rim-qty-${job.key}`}
