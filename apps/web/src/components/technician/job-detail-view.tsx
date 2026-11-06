@@ -127,10 +127,12 @@ export function JobDetailView({ group, onBack }: { group: JobGroup; onBack: () =
                   {job.invoiceItem.damageLevel && `, Damage: ${job.invoiceItem.damageLevel}`}
                 </p>
               </div>
-              <div className="flex gap-1 font-rubik text-sm leading-4.5">
-                <span className="text-label">Comments:</span>
-                <span className="text-body">{job.invoiceItem.comments}</span>
-              </div>
+              {job.invoiceItem.comments && (
+                <div className="flex gap-1 font-rubik text-sm leading-4.5">
+                  <span className="text-label">Comments:</span>
+                  <span className="text-body">{job.invoiceItem.comments}</span>
+                </div>
+              )}
               {job.technician && (
                 <span className="inline-flex w-fit rounded-[4px] bg-[#32cbfa] px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white">
                   {job.technician.name}
