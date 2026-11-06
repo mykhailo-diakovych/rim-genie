@@ -37,7 +37,7 @@ interface MetricCardProps {
   title: string;
   subtitle: string;
   value: string;
-  change: number;
+  change: number | null;
   sparkline: number[];
   accentColor: string;
   icon: (props: SVGProps<SVGSVGElement>) => React.ReactElement;
@@ -52,7 +52,7 @@ export function MetricCard({
   accentColor,
   icon: Icon,
 }: MetricCardProps) {
-  const isPositive = change >= 0;
+  const isPositive = (change ?? 0) >= 0;
   const chartColor = isPositive ? CHART_GREEN : CHART_RED;
   const chartData = sparkline.map((v, i) => ({ i, v }));
   const gradientId = `grad-${title.replace(/\W+/g, "-")}`;
@@ -82,23 +82,27 @@ export function MetricCard({
             <span className="font-rubik text-[26px] leading-[30px] font-medium text-body">
               {value}
             </span>
-            <span
-              className="flex items-center gap-[2px] rounded-[4px] px-[2px] py-[3px] text-white"
-              style={{
-                backgroundColor: isPositive ? "var(--badge-green)" : "var(--badge-red)",
-              }}
-            >
-              {isPositive ? (
-                <IconArrowUp className="size-3" />
-              ) : (
-                <IconArrowDown className="size-3" />
-              )}
-              <span className="font-rubik text-xs leading-none">{Math.abs(change)}%</span>
-            </span>
+            {change !== null && (
+              <span
+                className="flex items-center gap-[2px] rounded-[4px] px-[2px] py-[3px] text-white"
+                style={{
+                  backgroundColor: isPositive ? "var(--badge-green)" : "var(--badge-red)",
+                }}
+              >
+                {isPositive ? (
+                  <IconArrowUp className="size-3" />
+                ) : (
+                  <IconArrowDown className="size-3" />
+                )}
+                <span className="font-rubik text-xs leading-none">{Math.abs(change)}%</span>
+              </span>
+            )}
           </div>
-          <span className="font-rubik text-xs leading-4.5 text-label">
-            {m.metric_vs_last_period()}
-          </span>
+          {change !== null && (
+            <span className="font-rubik text-xs leading-4.5 text-label">
+              {m.metric_vs_last_period()}
+            </span>
+          )}
         </div>
 
         {/* Right: sparkline chart */}

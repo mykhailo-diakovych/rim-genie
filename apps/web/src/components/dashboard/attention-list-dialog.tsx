@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
+import { formatBusinessDate } from "@rim-genie/db/format-date";
 import type { UserRole } from "@rim-genie/db/schema";
 
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { authClient } from "@/lib/auth-client";
@@ -12,7 +14,7 @@ import { formatCents } from "@/lib/format-currency";
 import { hasRouteAccess } from "@/lib/route-permissions";
 import { orpc } from "@/utils/orpc";
 
-type AttentionKind = "overdue" | "inventory" | "unassigned" | "invoices";
+export type AttentionKind = "unassigned" | "overdue" | "missing" | "ready" | "unpaid";
 
 interface AttentionListDialogProps {
   kind: AttentionKind | null;
@@ -21,23 +23,27 @@ interface AttentionListDialogProps {
 }
 
 const COLUMNS: Record<AttentionKind, string[]> = {
-  overdue: ["Invoice", "Customer", "Technician", "Status", "Due"],
-  unassigned: ["Invoice", "Customer", "Status", "Created"],
-  invoices: ["Invoice", "Customer", "Total", "Created"],
-  inventory: ["Date", "SOD Rims", "EOD Rims", "Notes", "Recorded By"],
+  unassigned: ["Invoice", "Customer", "Status", "Job Created"],
+  overdue: ["Invoice", "Customer", "Technician", "Status", "Due Date"],
+  missing: ["Invoice", "Customer", "Technician", "Status", "Job Created"],
+  ready: ["Invoice", "Customer", "Invoice Total", "Invoice Date"],
+  unpaid: ["Invoice", "Customer", "Invoice Total", "Invoice Date"],
+};
+
+const PAGE_LINKS: Partial<
+  Record<
+    AttentionKind,
+    | { to: "/inventory"; search: { tab: "missing" | "readyForPickup"; dateRange: "all" } }
+    | { to: "/cashier"; search: { tab: "unpaid"; dateRange: "all" } }
+  >
+> = {
+  missing: { to: "/inventory", search: { tab: "missing", dateRange: "all" } },
+  ready: { to: "/inventory", search: { tab: "readyForPickup", dateRange: "all" } },
+  unpaid: { to: "/cashier", search: { tab: "unpaid", dateRange: "all" } },
 };
 
 function formatInvoiceNumber(invoiceNumber: number) {
   return `INV-${String(invoiceNumber).padStart(4, "0")}`;
-}
-
-function formatDate(value: Date | string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
 }
 
 const LINK_CLASS = "text-blue hover:underline";
@@ -139,6 +145,7 @@ function AttentionRows({ kind, role }: { kind: AttentionKind; role: UserRole | u
   let rows: { id: string; cells: ReactNode[] }[];
   switch (data.kind) {
     case "overdue":
+    case "missing":
       rows = data.rows.map((r) => ({
         id: r.id,
         cells: [
@@ -146,7 +153,7 @@ function AttentionRows({ kind, role }: { kind: AttentionKind; role: UserRole | u
           r.customerName,
           r.technicianName ?? "—",
           <StatusBadge status={r.status} />,
-          formatDate(r.dueDate),
+          formatBusinessDate(data.kind === "overdue" ? r.dueDate : r.createdAt),
         ],
       }));
       break;
@@ -157,30 +164,19 @@ function AttentionRows({ kind, role }: { kind: AttentionKind; role: UserRole | u
           <JobInvoiceLink role={role} row={r} />,
           r.customerName,
           <StatusBadge status={r.status} />,
-          formatDate(r.createdAt),
+          formatBusinessDate(r.createdAt),
         ],
       }));
       break;
-    case "invoices":
+    case "ready":
+    case "unpaid":
       rows = data.rows.map((r) => ({
         id: r.id,
         cells: [
           <InvoiceLink role={role} row={r} />,
           r.customerName,
           formatCents(r.total),
-          formatDate(r.createdAt),
-        ],
-      }));
-      break;
-    case "inventory":
-      rows = data.rows.map((r) => ({
-        id: r.id,
-        cells: [
-          formatDate(`${r.recordDate}T12:00:00`),
-          r.rimCount,
-          r.eodRimCount ?? "—",
-          r.discrepancyNotes ?? "—",
-          r.recordedByName,
+          formatBusinessDate(r.createdAt),
         ],
       }));
       break;
@@ -229,6 +225,17 @@ export function AttentionListDialog({ kind, title, onOpenChange }: AttentionList
                 <AttentionRows kind={kind} role={role} />
               </tbody>
             </table>
+            {PAGE_LINKS[kind] && hasRouteAccess(PAGE_LINKS[kind].to, role) && (
+              <div className="flex justify-end pt-3">
+                <Button
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link {...PAGE_LINKS[kind]} />}
+                >
+                  Open page
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>

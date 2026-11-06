@@ -65,7 +65,7 @@ export function EmailLayout({ children }: EmailLayoutProps): ReactElement {
         </div>
         <div style={bodySection}>{children}</div>
         <div style={footerSection}>
-          <p style={{ margin: "0 0 4px 0", fontWeight: 500 }}>Rim Genie</p>
+          <p style={{ margin: "0 0 4px 0", fontWeight: 700 }}>Rim Genie</p>
           <p style={{ margin: "0 0 2px 0" }}>82c Waltham Park Rd, Kingston, Jamaica</p>
           <p style={{ margin: 0 }}>876-830-9624</p>
         </div>

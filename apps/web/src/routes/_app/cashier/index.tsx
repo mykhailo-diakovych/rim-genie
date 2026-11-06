@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { InvoiceCard, InvoiceCardSkeleton } from "@/components/cashier/invoice-card";
@@ -9,10 +9,14 @@ import {
   DateRangeFilter,
   getDateFrom,
   getDateTo,
+  isDatePreset,
   parseDateRange,
+  type DatePreset,
   type DateRange,
 } from "@/components/ui/date-range-filter";
 import { PageHeader } from "@/components/ui/page-header";
+import { Pagination } from "@/components/ui/pagination";
+import { Select, SelectOption, SelectPopup, SelectTrigger } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePersistedState } from "@/lib/use-persisted-state";
 import { cn } from "@/lib/utils";
@@ -27,7 +31,27 @@ const TAB_LABELS: Record<InvoiceTab, string> = {
   paid: "Paid",
 };
 
+const TAB_STATUS = {
+  unpaid: "unpaid",
+  partially: "partially_paid",
+  paid: "paid",
+} as const satisfies Record<InvoiceTab, string>;
+
+const DATE_FIELDS = ["invoice", "lastPayment"] as const;
+type DateField = (typeof DATE_FIELDS)[number];
+
+const DATE_FIELD_LABELS: Record<DateField, string> = {
+  invoice: "Invoice Date",
+  lastPayment: "Last Payment Date",
+};
+
 export const Route = createFileRoute("/_app/cashier/")({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: InvoiceTab; dateRange?: DatePreset } => ({
+    tab: TAB_VALUES.includes(search.tab as InvoiceTab) ? (search.tab as InvoiceTab) : undefined,
+    dateRange: isDatePreset(search.dateRange) ? search.dateRange : undefined,
+  }),
   head: () => ({
     meta: [{ title: "Rim-Genie | Cashier" }],
   }),
@@ -48,32 +72,64 @@ function TabCounter({ count, active }: { count: number; active: boolean }) {
 }
 
 function CashierPage() {
-  const [tab, setTab] = usePersistedState<InvoiceTab>("cashier.tab", "unpaid", (v) =>
+  const [tab, setTabState] = usePersistedState<InvoiceTab>("cashier.tab", "unpaid", (v) =>
     TAB_VALUES.includes(v as InvoiceTab) ? (v as InvoiceTab) : null,
   );
-  const [dateRange, setDateRange] = usePersistedState<DateRange>("cashier.dateRange", "30d", (v) =>
-    parseDateRange(v, "30d"),
+  const [dateRange, setDateRangeState] = usePersistedState<DateRange>(
+    "cashier.dateRange",
+    "30d",
+    (v) => parseDateRange(v, "30d"),
   );
+  const [dateField, setDateFieldState] = usePersistedState<DateField>(
+    "cashier.dateField",
+    "invoice",
+    (v) => (DATE_FIELDS.includes(v as DateField) ? (v as DateField) : null),
+  );
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const queryClient = useQueryClient();
+
+  function setTab(next: InvoiceTab) {
+    setTabState(next);
+    setPage(1);
+  }
+  function setDateRange(next: DateRange) {
+    setDateRangeState(next);
+    setPage(1);
+  }
+  function setDateField(next: DateField) {
+    setDateFieldState(next);
+    setPage(1);
+  }
+
+  const search = Route.useSearch();
+  useEffect(() => {
+    if (search.tab) setTab(search.tab);
+    if (search.dateRange) setDateRange(search.dateRange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.tab, search.dateRange]);
 
   const dateFrom = getDateFrom(dateRange);
   const dateTo = getDateTo(dateRange);
 
-  const unpaidQuery = useQuery(
-    orpc.cashier.invoices.list.queryOptions({
-      input: { status: "unpaid", dateFrom, dateTo },
-    }),
-  );
-  const partiallyQuery = useQuery(
-    orpc.cashier.invoices.list.queryOptions({
-      input: { status: "partially_paid", dateFrom, dateTo },
-    }),
-  );
-  const paidQuery = useQuery(
-    orpc.cashier.invoices.list.queryOptions({
-      input: { status: "paid", dateFrom, dateTo },
-    }),
-  );
+  function listQuery(value: InvoiceTab) {
+    const active = value === tab;
+    return orpc.cashier.invoices.list.queryOptions({
+      input: {
+        status: TAB_STATUS[value],
+        dateFrom,
+        dateTo,
+        dateField,
+        page: active ? page : 1,
+        pageSize: active ? pageSize : 1,
+      },
+      placeholderData: keepPreviousData,
+    });
+  }
+
+  const unpaidQuery = useQuery(listQuery("unpaid"));
+  const partiallyQuery = useQuery(listQuery("partially"));
+  const paidQuery = useQuery(listQuery("paid"));
 
   const queries = { unpaid: unpaidQuery, partially: partiallyQuery, paid: paidQuery };
   const currentQuery = queries[tab];
@@ -106,7 +162,23 @@ function CashierPage() {
           <PageHeader
             title="Invoices"
             description="Manage finalized invoices, process customer payments, and complete transactions."
-            actions={<DateRangeFilter value={dateRange} onChange={setDateRange} />}
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={dateField} onValueChange={(v) => setDateField(v as DateField)}>
+                  <SelectTrigger className="w-44" aria-label="Filter by date">
+                    <span className="truncate">{DATE_FIELD_LABELS[dateField]}</span>
+                  </SelectTrigger>
+                  <SelectPopup>
+                    {DATE_FIELDS.map((field) => (
+                      <SelectOption key={field} value={field}>
+                        {DATE_FIELD_LABELS[field]}
+                      </SelectOption>
+                    ))}
+                  </SelectPopup>
+                </Select>
+                <DateRangeFilter value={dateRange} onChange={setDateRange} />
+              </div>
+            }
           />
 
           <TabsList>
@@ -139,6 +211,15 @@ function CashierPage() {
                     <p className="py-8 text-center font-rubik text-sm text-label">
                       No invoices found
                     </p>
+                  )}
+                  {counts[value] > 0 && (
+                    <Pagination
+                      page={page}
+                      pageSize={pageSize}
+                      total={counts[value]}
+                      onPageChange={setPage}
+                      onPageSizeChange={setPageSize}
+                    />
                   )}
                 </>
               )}

@@ -66,9 +66,11 @@ export function AssignDetailView({ group, onBack }: { group: JobGroup; onBack: (
                 {job.invoiceItem.description}
                 {job.invoiceItem.damageLevel && `, Damage: ${job.invoiceItem.damageLevel}`}
               </p>
-              <p className="font-rubik text-xs leading-3.5 text-label">
-                Comments: {job.invoiceItem.comments}
-              </p>
+              {job.invoiceItem.comments && (
+                <p className="font-rubik text-xs leading-3.5 text-label">
+                  Comments: {job.invoiceItem.comments}
+                </p>
+              )}
             </div>
 
             <div className="flex items-start pt-0.5">

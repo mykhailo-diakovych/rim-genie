@@ -23,7 +23,7 @@ import { DeleteServiceModal } from "./delete-service-modal";
 import { PricingModal } from "./pricing-modal";
 import type { PricingRow } from "./pricing-modal";
 import { IconDelete, IconEdit } from "./action-icons";
-import { ServicesPagination } from "./services-pagination";
+import { Pagination } from "@/components/ui/pagination";
 
 const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   rim: "Rim",
@@ -326,7 +326,7 @@ export function PricingTab() {
 
           {!isLoading && items.length > 0 && (
             <div className="border-t border-field-line">
-              <ServicesPagination
+              <Pagination
                 page={page}
                 pageSize={pageSize}
                 total={total}

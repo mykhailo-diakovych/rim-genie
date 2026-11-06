@@ -92,8 +92,7 @@ async function assertActiveJobTypes(keys: string[]) {
   }
 }
 
-// A line with no catalog price would be saved at $0 and reach the cashier that way, so
-// it is rejected instead: the job is not done at that size (RIM-5 item 13).
+// An unpriced line would reach the cashier at $0; the job isn't done at that size.
 async function priceItemOrFail(params: ItemPriceParams): Promise<number> {
   const { unitCost, unpriced } = await computeItemPrice(params);
   if (unpriced.length === 0) return unitCost;
@@ -240,13 +239,12 @@ export const floorRouter = {
             discount: customer.discount,
             quotesCount: sql<number>`count(distinct ${quote.id})::int`,
             jobsCount: sql<number>`count(${quoteItem.id})::int`,
-            paidInvoiceCount: sql<number>`count(distinct ${invoice.id}) filter (where ${invoice.status} = 'paid')::int`,
-            totalSpent: sql<number>`coalesce(sum(distinct case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end), 0)::int`,
+            paidInvoiceCount: sql<number>`(select count(*) from ${invoice} where ${invoice.customerId} = ${customer.id} and ${invoice.status} = 'paid')::int`,
+            totalSpent: sql<number>`(select coalesce(sum(${invoice.total}), 0) from ${invoice} where ${invoice.customerId} = ${customer.id} and ${invoice.status} = 'paid')::int`,
           })
           .from(customer)
           .leftJoin(quote, eq(quote.customerId, customer.id))
           .leftJoin(quoteItem, eq(quoteItem.quoteId, quote.id))
-          .leftJoin(invoice, eq(invoice.customerId, customer.id))
           .where(and(isNull(customer.deletedAt), dateFilter, dateToFilter))
           .groupBy(customer.id)
           .orderBy(desc(customer.createdAt));
@@ -478,8 +476,9 @@ export const floorRouter = {
       .input(
         z.object({
           customerId: z.string(),
-          customerReason: z.string().optional(),
+          customerReason: z.string().trim().min(1),
           fullDiagnosticConsent: z.boolean().optional(),
+          signatureDataUrl: z.string().min(1),
         }),
       )
       .handler(async ({ input, context }) => {
@@ -510,21 +509,28 @@ export const floorRouter = {
 
         const discountPercent = vipDiscountPercent + rewardDiscountPercent;
 
-        const rows = await db
-          .insert(quote)
-          .values({
-            customerId: input.customerId,
-            createdById: context.session.user.id,
-            locationId: context.locationId,
-            status: "draft",
-            discountPercent,
-            vipDiscountPercent,
-            rewardDiscountPercent,
-            customerReason: input.customerReason,
-            fullDiagnosticConsent: input.fullDiagnosticConsent ?? false,
-          })
-          .returning();
-        return rows[0]!;
+        return db.transaction(async (tx) => {
+          const [created] = await tx
+            .insert(quote)
+            .values({
+              customerId: input.customerId,
+              createdById: context.session.user.id,
+              locationId: context.locationId,
+              status: "draft",
+              discountPercent,
+              vipDiscountPercent,
+              rewardDiscountPercent,
+              customerReason: input.customerReason,
+              fullDiagnosticConsent: input.fullDiagnosticConsent ?? false,
+            })
+            .returning();
+          await tx.insert(termsSignature).values({
+            quoteId: created!.id,
+            signatureDataUrl: input.signatureDataUrl,
+            signedById: context.session.user.id,
+          });
+          return created!;
+        });
       }),
 
     update: floorManagerProcedure
@@ -532,7 +538,7 @@ export const floorRouter = {
         z.object({
           id: z.string(),
           comments: z.string().optional(),
-          customerReason: z.string().optional(),
+          customerReason: z.string().trim().min(1).optional(),
           jobRack: z.string().optional(),
           discountPercent: z.number().int().min(0).max(100).optional(),
           discountType: z.enum(["percent", "fixed"]).optional(),
@@ -625,6 +631,7 @@ export const floorRouter = {
           tireSize: z.number().int().min(1).optional(),
           jobTypes: z.array(jobTypeEntrySchema).min(1),
           description: z.string().optional(),
+          comments: z.string().optional(),
         }),
       )
       .handler(async ({ input }) => {
@@ -668,6 +675,7 @@ export const floorRouter = {
             tireSize: input.tireSize ?? null,
             jobTypes: input.jobTypes as JobTypeEntry[],
             description: input.description,
+            comments: input.comments?.trim() || null,
             sortOrder,
           })
           .returning();
@@ -941,8 +949,7 @@ export const floorRouter = {
         );
       }),
 
-    // The disclaimer is the final step: a quote cannot be finalized until it is signed, and the
-    // signature is captured once per quote, so later edits never ask for it again (RIM-5 item 3).
+    // New quotes are signed at creation; only older unsigned drafts can be blocked here.
     finalize: floorManagerProcedure
       .input(z.object({ quoteId: z.string() }))
       .handler(async ({ input, context }) => {

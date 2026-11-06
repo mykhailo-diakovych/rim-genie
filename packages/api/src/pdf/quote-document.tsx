@@ -1,8 +1,10 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
+import { formatBusinessDate } from "@rim-genie/db/format-date";
 import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
 
 import { LOGO_DATA_URI } from "./logo";
+import "./no-hyphenation";
 import { formatCents } from "../lib/format-currency";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -24,8 +26,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   logo: {
-    width: 33,
-    height: 32,
+    width: 72,
+    height: 70,
     objectFit: "contain",
   },
   quoteTitle: {
@@ -60,6 +62,12 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     flexDirection: "column",
     gap: 3,
+  },
+  companyName: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: "#1a1a1a",
+    textAlign: "right",
   },
   addressLine: {
     fontSize: 10,
@@ -112,7 +120,7 @@ const styles = StyleSheet.create({
   },
   colNum: { width: 28 },
   colDesc: { flex: 1 },
-  colQty: { width: 96, textAlign: "center" },
+  colQty: { width: 96, paddingHorizontal: 6, textAlign: "center" },
   colUnit: { width: 64, textAlign: "right" },
   colTotal: { width: 64, textAlign: "right" },
   headerCell: {
@@ -253,15 +261,6 @@ export type QuoteData = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmtDate(d: Date | string | null | undefined): string {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
-}
-
 // ─── Document ─────────────────────────────────────────────────────────────────
 
 export function QuoteDocument({ data }: { data: QuoteData }) {
@@ -299,7 +298,7 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
           <View style={{ flexDirection: "row", gap: 24 }}>
             <View style={styles.metaBlock}>
               <Text style={styles.metaLabel}>Quote Date</Text>
-              <Text style={styles.metaValue}>{fmtDate(data.createdAt)}</Text>
+              <Text style={styles.metaValue}>{formatBusinessDate(data.createdAt)}</Text>
             </View>
             <View style={styles.metaBlock}>
               <Text style={styles.metaLabel}>Prepared By</Text>
@@ -307,6 +306,7 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
             </View>
           </View>
           <View style={styles.addressBlock}>
+            <Text style={styles.companyName}>Rim Genie</Text>
             <Text style={styles.addressLine}>82c Waltham Park Rd,</Text>
             <Text style={styles.addressLine}>Kingston, Jamaica</Text>
             <Text style={styles.addressLine}>876-830-9624</Text>
@@ -329,9 +329,8 @@ export function QuoteDocument({ data }: { data: QuoteData }) {
           <View style={styles.tableRow}>
             <View style={styles.colNum} />
             <View style={styles.colDesc}>
-              <Text style={styles.cell}>Full Diagnostic Service</Text>
-              <Text style={styles.itemComments}>
-                Comments: {data.fullDiagnosticConsent ? "Agree" : "Disagree"}
+              <Text style={styles.cell}>
+                Full Diagnostic Service: {data.fullDiagnosticConsent ? "Agree" : "Disagree"}
               </Text>
             </View>
             <Text style={[styles.cell, styles.colQty]}>—</Text>

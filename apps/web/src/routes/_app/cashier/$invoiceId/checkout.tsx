@@ -228,6 +228,7 @@ function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [changeGivenCents, setChangeGivenCents] = useState(0);
   const [showNoPaymentConfirm, setShowNoPaymentConfirm] = useState(false);
 
   const sendReceipt = useMutation(
@@ -280,7 +281,7 @@ function CheckoutPage() {
       if (discountCents > 0 || trimmedNotes) {
         await orpc.cashier.invoices.update.call({
           id: invoiceId,
-          ...(discountCents > 0 && { discount: discountCents }),
+          ...(discountCents > 0 && { discount: (inv?.discount ?? 0) + discountCents }),
           ...(trimmedNotes && { notes: trimmedNotes }),
         });
       }
@@ -306,6 +307,12 @@ function CheckoutPage() {
         });
       }
 
+      setChangeGivenCents(changeCents);
+      // Clear tenders so the refetched balance doesn't show them as change owed.
+      setCashReceived("");
+      setCashCounts({});
+      setCardAmounts({ credit: "", debit: "", cheque: "", bank: "" });
+      setDiscount("");
       await queryClient.invalidateQueries({
         queryKey: orpc.cashier.invoices.get.key({ input: { id: invoiceId } }),
       });
@@ -327,7 +334,7 @@ function CheckoutPage() {
       if (discountCents > 0 || trimmedNotes) {
         await orpc.cashier.invoices.update.call({
           id: invoiceId,
-          ...(discountCents > 0 && { discount: discountCents }),
+          ...(discountCents > 0 && { discount: (inv?.discount ?? 0) + discountCents }),
           ...(trimmedNotes && { notes: trimmedNotes }),
         });
       }
@@ -729,8 +736,8 @@ function CheckoutPage() {
           </DialogHeader>
           <div className="flex flex-col gap-3 p-3">
             <DialogDescription>
-              {changeCents > 0
-                ? `Payment recorded. Change due to customer: ${formatCents(changeCents)}.`
+              {changeGivenCents > 0
+                ? `Payment recorded. Change due to customer: ${formatCents(changeGivenCents)}.`
                 : "Payment has been recorded successfully."}
             </DialogDescription>
             <div className="flex gap-2">

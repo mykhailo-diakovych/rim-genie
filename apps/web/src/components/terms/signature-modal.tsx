@@ -53,7 +53,6 @@ function SignatureModalBody({ onOpenChange, onSign }: Omit<SignatureModalProps, 
         </Banner>
 
         <div className="flex flex-col gap-6 md:flex-row md:items-stretch">
-          {/* Disclaimer — shown to the left of the signature widget (RIM-3) */}
           <div className="flex flex-1 flex-col gap-1">
             <span className="font-rubik text-sm leading-4.5 text-body">{DISCLAIMER_TITLE}</span>
             <div className="flex max-h-[280px] flex-col gap-2 overflow-y-auto rounded-md border border-field-line bg-page p-3">

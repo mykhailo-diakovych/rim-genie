@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { z } from "zod";
-import { and, eq, gte, ilike, isNull, lte, or, sql, sum } from "drizzle-orm";
+import { and, eq, gte, ilike, lte, max, or, sql, sum } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
@@ -8,6 +8,8 @@ import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
 import { customer, invoice, payment, quote } from "@rim-genie/db/schema";
 
 import { cashierProcedure } from "../index";
+import { invoiceAtLocation } from "../lib/classifications";
+import { lastPaymentAt } from "../lib/invoice-queries";
 import * as InvoiceService from "../services/invoice.service";
 import * as PaymentService from "../services/payment.service";
 import * as JobService from "../services/job.service";
@@ -26,32 +28,31 @@ export const cashierRouter = {
           status: z.enum(["unpaid", "partially_paid", "paid"]).optional(),
           dateFrom: z.string().datetime().optional(),
           dateTo: z.string().datetime().optional(),
+          dateField: z.enum(["invoice", "lastPayment"]).default("invoice"),
           search: z.string().optional(),
           page: z.number().int().min(1).default(1),
           pageSize: z.number().int().min(1).max(100).default(20),
         }),
       )
       .handler(async ({ input, context }) => {
-        // Only invoices the floor explicitly sent to the cashier (RIM-5 item 10).
         const conditions: (SQL | undefined)[] = [eq(quote.status, SENT_TO_CASHIER_STATUS)];
         const locId = context.locationId;
 
-        if (locId) {
-          // Match the branch recorded on the invoice itself. Rows predating that
-          // column stay visible everywhere rather than vanishing — a record shown at
-          // the wrong branch is a nuisance, one shown at no branch is the bug this
-          // replaces.
-          conditions.push(or(eq(invoice.locationId, locId), isNull(invoice.locationId))!);
-        }
+        conditions.push(invoiceAtLocation(locId));
 
         if (input.status) {
           conditions.push(eq(invoice.status, input.status));
         }
-        if (input.dateFrom) {
-          conditions.push(gte(invoice.createdAt, new Date(input.dateFrom)));
-        }
-        if (input.dateTo) {
-          conditions.push(lte(invoice.createdAt, new Date(input.dateTo)));
+        if (input.dateField === "lastPayment") {
+          if (input.dateFrom) {
+            conditions.push(sql`${lastPaymentAt} >= ${input.dateFrom}::timestamp`);
+          }
+          if (input.dateTo) {
+            conditions.push(sql`${lastPaymentAt} <= ${input.dateTo}::timestamp`);
+          }
+        } else {
+          if (input.dateFrom) conditions.push(gte(invoice.createdAt, new Date(input.dateFrom)));
+          if (input.dateTo) conditions.push(lte(invoice.createdAt, new Date(input.dateTo)));
         }
         if (input.search) {
           conditions.push(
@@ -80,6 +81,7 @@ export const cashierRouter = {
             customerPhone: customer.phone,
             customerId: customer.id,
             paid: sql<number>`coalesce(${sum(payment.amount)}, 0)::int`,
+            lastPaymentAt: max(payment.createdAt),
           })
           .from(invoice)
           .innerJoin(quote, eq(invoice.quoteId, quote.id))
@@ -87,7 +89,11 @@ export const cashierRouter = {
           .leftJoin(payment, eq(payment.invoiceId, invoice.id))
           .where(where)
           .groupBy(invoice.id, customer.id)
-          .orderBy(sql`${invoice.createdAt} desc`)
+          .orderBy(
+            input.dateField === "lastPayment"
+              ? sql`max(${payment.createdAt}) desc nulls last`
+              : sql`${invoice.createdAt} desc`,
+          )
           .limit(input.pageSize)
           .offset((input.page - 1) * input.pageSize);
 

@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Calendar, Eye, Trash2 } from "lucide-react";
 
+import { formatBusinessDate, formatBusinessDateTime } from "@rim-genie/db/format-date";
+
 import { Button } from "@/components/ui/button";
 import { IconPay } from "@/components/ui/nav-icons";
 import { RowActionsMenu, RowActionsMenuItem } from "@/components/ui/row-actions-menu";
@@ -15,20 +17,13 @@ export interface InvoiceCardData {
   total: number;
   balance: number;
   createdAt: Date | string;
+  lastPaymentAt: Date | string | null;
   customerName: string;
 }
 
 interface InvoiceCardProps {
   invoice: InvoiceCardData;
   onDelete: () => void;
-}
-
-function formatDate(date: Date | string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(date));
 }
 
 function formatSignedCents(cents: number) {
@@ -38,7 +33,7 @@ function formatSignedCents(cents: number) {
 const columnClass = "flex min-w-0 flex-col gap-1 md:flex-1 md:border-l md:border-card-line md:px-5";
 
 export function InvoiceCard({ invoice, onDelete }: InvoiceCardProps) {
-  const canPay = invoice.status === "unpaid" || invoice.status === "partially_paid";
+  const canPay = invoice.balance > 0;
   const canDelete = invoice.status === "unpaid";
 
   return (
@@ -57,7 +52,19 @@ export function InvoiceCard({ invoice, onDelete }: InvoiceCardProps) {
           <Calendar className="mt-0.5 size-5 shrink-0 text-label" />
           <div className="flex min-w-0 flex-col gap-1 font-rubik">
             <span className="text-xs text-label">Invoice Date</span>
-            <span className="truncate text-sm text-body">{formatDate(invoice.createdAt)}</span>
+            <span className="truncate text-sm text-body">
+              {formatBusinessDate(invoice.createdAt)}
+            </span>
+          </div>
+        </div>
+
+        <div className={cn(columnClass, "flex-row items-start gap-2.5")}>
+          <Calendar className="mt-0.5 size-5 shrink-0 text-label" />
+          <div className="flex min-w-0 flex-col gap-1 font-rubik">
+            <span className="text-xs text-label">Last Payment Date</span>
+            <span className="truncate text-sm text-body">
+              {formatBusinessDateTime(invoice.lastPaymentAt)}
+            </span>
           </div>
         </div>
 
@@ -85,17 +92,17 @@ export function InvoiceCard({ invoice, onDelete }: InvoiceCardProps) {
           <Eye />
           View
         </Button>
-        <Button
-          variant="outline"
-          color="success"
-          className="data-disabled:pointer-events-none data-disabled:opacity-45"
-          disabled={!canPay}
-          nativeButton={false}
-          render={<Link to="/cashier/$invoiceId/checkout" params={{ invoiceId: invoice.id }} />}
-        >
-          <IconPay />
-          Pay
-        </Button>
+        {canPay && (
+          <Button
+            variant="outline"
+            color="success"
+            nativeButton={false}
+            render={<Link to="/cashier/$invoiceId/checkout" params={{ invoiceId: invoice.id }} />}
+          >
+            <IconPay />
+            Pay
+          </Button>
+        )}
         <RowActionsMenu label="Invoice actions" className="size-9.5">
           <RowActionsMenuItem destructive disabled={!canDelete} onClick={onDelete}>
             <Trash2 />
@@ -125,6 +132,13 @@ export function InvoiceCardSkeleton() {
           <div className="flex flex-col gap-1.5">
             <Skeleton className="h-4 w-20 rounded" />
             <Skeleton className="h-4 w-24 rounded" />
+          </div>
+        </div>
+        <div className={cn(columnClass, "flex-row items-start gap-2.5")}>
+          <Skeleton className="size-5 shrink-0 rounded" />
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-4 w-24 rounded" />
+            <Skeleton className="h-4 w-32 rounded" />
           </div>
         </div>
         <div className={cn(columnClass, "gap-1.5")}>

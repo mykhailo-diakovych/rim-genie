@@ -79,5 +79,9 @@ export function send(input: { to: string; text: string }) {
       }
       return Effect.succeed(result);
     }),
+    Effect.tap((result) =>
+      Effect.sync(() => console.info(`[sms] sent (message ids ${result.messageIds?.join(", ")})`)),
+    ),
+    Effect.tapError((error) => Effect.sync(() => console.error(`[sms] failed: ${error.reason}`))),
   );
 }

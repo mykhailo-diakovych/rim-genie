@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface ServicesPaginationProps {
+interface PaginationProps {
   page: number;
   pageSize: number;
   total: number;
@@ -32,13 +32,13 @@ function getVisiblePages(current: number, total: number): (number | "...")[] {
   return [1, "...", current - 1, current, current + 1, "...", total];
 }
 
-export function ServicesPagination({
+export function Pagination({
   page,
   pageSize,
   total,
   onPageChange,
   onPageSizeChange,
-}: ServicesPaginationProps) {
+}: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const visiblePages = getVisiblePages(page, totalPages);
 

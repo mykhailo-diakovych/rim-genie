@@ -511,8 +511,6 @@ export const catalogRouter = {
         return { unitCost: row?.unitCost ?? 0, found: !!row };
       }),
 
-    // Distinct rim-size ranges for the powder-coating selector (RIM-3 F1) — the
-    // selector is driven by the price table instead of hardcoded inches.
     ranges: protectedProcedure.handler(async () => {
       return db
         .selectDistinct({ minSize: powderCoatPrice.minSize, maxSize: powderCoatPrice.maxSize })
@@ -591,8 +589,6 @@ export const catalogRouter = {
       }),
   },
 
-  // ─── Welding materials — distinct materials priced per inch (RIM-3 A1) ────
-  // Sourced from the welding price rows so the Other Welding tab is DB-driven.
   weldingMaterials: {
     list: protectedProcedure.handler(async () => {
       const rows = await db

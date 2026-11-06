@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { createFileRoute } from "@tanstack/react-router";
 import { Search } from "lucide-react";
@@ -14,6 +14,8 @@ import {
   DateRangeFilter,
   getDateFrom,
   getDateTo,
+  isDatePreset,
+  type DatePreset,
   type DateRange,
   parseDateRange,
 } from "@/components/ui/date-range-filter";
@@ -26,6 +28,12 @@ import { cn } from "@/lib/utils";
 import { requireRoles } from "@/lib/route-permissions";
 
 export const Route = createFileRoute("/_app/inventory")({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: TabValue; dateRange?: DatePreset } => ({
+    tab: TAB_CONFIG.some((t) => t.value === search.tab) ? (search.tab as TabValue) : undefined,
+    dateRange: isDatePreset(search.dateRange) ? search.dateRange : undefined,
+  }),
   beforeLoad: requireRoles(["admin", "cashier", "manager"]),
   head: () => ({
     meta: [{ title: "Rim-Genie | Inventory" }],
@@ -42,6 +50,12 @@ function InventoryPage() {
     "30d",
     (v) => parseDateRange(v, "30d"),
   );
+  const linked = Route.useSearch();
+  useEffect(() => {
+    if (linked.tab) setActiveTab(linked.tab);
+    if (linked.dateRange) setDateRange(linked.dateRange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linked.tab, linked.dateRange]);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search.trim());
   const filter = {

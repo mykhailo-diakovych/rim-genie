@@ -84,9 +84,11 @@ export function CompletedDetailView({ group, onBack }: { group: JobGroup; onBack
                 {job.invoiceItem.description}
                 {job.invoiceItem.damageLevel && `, Damage: ${job.invoiceItem.damageLevel}`}
               </p>
-              <p className="font-rubik text-xs leading-3.5 text-label">
-                Comments: {job.invoiceItem.comments}
-              </p>
+              {job.invoiceItem.comments && (
+                <p className="font-rubik text-xs leading-3.5 text-label">
+                  Comments: {job.invoiceItem.comments}
+                </p>
+              )}
               {job.technician && (
                 <span className="mt-0.5 inline-flex w-fit rounded-[4px] bg-[#32cbfa] px-1.5 py-0.5 font-rubik text-xs leading-3.5 text-white">
                   {job.technician.name}

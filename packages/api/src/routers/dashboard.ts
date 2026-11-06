@@ -1,52 +1,43 @@
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
-import { and, asc, count, desc, eq, gte, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { and, asc, count, countDistinct, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import type { AnyColumn, SQL } from "drizzle-orm";
 
 import { db } from "@rim-genie/db";
-import { SENT_TO_CASHIER_STATUS } from "@rim-genie/db/quote-status";
-import {
-  customer,
-  inventoryRecord,
-  invoice,
-  job,
-  payment,
-  quote,
-  user,
-  type UserRole,
-} from "@rim-genie/db/schema";
+import { customer, invoice, job, payment, user, type UserRole } from "@rim-genie/db/schema";
 
 import { protectedProcedure } from "../index";
+import {
+  invoiceAtLocation,
+  missingJob,
+  overdueJob,
+  readyForPickupJob,
+  sentToCashierInvoice,
+  unassignedJob,
+} from "../lib/classifications";
+import { lastPaymentAt } from "../lib/invoice-queries";
 
-// Only invoices the floor explicitly sent to the cashier.
-const sentInvoice = () =>
-  inArray(
-    invoice.quoteId,
-    db.select({ id: quote.id }).from(quote).where(eq(quote.status, SENT_TO_CASHIER_STATUS)),
-  );
-
-const dateFromSchema = z.object({
-  dateFrom: z.string().optional(),
+const rangeSchema = z.object({
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
 });
 
-function dateRange(dateFrom?: string) {
-  const now = new Date();
-  const start = dateFrom ? new Date(dateFrom) : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const diffDays = (now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000);
-  const prevStart = new Date(start.getTime() - (now.getTime() - start.getTime()));
+type Range = { start: Date | null; end: Date };
 
-  const interval =
-    diffDays <= 1
-      ? "2 hours"
-      : diffDays <= 7
-        ? "14 hours"
-        : diffDays <= 30
-          ? "2.5 days"
-          : diffDays <= 90
-            ? "7.5 days"
-            : "30 days";
+function toRange(input: z.infer<typeof rangeSchema>): Range {
+  return {
+    start: input.dateFrom ? new Date(input.dateFrom) : null,
+    end: input.dateTo ? new Date(input.dateTo) : new Date(),
+  };
+}
 
-  return { start, end: now, prevStart, prevEnd: start, interval };
+function previousRange({ start, end }: Range): Range | null {
+  if (!start) return null;
+  return { start: new Date(start.getTime() - (end.getTime() - start.getTime())), end: start };
+}
+
+function within(column: AnyColumn, { start, end }: Range) {
+  return and(start ? gte(column, start) : undefined, lte(column, end));
 }
 
 function changePercent(current: number, previous: number): number {
@@ -54,67 +45,53 @@ function changePercent(current: number, previous: number): number {
   return Math.round(((current - previous) / previous) * 1000) / 10;
 }
 
-async function revenueSparkline(start: Date, end: Date, interval: string): Promise<number[]> {
-  const result = await db.execute<{ val: string }>(sql`
-    SELECT COALESCE(SUM(p.amount), 0)::text AS val
-    FROM generate_series(
-      ${start.toISOString()}::timestamptz,
-      ${end.toISOString()}::timestamptz,
-      ${interval}::interval
-    ) AS bucket(ts)
-    LEFT JOIN ${payment} p
-      ON p.created_at >= bucket.ts
-      AND p.created_at < bucket.ts + ${interval}::interval
-    GROUP BY bucket.ts
-    ORDER BY bucket.ts
-    LIMIT 12
-  `);
-  return result.rows.map((r) => Number(r.val));
-}
+const SPARKLINE_POINTS = 12;
 
-async function jobCountSparkline(
-  start: Date,
-  end: Date,
-  interval: string,
-  statusFilter?: string[],
+async function sparkline(
+  range: Range,
+  fallbackStart: Date,
+  value: SQL,
+  column: AnyColumn,
+  where: SQL | undefined,
 ): Promise<number[]> {
-  const statusCondition =
-    statusFilter && statusFilter.length > 0
-      ? sql`AND j.status IN (${sql.join(
-          statusFilter.map((s) => sql`${s}`),
-          sql`, `,
-        )})`
-      : sql``;
-
+  const start = range.start ?? fallbackStart;
+  const stepSeconds = Math.max(
+    1,
+    Math.ceil((range.end.getTime() - start.getTime()) / 1000 / SPARKLINE_POINTS),
+  );
+  const step = sql`make_interval(secs => ${stepSeconds}::int)`;
   const result = await db.execute<{ val: string }>(sql`
-    SELECT COUNT(j.id)::text AS val
-    FROM generate_series(
-      ${start.toISOString()}::timestamptz,
-      ${end.toISOString()}::timestamptz,
-      ${interval}::interval
-    ) AS bucket(ts)
-    LEFT JOIN ${job} j
-      ON j.created_at >= bucket.ts
-      AND j.created_at < bucket.ts + ${interval}::interval
-      ${statusCondition}
-    GROUP BY bucket.ts
+    SELECT (${value} WHERE ${column} >= bucket.ts AND ${column} < bucket.ts + ${step}${
+      where ? sql` AND ${where}` : sql``
+    })::text AS val
+    FROM generate_series(0, ${SPARKLINE_POINTS - 1}::int) AS i,
+      LATERAL (SELECT ${start.toISOString()}::timestamp + i * ${step} AS ts) AS bucket
     ORDER BY bucket.ts
-    LIMIT 12
   `);
   return result.rows.map((r) => Number(r.val));
 }
 
-const ATTENTION_KINDS = ["overdue", "inventory", "unassigned", "invoices"] as const;
+async function earliestActivity(): Promise<Date> {
+  const [row] = await db
+    .select({ min: sql<string | null>`min(${invoice.createdAt})` })
+    .from(invoice);
+  return row?.min ? new Date(row.min) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+}
+
+const ATTENTION_KINDS = ["unassigned", "overdue", "missing", "ready", "unpaid"] as const;
 
 type AttentionKind = (typeof ATTENTION_KINDS)[number];
+
+const INVENTORY_ROLES: UserRole[] = ["admin", "cashier", "manager"];
 
 // The badge counts stay visible to every role; the records behind them only to roles
 // that can already see that data elsewhere in the app.
 const ATTENTION_LIST_ROLES: Record<AttentionKind, UserRole[] | null> = {
-  overdue: null,
   unassigned: null,
-  invoices: ["admin", "floorManager", "cashier", "manager"],
-  inventory: ["admin", "cashier", "manager"],
+  overdue: null,
+  missing: INVENTORY_ROLES,
+  ready: INVENTORY_ROLES,
+  unpaid: ["admin", "floorManager", "cashier", "manager"],
 };
 
 function canListAttention(kind: AttentionKind, role: string | null | undefined): boolean {
@@ -122,15 +99,26 @@ function canListAttention(kind: AttentionKind, role: string | null | undefined):
   return roles === null || (!!role && roles.includes(role as UserRole));
 }
 
-const attentionWhere = {
-  overdue: () =>
-    and(ne(job.status, "completed"), lt(job.dueDate, new Date()), sql`${job.dueDate} IS NOT NULL`),
-  inventory: () => eq(inventoryRecord.hasDiscrepancy, true),
-  unassigned: () => and(isNull(job.technicianId), ne(job.status, "completed")),
-  invoices: () => and(eq(invoice.status, "unpaid"), sentInvoice()),
-};
+// Lifetime on purpose: open items must not drop out of view because of the date filter.
+const unpaidInvoice = (locationId: string | null | undefined) =>
+  and(eq(invoice.status, "unpaid"), sentToCashierInvoice(), invoiceAtLocation(locationId));
 
-function attentionJobs(kind: "overdue" | "unassigned") {
+const paymentAtLocation = (locationId: string | null | undefined) =>
+  locationId
+    ? inArray(
+        payment.invoiceId,
+        db.select({ id: invoice.id }).from(invoice).where(invoiceAtLocation(locationId)),
+      )
+    : undefined;
+
+const outstandingInvoice = (locationId: string | null | undefined) =>
+  and(
+    inArray(invoice.status, ["unpaid", "partially_paid"]),
+    sentToCashierInvoice(),
+    invoiceAtLocation(locationId),
+  );
+
+function attentionJobs(where: SQL | undefined, orderBy: SQL) {
   return db
     .select({
       id: job.id,
@@ -147,132 +135,145 @@ function attentionJobs(kind: "overdue" | "unassigned") {
     .innerJoin(invoice, eq(job.invoiceId, invoice.id))
     .innerJoin(customer, eq(invoice.customerId, customer.id))
     .leftJoin(user, eq(job.technicianId, user.id))
-    .where(attentionWhere[kind]())
-    .orderBy(kind === "overdue" ? asc(job.dueDate) : asc(job.createdAt));
+    .where(where)
+    .orderBy(orderBy);
 }
 
-const previousEod = alias(inventoryRecord, "previous_eod");
+const attentionInvoiceColumns = {
+  id: invoice.id,
+  invoiceNumber: invoice.invoiceNumber,
+  customerId: customer.id,
+  customerName: customer.name,
+  total: invoice.total,
+  createdAt: invoice.createdAt,
+};
 
 export const dashboardRouter = {
-  metrics: protectedProcedure.input(dateFromSchema).handler(async ({ input }) => {
-    const { start, end, prevStart, prevEnd, interval } = dateRange(input.dateFrom);
+  metrics: protectedProcedure.input(rangeSchema).handler(async ({ input, context }) => {
+    const range = toRange(input);
+    const prev = previousRange(range);
+    const loc = context.locationId;
+    const fallbackStart = range.start ?? (await earliestActivity());
+
+    const revenue = (r: Range) =>
+      db
+        .select({ total: sql<number>`coalesce(sum(${payment.amount}), 0)::int` })
+        .from(payment)
+        .where(and(paymentAtLocation(loc), within(payment.createdAt, r)))
+        .then((rows) => rows[0]?.total ?? 0);
+
+    const outstanding = (r: Range) =>
+      db
+        .select({ count: count() })
+        .from(invoice)
+        .where(and(outstandingInvoice(loc), within(invoice.createdAt, r)))
+        .then((rows) => rows[0]?.count ?? 0);
+
+    const activeJob = () => inArray(job.status, ["accepted", "in_progress"]);
+    const active = (r: Range) =>
+      db
+        .select({ count: count() })
+        .from(job)
+        .where(and(activeJob(), within(job.acceptedAt, r)))
+        .then((rows) => rows[0]?.count ?? 0);
+
+    const overnight = (r: Range) =>
+      db
+        .select({ count: count() })
+        .from(job)
+        .where(and(eq(job.isOvernight, true), within(job.completedAt, r)))
+        .then((rows) => rows[0]?.count ?? 0);
 
     const [
-      currentRevenueRows,
-      prevRevenueRows,
-      openJobsRows,
-      currentOpenCreatedRows,
-      prevOpenCreatedRows,
-      activeJobsRows,
-      prevActiveRows,
-      overnightRows,
-      prevOvernightRows,
+      curRev,
+      prvRev,
+      curOutstanding,
+      prvOutstanding,
+      curActive,
+      prvActive,
+      curOvernight,
+      prvOvernight,
       revSparkline,
-      openSparkline,
+      outstandingSparkline,
       activeSparkline,
       overnightSparkline,
     ] = await Promise.all([
-      db
-        .select({ total: sql<string>`COALESCE(SUM(${payment.amount}), 0)::text` })
-        .from(payment)
-        .where(and(gte(payment.createdAt, start), lt(payment.createdAt, end))),
-      db
-        .select({ total: sql<string>`COALESCE(SUM(${payment.amount}), 0)::text` })
-        .from(payment)
-        .where(and(gte(payment.createdAt, prevStart), lt(payment.createdAt, prevEnd))),
-      db.select({ count: count() }).from(job).where(ne(job.status, "completed")),
-      db
-        .select({ count: count() })
-        .from(job)
-        .where(and(ne(job.status, "completed"), gte(job.createdAt, start), lt(job.createdAt, end))),
-      db
-        .select({ count: count() })
-        .from(job)
-        .where(
-          and(
-            ne(job.status, "completed"),
-            gte(job.createdAt, prevStart),
-            lt(job.createdAt, prevEnd),
-          ),
-        ),
-      db
-        .select({ count: count() })
-        .from(job)
-        .where(sql`${job.status} IN ('accepted', 'in_progress')`),
-      db
-        .select({ count: count() })
-        .from(job)
-        .where(
-          and(
-            sql`${job.status} IN ('accepted', 'in_progress')`,
-            gte(job.acceptedAt, prevStart),
-            lt(job.acceptedAt, prevEnd),
-          ),
-        ),
-      db
-        .select({ count: count() })
-        .from(job)
-        .where(
-          and(eq(job.isOvernight, true), gte(job.completedAt, start), lt(job.completedAt, end)),
-        ),
-      db
-        .select({ count: count() })
-        .from(job)
-        .where(
-          and(
-            eq(job.isOvernight, true),
-            gte(job.completedAt, prevStart),
-            lt(job.completedAt, prevEnd),
-          ),
-        ),
-      revenueSparkline(start, end, interval),
-      jobCountSparkline(start, end, interval),
-      jobCountSparkline(start, end, interval, ["accepted", "in_progress"]),
-      jobCountSparkline(start, end, interval),
+      revenue(range),
+      prev ? revenue(prev) : null,
+      outstanding(range),
+      prev ? outstanding(prev) : null,
+      active(range),
+      prev ? active(prev) : null,
+      overnight(range),
+      prev ? overnight(prev) : null,
+      sparkline(
+        range,
+        fallbackStart,
+        sql`SELECT coalesce(sum(${payment.amount}), 0) FROM ${payment}`,
+        payment.createdAt,
+        paymentAtLocation(loc),
+      ),
+      sparkline(
+        range,
+        fallbackStart,
+        sql`SELECT count(*) FROM ${invoice}`,
+        invoice.createdAt,
+        outstandingInvoice(loc),
+      ),
+      sparkline(
+        range,
+        fallbackStart,
+        sql`SELECT count(*) FROM ${job}`,
+        job.acceptedAt,
+        activeJob(),
+      ),
+      sparkline(
+        range,
+        fallbackStart,
+        sql`SELECT count(*) FROM ${job}`,
+        job.completedAt,
+        eq(job.isOvernight, true),
+      ),
     ]);
 
-    const curRev = Number(currentRevenueRows[0]?.total ?? "0");
-    const prvRev = Number(prevRevenueRows[0]?.total ?? "0");
-    const openJobs = openJobsRows[0]?.count ?? 0;
-    const curOpen = currentOpenCreatedRows[0]?.count ?? 0;
-    const prvOpen = prevOpenCreatedRows[0]?.count ?? 0;
-    const activeJobs = activeJobsRows[0]?.count ?? 0;
-    const prvActive = prevActiveRows[0]?.count ?? 0;
-    const overnight = overnightRows[0]?.count ?? 0;
-    const prvOvernight = prevOvernightRows[0]?.count ?? 0;
+    const change = (current: number, previous: number | null) =>
+      previous === null ? null : changePercent(current, previous);
 
     return [
       {
         key: "revenue",
         value: `$${(curRev / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-        change: changePercent(curRev, prvRev),
+        change: change(curRev, prvRev),
         sparkline: revSparkline,
       },
       {
         key: "open_jobs",
-        value: String(openJobs),
-        change: changePercent(curOpen, prvOpen),
-        sparkline: openSparkline,
+        value: String(curOutstanding),
+        change: change(curOutstanding, prvOutstanding),
+        sparkline: outstandingSparkline,
       },
       {
         key: "active_jobs",
-        value: String(activeJobs),
-        change: changePercent(activeJobs, prvActive),
+        value: String(curActive),
+        change: change(curActive, prvActive),
         sparkline: activeSparkline,
       },
       {
         key: "sleep_time",
-        value: String(overnight),
-        change: changePercent(overnight, prvOvernight),
+        value: String(curOvernight),
+        change: change(curOvernight, prvOvernight),
         sparkline: overnightSparkline,
       },
     ];
   }),
 
-  teamActivity: protectedProcedure.input(dateFromSchema).handler(async ({ input, context }) => {
-    const { start } = dateRange(input.dateFrom);
+  teamActivity: protectedProcedure.input(rangeSchema).handler(async ({ input, context }) => {
+    const { start, end } = toRange(input);
     const locId = context.locationId;
     const locationCondition = locId ? sql`AND u.location_id = ${locId}` : sql``;
+    const startCondition = start
+      ? sql`AND j.completed_at >= ${start.toISOString()}::timestamp`
+      : sql``;
 
     const result = await db.execute<{
       name: string;
@@ -282,7 +283,10 @@ export const dashboardRouter = {
       SELECT
         u.name,
         COUNT(*) FILTER (WHERE j.status IN ('accepted', 'in_progress'))::text AS "activeJobs",
-        COUNT(*) FILTER (WHERE j.status = 'completed' AND j.completed_at >= ${start.toISOString()}::timestamptz)::text AS "completedToday"
+        COUNT(*) FILTER (
+          WHERE j.status = 'completed' ${startCondition}
+            AND j.completed_at <= ${end.toISOString()}::timestamp
+        )::text AS "completedToday"
       FROM ${user} u
       LEFT JOIN ${job} j ON j.technician_id = u.id
       WHERE u.role = 'technician' ${locationCondition}
@@ -300,74 +304,87 @@ export const dashboardRouter = {
     };
   }),
 
-  latestInvoices: protectedProcedure.input(dateFromSchema).handler(async ({ input, context }) => {
-    const { start } = dateRange(input.dateFrom);
-    const locId = context.locationId;
+  latestInvoices: protectedProcedure
+    .input(
+      rangeSchema.extend({
+        page: z.number().int().min(1).default(1),
+        pageSize: z.number().int().min(1).max(100).default(10),
+      }),
+    )
+    .handler(async ({ input, context }) => {
+      const where = and(
+        within(invoice.createdAt, toRange(input)),
+        sentToCashierInvoice(),
+        invoiceAtLocation(context.locationId),
+      );
 
-    const conditions = [gte(invoice.createdAt, start), sentInvoice()];
-    if (locId) {
-      // Same fix as the cashier list — filter on the invoice's own branch.
-      conditions.push(or(eq(invoice.locationId, locId), isNull(invoice.locationId))!);
-    }
+      const [rows, [totalRow]] = await Promise.all([
+        db
+          .select({
+            id: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            total: invoice.total,
+            status: invoice.status,
+            createdAt: invoice.createdAt,
+            paidAt:
+              sql<Date | null>`case when ${invoice.status} = 'paid' then ${lastPaymentAt} end`.mapWith(
+                payment.createdAt,
+              ),
+            customerName: customer.name,
+            customerEmail: customer.email,
+          })
+          .from(invoice)
+          .innerJoin(customer, eq(invoice.customerId, customer.id))
+          .where(where)
+          .orderBy(desc(invoice.createdAt))
+          .limit(input.pageSize)
+          .offset((input.page - 1) * input.pageSize),
+        db.select({ count: count() }).from(invoice).where(where),
+      ]);
 
-    const rows = await db
-      .select({
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        total: invoice.total,
-        status: invoice.status,
-        createdAt: invoice.createdAt,
-        customerName: customer.name,
-        customerEmail: customer.email,
-      })
-      .from(invoice)
-      .innerJoin(customer, eq(invoice.customerId, customer.id))
-      .where(and(...conditions))
-      .orderBy(desc(invoice.createdAt))
-      .limit(10);
+      return { rows, total: totalRow?.count ?? 0 };
+    }),
 
-    return rows;
-  }),
+  attentionRequired: protectedProcedure.handler(async ({ context }) => {
+    const loc = context.locationId;
+    const countJobs = (where: SQL | undefined) =>
+      db
+        .select({ count: count() })
+        .from(job)
+        .where(where)
+        .then((rows) => rows[0]?.count ?? 0);
 
-  attentionRequired: protectedProcedure.input(dateFromSchema).handler(async ({ context }) => {
-    const [overdueRows, lowInventoryRows, unassignedRows, pendingRows] = await Promise.all([
-      db.select({ count: count() }).from(job).where(attentionWhere.overdue()),
-      db.select({ count: count() }).from(inventoryRecord).where(attentionWhere.inventory()),
-      db.select({ count: count() }).from(job).where(attentionWhere.unassigned()),
-      db.select({ count: count() }).from(invoice).where(attentionWhere.invoices()),
+    const [unassigned, overdue, missing, ready, unpaid] = await Promise.all([
+      countJobs(unassignedJob()),
+      countJobs(overdueJob()),
+      countJobs(missingJob()),
+      db
+        .select({ count: countDistinct(job.invoiceId) })
+        .from(job)
+        .where(readyForPickupJob())
+        .then((rows) => rows[0]?.count ?? 0),
+      db
+        .select({ count: count() })
+        .from(invoice)
+        .where(unpaidInvoice(loc))
+        .then((rows) => rows[0]?.count ?? 0),
     ]);
     const role = context.session.user.role;
 
+    const item = (id: AttentionKind, count: number, severity: "high" | "medium") => ({
+      id,
+      count,
+      severity,
+      canList: canListAttention(id, role),
+    });
+
     return {
       items: [
-        {
-          id: "overdue" as const,
-          label: "attention_overdue_jobs",
-          count: overdueRows[0]?.count ?? 0,
-          severity: "high" as const,
-          canList: canListAttention("overdue", role),
-        },
-        {
-          id: "inventory" as const,
-          label: "attention_low_inventory",
-          count: lowInventoryRows[0]?.count ?? 0,
-          severity: "medium" as const,
-          canList: canListAttention("inventory", role),
-        },
-        {
-          id: "unassigned" as const,
-          label: "attention_unassigned_jobs",
-          count: unassignedRows[0]?.count ?? 0,
-          severity: "high" as const,
-          canList: canListAttention("unassigned", role),
-        },
-        {
-          id: "invoices" as const,
-          label: "attention_pending_invoices",
-          count: pendingRows[0]?.count ?? 0,
-          severity: "medium" as const,
-          canList: canListAttention("invoices", role),
-        },
+        item("unassigned", unassigned, "high"),
+        item("overdue", overdue, "high"),
+        item("missing", missing, "high"),
+        item("ready", ready, "medium"),
+        item("unpaid", unpaid, "medium"),
       ],
     };
   }),
@@ -380,44 +397,45 @@ export const dashboardRouter = {
       }
 
       switch (input.kind) {
-        case "overdue":
-          return { kind: "overdue" as const, rows: await attentionJobs("overdue") };
         case "unassigned":
-          return { kind: "unassigned" as const, rows: await attentionJobs("unassigned") };
-        case "invoices":
           return {
-            kind: "invoices" as const,
+            kind: "unassigned" as const,
+            rows: await attentionJobs(unassignedJob(), asc(job.createdAt)),
+          };
+        case "overdue":
+          return {
+            kind: "overdue" as const,
+            rows: await attentionJobs(overdueJob(), asc(job.dueDate)),
+          };
+        case "missing":
+          return {
+            kind: "missing" as const,
+            rows: await attentionJobs(missingJob(), desc(job.createdAt)),
+          };
+        case "ready":
+          return {
+            kind: "ready" as const,
             rows: await db
-              .select({
-                id: invoice.id,
-                invoiceNumber: invoice.invoiceNumber,
-                customerId: customer.id,
-                customerName: customer.name,
-                total: invoice.total,
-                createdAt: invoice.createdAt,
-              })
+              .select(attentionInvoiceColumns)
               .from(invoice)
               .innerJoin(customer, eq(invoice.customerId, customer.id))
-              .where(attentionWhere.invoices())
+              .where(
+                inArray(
+                  invoice.id,
+                  db.select({ id: job.invoiceId }).from(job).where(readyForPickupJob()),
+                ),
+              )
               .orderBy(asc(invoice.createdAt)),
           };
-        case "inventory":
+        case "unpaid":
           return {
-            kind: "inventory" as const,
+            kind: "unpaid" as const,
             rows: await db
-              .select({
-                id: inventoryRecord.id,
-                recordDate: inventoryRecord.recordDate,
-                rimCount: inventoryRecord.rimCount,
-                eodRimCount: previousEod.rimCount,
-                discrepancyNotes: inventoryRecord.discrepancyNotes,
-                recordedByName: user.name,
-              })
-              .from(inventoryRecord)
-              .innerJoin(user, eq(inventoryRecord.recordedById, user.id))
-              .leftJoin(previousEod, eq(inventoryRecord.previousEodId, previousEod.id))
-              .where(attentionWhere.inventory())
-              .orderBy(desc(inventoryRecord.recordDate)),
+              .select(attentionInvoiceColumns)
+              .from(invoice)
+              .innerJoin(customer, eq(invoice.customerId, customer.id))
+              .where(unpaidInvoice(context.locationId))
+              .orderBy(asc(invoice.createdAt)),
           };
       }
     }),
