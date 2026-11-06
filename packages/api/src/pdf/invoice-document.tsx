@@ -1,8 +1,10 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { JobTypeEntry } from "@rim-genie/db/schema";
+import { formatBusinessDate, formatBusinessDateTime } from "@rim-genie/db/format-date";
 import { lineQuantityLabel, lineTotalCents } from "@rim-genie/db/line-item";
 
 import { LOGO_DATA_URI } from "./logo";
+import "./no-hyphenation";
 import { formatCents } from "../lib/format-currency";
 
 const styles = StyleSheet.create({
@@ -22,8 +24,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   logo: {
-    width: 33,
-    height: 32,
+    width: 72,
+    height: 70,
     objectFit: "contain",
   },
   title: {
@@ -91,6 +93,12 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 3,
   },
+  companyName: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: "#1a1a1a",
+    textAlign: "right",
+  },
   addressLine: {
     fontSize: 10,
     color: "#1a1a1a",
@@ -118,7 +126,7 @@ const styles = StyleSheet.create({
   },
   colNum: { width: 28 },
   colDesc: { flex: 1 },
-  colQty: { width: 96, textAlign: "center" },
+  colQty: { width: 96, paddingHorizontal: 6, textAlign: "center" },
   colUnit: { width: 64, textAlign: "right" },
   colTotal: { width: 64, textAlign: "right" },
   headerCell: {
@@ -217,10 +225,10 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
     marginBottom: 6,
   },
-  payColDate: { width: 80 },
+  payColDate: { width: 120 },
   payColMethod: { width: 80 },
-  payColAmount: { width: 64, textAlign: "right" },
-  payColRef: { flex: 1 },
+  payColAmount: { width: 72, textAlign: "right" },
+  payColRef: { flex: 1, paddingLeft: 16 },
   payColReceived: { width: 80, textAlign: "right" },
   // Storage fee notice
   noticeBox: {
@@ -279,15 +287,6 @@ export type InvoiceData = {
   }>;
 };
 
-function fmtDate(d: Date | string | null | undefined): string {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
-}
-
 const paymentModeLabels: Record<string, string> = {
   cash: "Cash",
   credit_card: "Credit Card",
@@ -306,6 +305,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
   const totalPaid = data.payments.reduce((sum, p) => sum + p.amount, 0);
   const balance = data.total - totalPaid;
   const status = statusMeta[data.status] ?? { label: data.status, color: "#999" };
+  const hasPaymentReference = data.payments.some((p) => p.reference);
 
   return (
     <Document title={`Invoice #${data.invoiceNumber}`}>
@@ -332,7 +332,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
             </View>
             <View style={styles.metaBlock}>
               <Text style={styles.metaLabel}>Date:</Text>
-              <Text style={styles.metaValue}>{fmtDate(data.createdAt)}</Text>
+              <Text style={styles.metaValue}>{formatBusinessDate(data.createdAt)}</Text>
             </View>
             <View style={styles.metaBlock}>
               <Text style={styles.metaLabel}>Prepared By:</Text>
@@ -359,6 +359,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
             <Text style={styles.totalDisplay}>{formatCents(data.total)}</Text>
           </View>
           <View style={styles.addressBlock}>
+            <Text style={styles.companyName}>Rim Genie</Text>
             <Text style={styles.addressLine}>82c Waltham Park Rd,</Text>
             <Text style={styles.addressLine}>Kingston, Jamaica</Text>
             <Text style={styles.addressLine}>876-830-9624</Text>
@@ -482,17 +483,27 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
                 <Text style={[styles.headerCell, styles.payColDate]}>Date</Text>
                 <Text style={[styles.headerCell, styles.payColMethod]}>Method</Text>
                 <Text style={[styles.headerCell, styles.payColAmount]}>Amount</Text>
-                <Text style={[styles.headerCell, styles.payColRef]}>Reference</Text>
+                {hasPaymentReference ? (
+                  <Text style={[styles.headerCell, styles.payColRef]}>Reference</Text>
+                ) : (
+                  <View style={{ flex: 1 }} />
+                )}
                 <Text style={[styles.headerCell, styles.payColReceived]}>Received By</Text>
               </View>
               {data.payments.map((p) => (
                 <View style={styles.tableRow} key={p.id}>
-                  <Text style={[styles.cell, styles.payColDate]}>{fmtDate(p.createdAt)}</Text>
+                  <Text style={[styles.cell, styles.payColDate]}>
+                    {formatBusinessDateTime(p.createdAt)}
+                  </Text>
                   <Text style={[styles.cell, styles.payColMethod]}>
                     {paymentModeLabels[p.mode] ?? p.mode}
                   </Text>
                   <Text style={[styles.cell, styles.payColAmount]}>{formatCents(p.amount)}</Text>
-                  <Text style={[styles.cell, styles.payColRef]}>{p.reference ?? "—"}</Text>
+                  {hasPaymentReference ? (
+                    <Text style={[styles.cell, styles.payColRef]}>{p.reference ?? ""}</Text>
+                  ) : (
+                    <View style={{ flex: 1 }} />
+                  )}
                   <Text style={[styles.cell, styles.payColReceived]}>
                     {p.receivedByName ?? "—"}
                   </Text>
