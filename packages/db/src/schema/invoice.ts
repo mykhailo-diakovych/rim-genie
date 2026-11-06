@@ -130,6 +130,7 @@ export const payment = pgTable(
   },
   (table) => [
     index("payment_invoiceId_idx").on(table.invoiceId),
+    index("payment_invoiceId_createdAt_idx").on(table.invoiceId, table.createdAt),
     index("payment_receivedById_idx").on(table.receivedById),
   ],
 );
