@@ -44,5 +44,11 @@ export function send(input: {
       }
       return Effect.succeed(result.data);
     }),
+    Effect.tap((data) =>
+      Effect.sync(() => console.info(`[email] sent "${input.subject}" (resend id ${data?.id})`)),
+    ),
+    Effect.tapError((error) =>
+      Effect.sync(() => console.error(`[email] failed "${input.subject}": ${error.reason}`)),
+    ),
   );
 }

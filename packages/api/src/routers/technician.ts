@@ -12,6 +12,7 @@ import * as ProofService from "../services/proof.service";
 import * as EmailService from "../services/email.service";
 import * as SmsService from "../services/sms.service";
 import { verifyJobTechnicianCode, verifyTechnicianCode } from "../services/technician-code.service";
+import { CustomerHasNoEmail, CustomerHasNoPhone } from "../services/errors";
 import { errorMessage, runEffect } from "../services/run-effect";
 import { createJobCompletedEmail } from "../emails/job-completed-email";
 import { formatCents } from "../lib/format-currency";
@@ -57,6 +58,10 @@ function notifyCustomerInvoiceCompleted(invoiceId: string): Promise<string | nul
         to: cust.phone,
         text: `Hi ${cust.name}, your rim repair for quote ${quoteRef} (${formatCents(inv.total)}) is complete and ready for pickup! - Rim Genie`,
       });
+    } else if (pref === "email") {
+      yield* Effect.fail(new CustomerHasNoEmail({ customerId: cust.id }));
+    } else if (pref === "sms") {
+      yield* Effect.fail(new CustomerHasNoPhone({ customerId: cust.id }));
     }
   });
 
